@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Desafio das Perguntas - Quiz</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1E1E14, #1E1E14);
+      display: block;
+      min-height: 100vh;
+    }
+    .quiz-container {
+      background: #7f7f47;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      width: 100%;
+      max-width: 600px;
+      position: relative;
+    }
+    #pergunta-enunciado {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 80px;
+      margin-top: -75px;
+    }
+    #comentarios {
+      transition: all 0.4s ease;
+    }
+    input, button {
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 1rem;
+      margin-top: 0.5rem;
+      border-radius: 8px;
+      border: none;
+    }
+    input {
+      width: 95%;
+      max-width: 900px;
+      border: 1px solid #ccc;
+      display: block;
+      margin-top: -40px;
+      margin-bottom: 20px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    button {
+      background: #6c63ff;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #574fd6;
+    }
+    #dica-box, #nota-box {
+      margin-top: 1rem;
+      background: #f0f0f0;
+      padding: 0.75rem;
+      border-radius: 8px;
+    }
+    #fim-quiz {
+      text-align: center;
+    }
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 70px;
+      margin-top: -15px;
+    }
+    .dica-icon {
+      display: none;
+      align-items: center;
+      cursor: pointer;
+      font-size: 1rem;
+      color: #666;
+    }
+    .dica-icon img {
+      width: 24px;
+      height: 24px;
+      margin-right: 0.3rem;
+    }
+    #avaliacao {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 50px;
+        margin: 20px 0;
+        font-size: 32px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .estrela {
+        font-size: 36px;
+        cursor: pointer;
+        color: black;
+        user-select: none;
+        transition: color 0.3s ease;
+        padding: 0 30px;
+    }
+
+    .estrela.dourada {
+      color: gold;
+    }
+  </style>
+</head>
+  <body style="margin: 0; font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1E1E14, #1E1E14);">
+    <div style="display: flex; flex-direction: column; align-items: center; padding: 2rem 0;">
+      <!-- Ranking anterior -->
+      <div style="color: white; display: flex; align-items: center; font-weight: bold; margin: -11px auto 1.5rem auto; width: 100%; max-width: 600px;">
+      <span id="ranking-anterior" style="width: 80px; text-align: left;">Ranking Anterior</span>
+      <!-- Barra de progresso -->
+      <div style="flex: 1; height: 16px; background-color: #444; border-radius: 10px; margin: 0 12px; overflow: hidden;">
+        <div id="barra-progresso" style="height: 100%; width: 0%; background: linear-gradient(to right, #f9a825, #fdd835); transition: width 0.5s;"></div>
+      </div>
+      <!-- Próximo ranking -->
+      <span id="ranking-proximo" style="color: white; width: 100px; font-weight: bold; text-align: right;">Próximo Ranking</span>
+    <!-- Ranking atual do jogador -->
+    </div>
+    <header style="color: white; position: absolute; top: 16px; left: 32px; font-weight: bold; font-size: 20px;">
+      Ranking: <span id="ranking">Iniciante</span>
+    </header>
+    <!-- Pontuação atual do jogador -->
+    <header style="color: white; position: absolute; top: 16px; right: 32px; font-weight: bold; font-size: 20px;">
+      Pontuação: <span id="pontuacao">0</span>
+    </header>
+      <div class="quiz-container">
+      <div class="quiz-header">
+        <!-- Tema e nível da pergunta -->
+        <h2 id="tema-nivel-pergunta" style="font-weight: bold;"></h2>
+        <!-- Ícone de dica e número de dicas disponíveis -->
+        <div id="dica-icon" class="dica-icon" onclick="usarDica()">
+          <span style="font-size: 24px; vertical-align: middle;">💡</span>
+          <span id="contador-dicas" style="color: black; font-size: 18px; font-weight: bold; margin-left: 4px;">0</span>
+        </div>
+      </div>
+      <div id="quiz-box">
+        <!-- Enunciado da pergunta -->
+        <p id="pergunta-enunciado"></p>
+        <!-- Caixa para digitar a resposta -->
+        <input type="text" id="resposta-input" maxlength="50" placeholder="Digite sua resposta" autocomplete="off"/>
+        <!-- Botão para enviar a resposta -->
+        <button id="enviar-btn" onclick="enviarResposta()" disabled>Enviar</button>
+        <!-- Botões de finalizar o quiz e chamar próxima pergunta -->
+        <div id="botoes-acao" style="display: none; margin-top: 20px; justify-content: space-between; gap: 12px;">
+          <button id="btnFinalizar" onclick="finalizarQuiz()" style="flex: 1; background-color: #e53935;">Finalizar</button>
+          <button id="btnProxima" onclick="proximaPergunta()" style="flex: 1;">Próxima</button>
+        </div>
+        <!-- Resultado após o envio da resposta -->
+        <div id="resultado" style="display: none; margin-top: 12px;"></div>
+        <div id="respostas-aceitas" class="respostas-aceitas" style="display: none;">
+        <strong>Respostas aceitas:</strong> <span id="lista-respostas"></span>
+        </div>
+        <div id="dica-final" style="display: none; margin-top: 10px;"></div>
+        <div id="nota" style="display: none; margin-top: 8px;"></div>
+        <div id="dica-box" style="display: none;">
+          <strong>Dica:</strong> <span id="dica-texto"></span>
+        </div>
+        <div id="nota-box" style="display: none;">
+          <span id="nota-texto"></span>
+        </div>
+        <!-- Estrelas para avaliar a pergunta -->
+        <div id="avaliacao" style="display: none">
+          <span class="estrela" data-valor="1">☆</span>
+          <span class="estrela" data-valor="2">☆</span>
+          <span class="estrela" data-valor="3">☆</span>
+          <span class="estrela" data-valor="4">☆</span>
+          <span class="estrela" data-valor="5">☆</span>
+        </div>
+      </div>
+    </div>
+    <!-- Comentários dos usuários para a pergunta -->
+    <div id="comentarios" style="display: none; max-height: 180px; overflow-y: auto; margin-top: 1rem; background: #fff8f0; padding: 1rem; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.05); width: 100%; max-width: 600px;">
+      <h3>Comentários:</h3>
+      <ul id="lista-comentarios" style="padding-left: 1rem;"></ul>
+    </div>
+  </div>
+
+  <script>
+    const emailUsuario = "{{ session['email'] if 'email' in session else '' }}";
+    const idUsuario = "{{ session['id_usuario'] if 'id_usuario' in session else '' }}";
+  </script>
+  <script src="{{ url_for('static', filename='quiz.js') }}"></script>
+</body>
+</html>

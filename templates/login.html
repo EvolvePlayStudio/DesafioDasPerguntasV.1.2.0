@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Desafio das Perguntas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1E1E14, #1E1E14);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .auth-container {
+            background-color: #7f7f47;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+            color: black;
+            font-weight: bold;
+        }
+
+        .auth-tabs {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .auth-tabs button {
+            background: none;
+            border: none;
+            font-weight: bold;
+            padding: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: color 0.3s, border-bottom 0.3s;
+        }
+
+        .auth-tabs button.active {
+            border-bottom: 2px solid #007BFF;
+            color: #007BFF;
+        }
+
+        form {
+            display: none;
+            flex-direction: column;
+        }
+
+        form.active {
+            display: flex;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        button[type="submit"] {
+            padding: 12px;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        .info-section {
+            margin-top: 25px;
+            text-align: center;
+        }
+
+        .info-section p {
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .info-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .info-section li {
+            margin: 6px 0;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="title">Desafio das Perguntas</div>
+
+        <div class="auth-tabs">
+            <button id="login-tab" class="active" onclick="showForm('login')">Login</button>
+            <button id="register-tab" onclick="showForm('register')">Registrar</button>
+        </div>
+
+        <!-- Formulário de Login -->
+        <form id="login-form" class="active">
+          <input type="email" id="email" name="email" placeholder="Email" required>
+          <input type="password" id="senha" name="senha" placeholder="Senha" required>
+          <button type="submit">Entrar</button>
+        </form>
+
+        <!-- Formulário de Registro -->
+        <form id="register-form" method="POST" action="{{ url_for('registrar') }}">
+            <input type="text" name="nome" placeholder="Nome de usuário" required>
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="password" name="senha" placeholder="Senha" required>
+            <input type="password" name="confirmar_senha" placeholder="Confirmar senha" required>
+            <input type="text" name="invite_token" placeholder="Token de convite" required>
+            <button type="submit">Registrar</button>
+        </form>
+
+        <div class="info-section">
+            <p>Explore perguntas em diversos temas:</p>
+            <ul>
+                <li>🌟 Progresso salvo com conta</li>
+                <li>🧠 Perguntas desafiadoras por nível</li>
+                <li>📊 Ranking pessoal e histórico</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='login.js') }}"></script>
+</body>
+</html>
