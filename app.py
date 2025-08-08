@@ -10,8 +10,18 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 import os
+import logging
+from logging.handlers import RotatingFileHandler
+import re
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
+# Para fazer depuração na render
+if not app.debug:
+    handler = RotatingFileHandler('error.log', maxBytes=100000, backupCount=3)
+    handler.setLevel(logging.ERROR)
+    formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
+    handler.setFormatter(formatter)
+    app.logger.addHandler(handler)
 temas_disponiveis = ["Biologia", "Esportes", "História"]
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
@@ -32,91 +42,95 @@ def index():
 
 @app.route("/login", methods=["POST"])
 def login():
-    if not request.is_json:
-        return jsonify(success=False, message="Content-Type deve ser application/json."), 415
+    conn = cur = None
+    try:
+        if not request.is_json:
+            return jsonify(success=False, message="Content-Type deve ser application/json."), 415
 
-    data = request.get_json()
-    email = data.get("email")
-    senha = data.get("senha")
+        data = request.get_json()
+        email = data.get("email")
+        senha = data.get("senha")
 
-    if not email or not senha:
-        return jsonify(success=False, message="Email e senha são obrigatórios.")
+        if not email or not senha:
+            return jsonify(success=False, message="Email e senha são obrigatórios.")
+        
+        EMAIL_REGEX = r"[^@]+@[^@]+\.[^@]+"
+        if not re.match(EMAIL_REGEX, email):
+            return jsonify(success=False, message="Formato de e-mail inválido."), 400
 
-    conn = get_db_connection()
-    cur = conn.cursor()
+        conn = get_db_connection()
+        cur = conn.cursor()
 
-    # Verifica se o usuário existe
-    cur.execute("SELECT id_usuario, senha_hash, email_confirmado, dicas_restantes, perguntas_restantes FROM usuarios_registrados WHERE email = %s", (email,))
-    usuario = cur.fetchone()
+        # Verifica se o usuário existe
+        cur.execute("SELECT id_usuario, senha_hash, email_confirmado, dicas_restantes, perguntas_restantes FROM usuarios_registrados WHERE email = %s", (email,))
+        usuario = cur.fetchone()
 
-    if not usuario:
-        cur.close()
-        conn.close()
-        return jsonify(success=False, message="E-mail não registrado.")
+        if not usuario:
+            return jsonify(success=False, message="E-mail não registrado.")
 
-    id_usuario, senha_hash, email_confirmado, dicas_restantes, perguntas_restantes = usuario
+        id_usuario, senha_hash, email_confirmado, dicas_restantes, perguntas_restantes = usuario
 
-    if not check_password_hash(senha_hash, senha):
-        cur.close()
-        conn.close()
-        return jsonify(success=False, message="Senha incorreta.")
+        if not check_password_hash(senha_hash, senha):
+            return jsonify(success=False, message="Senha incorreta.")
 
-    if not email_confirmado:
-        cur.close()
-        conn.close()
-        return jsonify(success=False, message="Você precisa confirmar seu e-mail antes de fazer login.")
+        if not email_confirmado:
+            return jsonify(success=False, message="Você precisa confirmar seu e-mail antes de fazer login.")
 
-    # Define sessão
-    session["id_usuario"] = id_usuario
-    session["email"] = email
+        # Define sessão
+        session["id_usuario"] = id_usuario
+        session["email"] = email
 
-    # Busca as pontuações atuais do usuário
-    cur.execute(
-        "SELECT tema FROM pontuacoes_usuarios WHERE id_usuario = %s",
-        (id_usuario,)
-    )
-    temas_ja_registrados = {row[0].strip().lower() for row in cur.fetchall()}
-
-    # Normaliza os temas disponíveis (garante consistência de capitalização e espaços)
-    temas_normalizados = {tema.strip().lower(): tema for tema in temas_disponiveis}
-
-    # Descobre quais rankings estão faltando
-    temas_faltantes = [
-        nome_original for chave, nome_original in temas_normalizados.items()
-        if chave not in temas_ja_registrados
-    ]
-
-    for tema in temas_faltantes:
+        # Busca as pontuações atuais do usuário
         cur.execute(
-            "INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao) VALUES (%s, %s, %s)",
-            (id_usuario, tema, 0)
+            "SELECT tema FROM pontuacoes_usuarios WHERE id_usuario = %s",
+            (id_usuario,)
         )
+        temas_ja_registrados = {row[0].strip().lower() for row in cur.fetchall()}
 
-    # Pega as regras de pontuação para acertos, erros e uso de dicas da pergunta
-    cur.execute("SELECT * FROM regras_pontuacao ORDER BY id_ranking")
-    linhas = cur.fetchall()
-    print("Linhas")
-    for linha in linhas:
-        print(linha)
-    colunas = [desc[0] for desc in cur.description]
+        # Normaliza os temas disponíveis (garante consistência de capitalização e espaços)
+        temas_normalizados = {tema.strip().lower(): tema for tema in temas_disponiveis}
 
-    conn.commit()
-    cur.close()
-    conn.close()
+        # Descobre quais rankings estão faltando
+        temas_faltantes = [
+            nome_original for chave, nome_original in temas_normalizados.items()
+            if chave not in temas_ja_registrados
+        ]
 
-    # Transforma em lista de dicionários
-    regras_pontuacao = []
-    for linha in linhas:
-        regra = dict(zip(colunas, linha))
-        regras_pontuacao.append(regra)
+        for tema in temas_faltantes:
+            cur.execute(
+                "INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao) VALUES (%s, %s, %s)",
+                (id_usuario, tema, 0)
+            )
 
+        # Pega as regras de pontuação para acertos, erros e uso de dicas da pergunta
+        cur.execute("SELECT * FROM regras_pontuacao ORDER BY id_ranking")
+        linhas = cur.fetchall()
+
+        colunas = [desc[0] for desc in cur.description]
+        conn.commit()
+        # Transforma em lista de dicionários
+        regras_pontuacao = []
+        for linha in linhas:
+            regra = dict(zip(colunas, linha))
+            regras_pontuacao.append(regra)
+    except Exception as e:
+        if conn:
+            conn.rollback()
+            app.logger.error("Erro no login", exc_info=True)
+        return jsonify(success=False, message="Erro interno no servidor."), 500
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
     return jsonify(
-        success=True,
-        message="Login realizado com sucesso.",
-        regras_pontuacao=regras_pontuacao,
-        dicas_restantes=dicas_restantes,
-        perguntas_restantes=perguntas_restantes
-    )
+            success=True,
+            message="Login realizado com sucesso.",
+            regras_pontuacao=regras_pontuacao,
+            dicas_restantes=dicas_restantes,
+            perguntas_restantes=perguntas_restantes
+        ), 200
+        
 
 @app.route("/register", methods=["POST"])
 def registrar():
@@ -126,10 +140,7 @@ def registrar():
     senha = data.get("senha")
     # A parte aabaixo será removida quando o app estiver em produção
     token_recebido = data.get("invite_token")
-    print(F'Token recevido: {token_recebido}')
-    print(f'Tojen de convitte; {invite_token}')
     if token_recebido != invite_token:
-        print("Token inválido")
         flash("Token de convite inválido")
         return redirect("/register")
     
