@@ -13,6 +13,7 @@ import os
 import re
 import logging
 import sys
+import traceback
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 # Para fazer depuração na render
@@ -113,11 +114,21 @@ def login():
         for linha in linhas:
             regra = dict(zip(colunas, linha))
             regras_pontuacao.append(regra)
-    except Exception as e:
+    except Exception:
+        # Se a conexão existir, reverte transação
         if conn:
             conn.rollback()
-            app.logger.error("Erro no login", exc_info=True)
-            print("Erro no login", e)
+
+        # Captura o stack trace completo
+        tb = traceback.format_exc()
+
+        # Registra no logger (que você já direcionou para stdout)
+        app.logger.error("Erro no login:\n" + tb)
+
+        # Também imprime no stdout (garante que a Render capture)
+        print(tb)
+
+        # Retorna erro genérico para o cliente
         return jsonify(success=False, message="Erro interno no servidor."), 500
     finally:
         if cur:
