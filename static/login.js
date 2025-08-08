@@ -1,33 +1,35 @@
 document.addEventListener('DOMContentLoaded', function () {
-  const loginTab = document.getElementById('login-tab');
-  const registerTab = document.getElementById('register-tab');
-  const loginForm = document.getElementById('login-form');
-  const registerForm = document.getElementById('register-form');
+  // Limpa o armazenament local para evitar dados de sessões anteriores
+  localStorage.clear()
+  const login_tab = document.getElementById('login-tab');
+  const register_tab = document.getElementById('register-tab');
+  const login_form = document.getElementById('login-form');
+  const register_form = document.getElementById('register-form');
 
   function showForm(type) {
     if (type === 'login') {
-      loginForm.classList.add('active');
-      registerForm.classList.remove('active');
-      loginTab.classList.add('active');
-      registerTab.classList.remove('active');
+      login_form.classList.add('active');
+      register_form.classList.remove('active');
+      login_tab.classList.add('active');
+      register_tab.classList.remove('active');
     } else if (type === 'register') {
-      registerForm.classList.add('active');
-      loginForm.classList.remove('active');
-      registerTab.classList.add('active');
-      loginTab.classList.remove('active');
+      register_form.classList.add('active');
+      login_form.classList.remove('active');
+      register_tab.classList.add('active');
+      login_tab.classList.remove('active');
     }
   }
 
   showForm('login');
   window.showForm = showForm;
 
-  registerForm.addEventListener('submit', async function(event) {
+  register_form.addEventListener('submit', async function(event) {
     event.preventDefault();
 
     const nome = this.nome?.value.trim();
     const email = this.email?.value.trim();
     const senha = this.senha?.value;
-    const confirmarSenha = this.confirmar_senha?.value;
+    const confirmar_senha = this.confirmar_senha?.value;
     // A parte abaixo será removida quando o app estiver em produção
     const invite_token = this.invite_token?.value
 
@@ -39,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
       alert('Por favor, preencha o email.');
       return;
     }
-    if (senha !== confirmarSenha) {
+    if (senha !== confirmar_senha) {
       alert('As senhas não coincidem.');
       return;
     }
@@ -70,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  loginForm.addEventListener("submit", async function (event) {
+  login_form.addEventListener("submit", async function (event) {
     event.preventDefault();
 
     const email = document.getElementById("email").value;

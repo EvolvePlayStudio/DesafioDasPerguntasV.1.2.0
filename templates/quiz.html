@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Desafio das Perguntas - Quiz</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     body {
       margin: 0;
@@ -136,7 +135,7 @@
         <!-- Tema e nível da pergunta -->
         <h2 id="tema-nivel-pergunta" style="font-weight: bold;"></h2>
         <!-- Ícone de dica e número de dicas disponíveis -->
-        <div id="dica-icon" class="dica-icon" onclick="usarDica()">
+        <div id="dica-icon" class="dica-icon">
           <span style="font-size: 24px; vertical-align: middle;">💡</span>
           <span id="contador-dicas" style="color: black; font-size: 18px; font-weight: bold; margin-left: 4px;">0</span>
         </div>
@@ -147,11 +146,11 @@
         <!-- Caixa para digitar a resposta -->
         <input type="text" id="resposta-input" maxlength="50" placeholder="Digite sua resposta" autocomplete="off"/>
         <!-- Botão para enviar a resposta -->
-        <button id="enviar-btn" onclick="enviarResposta()" disabled>Enviar</button>
+        <button id="btn-enviar" disabled>Enviar</button>
         <!-- Botões de finalizar o quiz e chamar próxima pergunta -->
         <div id="botoes-acao" style="display: none; margin-top: 20px; justify-content: space-between; gap: 12px;">
-          <button id="btnFinalizar" onclick="finalizarQuiz()" style="flex: 1; background-color: #e53935;">Finalizar</button>
-          <button id="btnProxima" onclick="proximaPergunta()" style="flex: 1;">Próxima</button>
+          <button id="btn-finalizar" style="flex: 1; background-color: #e53935;">Finalizar</button>
+          <button id="btn-proxima" style="flex: 1;">Próxima</button>
         </div>
         <!-- Resultado após o envio da resposta -->
         <div id="resultado" style="display: none; margin-top: 12px;"></div>
@@ -187,6 +186,6 @@
     const emailUsuario = "{{ session['email'] if 'email' in session else '' }}";
     const idUsuario = "{{ session['id_usuario'] if 'id_usuario' in session else '' }}";
   </script>
-  <script src="{{ url_for('static', filename='quiz.js') }}"></script>
+  <script type="module" src="{{ url_for('static', filename='quiz.js') }}"></script>
 </body>
 </html>

@@ -27,20 +27,20 @@ temas_disponiveis = ["Biologia", "Esportes", "História"]
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 
-"""
-def get_db_connection():
-    return psycopg2.connect(
-        host=host,
-        port=port,
-        database=database,
-        user=user,
-        password=password,
-        sslmode=sslmode
-    )"""
-
-def get_db_connection():
-    DATABASE_URL = os.getenv("DATABASE_URL")  # Esse valor será o Internal Database URL completo
-    return psycopg2.connect(DATABASE_URL, sslmode="require")
+if os.environ.get("FLASK_ENV") != "production":
+    def get_db_connection():
+        return psycopg2.connect(
+            host=os.getenv("DB_HOST"),
+            port=os.getenv("DB_PORT"),
+            database=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            sslmode=os.getenv("DB_SSLMODE")
+        )
+else:
+    def get_db_connection():
+        DATABASE_URL = os.getenv("DATABASE_URL")  # Esse valor será o Internal Database URL completo
+        return psycopg2.connect(DATABASE_URL, sslmode="require")
 
 @app.route("/", methods=["GET"])
 def index():
@@ -130,8 +130,9 @@ def login():
         # Registra no logger (que você já direcionou para stdout)
         app.logger.error("Erro no login:\n" + tb)
 
+        """
         # Também imprime no stdout (garante que a Render capture)
-        print(tb)
+        print(tb)"""
 
         # Retorna erro genérico para o cliente
         return jsonify(success=False, message="Erro interno no servidor."), 500
@@ -493,6 +494,9 @@ def registrar_resposta():
         print("Erro ao registrar resposta:", e)
         return jsonify({"sucesso": False, "mensagem": "Erro interno"})
 
-"""
-if __name__ == '__main__':
-    app.run(debug=True)"""
+
+if os.environ.get("FLASK_ENV") != "production":
+    if __name__ == '__main__':
+        app.run(debug=True)
+
+# LEMBRAR DAS MUDANÇAS QUANDO FOR PASSAR PARA O GIT: "Analisa se está no modo 'produção' antes de usar get_db_connection e app.run e exibe alert agora quando tenta iniciar quiz sem perguntas disponíveis"

@@ -1,154 +1,105 @@
-let perguntasPorDificuldade = {
-  "Fácil": [],
-  "Médio": [],
-  "Difícil": []
-};
-let aguardandoProxima = false;
-let dicaGasta = false;
-let inicioPergunta = null;  // horário inicial da pergunta
-let params = new URLSearchParams(window.location.search);
-let temaAtual = params.get("tema");
-let modoJogo = params.get("modo");
-let pontuacoesUsuario = null;
-let animacaoConcluida = false;
-let perguntaSelecionada = null
-let dificuldadesPermitidas = ['Fácil']
-let regrasPontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"))
-let infoUltimoRanking = regrasPontuacao[regrasPontuacao.length - 1]
-let regrasUsuario = null
-let rankingUsuario = null
+import { obterDificuldadesDisponiveis, obterInfoRankingAtual } from "./utils.js"
+
+let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"))
+let aguardando_proxima = false // Variável que evita uso de dica após já ter respondido a pergunta
+let dica_gasta = false
+let inicio_pergunta = null  // horário inicial da pergunta
+let tema_atual = decodeURIComponent(localStorage.getItem("tema_atual"))
+let modo_jogo = localStorage.getItem("modo_jogo")
+let pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario"))
+let animacao_concluida = false
+let pergunta_selecionada = null
+let dificuldades_permitidas = ['Fácil']
+let ha_perguntas_disponiveis = false
+let regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"))
+let info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1]
+let regras_usuario = null
+let ranking_usuario = null
+let nova_pontuacao_usuario = null
 
 function atualizarRankingVisual() {
-  const infoRankingAtual = obterInfoRankingAtual()
-  const pontuacao = pontuacoesUsuario[temaAtual] || 0;
+  const info_ranking_atual = obterInfoRankingAtual()
+  const pontuacao = pontuacoes_usuario[tema_atual] || 0;
 
   // Identifica o ranking anterior alcançado pelo usuário
-  let rankingAnterior = "";
-  for (let i = 0; i < regrasPontuacao.length; i++) {
-    if (regrasPontuacao[i].ranking === infoRankingAtual.ranking) {
+  let ranking_anterior = "";
+  for (let i = 0; i < regras_pontuacao.length; i++) {
+    if (regras_pontuacao[i].ranking === info_ranking_atual.ranking) {
       // Se não for o primeiro da lista, pega o anterior
       if (i > 0) {
-        rankingAnterior = regrasPontuacao[i - 1].ranking;
+        ranking_anterior = regras_pontuacao[i - 1].ranking;
       }
       break;
     }
   }
 
   // Identifica o próximo ranking a ser alcançado pelo usuário
-  let rankingProximo = null;
-  for (let i = 0; i < regrasPontuacao.length; i++) {
-    const r = regrasPontuacao[i];
+  let ranking_proximo = null;
+  for (let i = 0; i < regras_pontuacao.length; i++) {
+    const r = regras_pontuacao[i];
     if (pontuacao >= r.pontos_minimos && pontuacao <= r.pontos_maximos) {
-      rankingProximo = regrasPontuacao[i + 1];
+      ranking_proximo = regras_pontuacao[i + 1];
       break;
     }
   }
 
   // Calcula progresso percentual
   let progresso = 100;
-  if (rankingProximo) {
-    const intervalo = rankingProximo.pontos_minimos - infoRankingAtual.pontos_minimos;
-    progresso = ((pontuacao - infoRankingAtual.pontos_minimos) / intervalo) * 100;
+  if (ranking_proximo) {
+    const intervalo = ranking_proximo.pontos_minimos - info_ranking_atual.pontos_minimos;
+    progresso = ((pontuacao - info_ranking_atual.pontos_minimos) / intervalo) * 100;
     progresso = Math.min(100, Math.max(0, progresso));
   }
 
   // Atualiza a interface
-  document.getElementById("ranking").textContent = infoRankingAtual.ranking;
+  document.getElementById("ranking").textContent = info_ranking_atual.ranking;
   document.getElementById("pontuacao").textContent = pontuacao;
-  document.getElementById("ranking-anterior").textContent = rankingAnterior;
-  document.getElementById("ranking-proximo").textContent = rankingProximo ? rankingProximo.ranking : "";
+  document.getElementById("ranking-anterior").textContent = ranking_anterior;
+  document.getElementById("ranking-proximo").textContent = ranking_proximo ? ranking_proximo.ranking : "";
   document.getElementById("barra-progresso").style.width = progresso + "%";
 }
 
-function obterInfoRankingAtual() {
-  const pontuacao = pontuacoesUsuario[temaAtual] || 0;
-  const regras = JSON.parse(localStorage.getItem("regras_pontuacao")) || [];
-
-  const infoRankingAtual = regras.find(regra => 
-    pontuacao >= regra.pontos_minimos && pontuacao <= regra.pontos_maximos
-  );
-
-  return infoRankingAtual || (regras.length > 0 ? regras[0] : null);
-}
-
-function calcularTempoGasto() {
-    return Math.floor((Date.now() - inicioPergunta) / 1000);  // segundos
-}
-
-function carregarPerguntas() {
-  if (!temaAtual || !modoJogo) {
-    console.error("Tema ou modo de jogo não definidos na URL.");
-    return;
-  }
-  fetch(`/api/perguntas?tema=${temaAtual}&modo=${modoJogo}`)
-    .then(response => response.json())
-    .then(data => {
-      perguntasPorDificuldade = data["perguntas"];
-      pontuacoesUsuario = data["pontuacoes_usuario"];
-      atualizarRankingVisual();
-      mostrarPergunta();
-      configurarEstrelas();
-    })
-  .catch(error => {
-      console.error("Erro ao carregar perguntas:", error);
-    });
-}
-
-function animarTexto(texto, elemento, callback) {
-  elemento.textContent = "";
-  let i = 0;
-  const intervalo = setInterval(() => {
-    if (i < texto.length) {
-      elemento.textContent += texto[i];
-      i++;
-    } else {
-      clearInterval(intervalo);
-      animacaoConcluida = true
-      inicioPergunta = Date.now()
-      if (callback) callback();
-    }
-  }, 25); // velocidade da animação
-}
-
-function obterDificuldadesDesbloqueadas() {
-  const infoRankingAtual = obterInfoRankingAtual();
-  dificuldadesPermitidas = ['Fácil'];
-
-  if (infoRankingAtual.pode_receber_medio) {
-    dificuldadesPermitidas.push('Médio');
-  }
-  if (infoRankingAtual.pode_receber_dificil) {
-    dificuldadesPermitidas.push('Difícil');
-  }
-
-  return dificuldadesPermitidas;
-}
-
 function mostrarPergunta() {
-  animacaoConcluida = false;
-  const dificuldadesDisponiveis = pegarDificuldadesDisponiveis()
+  animacao_concluida = false;
   
-  // Seleciona dificuldade aleatória apenas entre as que ainda têm perguntas
-  const dificuldadeSelecionada = choice(dificuldadesDisponiveis);
-  const perguntasDisponiveis = perguntasPorDificuldade[dificuldadeSelecionada];
+  // Seleciona uma dificuldade aleatória dentre as disponíveis para o ranking do usuário atual
+  function selecionarDificuldadeComPerguntas() {
+    const dificuldades_disponiveis = obterDificuldadesDisponiveis()
+    const dificuldades_embaralhadas = [...dificuldades_disponiveis]
+      .sort(() => Math.random() - 0.5);  // Embaralha as dificuldades
 
-  // Define a pergunta
-  const indicePergunta = Math.floor(Math.random() * perguntasDisponiveis.length);
-  perguntaSelecionada = perguntasDisponiveis[indicePergunta];
+    for (const dificuldade of dificuldades_embaralhadas) {
+      const perguntas = perguntas_por_dificuldade[dificuldade];
+      if (perguntas && perguntas.length > 0) {
+        return dificuldade;  // Encontrou uma com perguntas restantes
+      }
+    }
+
+    return null;  // Nenhuma dificuldade com perguntas restantes
+  }
+  const dificuldade_selecionada = selecionarDificuldadeComPerguntas();
+
+  // Pega uma pergunta aleatória da dificuldade selecionada
+  const perguntas_disponiveis = perguntas_por_dificuldade[dificuldade_selecionada];
+  const indicePergunta = Math.floor(Math.random() * perguntas_disponiveis.length);
+  pergunta_selecionada = perguntas_disponiveis[indicePergunta];
+  console.log(`Pergunta selecionada: (${pergunta_selecionada.id_pergunta}) ${pergunta_selecionada.enunciado}`)
 
   // Remove a pergunta do array para não repetir
-  perguntasDisponiveis.splice(indicePergunta, 1);
-
-  dicaGasta = false;
+  perguntas_disponiveis.splice(indicePergunta, 1);
+  
+  dica_gasta = false;
   window.avaliacaoAtual = 0;
 
+  // Faz animação do enunciado da pergunta
   const enunciadoElemento = document.getElementById("pergunta-enunciado");
-  animarTexto(perguntaSelecionada.enunciado, enunciadoElemento);
+  animarTexto(pergunta_selecionada.enunciado, enunciadoElemento);
 
   // Mostra o nível da pergunta
-  const dificuldade = perguntaSelecionada.dificuldade
+  const dificuldade = pergunta_selecionada.dificuldade
   const titulo = document.getElementById("tema-nivel-pergunta");
-  titulo.textContent = `${temaAtual} - ${dificuldade}`;
+  titulo.textContent = `${tema_atual} - ${dificuldade}`;
+
   // Define a cor com base na dificuldade
   switch (dificuldade.toLowerCase()) {
     case "fácil":
@@ -169,30 +120,35 @@ function mostrarPergunta() {
   document.getElementById("resposta-input").value = "";
 
   // Decide se deve mostrar o ícone de dica
-  rankingUsuario = obterInfoRankingAtual().ranking
-  regrasUsuario = regrasPontuacao.find(r => r.ranking === rankingUsuario); // Estas regras do usuário, assim como o rankingUsuario são utilizadas na parte de calcular pontos também, portanto deve-se ter cuidado caso se deva apagar daqui
-    if (!regrasUsuario) {
+  ranking_usuario = obterInfoRankingAtual().ranking
+  regras_usuario = regras_pontuacao.find(r => r.ranking === ranking_usuario); // Estas regras do usuário, assim como o ranking_usuario são utilizadas na parte de calcular pontos também, portanto cuidado ao apagar aqui
+  if (!regras_usuario) {
         console.error("Ranking do usuário não encontrado nas regras de pontuação.");
         return 0;
-    }
-  dicaPermitida = true
-  if (perguntaSelecionada.dificuldade === 'Fácil' && regrasUsuario.pontos_acerto_facil <= 10 || perguntaSelecionada.dificuldade === 'Médio' && regrasUsuario.pontos_acerto_medio <= 10 || !perguntaSelecionada.dica) {
-    dicaPermitida = false
   }
-  if (dicaPermitida) {
+  let dica_permitida = true
+  if (pergunta_selecionada.dificuldade === 'Fácil' && regras_usuario.pontos_acerto_facil <= 10 || pergunta_selecionada.dificuldade === 'Médio' && regras_usuario.pontos_acerto_medio <= 10 || !pergunta_selecionada.dica) {
+    dica_permitida = false
+  }
+  if (dica_permitida) {
   document.getElementById("dica-icon").style.display = "flex";
     } 
   else {
   document.getElementById("dica-icon").style.display = "none";
     }
   
+  // No modo revisão não exibe contador de dicas
+  if (modo_jogo === 'revisao') {
+    document.getElementById("contador-dicas").textContent = ''
+  }
+  
   document.getElementById("resposta-input").value = "";
   document.getElementById("resultado").style.display = "none";
   document.getElementById("avaliacao").style.display = "none";
   document.getElementById("dica-box").style.display = "none";
   document.getElementById("nota-box").style.display = "none";
-  document.getElementById('enviar-btn').disabled = false;
-  aguardandoProxima = false;
+  document.getElementById('btn-enviar').disabled = false;
+  aguardando_proxima = false;
 
   // Resetar estrelas
   document.querySelectorAll(".estrela").forEach(e => {
@@ -204,87 +160,75 @@ function mostrarPergunta() {
 }
 
 function calcularPontuacao(dificuldade, acertou) {
-    if (!acertou) {
-      let pontosGanhos = 0;
-      const respostaUsuario = document.getElementById("resposta-input").value.trim()
-      if (respostaUsuario === "") {
-        pontosGanhos = regrasUsuario.pontos_pular_pergunta; // Penalidade menor por não responder
-      } else {
-        pontosGanhos = regrasUsuario.pontos_erro; // Erro com tentativa
-      }
+  if (!acertou) {
+    let pontos_ganhos = 0;
+    const resposta_usuario = document.getElementById("resposta-input").value.trim()
+    if (resposta_usuario === "") {
+      pontos_ganhos = regras_usuario.pontos_pular_pergunta; // Penalidade menor por não responder
+    } else {
+      pontos_ganhos = regras_usuario.pontos_erro; // Erro com tentativa
+    }
+    nova_pontuacao_usuario = Math.max(0, (pontuacoes_usuario[tema_atual] || 0) + pontos_ganhos);
+    return pontos_ganhos;
+  }
+
+  let pontosBase = 0;
+  switch (dificuldade) {
+      case "Fácil":
+          pontosBase = regras_usuario.pontos_acerto_facil;
+          break;
+      case "Médio":
+          pontosBase = regras_usuario.pontos_acerto_medio;
+          break;
+      case "Difícil":
+          pontosBase = regras_usuario.pontos_acerto_dificil;
+          break;
+      default:
+          console.warn("Dificuldade desconhecida:", dificuldade);
+          return 0;
+  }
+
+  let pontos_ganhos = pontosBase;
+
+  if (dica_gasta) {
+      const percentualPenalidade = regras_usuario.percentual_penalidade_dica / 100;
+      const inteiroPenalidade = Math.round((pontosBase * percentualPenalidade) / 10) * 10;
+      pontos_ganhos = pontosBase - inteiroPenalidade;
       
-      pontuacoesUsuario[temaAtual] = Math.max(0, (pontuacoesUsuario[temaAtual] || 0) + pontosGanhos);
-      return pontosGanhos;
-    }
-
-    let pontosBase = 0;
-    switch (dificuldade) {
-        case "Fácil":
-            pontosBase = regrasUsuario.pontos_acerto_facil;
-            break;
-        case "Médio":
-            pontosBase = regrasUsuario.pontos_acerto_medio;
-            break;
-        case "Difícil":
-            pontosBase = regrasUsuario.pontos_acerto_dificil;
-            break;
-        default:
-            console.warn("Dificuldade desconhecida:", dificuldade);
-            return 0;
-    }
-
-    let pontosGanhos = pontosBase;
-
-    if (dicaGasta) {
-        const percentualPenalidade = regrasUsuario.percentual_penalidade_dica / 100;
-        const inteiroPenalidade = Math.round((pontosBase * percentualPenalidade) / 10) * 10;
-        console.log("Pontos base: ", pontosBase)
-        console.log("Penalidade aplicada: ", inteiroPenalidade)
-        pontosGanhos = pontosBase - inteiroPenalidade;
-        
-        // fallback defensivo
-        if (pontosGanhos < 0) {
-            console.warn("Penalidade excedeu a pontuação base. Aplicando pontuação base.");
-            pontosGanhos = pontosBase;
-        }
-    }
-    
-    // Analisa quantos pontos o usuário ainda pode ganhar caso esteja no último ranking já
-    if (rankingUsuario === infoUltimoRanking.ranking && pontuacoesUsuario[temaAtual] + pontosGanhos > infoUltimoRanking.pontos_maximos) {
-       pontosGanhos = infoUltimoRanking.pontos_maximos - pontuacoesUsuario[temaAtual]
-    }
-    pontuacoesUsuario[temaAtual] = pontuacoesUsuario[temaAtual] + pontosGanhos;
-    return pontosGanhos;
-}
-
-function obterDicaAtual() {
-  return perguntaSelecionada?.dica || "";
-}
-
-function obterNotaAtual() {
-  return perguntaSelecionada?.nota || "";
+      // fallback defensivo
+      if (pontos_ganhos < 0) {
+          console.warn("Penalidade excedeu a pontuação base. Aplicando pontuação base.");
+          pontos_ganhos = pontosBase;
+      }
+  }
+  
+  // Analisa quantos pontos o usuário ainda pode ganhar caso esteja no último ranking já
+  if (ranking_usuario === info_ultimo_ranking.ranking && pontuacoes_usuario[tema_atual] + pontos_ganhos > info_ultimo_ranking.pontos_maximos) {
+      pontos_ganhos = info_ultimo_ranking.pontos_maximos - pontuacoes_usuario[tema_atual]
+  }
+  nova_pontuacao_usuario = pontuacoes_usuario[tema_atual] + pontos_ganhos;
+  return pontos_ganhos;
 }
 
 function mostrarResultadoResposta(correto) {
   const resultado = document.getElementById("resultado");
-  const respostasCorretas = perguntaSelecionada.respostas_corretas
+  const respostas_corretas = pergunta_selecionada.respostas_corretas
   resultado.style.display = "block";
 
   // Desativa caixa de texto da resposta e mostra as possibilidades de respostas corretas para a pergunta
   document.getElementById("resposta-input").disabled = true;
-  mostrarRespostasAceitas(respostasCorretas);
+  mostrarRespostasAceitas(respostas_corretas);
   
   // Exibe dica
-  if (perguntaSelecionada.dica && perguntaSelecionada.dica.trim() !== "") {
-    document.getElementById("dica-texto").textContent = obterDicaAtual();
-    document.getElementById("dica-box").style.display = "block";
+  if (pergunta_selecionada.dica && pergunta_selecionada.dica.trim() !== "") {
+    mostrarDica()
   } else {
     document.getElementById("dica-box").style.display = "none";
   }
 
    // Exibe nota, curiosidade ou explicação
-   if (perguntaSelecionada.nota && perguntaSelecionada.nota.trim() !== "") {
-    let textoFormatado = perguntaSelecionada.nota.replace(/^(Nota|Explicação|Curiosidade)/i, '<strong>$1</strong>');
+   if (pergunta_selecionada.nota && pergunta_selecionada.nota.trim() !== "") {
+    let textoFormatado = pergunta_selecionada.nota.replace(/^(Nota|Explicação|Curiosidade)/i, '<strong>$1</strong>');
     document.getElementById("nota-texto").innerHTML = textoFormatado;
     document.getElementById("nota-box").style.display = "block";
    } else {
@@ -299,13 +243,13 @@ function mostrarResultadoResposta(correto) {
     resultado.style.color = "red";
   }
 
-  aguardandoProxima = true;
-  document.getElementById("enviar-btn").style.display = "none";
+  aguardando_proxima = true;
+  document.getElementById("btn-enviar").style.display = "none";
 
   // Chama as estrelas de feedback e carrega as anteriores enviadas pelo usuário caso esteja no modo Revisão
-  if (modoJogo === "revisao") {
-    const avaliacaoAnterior = perguntaSelecionada.estrelas || 0;
-    renderizarEstrelas(avaliacaoAnterior);
+  if (modo_jogo === "revisao") {
+    const avaliacao_anterior = pergunta_selecionada.estrelas || 0;
+    renderizarEstrelas(avaliacao_anterior);
   }
   document.getElementById("avaliacao").style.display = "block";
 
@@ -313,7 +257,7 @@ function mostrarResultadoResposta(correto) {
   document.getElementById('comentarios').style.display = 'block';
 }
 
-function respostaEstaCorreta(respostaUsuario, respostasAceitas) {
+function respostaEstaCorreta(resposta_usuario, respostas_aceitas) {
   const stopwords = ["a", "o", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "no", "na", "nos", "nas", "por", "com", "para", "um", "uma", "uns", "umas", "ao", "aos", "à", "às"];
 
   function removerAcentos(texto) {
@@ -347,9 +291,9 @@ function respostaEstaCorreta(respostaUsuario, respostasAceitas) {
     return matrix[a.length][b.length];
   }
 
-  const textoUsuario = limparTexto(respostaUsuario);
+  const textoUsuario = limparTexto(resposta_usuario);
 
-  return respostasAceitas.some(resposta => {
+  return respostas_aceitas.some(resposta => {
     const textoCorreto = limparTexto(resposta);
 
     if (textoUsuario === textoCorreto) return true;
@@ -363,42 +307,40 @@ function respostaEstaCorreta(respostaUsuario, respostasAceitas) {
   });
 }
 
-function registrarResposta(respostaUsuario, acertou, usouDica, pontosGanhos, tempoGasto, idPergunta, versaoPergunta) {
-    fetch('/registrar_resposta', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            tipo_pergunta: 'Discursiva',
-            resposta_usuario: respostaUsuario,
-            acertou: acertou,
-            usou_dica: usouDica,
-            pontos_ganhos: pontosGanhos,
-            tempo_gasto: tempoGasto,
-            id_pergunta: idPergunta,
-            versao_pergunta: versaoPergunta,
-            tema: temaAtual
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.sucesso) {
-            atualizarRankingVisual(data.nova_pontuacao, pontosGanhos);
-        } else {
-            console.error('Erro ao registrar resposta:', data.mensagem);
-        }
-    })
-    .catch(err => console.error('Erro na comunicação:', err));
-}
+async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ganhos, tempo_gasto, id_pergunta, versao_pergunta) {
+  try {
+    const response = await fetch('/registrar_resposta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tipo_pergunta: 'Discursiva',
+        resposta_usuario: resposta_usuario,
+        acertou: acertou,
+        usou_dica: usou_dica,
+        pontos_ganhos: pontos_ganhos,
+        tempo_gasto: tempo_gasto,
+        id_pergunta: id_pergunta,
+        versao_pergunta: versao_pergunta,
+        tema: tema_atual
+      })
+    });
 
-function mostrarRespostasAceitas(lista) {
-  const container = document.getElementById("respostas-aceitas");
-  const span = document.getElementById("lista-respostas");
-  span.textContent = lista.join(", ");
-  container.style.display = "block";
-}
+    const data = await response.json();
 
-function esconderRespostasAceitas() {
-  document.getElementById("respostas-aceitas").style.display = "none";
+    if (data.sucesso) {
+      pontuacoes_usuario[tema_atual] = nova_pontuacao_usuario;
+      localStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_usuario));
+      atualizarRankingVisual();
+      return true;
+    } else {
+      console.error('Erro ao registrar resposta:', data.mensagem);
+      return false;
+    }
+
+  } catch (err) {
+    console.error('Erro na comunicação:', err);
+    return false;
+  }
 }
 
 function renderizarEstrelas(valor) {
@@ -420,29 +362,29 @@ function configurarEstrelas() {
   estrelas.forEach((estrela, i) => {
     estrela.addEventListener("click", () => {
       const valor = i + 1;
-      const idPergunta = perguntaSelecionada.id_pergunta;
-      const tipoPergunta = "Discursiva";
-      versaoPergunta = perguntaSelecionada.versao_pergunta;
+      const id_pergunta = pergunta_selecionada.id_pergunta;
+      const tipo_pergunta = "Discursiva";
+      versao_pergunta = pergunta_selecionada.versao_pergunta;
 
       // Esta variável serve para economizar memória caso o usuário clique duas vezes na mesma estrela
-      let avaliacaoAnterior = window.avaliacoes?.[idPergunta] || 0;
-      if (valor === avaliacaoAnterior) return;
+      let avaliacao_anterior = window.avaliacoes?.[id_pergunta] || 0;
+      if (valor === avaliacao_anterior) return;
 
       renderizarEstrelas(valor); // reutilização
 
       window.avaliacoes = window.avaliacoes || {};
-      window.avaliacoes[idPergunta] = valor;
+      window.avaliacoes[id_pergunta] = valor;
 
       fetch("/enviar_feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id_pergunta: idPergunta,
-          tipo_pergunta: tipoPergunta,
-          email_usuario: emailUsuario,
+          id_pergunta: id_pergunta,
+          tipo_pergunta: tipo_pergunta,
+          email_usuario: email_usuario,
           estrelas: valor,
-          versao_pergunta: versaoPergunta,
-          id_usuario: idUsuario
+          versao_pergunta: versao_pergunta,
+          id_usuario: id_usuario
         })
       })
       .then(res => res.json())
@@ -456,52 +398,81 @@ function configurarEstrelas() {
   });
 }
 
+async function enviarResposta() {
+  if (!animacao_concluida) return;
+
+  // Analisa se a resposta enviada está correta
+  const resposta_usuario = document.getElementById("resposta-input").value.trim();
+  const respostas_corretas = pergunta_selecionada.respostas_corretas;
+  const acertou = respostaEstaCorreta(resposta_usuario, respostas_corretas);
+  let prosseguir_com_resultado = true
+  
+  // ATENÇÃO: AQUI DEVERÁ CHAMAR O registrarRespostaObjetiva SE FOR O CASO NO FUTURO
+  if (modo_jogo == 'desafio') {
+    const dificuldade = pergunta_selecionada.dificuldade
+    const pontos_ganhos = calcularPontuacao(dificuldade, acertou);
+    const id_pergunta = pergunta_selecionada.id_pergunta;
+    const versao_pergunta = pergunta_selecionada.versao_pergunta;
+    const tempo_gasto = calcularTempoGasto();
+    prosseguir_com_resultado = await registrarResposta(
+      resposta_usuario,
+      acertou,
+      dica_gasta,
+      pontos_ganhos,
+      tempo_gasto,
+      id_pergunta,
+      versao_pergunta
+  )};
+
+  if (prosseguir_com_resultado) {
+    mostrarResultadoResposta(acertou);
+    mostrarBotoesAcao()
+  }
+  else  {
+    alert("Não foi possível se conectar com o servidor. Por favor, verifique sua conexão e tente novamente")
+  }
+}
+
 function mostrarBotoesAcao() {
-  const botoesDiv = document.getElementById("botoes-acao");
-  const btnFinalizar = document.getElementById("btnFinalizar");
-  const btnProxima = document.getElementById("btnProxima");
+  const botoes_div = document.getElementById("botoes-acao");
+  const btn_finalizar = document.getElementById("btn-finalizar");
+  const btn_proxima = document.getElementById("btn-proxima");
 
   // Mostra a div de botões
-  botoesDiv.style.display = "flex";
+  botoes_div.style.display = "flex";
   
-  const dificuldadesDisponiveis = pegarDificuldadesDisponiveis()
-  if (dificuldadesDisponiveis.length === 0) {
+  dificuldades_permitidas = obterDificuldadesDisponiveis()
+  ha_perguntas_disponiveis = dificuldades_permitidas.some(dif => perguntas_por_dificuldade[dif].length > 0)
+  
+  if (!ha_perguntas_disponiveis) {
     // Mostrar apenas o botão Finalizar
-    btnProxima.style.display = "none";
-    btnFinalizar.style.display = "inline-block";
-    btnFinalizar.style.flex = "unset"; // remove flex igual ao botão enviar
-    btnFinalizar.style.width = "100%";
-    btnFinalizar.style.margin = "0 auto";
+    btn_proxima.style.display = "none";
+    btn_finalizar.style.display = "inline-block";
+    btn_finalizar.style.flex = "unset"; // remove flex igual ao botão enviar
+    btn_finalizar.style.width = "100%";
+    btn_finalizar.style.margin = "0 auto";
 
   } else {
     // Mostrar ambos
-    btnProxima.style.display = "inline-block";
-    btnFinalizar.style.display = "inline-block";
-    btnFinalizar.style.flex = "1";
-    btnFinalizar.style.width = "unset";
+    btn_proxima.style.display = "inline-block";
+    btn_finalizar.style.display = "inline-block";
+    btn_finalizar.style.flex = "1";
+    btn_finalizar.style.width = "unset";
   }
 
   // Desabilita ambos por precaução
-  btnFinalizar.disabled = true;
-  btnProxima.disabled = true;
+  btn_finalizar.disabled = true;
+  btn_proxima.disabled = true;
 
   // Reativa após 500ms
   setTimeout(() => {
-    btnFinalizar.disabled = false;
-    btnProxima.disabled = false;
+    btn_finalizar.disabled = false;
+    btn_proxima.disabled = false;
   }, 500);
 }
 
-function pegarDificuldadesDisponiveis() {
-  const dificuldadesPermitidas = obterDificuldadesDesbloqueadas();
-  const dificuldadesDisponiveis = dificuldadesPermitidas.filter(dif => {
-    return perguntasPorDificuldade[dif] && perguntasPorDificuldade[dif].length > 0;
-  });
-  return dificuldadesDisponiveis
-}
-
 function proximaPergunta() {
-  if (haPerguntasDisponiveis()) {
+  if (ha_perguntas_disponiveis) {
     mostrarPergunta();
     document.getElementById('botoes-acao').style.display = "none";
     document.getElementById("avaliacao").style.display = "none";
@@ -510,92 +481,92 @@ function proximaPergunta() {
     document.getElementById("nota-box").style.display = "none";
     document.getElementById("resposta-input").value = "";
     document.getElementById('comentarios').style.display = 'none';
-    document.getElementById("enviar-btn").style.display= "inline-block";
-    aguardandoProxima = false;
+    document.getElementById("btn-enviar").style.display= "inline-block";
+    aguardando_proxima = false;
   }
 }
 
 function usarDica() {
-  if (aguardandoProxima || dicaGasta) return;
-  
-  let dicasRestantes = parseInt(localStorage.getItem("dicas_restantes") || "0");
-  if (dicasRestantes <= 0) {
-    alert("Você não possui mais dicas.");
-    return;
-  }
-
-  fetch("/usar_dica", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({})
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      dicasRestantes -= 1;
-      localStorage.setItem("dicas_restantes", dicasRestantes);
-      document.getElementById("contador-dicas").textContent = dicasRestantes;
-
-      document.getElementById("dica-texto").textContent = obterDicaAtual();
-      document.getElementById("dica-box").style.display = "block";
-      dicaGasta = true;
-    } else {
-      alert(data.message || "Erro ao usar a dica.");
+  if (aguardando_proxima || dica_gasta) return;
+  if (modo_jogo == 'desafio') {
+    let dicas_restantes = parseInt(localStorage.getItem("dicas_restantes") || "0");
+    if (dicas_restantes <= 0) {
+      alert("Você não possui mais dicas.");
+      return;
     }
-  })
-  .catch(error => {
-    console.error("Erro ao requisitar o backend:", error);
-  });
+
+    fetch("/usar_dica", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        dicas_restantes -= 1;
+        localStorage.setItem("dicas_restantes", dicas_restantes);
+        document.getElementById("contador-dicas").textContent = dicas_restantes;
+        mostrarDica();
+      } else {
+        alert(data.message || "Erro ao usar a dica.");
+      }
+    })
+    .catch(error => {
+      console.error("Erro ao requisitar o backend:", error);
+    });
+  }
+  else {
+    mostrarDica();
+  }
 }
 
-function haPerguntasDisponiveis() {
-  return dificuldadesPermitidas.some(dif => perguntasPorDificuldade[dif].length > 0);
+function animarTexto(texto, elemento, callback) {
+  elemento.textContent = "";
+  let i = 0;
+  const intervalo = setInterval(() => {
+    if (i < texto.length) {
+      elemento.textContent += texto[i];
+      i++;
+    } else {
+      clearInterval(intervalo);
+      animacao_concluida = true
+      inicio_pergunta = Date.now()
+      document.getElementById('resposta-input').focus()
+      if (callback) callback();
+    }
+  }, 25); // velocidade da animação
 }
 
-function choice(array) {
-  const indice = Math.floor(Math.random() * array.length);
-  return array[indice];
+function mostrarRespostasAceitas(lista) {
+  const container = document.getElementById("respostas-aceitas");
+  const span = document.getElementById("lista-respostas");
+  span.textContent = lista.join(", ");
+  container.style.display = "block";
+}
+
+function esconderRespostasAceitas() {
+  document.getElementById("respostas-aceitas").style.display = "none";
+}
+
+function mostrarDica() {
+  document.getElementById("dica-texto").textContent = pergunta_selecionada?.dica || "";
+  document.getElementById("dica-box").style.display = "block";
+  dica_gasta = true;
 }
 
 function finalizarQuiz() {
 window.location.href = "/home";
 }
 
-function enviarResposta() {
-if (!animacaoConcluida) return;
-
-  // Analisa se a resposta enviada está correta
-  const respostaUsuario = document.getElementById("resposta-input").value.trim();
-  const respostasCorretas = perguntaSelecionada.respostas_corretas;
-  const acertou = respostaEstaCorreta(respostaUsuario, respostasCorretas);
-  
-  // ATENÇÃO: AQUI DEVERÁ CHAMAR O registrarRespostaObjetiva SE FOR O CASO NO FUTURO
-  if (modoJogo == 'desafio') {
-  const dificuldade = perguntaSelecionada.dificuldade
-  const pontosGanhos = calcularPontuacao(dificuldade, acertou);
-  const idPergunta = perguntaSelecionada.id_pergunta;
-  const versaoPergunta = perguntaSelecionada.versao_pergunta;
-  const tempoGasto = calcularTempoGasto();
-  console.log("Tempo gasto: ", tempoGasto)
-  registrarResposta(
-    respostaUsuario,
-    acertou,
-    dicaGasta,
-    pontosGanhos,
-    tempoGasto,
-    idPergunta,
-    versaoPergunta
-  )};
-
-  mostrarResultadoResposta(acertou);
-  mostrarBotoesAcao()
+function calcularTempoGasto() {
+    return Math.floor((Date.now() - inicio_pergunta) / 1000);  // segundos
 }
 
 document.getElementById('resposta-input').addEventListener('keydown', function(event) {
   if (event.key === 'Enter') {
     event.preventDefault();
 
-    const botao = document.getElementById('botao-enviar');
+    const botao = document.getElementById('btn-enviar');
 
     if (botao && botao.offsetParent !== null) {
       // offsetParent !== null garante que está visível (não display: none)
@@ -610,7 +581,40 @@ document.addEventListener("DOMContentLoaded", () => {
   if (contadorDicas && dicas !== null) {
     contadorDicas.textContent = dicas;
   }
-});
 
-// Carrega as perguntas para o quiz
-carregarPerguntas();
+  // Implementa a função para usar dica
+  const dica_icon = document.getElementById("dica-icon")
+  if (dica_icon) {
+    dica_icon.addEventListener("click", () => {
+      usarDica()
+    })
+  }
+
+  // Implementa a função de chamar próxima pergunta
+  const btn_proxima = document.getElementById("btn-proxima")
+  if (btn_proxima) {
+    btn_proxima.addEventListener("click", () => {
+      proximaPergunta()
+    })
+  }
+
+  // Implementa a função para finalizar o quiz
+  const btn_finalizar = document.getElementById("btn-finalizar")
+  if (btn_finalizar) {
+    btn_finalizar.addEventListener("click", () => {
+      finalizarQuiz()
+    })
+  }
+
+  // Implementa a função de enviar resposta
+  const btn_enviar = document.getElementById("btn-enviar")
+  if (btn_enviar) {
+    btn_enviar.addEventListener("click", () => {
+      enviarResposta()
+    })
+  }
+
+  atualizarRankingVisual();
+  mostrarPergunta();
+  configurarEstrelas();
+});
