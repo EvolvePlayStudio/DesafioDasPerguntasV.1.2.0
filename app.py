@@ -26,8 +26,13 @@ app.logger.addHandler(handler)
 temas_disponiveis = ["Biologia", "Esportes", "História"]
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
+database_url = os.getenv("DATABASE_URL")
 
-if os.environ.get("FLASK_ENV") != "production":
+if database_url:
+    def get_db_connection():
+        # Esse valor será o Internal Database URL completo
+        return psycopg2.connect(database_url, sslmode="require")
+else:
     def get_db_connection():
         return psycopg2.connect(
             host=os.getenv("DB_HOST"),
@@ -37,10 +42,6 @@ if os.environ.get("FLASK_ENV") != "production":
             password=os.getenv("DB_PASSWORD"),
             sslmode=os.getenv("DB_SSLMODE")
         )
-else:
-    def get_db_connection():
-        DATABASE_URL = os.getenv("DATABASE_URL")  # Esse valor será o Internal Database URL completo
-        return psycopg2.connect(DATABASE_URL, sslmode="require")
 
 @app.route("/", methods=["GET"])
 def index():
@@ -495,8 +496,6 @@ def registrar_resposta():
         return jsonify({"sucesso": False, "mensagem": "Erro interno"})
 
 
-if os.environ.get("FLASK_ENV") != "production":
+if not database_url:
     if __name__ == '__main__':
         app.run(debug=True)
-
-# LEMBRAR DAS MUDANÇAS QUANDO FOR PASSAR PARA O GIT: "Analisa se está no modo 'produção' antes de usar get_db_connection e app.run e exibe alert agora quando tenta iniciar quiz sem perguntas disponíveis"
