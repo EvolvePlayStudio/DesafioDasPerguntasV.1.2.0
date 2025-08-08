@@ -117,6 +117,7 @@ def login():
         if conn:
             conn.rollback()
             app.logger.error("Erro no login", exc_info=True)
+            print("Erro no login", e)
         return jsonify(success=False, message="Erro interno no servidor."), 500
     finally:
         if cur:
@@ -475,3 +476,7 @@ def registrar_resposta():
     except Exception as e:
         print("Erro ao registrar resposta:", e)
         return jsonify({"sucesso": False, "mensagem": "Erro interno"})
+
+"""
+if __name__ == '__main__':
+    app.run(debug=True)"""
