@@ -10,18 +10,18 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 import os
-import logging
-from logging.handlers import RotatingFileHandler
 import re
+import logging
+import sys
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 # Para fazer depuração na render
-if not app.debug:
-    handler = RotatingFileHandler('error.log', maxBytes=100000, backupCount=3)
-    handler.setLevel(logging.ERROR)
-    formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
-    handler.setFormatter(formatter)
-    app.logger.addHandler(handler)
+app.logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
+handler.setFormatter(formatter)
+app.logger.addHandler(handler)
 temas_disponiveis = ["Biologia", "Esportes", "História"]
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
