@@ -27,21 +27,8 @@ temas_disponiveis = ["Biologia", "Esportes", "História"]
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 
+"""
 def get_db_connection():
-    host = os.getenv("DB_HOST")
-    port = os.getenv("DB_PORT", 5432)
-    database = os.getenv("DB_NAME")
-    user = os.getenv("DB_USER")
-    password = os.getenv("DB_PASSWORD")  # Cuidado!
-    sslmode = os.getenv("DB_SSLMODE", "require")
-
-    print(f"Host: {host}")
-    print(f"Port: {port}")
-    print(f"Database: {database}")
-    print(f"User: {user}")
-    print(f"SSL Mode: {sslmode}")
-    print(f"Password is None: {password is None}")  # Apenas para saber se está vazia
-
     return psycopg2.connect(
         host=host,
         port=port,
@@ -49,7 +36,11 @@ def get_db_connection():
         user=user,
         password=password,
         sslmode=sslmode
-    )
+    )"""
+
+def get_db_connection():
+    DATABASE_URL = os.getenv("DATABASE_URL")  # Esse valor será o Internal Database URL completo
+    return psycopg2.connect(DATABASE_URL, sslmode="require")
 
 @app.route("/", methods=["GET"])
 def index():
