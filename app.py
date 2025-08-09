@@ -14,6 +14,8 @@ import re
 import logging
 import sys
 import traceback
+from apscheduler.schedulers.background import BackgroundScheduler
+from atualizar_perguntas_dicas import atualizar_perguntas_dicas
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 # Para fazer depuração na render
@@ -42,6 +44,16 @@ else:
             password=os.getenv("DB_PASSWORD"),
             sslmode=os.getenv("DB_SSLMODE")
         )
+
+# Função para iniciar o scheduler
+def iniciar_agendamento():
+    scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
+    # Executa todo dia às 12:00
+    scheduler.add_job(atualizar_perguntas_dicas, 'cron', hour=12, minute=0)
+    scheduler.start()
+
+# Inicializa o agendamento assim que o app carregar
+iniciar_agendamento()
 
 @app.route("/", methods=["GET"])
 def index():
