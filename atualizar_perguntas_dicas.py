@@ -1,5 +1,5 @@
-from app import get_db_connection
 from psycopg2.extras import RealDictCursor
+from db import *
 
 def atualizar_perguntas_dicas():
     conn = get_db_connection()

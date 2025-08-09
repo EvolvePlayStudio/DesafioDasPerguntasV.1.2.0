@@ -1,6 +1,5 @@
 from flask import Flask, jsonify, render_template, request, session, redirect, flash
 from werkzeug.security import generate_password_hash, check_password_hash
-import psycopg2
 from utils import *
 from datetime import datetime, timedelta
 import secrets
@@ -9,13 +8,12 @@ import string
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
-import os
 import re
 import logging
 import sys
 import traceback
 from apscheduler.schedulers.background import BackgroundScheduler
-from atualizar_perguntas_dicas import atualizar_perguntas_dicas
+from atualizar_perguntas_dicas import *
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 # Para fazer depuração na render
@@ -28,22 +26,6 @@ app.logger.addHandler(handler)
 temas_disponiveis = ["Biologia", "Esportes", "História"]
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
-database_url = os.getenv("DATABASE_URL")
-
-if database_url:
-    def get_db_connection():
-        # Esse valor será o Internal Database URL completo
-        return psycopg2.connect(database_url, sslmode="require")
-else:
-    def get_db_connection():
-        return psycopg2.connect(
-            host=os.getenv("DB_HOST"),
-            port=os.getenv("DB_PORT"),
-            database=os.getenv("DB_NAME"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            sslmode=os.getenv("DB_SSLMODE")
-        )
 
 # Função para iniciar o scheduler
 def iniciar_agendamento():
@@ -506,7 +488,6 @@ def registrar_resposta():
     except Exception as e:
         print("Erro ao registrar resposta:", e)
         return jsonify({"sucesso": False, "mensagem": "Erro interno"})
-
 
 if not database_url:
     if __name__ == '__main__':
