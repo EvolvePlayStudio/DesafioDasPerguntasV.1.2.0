@@ -88,6 +88,9 @@ document.addEventListener('DOMContentLoaded', function () {
     localStorage.setItem("regras_pontuacao", JSON.stringify(result.regras_pontuacao));
     localStorage.setItem("dicas_restantes", JSON.stringify(result.dicas_restantes));
     localStorage.setItem("perguntas_restantes", JSON.stringify(result.perguntas_restantes));
+    localStorage.setItem("plano", result.plano);
+    localStorage.setItem("regras_plano", JSON.stringify(result.regras_plano));
+    localStorage.setItem("nome_usuario", result.nome_usuario);
 
     if (result.success) {
       window.location.href = "/home";

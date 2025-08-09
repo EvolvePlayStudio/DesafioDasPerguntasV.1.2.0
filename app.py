@@ -63,13 +63,13 @@ def login():
         cur = conn.cursor()
 
         # Verifica se o usuário existe
-        cur.execute("SELECT id_usuario, senha_hash, email_confirmado, dicas_restantes, perguntas_restantes FROM usuarios_registrados WHERE email = %s", (email,))
+        cur.execute("SELECT id_usuario, senha_hash, email_confirmado, nome, plano, dicas_restantes, perguntas_restantes FROM usuarios_registrados WHERE email = %s", (email,))
         usuario = cur.fetchone()
 
         if not usuario:
             return jsonify(success=False, message="E-mail não registrado.")
 
-        id_usuario, senha_hash, email_confirmado, dicas_restantes, perguntas_restantes = usuario
+        id_usuario, senha_hash, email_confirmado, nome_usuario, plano, dicas_restantes, perguntas_restantes = usuario
 
         if not check_password_hash(senha_hash, senha):
             return jsonify(success=False, message="Senha incorreta.")
@@ -103,6 +103,12 @@ def login():
                 (id_usuario, tema, 0)
             )
 
+        # Pega as regras dos planos de assinatura
+        cur.execute("SELECT * FROM regras_plano ORDER BY id")
+        colunas = [desc[0] for desc in cur.description]  # nomes das colunas
+        linhas_regras_plano = cur.fetchall()
+        regras_plano = [dict(zip(colunas, linha)) for linha in linhas_regras_plano]
+
         # Pega as regras de pontuação para acertos, erros e uso de dicas da pergunta
         cur.execute("SELECT * FROM regras_pontuacao ORDER BY id_ranking")
         linhas = cur.fetchall()
@@ -125,10 +131,6 @@ def login():
         # Registra no logger (que você já direcionou para stdout)
         app.logger.error("Erro no login:\n" + tb)
 
-        """
-        # Também imprime no stdout (garante que a Render capture)
-        print(tb)"""
-
         # Retorna erro genérico para o cliente
         return jsonify(success=False, message="Erro interno no servidor."), 500
     finally:
@@ -136,12 +138,16 @@ def login():
             cur.close()
         if conn:
             conn.close()
+
     return jsonify(
             success=True,
             message="Login realizado com sucesso.",
             regras_pontuacao=regras_pontuacao,
             dicas_restantes=dicas_restantes,
-            perguntas_restantes=perguntas_restantes
+            perguntas_restantes=perguntas_restantes,
+            nome_usuario=nome_usuario,
+            plano=plano, # Plano atual do usuário (Gratuito ou Premium)
+            regras_plano=regras_plano
         ), 200
         
 

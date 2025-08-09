@@ -14,37 +14,135 @@
     }
 
     header {
-      background-color: #111109;
-      color: white;
-      padding: 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+        display:flex;
+        align-items: center;
+        background-color: #111109;
+        color: white;
+        padding: 0.6rem 1rem;
+        display: flex;
+        align-items: center;
+        position: relative;
+        gap: 0.5rem;
     }
 
-    header h1 {
+    /* esquerda: avatar + nome */
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 0 0 auto;
+    }
+
+    .avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+        display: inline-block;
+    }
+
+    .avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .user-name {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #ffffff;
+    }
+
+    .header-center-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem; /* Espaçamento entre ícones e título */
+        flex: 1 1 auto; /* Expande no espaço disponível */
+        position: relative; /* Importante apra empurrar os outros itens do header */
+    }
+
+    /* centro: título */
+    .header-center {
+      position: static;
+      pointer-events: none; /* Evita que o header-center capture cliques */
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    .header-center h1 {
       margin: 0;
-      font-size: 1.5rem;
+      font-size: 1.6em;
+    }
+
+    /* direita: contadores + botões */
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex: 0 0 auto; /* não cresce nem encolhe */
+    }
+
+    .header-right nav button {
+      font-size: 0.85rem;
+      padding: 0.3rem 0.6rem;
+    }
+
+    /* Ícones de perguntas e dicas restantes ao lado do título */
+    .icon-left, .icon-right {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.07);
+      padding: 0.3rem 0.6rem;
+      border-radius: 8px;
+      font-weight: 700;
+      color: #fff;
+      min-width: 60px;
+      justify-content: center;
+      gap: 0.3rem;
+      flex: 0 0 auto;
+      flex-shrink: 0;
+    }
+
+    .icon-left {
+        margin-right: 1.5rem;
+    }
+
+    .icon-right {
+        margin-left: 1.5rem;
     }
 
     nav {
       display: flex;
-      gap: 1rem;
+      gap: 0.7rem;
     }
 
     nav button {
-      background: white;
-      color: #3a7bd5;
-      border: none;
-      padding: 0.4rem 0.8rem;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.07);
+        color: white;
+        border: none;
+        padding: 0.3rem 0.6rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 700;
+        box-sizing: border-box; /* Garante padding incluído no tamanho total */
+        min-height: 40px;
+        white-space: nowrap; /* Evita que o texto quebre */
+        transition: background-color 0.3s ease;
+        flex-shrink: 0; /* Impede encolhimento se dentro de flexbox */
     }
 
-    nav button:disabled {
-      opacity: 0.5;
-      cursor: default;
+    .icon-left .icon,
+    .icon-right .icon {
+      min-width: 28px;
+      min-height: 24px;
+      font-size: 1.05em;
+      padding:0.15rem 0.1rem;
     }
 
     main {
@@ -128,12 +226,45 @@
 </head>
 <body>
   <header>
-    <h1>Desafio das Perguntas</h1>
-    <nav>
-      <button disabled>Perfil</button>
-      <button disabled>Ranking</button>
-      <button disabled>Premium</button>
-    </nav>
+    <!-- esquerda: avatar + nome -->
+    <div class="header-left">
+      <div class="avatar">
+        <!-- imagem padrão; substitua por url dinâmica via JS -->
+        <img id="avatar-img" src="{{ url_for('static', filename='img/Avatar.png') }}" alt="Avatar">
+      </div>
+      <div class="user-info">
+        <div id="user-name" class="user-name"></div>
+      </div>
+    </div>
+
+    <!-- Contêiner dos ícones e título -->
+    <div class="header-center-wrapper">
+        <!-- Ícone de perguntas restantes à esquerda do título -->
+        <div class="icon-left stat" title="Perguntas restantes">
+            <span class="icon">⚡</span>
+            <span id="perguntas-count">0/0</span>
+        </div>
+
+        <!-- centro: título -->
+        <div class="header-center">
+            <h1>Desafio das Perguntas</h1>
+        </div>
+
+        <!-- Ícone de dicas restantes à direita do título -->
+        <div class="icon-right stat" title="Dicas restantes">
+            <span class="icon">💡</span>
+            <span id="dicas-count">0/0</span>
+        </div>
+    </div>
+
+    <!-- direita: botões -->
+    <div class="header-right">
+      <nav>
+        <button id="btn-perfil" disabled>Perfil</button>
+        <button id="btn-ranking" disabled>Ranking</button>
+        <button id="btn-premium" disabled>Premium</button>
+      </nav>
+    </div>
   </header>
 
   <main>
@@ -155,15 +286,15 @@
     <!-- Cards de temas -->
     <div class="cards-container">
       <div class="card tema-card" data-tema="Biologia">
-        <img src="static/img/Biologia.jpeg" alt="Biologia">
+        <img src="{{ url_for('static', filename='img/Biologia.jpeg') }}" alt="Biologia">
         <span>Biologia</span>
       </div>
       <div class="card tema-card" data-tema="Esportes">
-        <img src="static/img/Esportes.jpeg" alt="Esportes">
+        <img src="{{ url_for('static', filename='img/Esportes.jpeg') }}" alt="Esportes">
         <span>Esportes</span>
       </div>
       <div class="card tema-card" data-tema="História">
-        <img src="static/img/Historia.jpeg" alt="História">
+        <img src="{{ url_for('static', filename='img/Historia.jpeg') }}" alt="História">
         <span>História</span>
       </div>
     </div>
@@ -174,5 +305,6 @@
   </footer>
 
   <script type="module" src="{{ url_for('static', filename='home.js') }}"></script>
+
 </body>
 </html>
