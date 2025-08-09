@@ -460,6 +460,7 @@ def registrar_resposta():
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
+            # Registra a resposta do usuário
             cur.execute("""
                 INSERT INTO respostas_usuarios (
                     id_usuario, id_pergunta, tipo_pergunta, versao_pergunta, resposta_usuario,
@@ -479,6 +480,9 @@ def registrar_resposta():
             ))
 
             # Atualiza a pontuação do usuário
+            """
+            nova_pontuacao_usuario = Math.max(0, (pontuacoes_usuario[tema_atual] || 0) + pontos_ganhos);"""
+            # ATENÇÃO: AQUI É NECESSÁRIO TRATAR OS CASOS DE PONTOS ABAIXO DE 0 E ACIMA DO MÁXIMO PERMITIDO NO RANKING LENDA
             cur.execute("""
                 INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao)
                 VALUES (%s, %s, %s)
@@ -486,10 +490,20 @@ def registrar_resposta():
                 DO UPDATE SET pontuacao = pontuacoes_usuarios.pontuacao + EXCLUDED.pontuacao
                 RETURNING pontuacao
             """, (id_usuario, dados["tema"], dados["pontos_ganhos"]))
-
             nova_pontuacao = cur.fetchone()[0]
+
+            # Atualiza a quantidade de perguntas restantes do usuário
+            cur.execute("""
+                SELECT perguntas_restantes FROM usuarios_registrados WHERE id_usuario = %s
+                """, (id_usuario,))
+            perguntas_restantes = cur.fetchone()[0]
+            nova_perguntas_restantes = max(0, perguntas_restantes - 1)
+            cur.execute("""
+                UPDATE usuarios_registrados SET perguntas_restantes = %s WHERE id_usuario = %s
+            """, (nova_perguntas_restantes, id_usuario))
+
             conn.commit()
-            return jsonify({"sucesso": True, "nova_pontuacao": nova_pontuacao})
+            return jsonify({"sucesso": True, "nova_pontuacao": nova_pontuacao, "perguntas_restantes": nova_perguntas_restantes})
 
     except Exception as e:
         print("Erro ao registrar resposta:", e)

@@ -15,7 +15,6 @@ let regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"))
 let info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1]
 let regras_usuario = null
 let ranking_usuario = null
-let nova_pontuacao_usuario = null
 
 function atualizarRankingVisual() {
   const info_ranking_atual = obterInfoRankingAtual()
@@ -168,7 +167,10 @@ function calcularPontuacao(dificuldade, acertou) {
     } else {
       pontos_ganhos = regras_usuario.pontos_erro; // Erro com tentativa
     }
-    nova_pontuacao_usuario = Math.max(0, (pontuacoes_usuario[tema_atual] || 0) + pontos_ganhos);
+    // Trata casos em que a pontuação do usuário ficaria negativa
+    if (pontuacoes_usuario[tema_atual] + pontos_ganhos < 0) {
+      pontos_ganhos = -pontuacoes_usuario[tema_atual]
+    } 
     return pontos_ganhos;
   }
 
@@ -202,11 +204,10 @@ function calcularPontuacao(dificuldade, acertou) {
       }
   }
   
-  // Analisa quantos pontos o usuário ainda pode ganhar caso esteja no último ranking já
+  // Trata casos em que a pontução do usuário ficaria acima do máximo permitido
   if (ranking_usuario === info_ultimo_ranking.ranking && pontuacoes_usuario[tema_atual] + pontos_ganhos > info_ultimo_ranking.pontos_maximos) {
       pontos_ganhos = info_ultimo_ranking.pontos_maximos - pontuacoes_usuario[tema_atual]
   }
-  nova_pontuacao_usuario = pontuacoes_usuario[tema_atual] + pontos_ganhos;
   return pontos_ganhos;
 }
 
@@ -328,8 +329,14 @@ async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ga
     const data = await response.json();
 
     if (data.sucesso) {
-      pontuacoes_usuario[tema_atual] = nova_pontuacao_usuario;
+      // Atualiza a pontuação do usuário para o tema no localStorage
+      pontuacoes_usuario[tema_atual] = data.nova_pontuacao;
       localStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_usuario));
+
+      // Atualiza as perguntas restantes do usuário no localStorage
+      localStorage.setItem("perguntas_restantes", data.perguntas_restantes)
+      document.getElementById("perguntas-count").textContent = data.perguntas_restantes
+
       atualizarRankingVisual();
       return true;
     } else {
@@ -443,8 +450,7 @@ function mostrarBotoesAcao() {
   
   dificuldades_permitidas = obterDificuldadesDisponiveis()
   ha_perguntas_disponiveis = dificuldades_permitidas.some(dif => perguntas_por_dificuldade[dif].length > 0)
-  
-  if (!ha_perguntas_disponiveis) {
+  if (!ha_perguntas_disponiveis || localStorage.getItem("perguntas_restantes") <= 0) {
     // Mostrar apenas o botão Finalizar
     btn_proxima.style.display = "none";
     btn_finalizar.style.display = "inline-block";
@@ -576,10 +582,23 @@ document.getElementById('resposta-input').addEventListener('keydown', function(e
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Exibe a contagem de dicas restantes
   const dicas = JSON.parse(localStorage.getItem("dicas_restantes"));
-  const contadorDicas = document.getElementById("contador-dicas");
-  if (contadorDicas && dicas !== null) {
-    contadorDicas.textContent = dicas;
+  const contador_dicas = document.getElementById("contador-dicas");
+  if (contador_dicas && dicas !== null) {
+    contador_dicas.textContent = dicas;
+  }
+
+  // Exibe o ícone de perguntas restantes caso esteja no modo desafio
+  const icone_perguntas_restantes = document.getElementById("perguntas-restantes-icon")
+  icone_perguntas_restantes.style.display = "flex"
+  if (modo_jogo === 'desafio') {
+    const num_perguntas_restantes = document.getElementById("perguntas-count")
+    num_perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}`
+    icone_perguntas_restantes.style.visibility = 'visible';
+  }
+  else {
+      icone_perguntas_restantes.style.visibility = 'hidden';
   }
 
   // Implementa a função para usar dica

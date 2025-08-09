@@ -24,8 +24,8 @@
     #pergunta-enunciado {
       font-size: 22px;
       font-weight: bold;
-      margin-bottom: 80px;
-      margin-top: -75px;
+      margin-top: 1rem;
+      margin-bottom: 40px;
     }
     #comentarios {
       transition: all 0.4s ease;
@@ -43,10 +43,19 @@
       max-width: 900px;
       border: 1px solid #ccc;
       display: block;
-      margin-top: -40px;
+      margin-top: -20px;
       margin-bottom: 20px;
       margin-left: auto;
       margin-right: auto;
+    }
+    .icon-left.stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .icon-left.stat .icon {
+      font-size: 20px;
+      color: gold;
     }
     button {
       background: #6c63ff;
@@ -67,11 +76,28 @@
       text-align: center;
     }
     .quiz-header {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 80px 1fr 80px;
       align-items: center;
-      margin-bottom: 70px;
-      margin-top: -15px;
+      gap: 12px;
+      margin-top: -10px;
+      padding: 0;
+      color: white;
+    }
+    #perguntas-restantes-icon,
+    #dica-icon {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: gold;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    #tema-nivel-pergunta {
+      font-weight: bold;
+      margin: 0;
+      text-align: center;
+      white-space: nowrap; /* evita quebra */
     }
     .dica-icon {
       display: none;
@@ -95,7 +121,6 @@
         width: 100%;
         text-align: center;
     }
-
     .estrela {
         font-size: 36px;
         cursor: pointer;
@@ -104,7 +129,6 @@
         transition: color 0.3s ease;
         padding: 0 30px;
     }
-
     .estrela.dourada {
       color: gold;
     }
@@ -112,46 +136,63 @@
 </head>
   <body style="margin: 0; font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1E1E14, #1E1E14);">
     <div style="display: flex; flex-direction: column; align-items: center; padding: 2rem 0;">
+      <!-- Ranking atual do jogador -->
+      <header style="color: white; position: absolute; top: 16px; left: 32px; font-weight: bold; font-size: 20px;">
+        Ranking: <span id="ranking"></span>
+      </header>
+
       <!-- Ranking anterior -->
       <div style="color: white; display: flex; align-items: center; font-weight: bold; margin: -11px auto 1.5rem auto; width: 100%; max-width: 600px;">
-      <span id="ranking-anterior" style="width: 80px; text-align: left;">Ranking Anterior</span>
+        <span id="ranking-anterior" style="width: 80px; text-align: left;">Ranking Anterior</span>
+
       <!-- Barra de progresso -->
       <div style="flex: 1; height: 16px; background-color: #444; border-radius: 10px; margin: 0 12px; overflow: hidden;">
         <div id="barra-progresso" style="height: 100%; width: 0%; background: linear-gradient(to right, #f9a825, #fdd835); transition: width 0.5s;"></div>
-      </div>
+
       <!-- Próximo ranking -->
-      <span id="ranking-proximo" style="color: white; width: 100px; font-weight: bold; text-align: right;">Próximo Ranking</span>
-    <!-- Ranking atual do jogador -->
-    </div>
-    <header style="color: white; position: absolute; top: 16px; left: 32px; font-weight: bold; font-size: 20px;">
-      Ranking: <span id="ranking">Iniciante</span>
-    </header>
-    <!-- Pontuação atual do jogador -->
-    <header style="color: white; position: absolute; top: 16px; right: 32px; font-weight: bold; font-size: 20px;">
-      Pontuação: <span id="pontuacao">0</span>
-    </header>
+      </div>
+        <span id="ranking-proximo" style="color: white; width: 100px; font-weight: bold; text-align: right;">Próximo Ranking</span>
+      </div>
+      
+      <!-- Pontuação atual do jogador -->
+      <header style="color: white; position: absolute; top: 16px; right: 32px; font-weight: bold; font-size: 20px;">
+        Pontuação: <span id="pontuacao"></span>
+      </header>
+
+      <!-- Layout contendo o enunciado, ícone de dica, etc -->
       <div class="quiz-container">
-      <div class="quiz-header">
-        <!-- Tema e nível da pergunta -->
-        <h2 id="tema-nivel-pergunta" style="font-weight: bold;"></h2>
-        <!-- Ícone de dica e número de dicas disponíveis -->
-        <div id="dica-icon" class="dica-icon">
-          <span style="font-size: 24px; vertical-align: middle;">💡</span>
-          <span id="contador-dicas" style="color: black; font-size: 18px; font-weight: bold; margin-left: 4px;">0</span>
-        </div>
+        <div class="quiz-header">
+          <!-- Ícone do raio (Perguntas restantes) à esquerda -->
+          <div id="perguntas-restantes-icon" class="dica-icon" title="Perguntas restantes" style="justify-content: flex-start;">
+            <span>⚡</span>
+            <span id="perguntas-count" style="font-weight: bold; font-size: 18px; margin-left: 6px; color: black;">0</span>
+          </div>
+
+          <!-- Tema e nível da pergunta no centro -->
+          <h2 id="tema-nivel-pergunta" style="font-weight: bold; margin: 0; flex-grow: 1; text-align: center;"></h2>
+
+          <!-- Ícone de dica à direita -->
+          <div id="dica-icon" class="dica-icon" title="Dica" style="justify-content: flex-end;">
+            <span>💡</span>
+            <span id="contador-dicas" style="color: black; font-size: 20px; font-weight: bold; margin-left: 4px;">0</span>
+          </div>
       </div>
       <div id="quiz-box">
         <!-- Enunciado da pergunta -->
         <p id="pergunta-enunciado"></p>
+
         <!-- Caixa para digitar a resposta -->
         <input type="text" id="resposta-input" maxlength="50" placeholder="Digite sua resposta" autocomplete="off"/>
+
         <!-- Botão para enviar a resposta -->
         <button id="btn-enviar" disabled>Enviar</button>
+
         <!-- Botões de finalizar o quiz e chamar próxima pergunta -->
         <div id="botoes-acao" style="display: none; margin-top: 20px; justify-content: space-between; gap: 12px;">
           <button id="btn-finalizar" style="flex: 1; background-color: #e53935;">Finalizar</button>
           <button id="btn-proxima" style="flex: 1;">Próxima</button>
         </div>
+        
         <!-- Resultado após o envio da resposta -->
         <div id="resultado" style="display: none; margin-top: 12px;"></div>
         <div id="respostas-aceitas" class="respostas-aceitas" style="display: none;">
@@ -189,3 +230,5 @@
   <script type="module" src="{{ url_for('static', filename='quiz.js') }}"></script>
 </body>
 </html>
+
+
