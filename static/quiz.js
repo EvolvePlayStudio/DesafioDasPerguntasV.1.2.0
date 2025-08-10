@@ -15,6 +15,17 @@ let regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"))
 let info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1]
 let regras_usuario = null
 let ranking_usuario = null
+const lbl_pontos_ganhos = document.getElementById('incremento-pontuacao')
+// Círculo amarelo com interrogação preta para símbolo de pergunta pulada
+let svg1 = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
+  viewBox="0 0 24 24" style="vertical-align: middle;">
+  <g transform="translate(0,-1)">
+    <circle cx="12" cy="12" r="11" fill="#FFD700"/>
+    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
+          font-family="Segoe UI Emoji,Segoe UI Symbol,Arial" font-size="13"
+          font-weight="700" fill="#111">?</text>
+  </g>
+</svg>`;
 
 function atualizarRankingVisual() {
   const info_ranking_atual = obterInfoRankingAtual()
@@ -211,7 +222,8 @@ function calcularPontuacao(dificuldade, acertou) {
   return pontos_ganhos;
 }
 
-function mostrarResultadoResposta(correto) {
+function mostrarResultadoResposta(correto, pontos_ganhos) {
+  // ATENÇÃO: TALVEZ SÓ SEJA NECESSÁRIO OS PONTOS_GANHOS AQUI E NÃO A BOOLENA CORRETO
   const resultado = document.getElementById("resultado");
   const respostas_corretas = pergunta_selecionada.respostas_corretas
   resultado.style.display = "block";
@@ -236,12 +248,17 @@ function mostrarResultadoResposta(correto) {
     document.getElementById("nota-box").style.display = "none";
    }
 
-  if (correto) {
-    resultado.innerHTML = '✅ <strong>Resposta correta!</strong>';
-    resultado.style.color = "green";
+  // Exibe a mensagem que indica se a resposta foi correta, errada ou se o usuário pulou
+  const resposta_usuario = document.getElementById("resposta-input").value.trim();
+  if (!resposta_usuario || resposta_usuario.trim() === "") {
+    const svgEscolhido = svg1;
+    resultado.innerHTML = `${svgEscolhido} <strong style="color: #FFD700; margin-left:6px;">Não respondida</strong>`;
+  } else if (correto) {
+      resultado.innerHTML = '✅ <strong>Resposta correta!</strong>';
+      resultado.style.color = "green";
   } else {
-    resultado.innerHTML = '❌ <strong>Resposta incorreta</strong>';
-    resultado.style.color = "red";
+      resultado.innerHTML = '❌ <strong>Resposta incorreta</strong>';
+      resultado.style.color = "red";
   }
 
   aguardando_proxima = true;
@@ -256,6 +273,21 @@ function mostrarResultadoResposta(correto) {
 
   // Exibe os comentários dos outros usuários
   document.getElementById('comentarios').style.display = 'block';
+
+  // Exibe os pontos ganhos ou perdidos
+  if (pontos_ganhos > 0) {
+    lbl_pontos_ganhos.style.color = 'green'
+    //lbl_pontos_ganhos.style.opacity = 1
+    lbl_pontos_ganhos.style.display = 'flex'
+    lbl_pontos_ganhos.textContent = `+${pontos_ganhos}`
+  }
+  else if (pontos_ganhos < 0) {
+    lbl_pontos_ganhos.style.color = 'red'
+    //lbl_pontos_ganhos.style.opacity = 1
+    lbl_pontos_ganhos.style.display = 'flex'
+    lbl_pontos_ganhos.textContent = `${pontos_ganhos}`
+  }
+  
 }
 
 function respostaEstaCorreta(resposta_usuario, respostas_aceitas) {
@@ -415,9 +447,10 @@ async function enviarResposta() {
   let prosseguir_com_resultado = true
   
   // ATENÇÃO: AQUI DEVERÁ CHAMAR O registrarRespostaObjetiva SE FOR O CASO NO FUTURO
+  let pontos_ganhos = 0
   if (modo_jogo == 'desafio') {
     const dificuldade = pergunta_selecionada.dificuldade
-    const pontos_ganhos = calcularPontuacao(dificuldade, acertou);
+    pontos_ganhos = calcularPontuacao(dificuldade, acertou);
     const id_pergunta = pergunta_selecionada.id_pergunta;
     const versao_pergunta = pergunta_selecionada.versao_pergunta;
     const tempo_gasto = calcularTempoGasto();
@@ -432,7 +465,7 @@ async function enviarResposta() {
   )};
 
   if (prosseguir_com_resultado) {
-    mostrarResultadoResposta(acertou);
+    mostrarResultadoResposta(acertou, pontos_ganhos);
     mostrarBotoesAcao()
   }
   else  {
@@ -478,6 +511,7 @@ function mostrarBotoesAcao() {
 }
 
 function proximaPergunta() {
+  lbl_pontos_ganhos.style.display = 'none'
   if (ha_perguntas_disponiveis) {
     mostrarPergunta();
     document.getElementById('botoes-acao').style.display = "none";

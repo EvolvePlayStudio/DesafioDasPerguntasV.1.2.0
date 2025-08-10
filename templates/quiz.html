@@ -136,8 +136,23 @@
 </head>
   <body style="margin: 0; font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1E1E14, #1E1E14);">
     <div style="display: flex; flex-direction: column; align-items: center; padding: 2rem 0;">
-      <!-- Ranking atual do jogador -->
-      <header style="color: white; position: absolute; top: 16px; left: 32px; font-weight: bold; font-size: 20px;">
+
+      <!-- Pontuação atual do jogador (à esquerda) -->
+      <header style="color: white; position: absolute; top: 16px; left: 32px; font-weight: bold; font-size: 20px; display: flex; align-items: center; gap: 8px;">
+        Pontuação: <span id="pontuacao"></span>
+        <!-- Pontuação ganha ou perdida pela pergunta (fica invisível a princípio) -->
+        <span id="incremento-pontuacao" style="
+          color: limegreen;
+          font-weight: bold;
+          font-size: 1.2rem;
+          transition: transform 0.8s ease-out;
+          display: none;
+          user-select: none;
+        "></span>
+      </header>
+
+      <!-- Ranking atual do jogador (à direita) -->
+      <header style="color: white; position: absolute; top: 16px; right: 32px; font-weight: bold; font-size: 20px;">
         Ranking: <span id="ranking"></span>
       </header>
 
@@ -148,16 +163,17 @@
       <!-- Barra de progresso -->
       <div style="flex: 1; height: 16px; background-color: #444; border-radius: 10px; margin: 0 12px; overflow: hidden;">
         <div id="barra-progresso" style="height: 100%; width: 0%; background: linear-gradient(to right, #f9a825, #fdd835); transition: width 0.5s;"></div>
+      </div>
 
       <!-- Próximo ranking -->
-      </div>
-        <span id="ranking-proximo" style="color: white; width: 100px; font-weight: bold; text-align: right;">Próximo Ranking</span>
-      </div>
+      <span id="ranking-proximo" style="color: white; width: 100px; font-weight: bold; text-align: right;">Próximo Ranking</span>
+    </div>
+
+
+
+
+
       
-      <!-- Pontuação atual do jogador -->
-      <header style="color: white; position: absolute; top: 16px; right: 32px; font-weight: bold; font-size: 20px;">
-        Pontuação: <span id="pontuacao"></span>
-      </header>
 
       <!-- Layout contendo o enunciado, ícone de dica, etc -->
       <div class="quiz-container">
@@ -195,15 +211,15 @@
         
         <!-- Resultado após o envio da resposta -->
         <div id="resultado" style="display: none; margin-top: 12px;"></div>
-        <div id="respostas-aceitas" class="respostas-aceitas" style="display: none;">
+        <div id="respostas-aceitas" class="respostas-aceitas" style="display: none; font-weight: 500;">
         <strong>Respostas aceitas:</strong> <span id="lista-respostas"></span>
         </div>
         <div id="dica-final" style="display: none; margin-top: 10px;"></div>
-        <div id="nota" style="display: none; margin-top: 8px;"></div>
-        <div id="dica-box" style="display: none;">
+        <div id="nota" style="display: none; margin-top: 8px; font-weight: 500;"></div>
+        <div id="dica-box" style="display: none; font-weight: 500;">
           <strong>Dica:</strong> <span id="dica-texto"></span>
         </div>
-        <div id="nota-box" style="display: none;">
+        <div id="nota-box" style="display: none; font-weight: 500;">
           <span id="nota-texto"></span>
         </div>
         <!-- Estrelas para avaliar a pergunta -->
@@ -230,5 +246,3 @@
   <script type="module" src="{{ url_for('static', filename='quiz.js') }}"></script>
 </body>
 </html>
-
-
