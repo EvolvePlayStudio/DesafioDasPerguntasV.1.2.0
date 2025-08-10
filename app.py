@@ -46,7 +46,7 @@ def login():
     conn = cur = None
     try:
         if not request.is_json:
-            return jsonify(success=False, message="Content-Type deve ser application/json."), 415
+            return jsonify(success=False, message="Content-Type deve ser application/json"), 415
 
         data = request.get_json()
         email = data.get("email")
@@ -55,9 +55,9 @@ def login():
         if not email or not senha:
             return jsonify(success=False, message="Email e senha são obrigatórios.")
         
-        EMAIL_REGEX = r"[^@]+@[^@]+\.[^@]+"
-        if not re.match(EMAIL_REGEX, email):
-            return jsonify(success=False, message="Formato de e-mail inválido."), 400
+        email_regex = r"[^@]+@[^@]+\.[^@]+"
+        if not re.match(email_regex, email):
+            return jsonify(success=False, message="Formato de e-mail inválido"), 400
 
         conn = get_db_connection()
         cur = conn.cursor()
@@ -67,15 +67,15 @@ def login():
         usuario = cur.fetchone()
 
         if not usuario:
-            return jsonify(success=False, message="E-mail não registrado.")
+            return jsonify(success=False, message="E-mail não registrado")
 
         id_usuario, senha_hash, email_confirmado, nome_usuario, plano, dicas_restantes, perguntas_restantes = usuario
 
         if not check_password_hash(senha_hash, senha):
-            return jsonify(success=False, message="Senha incorreta.")
+            return jsonify(success=False, message="A senha está incorreta")
 
         if not email_confirmado:
-            return jsonify(success=False, message="Você precisa confirmar seu e-mail antes de fazer login.")
+            return jsonify(success=False, message="Você precisa confirmar seu e-mail antes de fazer login")
 
         # Define sessão
         session["id_usuario"] = id_usuario
@@ -132,7 +132,7 @@ def login():
         app.logger.error("Erro no login:\n" + tb)
 
         # Retorna erro genérico para o cliente
-        return jsonify(success=False, message="Erro interno no servidor."), 500
+        return jsonify(success=False, message="Erro interno no servidor, não foi possível fazer login"), 500
     finally:
         if cur:
             cur.close()
@@ -141,7 +141,7 @@ def login():
 
     return jsonify(
             success=True,
-            message="Login realizado com sucesso.",
+            message="Login realizado com sucesso",
             regras_pontuacao=regras_pontuacao,
             dicas_restantes=dicas_restantes,
             perguntas_restantes=perguntas_restantes,
@@ -157,7 +157,7 @@ def registrar():
     nome = data.get("nome")
     email = data.get("email")
     senha = data.get("senha")
-    # A parte aabaixo será removida quando o app estiver em produção
+    # A parte abaixo será removida quando o app estiver em produção
     token_recebido = data.get("invite_token")
     if token_recebido != invite_token:
         flash("Token de convite inválido")
@@ -191,7 +191,7 @@ def registrar():
     link_confirmacao = f"{base_url}/confirmar_email?token={token}"
     enviar_email_confirmacao(email, nome, link_confirmacao)
 
-    return jsonify(success=True, message="Registro realizado. Verifique seu e-mail para confirmar.")
+    return jsonify(success=True, message="Registro realizado! Verifique seu e-mail para confirmar")
 
 @app.route('/confirmar_email')
 def confirmar_email():
@@ -205,7 +205,6 @@ def confirmar_email():
 
     try:
         # Busca usuário com o token fornecido e ainda válido
-        print(f"O token é: {token}")
         cur.execute("""
             SELECT id_usuario, expiracao_token_confirmacao 
             FROM usuarios_registrados 
@@ -273,10 +272,8 @@ O link expira em 24 horas.
             servidor.starttls()
             servidor.login(remetente, senha)
             servidor.send_message(msg)
-        print(f"[INFO] E-mail enviado para {email_destinatario}")
         return True
     except Exception as e:
-        print(f"[ERRO] Falha no envio de e-mail: {e}")
         return False
 
 @app.route("/home")
@@ -506,7 +503,6 @@ def registrar_resposta():
             return jsonify({"sucesso": True, "nova_pontuacao": nova_pontuacao, "perguntas_restantes": nova_perguntas_restantes})
 
     except Exception as e:
-        print("Erro ao registrar resposta:", e)
         return jsonify({"sucesso": False, "mensagem": "Erro interno"})
 
 if not database_url:

@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const register_tab = document.getElementById('register-tab');
   const login_form = document.getElementById('login-form');
   const register_form = document.getElementById('register-form');
+  const lbl_mensagem_login = document.getElementById("login-message");
+  const lbl_mensagem_registro = document.getElementById("registro-message");
 
   function showForm(type) {
     if (type === 'login') {
@@ -23,9 +25,10 @@ document.addEventListener('DOMContentLoaded', function () {
   showForm('login');
   window.showForm = showForm;
 
+ 
   register_form.addEventListener('submit', async function(event) {
     event.preventDefault();
-
+    
     const nome = this.nome?.value.trim();
     const email = this.email?.value.trim();
     const senha = this.senha?.value;
@@ -33,20 +36,16 @@ document.addEventListener('DOMContentLoaded', function () {
     // A parte abaixo será removida quando o app estiver em produção
     const invite_token = this.invite_token?.value
 
-    if (!nome) {
-      alert('Por favor, preencha o nome de usuário.');
-      return;
-    }
-    if (!email) {
-      alert('Por favor, preencha o email.');
-      return;
-    }
     if (senha !== confirmar_senha) {
-      alert('As senhas não coincidem.');
+      lbl_mensagem_registro.style.visibility = 'visible'
+      lbl_mensagem_registro.style.color = 'red'
+      lbl_mensagem_registro.textContent = 'As senhas não coincidem'
       return;
     }
     if (senha.length < 6) {
-      alert('A senha deve ter pelo menos 6 caracteres.');
+      lbl_mensagem_registro.style.visibility = 'visible'
+      lbl_mensagem_registro.style.color = 'red'
+      lbl_mensagem_registro.textContent = 'A senha deve ter pelo menos 6 caracteres'
       return;
     }
 
@@ -60,14 +59,21 @@ document.addEventListener('DOMContentLoaded', function () {
       const data = await response.json();
 
       if (data.success) {
-        alert('Registro realizado! Verifique seu e-mail para confirmá-lo.');
-        showForm('login');
+        lbl_mensagem_registro.style.color = 'green'
+        lbl_mensagem_registro.style.visibility = 'visible'
+        lbl_mensagem_registro.textContent = 'Registro realizado! Verifique seu e-mail para confirmar'
         this.reset();
-      } else {
-        alert('Erro no registro: ' + data.message);
+      } 
+      else {
+        lbl_mensagem_registro.style.color = 'red'
+        lbl_mensagem_registro.style.visibility = 'visible'
+        lbl_mensagem_registro.textContent = data.message
       }
-    } catch (error) {
-      alert('Erro na comunicação com o servidor.');
+    }
+    catch (error) {
+      lbl_mensagem_registro.style.color = 'red'
+      lbl_mensagem_registro.style.visibility = 'visible'
+      lbl_mensagem_registro.textContent = 'Erro na comunicação com o servidor'
       console.error(error);
     }
   });
@@ -84,18 +90,21 @@ document.addEventListener('DOMContentLoaded', function () {
       body: JSON.stringify({ email, senha })
     });
 
-    const result = await response.json();
-    localStorage.setItem("regras_pontuacao", JSON.stringify(result.regras_pontuacao));
-    localStorage.setItem("dicas_restantes", JSON.stringify(result.dicas_restantes));
-    localStorage.setItem("perguntas_restantes", JSON.stringify(result.perguntas_restantes));
-    localStorage.setItem("plano", result.plano);
-    localStorage.setItem("regras_plano", JSON.stringify(result.regras_plano));
-    localStorage.setItem("nome_usuario", result.nome_usuario);
+    const data = await response.json();
+    localStorage.setItem("regras_pontuacao", JSON.stringify(data.regras_pontuacao));
+    localStorage.setItem("dicas_restantes", JSON.stringify(data.dicas_restantes));
+    localStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes));
+    localStorage.setItem("plano", data.plano);
+    localStorage.setItem("regras_plano", JSON.stringify(data.regras_plano));
+    localStorage.setItem("nome_usuario", data.nome_usuario);
 
-    if (result.success) {
+    if (data.success) {
       window.location.href = "/home";
-    } else {
-      alert(result.message);
+    } 
+    else {
+      lbl_mensagem_login.style.visibility = 'visible'
+      lbl_mensagem_login.style.color = 'red'
+      lbl_mensagem_login.textContent = data.message
     }
   });
 });
