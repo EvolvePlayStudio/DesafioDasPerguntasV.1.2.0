@@ -9,11 +9,17 @@ function iniciarQuiz(event) {
   const modo_jogo = document.querySelector('input[name="modo"]:checked').value;
   localStorage.setItem("modo_jogo", modo_jogo)
 
-  // Carrega as perguntas para o quiz
   if (!tema_atual || !modo_jogo) {
     console.error("Tema ou modo de jogo não definidos na URL.");
     return;
   }
+
+  if (modo_jogo.toLowerCase() === 'desafio' && localStorage.getItem("perguntas_restantes") <= 0) {
+    alert('Você precisa aguardar para obter mais perguntas no modo desafio')
+    return;
+  }
+
+  // Carrega as perguntas para o quiz
   fetch(`/api/perguntas?tema=${tema_atual}&modo=${modo_jogo}`)
     .then(response => response.json())
     .then(data => {

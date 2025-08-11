@@ -6,7 +6,7 @@ let dica_gasta = false
 let inicio_pergunta = null  // horário inicial da pergunta
 let tema_atual = decodeURIComponent(localStorage.getItem("tema_atual"))
 let modo_jogo = localStorage.getItem("modo_jogo")
-let pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario"))
+let pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario")) // DEVERÁ SER REMOVIDA EM BREVE
 let animacao_concluida = false
 let pergunta_selecionada = null
 let dificuldades_permitidas = ['Fácil']
@@ -15,9 +15,11 @@ let regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"))
 let info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1]
 let regras_usuario = null
 let ranking_usuario = null
+const lbl_pontuacao_usuario = document.getElementById('pontuacao')
 const lbl_pontos_ganhos = document.getElementById('incremento-pontuacao')
+const btn_enviar = document.getElementById("btn-enviar")
 // Círculo amarelo com interrogação preta para símbolo de pergunta pulada
-let svg1 = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
+const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
   viewBox="0 0 24 24" style="vertical-align: middle;">
   <g transform="translate(0,-1)">
     <circle cx="12" cy="12" r="11" fill="#FFD700"/>
@@ -28,11 +30,14 @@ let svg1 = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
 </svg>`;
 
 function atualizarRankingVisual() {
-  const info_ranking_atual = obterInfoRankingAtual()
+  // Declara as variáveis que serão úteis
+  const info_ranking_atual = obterInfoRankingAtual();
   const pontuacao = pontuacoes_usuario[tema_atual] || 0;
+  let ranking_anterior = "";
+  let ranking_proximo = null;
+  let progresso = 100;
 
   // Identifica o ranking anterior alcançado pelo usuário
-  let ranking_anterior = "";
   for (let i = 0; i < regras_pontuacao.length; i++) {
     if (regras_pontuacao[i].ranking === info_ranking_atual.ranking) {
       // Se não for o primeiro da lista, pega o anterior
@@ -44,7 +49,6 @@ function atualizarRankingVisual() {
   }
 
   // Identifica o próximo ranking a ser alcançado pelo usuário
-  let ranking_proximo = null;
   for (let i = 0; i < regras_pontuacao.length; i++) {
     const r = regras_pontuacao[i];
     if (pontuacao >= r.pontos_minimos && pontuacao <= r.pontos_maximos) {
@@ -54,7 +58,6 @@ function atualizarRankingVisual() {
   }
 
   // Calcula progresso percentual
-  let progresso = 100;
   if (ranking_proximo) {
     const intervalo = ranking_proximo.pontos_minimos - info_ranking_atual.pontos_minimos;
     progresso = ((pontuacao - info_ranking_atual.pontos_minimos) / intervalo) * 100;
@@ -63,7 +66,6 @@ function atualizarRankingVisual() {
 
   // Atualiza a interface
   document.getElementById("ranking").textContent = info_ranking_atual.ranking;
-  document.getElementById("pontuacao").textContent = pontuacao;
   document.getElementById("ranking-anterior").textContent = ranking_anterior;
   document.getElementById("ranking-proximo").textContent = ranking_proximo ? ranking_proximo.ranking : "";
   document.getElementById("barra-progresso").style.width = progresso + "%";
@@ -223,7 +225,7 @@ function calcularPontuacao(dificuldade, acertou) {
 }
 
 function mostrarResultadoResposta(correto, pontos_ganhos) {
-  // ATENÇÃO: TALVEZ SÓ SEJA NECESSÁRIO OS PONTOS_GANHOS AQUI E NÃO A BOOLENA CORRETO
+  // ATENÇÃO: TALVEZ SÓ SEJA NECESSÁRIO OS PONTOS_GANHOS AQUI E NÃO A BOOLEANA CORRETO
   const resultado = document.getElementById("resultado");
   const respostas_corretas = pergunta_selecionada.respostas_corretas
   resultado.style.display = "block";
@@ -362,7 +364,9 @@ async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ga
 
     if (data.sucesso) {
       // Atualiza a pontuação do usuário para o tema no localStorage
+      const pontuacao_atual = pontuacoes_usuario[tema_atual]
       pontuacoes_usuario[tema_atual] = data.nova_pontuacao;
+      alterarPontuacaoUsuario(pontuacao_atual, pontuacoes_usuario[tema_atual], callbackAtualizarUI)
       localStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_usuario));
 
       // Atualiza as perguntas restantes do usuário no localStorage
@@ -381,6 +385,45 @@ async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ga
     return false;
   }
 }
+
+function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
+  const intervaloMin = 20; // ms entre frames no máximo, para smooth
+  let ultimaExecucao = 0;
+
+  function passo(timestamp) {
+    if (!ultimaExecucao) ultimaExecucao = timestamp;
+    const delta = timestamp - ultimaExecucao;
+
+    if (delta > intervaloMin) {
+      let diferenca = pontuacao_alvo - pontuacao_atual;
+      if (diferenca === 0) {
+        return;
+      }
+
+      // Calcula passo proporcional (4% da distância, no mínimo 1)
+      // Usa Math.sign para saber se deve incrementar ou decrementar
+      let passo = Math.max(1, Math.floor(Math.abs(diferenca) * 0.04));
+      pontuacao_atual += passo * Math.sign(diferenca);
+
+      // Corrige ultrapassagem (ex: passar do alvo)
+      if ((diferenca > 0 && pontuacao_atual > pontuacao_alvo) ||
+          (diferenca < 0 && pontuacao_atual < pontuacao_alvo)) {
+        pontuacao_atual = pontuacao_alvo;
+      }
+
+      callbackAtualizarUI(pontuacao_atual);
+      ultimaExecucao = timestamp;
+    }
+
+    window.requestAnimationFrame(passo);
+  }
+
+  window.requestAnimationFrame(passo);
+}
+
+function callbackAtualizarUI (pontuacao) {
+  lbl_pontuacao_usuario.textContent = pontuacao
+  }
 
 function renderizarEstrelas(valor) {
   const estrelas = document.querySelectorAll(".estrela");
@@ -438,7 +481,8 @@ function configurarEstrelas() {
 }
 
 async function enviarResposta() {
-  if (!animacao_concluida) return;
+  if (!animacao_concluida || btn_enviar.disabled) return;
+  btn_enviar.disabled = true
 
   // Analisa se a resposta enviada está correta
   const resposta_usuario = document.getElementById("resposta-input").value.trim();
@@ -470,6 +514,7 @@ async function enviarResposta() {
   }
   else  {
     alert("Não foi possível se conectar com o servidor. Por favor, verifique sua conexão e tente novamente")
+    btn_enviar.disabled = false
   }
 }
 
@@ -616,15 +661,20 @@ document.getElementById('resposta-input').addEventListener('keydown', function(e
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Exibe a contagem de dicas restantes
+  // Declara as variáveis que serão úteis
   const dicas = JSON.parse(localStorage.getItem("dicas_restantes"));
   const contador_dicas = document.getElementById("contador-dicas");
+  const icone_perguntas_restantes = document.getElementById("perguntas-restantes-icon");
+  const dica_icon = document.getElementById("dica-icon");
+  const btn_proxima = document.getElementById("btn-proxima");
+  const btn_finalizar = document.getElementById("btn-finalizar");
+
+  // Exibe a contagem de dicas restantes
   if (contador_dicas && dicas !== null) {
     contador_dicas.textContent = dicas;
   }
 
   // Exibe o ícone de perguntas restantes caso esteja no modo desafio
-  const icone_perguntas_restantes = document.getElementById("perguntas-restantes-icon")
   icone_perguntas_restantes.style.display = "flex"
   if (modo_jogo === 'desafio') {
     const num_perguntas_restantes = document.getElementById("perguntas-count")
@@ -636,7 +686,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Implementa a função para usar dica
-  const dica_icon = document.getElementById("dica-icon")
   if (dica_icon) {
     dica_icon.addEventListener("click", () => {
       usarDica()
@@ -644,7 +693,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Implementa a função de chamar próxima pergunta
-  const btn_proxima = document.getElementById("btn-proxima")
   if (btn_proxima) {
     btn_proxima.addEventListener("click", () => {
       proximaPergunta()
@@ -652,7 +700,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Implementa a função para finalizar o quiz
-  const btn_finalizar = document.getElementById("btn-finalizar")
   if (btn_finalizar) {
     btn_finalizar.addEventListener("click", () => {
       finalizarQuiz()
@@ -660,13 +707,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Implementa a função de enviar resposta
-  const btn_enviar = document.getElementById("btn-enviar")
   if (btn_enviar) {
     btn_enviar.addEventListener("click", () => {
       enviarResposta()
     })
   }
 
+  // Chama as funções que são necessárias na inicialização
+  callbackAtualizarUI (pontuacoes_usuario[tema_atual])
   atualizarRankingVisual();
   mostrarPergunta();
   configurarEstrelas();

@@ -1,19 +1,22 @@
-from flask import Flask, jsonify, render_template, request, session, redirect, flash
+from flask import Flask, jsonify, render_template, request, session, redirect, flash, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 from utils import *
-from datetime import datetime, timedelta
 import secrets
 import smtplib
 import string
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import re
 import logging
 import sys
 import traceback
 from apscheduler.schedulers.background import BackgroundScheduler
 from atualizar_perguntas_dicas import *
+import random, string, time
+from PIL import Image, ImageEnhance, ImageFilter
+from io import BytesIO
+import urllib.parse
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 # Para fazer depuração na render
@@ -26,6 +29,16 @@ app.logger.addHandler(handler)
 temas_disponiveis = ["Biologia", "Esportes", "História"]
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
+email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+dominios_permitidos = {
+    "gmail.com", "outlook.com", "hotmail.com", "yahoo.com",
+    "protonmail.com", "icloud.com", "live.com"
+}
+dominios_descartaveis = {
+    "mailinator.com", "10minutemail.com", "guerrillamail.com", "tempmail.com"
+}
+CAPTCHA_BASE_DIR = "static/captcha_imgs"
+FUSO_SERVIDOR = timezone(timedelta(hours=-3))
 
 # Função para iniciar o scheduler
 def iniciar_agendamento():
@@ -34,7 +47,6 @@ def iniciar_agendamento():
     scheduler.add_job(atualizar_perguntas_dicas, 'cron', hour=12, minute=0)
     scheduler.start()
 
-# Inicializa o agendamento assim que o app carregar
 iniciar_agendamento()
 
 @app.route("/", methods=["GET"])
@@ -55,7 +67,7 @@ def login():
         if not email or not senha:
             return jsonify(success=False, message="Email e senha são obrigatórios.")
         
-        email_regex = r"[^@]+@[^@]+\.[^@]+"
+        
         if not re.match(email_regex, email):
             return jsonify(success=False, message="Formato de e-mail inválido"), 400
 
@@ -149,7 +161,46 @@ def login():
             plano=plano, # Plano atual do usuário (Gratuito ou Premium)
             regras_plano=regras_plano
         ), 200
-        
+
+def checar_dados_registro(nome, email, senha, token_recebido):
+    if not nome or not email or not senha:
+        return False, "Preencha todos os campos"
+
+    if not re.match(email_regex, email):
+        return False, "E-mail inválido"
+
+    dominio = email.split("@")[-1].lower()
+
+    if dominio in dominios_descartaveis:
+        return False, "Domínio de e-mail temporário não é permitido"
+
+    if dominio not in dominios_permitidos:
+        return False, "O provedor de e-mail fornecido não é confiável"
+
+    # Validação do token de convite
+    if token_recebido != invite_token:
+        return False, "Token de convite inválido"
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id_usuario FROM usuarios_registrados WHERE email = %s", (email,))
+    if cur.fetchone():
+        cur.close()
+        conn.close()
+        return False, "E-mail já registrado"
+    cur.close()
+    conn.close()
+
+    return True, "Validação OK"
+
+@app.route("/register_validate", methods=["POST"])
+def validar_registro():
+    data = request.get_json()
+    ok, msg = checar_dados_registro(data.get("nome"), data.get("email"), data.get("senha"), data.get("invite_token"))
+    if not ok:
+        return jsonify(success=False, message=msg)
+
+    return jsonify(success=True, message="Validação OK")
 
 @app.route("/register", methods=["POST"])
 def registrar():
@@ -157,26 +208,30 @@ def registrar():
     nome = data.get("nome")
     email = data.get("email")
     senha = data.get("senha")
-    # A parte abaixo será removida quando o app estiver em produção
-    token_recebido = data.get("invite_token")
-    if token_recebido != invite_token:
-        flash("Token de convite inválido")
-        return redirect("/register")
-    
-    if not nome or not email or not senha:
-        return jsonify(success=False, message="Preencha todos os campos.")
+    captcha_token = data.get("captcha_token")
+    captcha_selecoes = list(map(int, data.get("captcha_selecoes", [])))
 
-    conn = get_db_connection()
-    cur = conn.cursor()
+    # Validação do CAPTCHA
+    if not captcha_token:
+        return jsonify(success=False, message="CAPTCHA token ausente"), 400
 
-    cur.execute("SELECT id_usuario FROM usuarios_registrados WHERE email = %s", (email,))
-    if cur.fetchone():
-        return jsonify(success=False, message="E-mail já registrado.")
+    dados_captcha = session.get(f"captcha_{captcha_token}")
+    if not dados_captcha or time.time() > dados_captcha.get("expira", 0):
+        return jsonify(success=False, message="CAPTCHA expirado ou inválido")
 
+    if sorted(captcha_selecoes) != sorted(dados_captcha.get("corretos", [])):
+        return jsonify(success=False, message="Seleções do CAPTCHA incorretas")
+
+    # Invalida o CAPTCHA para evitar reutilização
+    session.pop(f"captcha_{captcha_token}", None)
+
+    # Gerar hash da senha e token de confirmação
     senha_hash = generate_password_hash(senha)
     token = gerar_token_confirmacao()
     expiracao = datetime.utcnow() + timedelta(hours=24)
 
+    conn = get_db_connection()
+    cur = conn.cursor()
     cur.execute("""
         INSERT INTO usuarios_registrados (
             nome, email, senha_hash, email_confirmado,
@@ -192,6 +247,140 @@ def registrar():
     enviar_email_confirmacao(email, nome, link_confirmacao)
 
     return jsonify(success=True, message="Registro realizado! Verifique seu e-mail para confirmar")
+
+def carregar_e_transformar(caminho_img):
+    """Carrega a imagem do CAPTCHA com alguns ajustes para evitar identificação automática"""
+    img = Image.open(caminho_img).convert("RGB")
+    # Ajuste de brilho/contraste
+    enhancer = ImageEnhance.Contrast(img)
+    img = enhancer.enhance(random.uniform(0.85, 1.15))
+    # Pequeno desfoque
+    img = img.filter(ImageFilter.GaussianBlur(random.uniform(0, 1)))
+    # Opcional: redimensiona para um tamanho consistente (ex: 200x200) mantendo a proporção
+    img.thumbnail((240, 240), Image.LANCZOS)
+    # Salvar em memória
+    buffer = BytesIO()
+    img.save(buffer, format="JPEG", quality=85)
+    buffer.seek(0)
+    return buffer
+
+@app.route("/captcha_novo")
+def captcha_novo():
+    # Lista de categorias (pastas) dentro de CAPTCHA_BASE_DIR
+    categorias = [d for d in os.listdir(CAPTCHA_BASE_DIR) if os.path.isdir(os.path.join(CAPTCHA_BASE_DIR, d))]
+    if not categorias:
+        return jsonify({"error": "Sem categorias de CAPTCHA configuradas"}), 500
+    
+    categoria_correta = random.choice(categorias)
+
+    # 3 imagens corretas
+    todas_da_cat = os.listdir(os.path.join(CAPTCHA_BASE_DIR, categoria_correta))
+    if len(todas_da_cat) < 3:
+        return jsonify({"error": "Categoria sem imagens suficientes"}), 500
+    corretas = random.sample(todas_da_cat, 3)
+    corretas_paths = [f"{categoria_correta}/{fname}" for fname in corretas]
+
+
+    # 6 imagens incorretas
+    outras_categorias = [c for c in categorias if c != categoria_correta]
+    incorretas = []
+    while len(incorretas) < 6:
+        cat = random.choice(outras_categorias)
+        arquivos = os.listdir(os.path.join(CAPTCHA_BASE_DIR, cat))
+        if not arquivos:
+            continue
+        img = random.choice(arquivos)
+        caminho = f"{cat}/{img}"
+        if caminho not in incorretas:
+            incorretas.append(caminho)
+
+    todas = corretas_paths + incorretas
+    random.shuffle(todas)
+
+    # Criar token para este CAPTCHA
+    token = secrets.token_hex(16)
+
+    # Guardar na sessão quais índices são corretos
+    session[f"captcha_{token}"] = {
+        "categoria": categoria_correta,
+        "corretos": [todas.index(path) for path in corretas_paths],
+        "expira": time.time() + 180
+    }
+
+    # Gera URLs codificando segmentos
+    imagens_urls = []
+    for p in todas:
+        cat, fname = p.split("/", 1)
+        imagens_urls.append(f"/captcha_imagem/{urllib.parse.quote(cat)}/{urllib.parse.quote(fname)}")
+    return jsonify({
+        "token": token,
+        "categoria": categoria_correta,
+        "imagens": imagens_urls
+    })
+
+@app.route("/captcha_imagem/<categoria>/<filename>")
+def captcha_imagem(categoria, filename):
+    # Decodifica já feita pelo Flask — junta os segmentos
+    subpath = os.path.join(categoria, filename)
+    safe_subpath = os.path.normpath(subpath).lstrip(os.sep)
+    full_path = os.path.join(CAPTCHA_BASE_DIR, safe_subpath)
+
+    base_real = os.path.realpath(CAPTCHA_BASE_DIR)
+    target_real = os.path.realpath(full_path)
+    if not target_real.startswith(base_real):
+        return "Caminho inválido", 400
+    if not os.path.isfile(target_real):
+        return "Imagem não encontrada", 404
+
+    buffer = carregar_e_transformar(target_real)
+    # evita cache no cliente (opcional)
+    resp = send_file(buffer, mimetype="image/jpeg")
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return resp
+
+def formatar_hora_servidor(timestamp):
+    """Retorna data/hora formatada no fuso do servidor."""
+    if not timestamp:
+        return None
+    dt = datetime.fromtimestamp(timestamp, FUSO_SERVIDOR)
+    offset = FUSO_SERVIDOR.utcoffset(None)
+    hours = int(offset.total_seconds() // 3600)
+    return dt.strftime("%H:%M")
+
+@app.route('/verificar_bloqueio')
+def verificar_bloqueio():
+    info = session.get('bloqueio_captcha', {'tentativas_registro': 0, 'bloqueado_ate': 0})
+    agora = time.time()
+
+    if info.get('bloqueado_ate', 0) > agora:
+        return jsonify(
+            bloqueado=True,
+            tentativas_registro=info['tentativas_registro'],
+            bloqueado_ate=info['bloqueado_ate'],
+            bloqueado_ate_str=formatar_hora_servidor(info['bloqueado_ate'])
+        )
+    else:
+        session.pop('bloqueio_captcha', None)
+        return jsonify(bloqueado=False)
+
+@app.route('/registrar_falha_captcha', methods=['POST'])
+def registra_falha_sessao():
+    agora = time.time()
+    info = session.get('bloqueio_captcha', {'tentativas_registro': 0, 'bloqueado_ate': 0})
+    info['tentativas_registro'] += 1
+
+    print(f"Tentativas: {info['tentativas_registro']}")
+    if info['tentativas_registro'] >= 6:
+        info['bloqueado_ate'] = agora + 15 * 60  # bloqueio 15 minutos
+
+    session['bloqueio_captcha'] = info
+
+    return jsonify(
+        success=True,
+        tentativas_registro=info['tentativas_registro'],
+        bloqueado_ate=info['bloqueado_ate'],
+        bloqueado_ate_str=formatar_hora_servidor(info['bloqueado_ate'])
+    )
 
 @app.route('/confirmar_email')
 def confirmar_email():

@@ -11,11 +11,15 @@
             background: linear-gradient(135deg, #1E1E14, #1E1E14);
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
+            padding-top: 6vh;
             height: 100vh;
+            overflow-y: auto;
         }
 
         .auth-container {
+            max-height: calc(100vh - 8vh);
+            overflow: auto;
             background-color: #7f7f47;
             padding: 30px;
             border-radius: 16px;
@@ -112,6 +116,18 @@
             font-size: 14px;
             font-weight: bold;
         }
+
+        #captcha-grid img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            display: block;
+            border-radius: 6px;
+            }
+
+        #captcha-grid {
+        justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -126,8 +142,8 @@
 
         <!-- Formulário de Login -->
         <form id="login-form" class="active">
-          <input type="email" id="email" name="email" placeholder="Email" required>
-          <input type="password" id="senha" name="senha" placeholder="Senha" required>
+          <input type="email" id="email" name="email" placeholder="Email" maxlength="50" required>
+          <input type="password" id="senha" name="senha" placeholder="Senha" maxlength="50" required>
           <button type="submit">Entrar</button>
 
           <!-- Mensagem na tela de login -->
@@ -136,11 +152,20 @@
 
         <!-- Formulário de Registro -->
         <form id="register-form" method="POST" action="{{ url_for('registrar') }}">
-            <input type="text" name="nome" placeholder="Nome de usuário" required>
-            <input type="email" name="email" placeholder="Email" required>
-            <input type="password" name="senha" placeholder="Senha" required>
-            <input type="password" name="confirmar_senha" placeholder="Confirmar senha" required>
-            <input type="text" name="invite_token" placeholder="Token de convite" required>
+            <!-- Contêiner do CAPTCHA -->
+            <div id="captcha-container" hidden style="margin-bottom: 1.8rem; margin-top: -1rem;">
+                <p id="captcha-instrucao" style="font-weight: bold; text-align: center;"></p>
+                <div id="captcha-grid" style="display: grid; grid-template-columns: repeat(3, 100px); gap: 5px; justify-content: center;"></div>
+                <!-- Inputs ocultos para envio via JS -->
+                <input type="hidden" id="captcha-token" name="captcha_token">
+                <input type="hidden" id="captcha-selecoes" name="captcha_selecoes">
+            </div>
+            <!-- Campos para registro -->
+            <input type="text" name="nome" placeholder="Nome de usuário" maxlength="50" required>
+            <input type="email" name="email" placeholder="Email" maxlength="50" required>
+            <input type="password" name="senha" placeholder="Senha" maxlength="50" required>
+            <input type="password" name="confirmar_senha" placeholder="Confirmar senha" maxlength="50" required>
+            <input type="text" name="invite_token" placeholder="Token de convite" maxlength="50" required>
             <button type="submit">Registrar</button>
 
             <!-- Mensagem na tela de registro -->
