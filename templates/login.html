@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <title>Desafio das Perguntas</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         body {
-            margin: 0;
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #1E1E14, #1E1E14);
             display: flex;
             justify-content: center;
             align-items: flex-start;
@@ -20,7 +19,7 @@
         .auth-container {
             max-height: calc(100vh - 8vh);
             overflow: auto;
-            background-color: #7f7f47;
+            background-color: var(--cor-fundo-claro);
             padding: 30px;
             border-radius: 16px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
@@ -57,8 +56,8 @@
         }
 
         .auth-tabs button.active {
-            border-bottom: 2px solid #007BFF;
-            color: #007BFF;
+            border-bottom: 2px solid var(--cor-fundo-botao);
+            color: var(--cor-fundo-botao);
         }
 
         form {

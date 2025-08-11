@@ -3,36 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <title>Desafio das Perguntas – Início</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    
     body {
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
+      padding: 0;
+      width: 100%;
+      overflow-x: hidden; /* evita scroll horizontal */
+      box-sizing: border-box; /* para facilitar cálculos de largura */
+
+
+
+      /*font-family: 'Segoe UI', sans-serif;*/
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+
+
       background: linear-gradient(to bottom right, #1E1E14, #1E1E14);
       display: flex;
       flex-direction: column;
       min-height: 100vh;
     }
-
     header {
-        display:flex;
-        align-items: center;
-        background-color: #111109;
-        color: white;
-        padding: 0.6rem 1rem;
-        display: flex;
-        align-items: center;
-        position: relative;
-        gap: 0.5rem;
+      display:flex;
+      align-items: center;
+      background-color: var(--cor-fundo-escuro);
+      color: white;
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      position: relative;
     }
-
-    /* esquerda: avatar + nome */
+    .header-left, .header-right {
+      flex: 0 0 250px; /* mesma largura fixa para os dois lados */
+      display: flex;
+      align-items: center;
+    }
     .header-left {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        flex: 0 0 auto;
+      justify-content: flex-start;
+      gap: 1rem;
     }
-
+    .header-right {
+      justify-content: flex-end;
+      gap: 1rem;
+    }
     .avatar {
         width: 44px;
         height: 44px;
@@ -41,83 +57,77 @@
         flex-shrink: 0;
         display: inline-block;
     }
-
     .avatar img {
         width: 100%;
         height: 100%;
         object-fit: cover;
     }
-
     .user-name {
         font-weight: 700;
         font-size: 1rem;
         color: #ffffff;
     }
-
     .header-center-wrapper {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 2rem; /* Espaçamento entre ícones e título */
-        flex: 1 1 auto; /* Expande no espaço disponível */
-        position: relative; /* Importante apra empurrar os outros itens do header */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem; /* Espaçamento entre ícones e título */
+      flex: 1 1 auto; /* Expande no espaço disponível */
+      position: relative; /* Importante apra empurrar os outros itens do header */
     }
-
     /* centro: título */
     .header-center {
+      font-size: 1.6rem;
+      flex: 1 1 auto;
+      text-align: center;
+      user-select: none;
       position: static;
       pointer-events: none; /* Evita que o header-center capture cliques */
       white-space: nowrap;
       font-weight: 700;
     }
-
-    .header-center h1 {
-      margin: 0;
-      font-size: 1.6em;
-    }
-
-    /* direita: contadores + botões */
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      flex: 0 0 auto; /* não cresce nem encolhe */
-    }
-
     .header-right nav button {
       font-size: 0.85rem;
       padding: 0.3rem 0.6rem;
     }
-
-    /* Ícones de perguntas e dicas restantes ao lado do título */
     .icon-left, .icon-right {
-      display: flex;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.07);
+      position: absolute;
+      top: 50%;                 /* centraliza verticalmente */
+      transform: translateY(-50%);
       padding: 0.3rem 0.6rem;
       border-radius: 8px;
-      font-weight: 700;
-      color: #fff;
-      min-width: 60px;
+      font-weight: 700;         /* peso fixo */
+      color: white;
+      display: flex;
+      align-items: center;
       justify-content: center;
       gap: 0.3rem;
-      flex: 0 0 auto;
+      min-width: 60px;
+      cursor: default;
+      user-select: none;
+      font-size: 1.3rem;        /* fonte maior para ícones e texto */
       flex-shrink: 0;
+      white-space: nowrap;
     }
-
+    /* Posicionamento fixo dos ícones */
     .icon-left {
-        margin-right: 1.5rem;
+      left: 25vw;  /* cerca de 25% da largura da viewport */
     }
-
     .icon-right {
-        margin-left: 1.5rem;
+      right: 25vw; /* cerca de 75% da largura da viewport */
     }
-
+    /* Ajuste do tamanho dos ícones internos (exemplo se usar spans ou SVGs) */
+    .icon-left .icon, 
+    .icon-right .icon {
+      min-width: 28px;
+      min-height: 24px;
+      font-size: 1.05em;
+      padding: 0.15rem 0.1rem;
+    }
     nav {
       display: flex;
       gap: 0.7rem;
     }
-
     nav button {
         display: flex;
         align-items: center;
@@ -136,28 +146,17 @@
         transition: background-color 0.3s ease;
         flex-shrink: 0; /* Impede encolhimento se dentro de flexbox */
     }
-
-    .icon-left .icon,
-    .icon-right .icon {
-      min-width: 28px;
-      min-height: 24px;
-      font-size: 1.05em;
-      padding:0.15rem 0.1rem;
-    }
-
     main {
       flex: 1;
       padding: 2rem;
       text-align: center;
     }
-
     .titulo {
       font-size: 24px;
       font-weight: bold;
       margin-bottom: 1rem;
       color: white;
     }
-
     .modo-jogo-container,
     .tema-container {
       display: flex;
@@ -165,7 +164,6 @@
       align-items: center;
       margin-bottom: 2rem;
     }
-
     .cards-container {
       display: flex;
       flex-wrap: wrap;
@@ -173,7 +171,6 @@
       gap: 1.5rem;
       padding: 0 1rem;
     }
-
     .card {
       width: 200px;
       height: 180px; /* era 140px */
@@ -186,18 +183,15 @@
       transition: transform 0.2s ease;
       background-color: #fff;
     }
-
     .card img {
       width: 100%;
       height: 150px; /* fixo agora */
       object-fit: cover;
       flex-shrink: 0;
     }
-
     .card:hover {
       transform: scale(1.03);
     }
-
     .card span {
       text-align: center;
       font-weight: bold;
@@ -205,60 +199,37 @@
       background-color: #7f7f47;
       font-size: 16px;
     }
-
     footer {
       text-align: center;
       padding: 1rem;
-      background-color: #111109; /* Cor de fundo do topo */
+      background-color: var(--cor-fundo-escuro);
       color: white;
       font-size: 14px;
     }
-
     a {
       color: #3a7bd5;
       text-decoration: none;
     }
-
     a:hover {
       text-decoration: underline;
     }
   </style>
 </head>
 <body>
+  
   <header>
-    <!-- esquerda: avatar + nome -->
     <div class="header-left">
-      <div class="avatar">
-        <!-- imagem padrão; substitua por url dinâmica via JS -->
-        <img id="avatar-img" src="{{ url_for('static', filename='img/Avatar.png') }}" alt="Avatar">
-      </div>
-      <div class="user-info">
-        <div id="user-name" class="user-name"></div>
-      </div>
+      <div class="avatar"><img src="{{ url_for('static', filename='img/Avatar.png') }}" alt="Avatar"></div>
+      <div id="user-name" class="user-name"></div>
+      <div id="icon-left" class="icon-left" title="Perguntas restantes">⚡ <span id="perguntas-count">0/0</span></div>
     </div>
 
-    <!-- Contêiner dos ícones e título -->
-    <div class="header-center-wrapper">
-        <!-- Ícone de perguntas restantes à esquerda do título -->
-        <div class="icon-left stat" title="Perguntas restantes">
-            <span class="icon">⚡</span>
-            <span id="perguntas-count">0/0</span>
-        </div>
-
-        <!-- centro: título -->
-        <div class="header-center">
-            <h1>Desafio das Perguntas</h1>
-        </div>
-
-        <!-- Ícone de dicas restantes à direita do título -->
-        <div class="icon-right stat" title="Dicas restantes">
-            <span class="icon">💡</span>
-            <span id="dicas-count">0/0</span>
-        </div>
+    <div class="header-center">
+      Desafio das Perguntas
     </div>
 
-    <!-- direita: botões -->
     <div class="header-right">
+      <div id="icon-right" class="icon-right" title="Dicas restantes">💡 <span id="dicas-count">0/0</span></div>
       <nav>
         <button id="btn-perfil" disabled>Perfil</button>
         <button id="btn-ranking" disabled>Ranking</button>
@@ -266,6 +237,7 @@
       </nav>
     </div>
   </header>
+
 
   <main>
     <!-- Título do modo de jogo -->
@@ -301,7 +273,9 @@
   </main>
 
   <footer>
-    <a href="#" style="color: white; font-weight: bold;">Política de Privacidade</a> | <a href="#" style="color: white;font-weight: bold;">Sobre o App</a>
+    <a href="{{ url_for('home') }}" style="color: white; font-weight: bold;">Home</a> |
+    <a href="{{ url_for('politica_privacidade') }}" style="color: white; font-weight: bold;">Política de Privacidade</a> |
+    <a href="{{ url_for('sobre_app') }}" style="color: white; font-weight: bold;">Sobre o App</a>
   </footer>
 
   <script type="module" src="{{ url_for('static', filename='home.js') }}"></script>

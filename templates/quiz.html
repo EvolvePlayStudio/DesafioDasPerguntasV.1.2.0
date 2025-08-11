@@ -4,13 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Desafio das Perguntas - Quiz</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
+  
+
+    
     body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
       background: linear-gradient(135deg, #1E1E14, #1E1E14);
       display: block;
       min-height: 100vh;
+    }
+    .pontuacoes {
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
     .quiz-container {
       background: #7f7f47;
@@ -23,6 +28,7 @@
     }
     #pergunta-enunciado {
       font-size: 22px;
+      font-family: 'Noto Serif', 'Roboto', serif, sans-serif;
       font-weight: bold;
       margin-top: 1rem;
       margin-bottom: 40px;
@@ -59,7 +65,8 @@
     }
     button {
       background: #6c63ff;
-      color: white;
+      color: black;
+      font-weight: var(--peso-fonte-botoes);
       cursor: pointer;
       transition: background 0.3s ease;
     }
@@ -71,9 +78,6 @@
       background: #f0f0f0;
       padding: 0.75rem;
       border-radius: 8px;
-    }
-    #fim-quiz {
-      text-align: center;
     }
     .quiz-header {
       display: grid;
@@ -104,7 +108,6 @@
       align-items: center;
       cursor: pointer;
       font-size: 1rem;
-      color: #666;
     }
     .dica-icon img {
       width: 24px;
@@ -112,14 +115,14 @@
       margin-right: 0.3rem;
     }
     #avaliacao {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 50px;
-        margin: 20px 0;
-        font-size: 32px;
-        width: 100%;
-        text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 50px;
+      margin: 20px 0;
+      font-size: 32px;
+      width: 100%;
+      text-align: center;
     }
     .estrela {
         font-size: 36px;
@@ -138,7 +141,7 @@
     <div style="display: flex; flex-direction: column; align-items: center; padding: 2rem 0;">
 
       <!-- Pontuação atual do jogador (à esquerda) -->
-      <header style="color: white; position: absolute; top: 16px; left: 32px; font-weight: bold; font-size: 20px; display: flex; align-items: center; gap: 8px;">
+      <header class="pontuacoes" style="color: white; position: absolute; top: 16px; left: 32px; font-weight: bold; font-size: 20px; display: flex; align-items: center; gap: 8px;">
         Pontuação: <span id="pontuacao"></span>
         <!-- Pontuação ganha ou perdida pela pergunta (fica invisível a princípio) -->
         <span id="incremento-pontuacao" style="
@@ -178,7 +181,7 @@
           </div>
 
           <!-- Tema e nível da pergunta no centro -->
-          <h2 id="tema-nivel-pergunta" style="font-weight: bold; margin: 0; flex-grow: 1; text-align: center;"></h2>
+          <h2 id="tema-nivel-pergunta" style="font-family:'Noto Serif', 'Roboto', serif, sans-serif ;font-weight: bold; margin: 0; flex-grow: 1; text-align: center;"></h2>
 
           <!-- Ícone de dica à direita -->
           <div id="dica-icon" class="dica-icon" title="Dica" style="justify-content: flex-end;">

@@ -43,7 +43,7 @@ FUSO_SERVIDOR = timezone(timedelta(hours=-3))
 # Função para iniciar o scheduler
 def iniciar_agendamento():
     scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
-    # Executa todo dia às 12:00
+    # Executa todo dia às 3:00
     scheduler.add_job(atualizar_perguntas_dicas, 'cron', hour=12, minute=0)
     scheduler.start()
 
@@ -468,6 +468,14 @@ O link expira em 24 horas.
 @app.route("/home")
 def home():
     return render_template("home.html")
+
+@app.route("/politica-de-privacidade")
+def politica_privacidade():
+    return render_template("privacy_policy.html")
+
+@app.route("/sobre-o-app")
+def sobre_app():
+    return render_template("policy.html") # MUDANÇA NECESSÁRIA AQUI
 
 @app.route("/quiz")
 def quiz():

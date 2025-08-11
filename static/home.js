@@ -52,8 +52,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const nome_usuario = document.getElementById("user-name")
   const perguntas_restantes = document.getElementById("perguntas-count")
   const dicas_restantes = document.getElementById("dicas-count")
+  console.log("Perguntas restantes: ", perguntas_restantes)
+  console.log("Nome de usuário: ", nome_usuario)
 
   // Define o nome do usuário
+  console.log("Nome do usuário no localStorage: ", localStorage.getItem("nome_usuario"))
   nome_usuario.textContent = localStorage.getItem("nome_usuario")
   
   // Identifica os limites para dicas e perguntas

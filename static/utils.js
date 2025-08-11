@@ -1,3 +1,5 @@
+
+
 export function obterInfoRankingAtual() {
   const pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario")) || {}
   const tema_atual = localStorage.getItem("tema_atual");

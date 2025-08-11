@@ -513,7 +513,7 @@ async function enviarResposta() {
     mostrarBotoesAcao()
   }
   else  {
-    alert("Não foi possível se conectar com o servidor. Por favor, verifique sua conexão e tente novamente")
+    alert("Não foi possível se conectar com o servidor. Por favor, verifique sua conexão e tente novamente.")
     btn_enviar.disabled = false
   }
 }
