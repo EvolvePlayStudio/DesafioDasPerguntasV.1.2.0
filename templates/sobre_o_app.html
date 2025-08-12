@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="html-politica-de-privacidade">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <title>Sobre o App</title>
+</head>
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: center;
+        font-family: Arial, sans-serif;
+    }
+    th, td {
+        background-color: #e7e0e0;
+        border: 2px solid var(--cor-fundo-escuro);
+        padding: 10px;
+        font-weight: 600;
+    }
+    th {
+        background-color: var(--cor-fundo-padrao);
+        font-weight: bold;
+        color: white;
+    }
+</style>
+<body class="body-politica-de-privacidade">
+  <main class="main-politica-de-privacidade">
+    <div class="content-politica-de-privacidade">
+
+      <!-- Título com data da última atualização -->
+      <div class="header-content-politica-de-privacidade">
+        <h1 class="h1-politica-de-privacidade">Sobre o App</h1>
+        <span class="last-update">Última atualização: 12/08/2025</span>
+      </div>
+
+      <!-- Conteúdo -->
+      <h2 class="h2-politica-de-privacidade">1. Informações Gerais</h2>
+      <p class="p-politica-de-privacidade">
+        O app foi criado para proporcionar uma experiência desafiadora e educativa, com um sistema de rankings e pontuações em cada tema para estimular a evolução do jogador ao longo do tempo. Oferecemos perguntas em 3 níveis de dificuldade, divididas atualmente em 4 temas (Astronomia, Biologia, Esportes e História) e um sistema para avaliar a qualidade da pergunta após cada resposta enviada.
+      </p>
+
+      <h2 class="h2-politica-de-privacidade">2. Perguntas discursivas</h2>
+        <p class="p-politica-de-privacidade"> Procure responder de forma simples e não se preocupe com possíveis erros de acentuação ou uso de letra maiúsculas e minúsculas, pois usamos um sistema que ignora pequenos erros de digitação ao analisar a resposta enviada. Se não souber a resposta, você deve decidir entre arriscar um "chute" ou enviar uma resposta vazia para pular a pergunta e diminuir a penalidade recebida.</p>
+
+      <h2 class="h2-politica-de-privacidade">3. Regras do Modo Desafio</h2>
+      <ul class="ul-politica-de-privacidade">
+        <li class="li-politica-de-privacidade">Cada pergunta respondida corretamente adiciona novos pontos ao jogador no tema selecionado e cada erro ou pergunta não respondida reduz sua pontuação. No ranking "Lenda", apenas as perguntas de nível médio e difícil contam para pontuação.</li>
+        <li class="li-politica-de-privacidade">Caso você acerte uma pergunta em que utilizou dica, você será penalizado em 30 pontos nas perguntas que valem 100, 20 pontos nas que valem 70 e 10 pontos nas que valem 40. Nas perguntas que valem 10 pontos você não poderá utilizar dica.</li>
+        <li class="li-politica-de-privacidade">Cada erro penaliza em 80 pontos e cada resposta pulada nas perguntas discursivas penaliza em 60 pontos.</li>
+        <li class="li-politica-de-privacidade">O jogador pode promover ou ser rebaixado de ranking de acordo com a pontuação que possui atualmente. Cada novo ranking exige 1000 pontos, sendo 4000 o necessário para chegar no último e 5000 a pontuação máxima que se pode obter.</li>
+        <li class="li-politica-de-privacidade">Veja abaixo as regras para pontos ganhos em cada pergunta:</li>
+      </ul>
+
+      <table>
+        <thead>
+        <tr>
+            <th>Ranking</th>
+            <th>Acertos no Fácil</th>
+            <th>Acertos no Médio</th>
+            <th>Acertos no Difícil</th>
+        </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Iniciante</td>
+                <td>100 pontos</td>
+                <td>Nível bloqueado</td>
+                <td>Nível bloqueado</td>
+            </tr>
+            <tr>
+                <td>Aprendiz</td>
+                <td>70 pontos</td>
+                <td>100 pontos</td>
+                <td>Nível bloqueado</td>
+            </tr>
+            <tr>
+                <td>Estudante</td>
+                <td>40 pontos</td>
+                <td>70 pontos</td>
+                <td>100 pontos</td>
+            </tr>
+            <tr>
+                <td>Sábio</td>
+                <td>10 pontos</td>
+                <td>40 pontos</td>
+                <td>70 pontos</td>
+            </tr>
+            <tr>
+                <td>Lenda</td>
+                <td>Não valem pontos</td>
+                <td>10 pontos</td>
+                <td>40 pontos</td>
+            </tr>
+        </tbody>
+      </table>
+
+      <h2 class="h2-politica-de-privacidade">4. Contato</h2>
+      <p class="p-politica-de-privacidade">
+        Para dúvidas, sugestões ou suporte, entre em contato pelo e-mail: <a href="mailto:evolveplaystudio@gmail.com">evolveplaystudio@gmail.com</a>
+      </p>
+
+    </div>
+  </main>
+
+  <!-- Rodapé da página -->
+  <footer>
+      <a href="{{ url_for('home') }}">Home</a> |
+      <a href="{{ url_for('politica_privacidade') }}">Política de Privacidade</a> |
+      <a href="{{ url_for('termos_uso') }}">Termos de Uso</a> |
+      <a href="{{ url_for('sobre_app') }}" style="color: var(--cor-pagina-selecionada)">Sobre o App</a>
+  </footer>
+
+</body>
+</html>

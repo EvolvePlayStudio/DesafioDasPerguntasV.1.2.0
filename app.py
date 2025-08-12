@@ -478,7 +478,7 @@ def termos_uso():
 
 @app.route("/sobre-o-app")
 def sobre_app():
-    return render_template("policy.html") # MUDANÇA NECESSÁRIA AQUI
+    return render_template("sobre_o_app.html")
 
 @app.route("/quiz")
 def quiz():
