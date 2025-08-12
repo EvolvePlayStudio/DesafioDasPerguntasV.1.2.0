@@ -5,23 +5,15 @@
   <title>Desafio das Perguntas – Início</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-    
     body {
       margin: 0;
       padding: 0;
       width: 100%;
       overflow-x: hidden; /* evita scroll horizontal */
       box-sizing: border-box; /* para facilitar cálculos de largura */
-
-
-
-      /*font-family: 'Segoe UI', sans-serif;*/
+      /*font-family: 'Segoe UI', sans-serif; fonte antiga*/
       font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-
-
-
-      background: linear-gradient(to bottom right, #1E1E14, #1E1E14);
+      background: var(--cor-fundo-padrao);
       display: flex;
       flex-direction: column;
       min-height: 100vh;
@@ -77,7 +69,7 @@
     }
     /* centro: título */
     .header-center {
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       flex: 1 1 auto;
       text-align: center;
       user-select: none;
@@ -105,7 +97,7 @@
       min-width: 60px;
       cursor: default;
       user-select: none;
-      font-size: 1.3rem;        /* fonte maior para ícones e texto */
+      font-size: 1.15rem;        /* fonte maior para ícones e texto */
       flex-shrink: 0;
       white-space: nowrap;
     }
@@ -153,6 +145,7 @@
     }
     .titulo {
       font-size: 24px;
+      font-size: 1.5rem;
       font-weight: bold;
       margin-bottom: 1rem;
       color: white;
@@ -199,20 +192,6 @@
       background-color: #7f7f47;
       font-size: 16px;
     }
-    footer {
-      text-align: center;
-      padding: 1rem;
-      background-color: var(--cor-fundo-escuro);
-      color: white;
-      font-size: 14px;
-    }
-    a {
-      color: #3a7bd5;
-      text-decoration: none;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
   </style>
 </head>
 <body>
@@ -257,6 +236,10 @@
 
     <!-- Cards de temas -->
     <div class="cards-container">
+      <div class="card tema-card" data-tema="Astronomia">
+        <img src="{{ url_for('static', filename='img/Astronomia.jpeg') }}" alt="Astronomia">
+        <span>Astronomia</span>
+      </div>
       <div class="card tema-card" data-tema="Biologia">
         <img src="{{ url_for('static', filename='img/Biologia.jpeg') }}" alt="Biologia">
         <span>Biologia</span>
@@ -273,7 +256,7 @@
   </main>
 
   <footer>
-    <a href="{{ url_for('home') }}" style="color: white; font-weight: bold;">Home</a> |
+    <a href="{{ url_for('home') }}" style="color: var(--cor-pagina-selecionada); font-weight: bold;">Home</a> |
     <a href="{{ url_for('politica_privacidade') }}" style="color: white; font-weight: bold;">Política de Privacidade</a> |
     <a href="{{ url_for('sobre_app') }}" style="color: white; font-weight: bold;">Sobre o App</a>
   </footer>

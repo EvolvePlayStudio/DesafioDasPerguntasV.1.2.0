@@ -26,7 +26,7 @@ handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
-temas_disponiveis = ["Biologia", "Esportes", "História"]
+temas_disponiveis = ["Astronomia", "Biologia", "Esportes", "História"]
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -44,7 +44,7 @@ FUSO_SERVIDOR = timezone(timedelta(hours=-3))
 def iniciar_agendamento():
     scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
     # Executa todo dia às 3:00
-    scheduler.add_job(atualizar_perguntas_dicas, 'cron', hour=12, minute=0)
+    scheduler.add_job(atualizar_perguntas_dicas, 'cron', hour=3, minute=0)
     scheduler.start()
 
 iniciar_agendamento()
@@ -66,7 +66,6 @@ def login():
 
         if not email or not senha:
             return jsonify(success=False, message="Email e senha são obrigatórios.")
-        
         
         if not re.match(email_regex, email):
             return jsonify(success=False, message="Formato de e-mail inválido"), 400
@@ -120,7 +119,7 @@ def login():
         colunas = [desc[0] for desc in cur.description]  # nomes das colunas
         linhas_regras_plano = cur.fetchall()
         regras_plano = [dict(zip(colunas, linha)) for linha in linhas_regras_plano]
-
+        
         # Pega as regras de pontuação para acertos, erros e uso de dicas da pergunta
         cur.execute("SELECT * FROM regras_pontuacao ORDER BY id_ranking")
         linhas = cur.fetchall()
@@ -589,17 +588,30 @@ def listar_perguntas_discursivas(id_usuario, tema, modo):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    query = """
-        SELECT p.id_pergunta, p.enunciado, p.dica, p.nota, p.respostas_corretas,
-               COALESCE(f.estrelas, NULL) AS estrelas,
-               r.id_resposta IS NOT NULL AS respondida, p.dificuldade, p.versao
-        FROM perguntas_discursivas p
-        LEFT JOIN respostas_usuarios r
-            ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s AND r.tipo_pergunta = 'Discursiva'
-        LEFT JOIN feedbacks f
-            ON p.id_pergunta = f.id_pergunta AND f.id_usuario = %s AND f.tipo_pergunta = 'Discursiva'
-        WHERE p.tema = %s
-    """
+    if int(id_usuario) not in (4, 6):
+        query = """
+            SELECT p.id_pergunta, p.enunciado, p.dica, p.nota, p.respostas_corretas,
+                COALESCE(f.estrelas, NULL) AS estrelas,
+                r.id_resposta IS NOT NULL AS respondida, p.dificuldade, p.versao
+            FROM perguntas_discursivas p
+            LEFT JOIN respostas_usuarios r
+                ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s AND r.tipo_pergunta = 'Discursiva'
+            LEFT JOIN feedbacks f
+                ON p.id_pergunta = f.id_pergunta AND f.id_usuario = %s AND f.tipo_pergunta = 'Discursiva'
+            WHERE p.tema = %s AND p.status = 'Ativa' LIMIT 90
+        """
+    else:
+        query = """
+            SELECT p.id_pergunta, p.enunciado, p.dica, p.nota, p.respostas_corretas,
+                COALESCE(f.estrelas, NULL) AS estrelas,
+                r.id_resposta IS NOT NULL AS respondida, p.dificuldade, p.versao
+            FROM perguntas_discursivas p
+            LEFT JOIN respostas_usuarios r
+                ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s AND r.tipo_pergunta = 'Discursiva'
+            LEFT JOIN feedbacks f
+                ON p.id_pergunta = f.id_pergunta AND f.id_usuario = %s AND f.tipo_pergunta = 'Discursiva'
+            WHERE p.tema = %s AND p.status != 'Deletada' LIMIT 90
+        """
 
     cursor.execute(query, (id_usuario, id_usuario, tema))
     

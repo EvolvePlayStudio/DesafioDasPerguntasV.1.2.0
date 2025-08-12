@@ -6,11 +6,8 @@
   <title>Desafio das Perguntas - Quiz</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-  
-
-    
     body {
-      background: linear-gradient(135deg, #1E1E14, #1E1E14);
+      background: var(--cor-fundo-padrao);
       display: block;
       min-height: 100vh;
     }
@@ -63,15 +60,24 @@
       font-size: 20px;
       color: gold;
     }
-    button {
-      background: #6c63ff;
-      color: black;
+    .btn-azul, .btn-vermelho {
+      flex: 1;
+      color: white;
       font-weight: var(--peso-fonte-botoes);
       cursor: pointer;
       transition: background 0.3s ease;
     }
-    button:hover {
-      background: #574fd6;
+    .btn-azul {
+      background: var(--bg-botao-azul);
+    }
+    .btn-vermelho{
+      background: var(--bg-botao-vermelho);
+    }
+    .btn-azul:hover {
+      background: var(--bg-hover-botao-azul); 
+    }
+    .btn-vermelho:hover {
+      background: var(--bg-hover-botao-vermelho); 
     }
     #dica-box, #nota-box {
       margin-top: 1rem;
@@ -197,12 +203,12 @@
         <input type="text" id="resposta-input" maxlength="50" placeholder="Digite sua resposta" autocomplete="off"/>
 
         <!-- Botão para enviar a resposta -->
-        <button id="btn-enviar" disabled>Enviar</button>
+        <button id="btn-enviar" class="btn-azul" disabled>Enviar</button>
 
         <!-- Botões de finalizar o quiz e chamar próxima pergunta -->
         <div id="botoes-acao" style="display: none; margin-top: 20px; justify-content: space-between; gap: 12px;">
-          <button id="btn-finalizar" style="flex: 1; background-color: #e53935;">Finalizar</button>
-          <button id="btn-proxima" style="flex: 1;">Próxima</button>
+          <button id="btn-finalizar" class="btn-vermelho">Finalizar</button>
+          <button id="btn-proxima" class="btn-azul">Próxima</button>
         </div>
         
         <!-- Resultado após o envio da resposta -->

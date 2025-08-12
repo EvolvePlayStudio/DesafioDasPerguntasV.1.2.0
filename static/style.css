@@ -3,11 +3,33 @@
 
 :root {
     --cor-fundo-escuro: #111109;
+    --cor-fundo-padrao: #1E1E14;
     --cor-fundo-claro: #7f7f47;
     --peso-fonte-padrao: 500;
     --peso-fonte-botoes: 700;
-    --cor-fundo-botao: #007BFF;
+    --bg-botao-azul: #007BFF;
+    --bg-hover-botao-azul: #0056b3;
+    --bg-botao-vermelho: #e53935;
+    --bg-hover-botao-vermelho: #b71c1c;
+    --cor-pagina-selecionada: gold;
 }
 body {
-    background: #1E1E14;
+    margin: 0;
+    padding: 0;
+}
+/* Rodapé das páginas (parte inferior da tela) */
+footer {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    text-align: center;
+    font-weight: bold;
+    padding: 1rem;
+    background-color: var(--cor-fundo-escuro);
+    color: white;
+    font-size: 14px;
+}
+footer a {
+    text-decoration: none;
+}
+footer a:hover {
+    text-decoration: underline;
 }

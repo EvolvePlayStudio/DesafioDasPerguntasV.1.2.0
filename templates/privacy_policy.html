@@ -6,27 +6,27 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <title>Política de Privacidade</title>
   <style>
-    :root {
-      --bg: #f6f7f9;
-      --card: var(--cor-fundo-claro);
-      --accent: yellow;
-      --muted: black;
-    }
     body {
       font-family: Inter, Arial, sans-serif;
-      color: black;
+      display: flex;
+      flex-direction: column;
+      height: 100vh; /* full viewport height */
+    }
+    header {
+      background-color: var(--cor-fundo-escuro);
+      color: white;
+      font-weight: bold;
+      padding: 12px 20px;
+      flex-shrink: 0; /* Evita encolher */
     }
     .wrap {
-      max-width: 900px;
-      margin: 36px auto;
+      flex: 1 1 auto;
+      overflow-y: auto;
+      background: var(--cor-fundo-claro);
       padding: 20px;
+      box-sizing: border-box;
     }
-    .card {
-      background: var(--card);
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 6px 24px rgba(0,0,0,0.06);
-    }
+    /* Remove a .card wrapper para evitar excesso de bordas e sombras duplicadas */
     h1 { margin: 0 0 8px; font-size: 1.6rem; }
     h2 { margin-top: 20px; font-size: 1.05rem; color: var(--accent); }
     p { line-height: 1.5; font-weight: var(--peso-fonte-padrao );}
@@ -35,77 +35,76 @@
     .meta { font-size: .9rem; margin-bottom: 12px; }
     .actions { display: flex; gap: 10px; margin-top: 18px; }
     .small { font-size: .9rem; color: var(--muted); }
-
-    footer {
-      text-align: center;
-      padding: 1rem;
-      background-color: var(--cor-fundo-escuro); /* Cor de fundo do topo */
-      color: white;
-      font-size: 14px;
-    }
   </style>
 </head>
 <body>
+
+  <!-- Título da página -->
+  <header>
+    <h1>Política de Privacidade</h1>
+  </header>
+
+  <!-- Conteúdo da política de privacidade -->
   <div class="wrap">
-    <div class="card">
-      <h1>Política de Privacidade</h1>
-      <div class="meta" style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 12px;">
-        <div>Versão <span id="policy-version">1.0</span></div>
-        <div>Última atualização: <span id="policy-date">2025-08-11</span></div>
-      </div>
-
-      <p>Ao utilizar este aplicativo, você concorda com os termos descritos nesta Política de Privacidade. Caso não concorde, recomendamos que não utilize o serviço.</p>
-
-      <h2>1. Dados que coletamos</h2>
-      <ul>
-        <li><strong>Dados da conta:</strong> nome de usuário, endereço de e-mail e senha (armazenada de forma criptografada).</li>
-        <li><strong>Dados de uso e performance:</strong> métricas relacionadas ao desempenho do aplicativo e seu funcionamento.</li>
-        <li><strong>Feedbacks e avaliações:</strong> comentários, sugestões ou avaliações enviadas voluntariamente pelo usuário.</li>
-        <li><strong>Registros de erros:</strong> informações técnicas sobre falhas que possam ocorrer durante o uso do serviço.</li>
-      </ul>
-
-      <h2>2. Finalidade do processamento</h2>
-      <ul>
-        <li>Manter e gerenciar contas de usuários.</li>
-        <li>Melhorar o desempenho e a estabilidade do serviço.</li>
-        <li>Processar e responder a feedbacks enviados.</li>
-        <li>Corrigir erros e aprimorar a experiência do usuário.</li>
-      </ul>
-
-      <h2>3. Base legal</h2>
-      <p><p>O tratamento dos dados baseia-se no seu consentimento e na necessidade de execução do contrato de prestação de serviço.</p></p>
-
-      <h2>4. Compartilhamento</h2>
-      <p>Não compartilhamos dados pessoais com terceiros.</p>
-
-      <h2>5. Retenção</h2>
-      <ul>
-        <li><strong>Dados de conta:</strong> armazenados enquanto a conta estiver ativa e por até 12 meses após a exclusão, para fins administrativos e legais.</li>
-        <li><strong>Demais dados:</strong> <li><strong>Demais dados:</strong> mantidos enquanto necessários para a melhoria do serviço, sem prazo fixo para exclusão, salvo exigência legal em contrário.</li></li>
-      </ul>
-
-      <h2>6. Segurança</h2>
-      <p>Adotamos medidas técnicas para proteger os dados contra acesso não autorizado, uso indevido e divulgação. Embora empreguemos boas práticas de segurança, nenhum sistema é totalmente imune a riscos.</p>
-
-      <h2>7. Direitos do usuário</h2>
-      <ul>
-        <li>Acessar e corrigir seus dados.</li>
-        <li>Solicitar exclusão da conta.</li>
-        <li>Revogar consentimento quando aplicável.</li>
-      </ul>
-
-      <h2>8. Contato</h2>
-      <p>Para dúvidas, solicitações ou reclamações relacionadas a esta política, entre em contato pelo e-mail: <a href="mailto:evolveplaystudio@gmail.com">evolveplaystudio@gmail.com</a>.</p>
-      
+    <div class="meta" style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 12px;">
+      <div>Última atualização: <span id="policy-date">2025-08-11</span></div>
+      <div>Versão <span id="policy-version">1.0</span></div>
     </div>
+
+    <p>Ao utilizar este aplicativo, você concorda com os termos descritos nesta Política de Privacidade. Caso não concorde, recomendamos que não utilize o serviço.</p>
+
+    <h2>1. Dados que coletamos</h2>
+    <ul>
+      <li><strong>Dados da conta:</strong> nome de usuário, endereço de e-mail e senha (armazenada de forma criptografada).</li>
+      <li><strong>Dados de uso e performance:</strong> métricas relacionadas ao desempenho do aplicativo e seu funcionamento.</li>
+      <li><strong>Feedbacks e avaliações:</strong> comentários, sugestões ou avaliações enviadas voluntariamente pelo usuário.</li>
+      <li><strong>Registros de erros:</strong> informações técnicas sobre falhas que possam ocorrer durante o uso do serviço.</li>
+    </ul>
+
+    <h2>2. Finalidade do processamento</h2>
+    <ul>
+      <li>Manter e gerenciar contas de usuários.</li>
+      <li>Melhorar o desempenho e a estabilidade do serviço.</li>
+      <li>Processar e responder a feedbacks enviados.</li>
+      <li>Corrigir erros e aprimorar a experiência do usuário.</li>
+    </ul>
+
+    <h2>3. Base legal</h2>
+    <p>O tratamento dos dados baseia-se no seu consentimento e na necessidade de execução do contrato de prestação de serviço.</p>
+
+    <h2>4. Compartilhamento</h2>
+    <p>Não compartilhamos dados pessoais com terceiros.</p>
+
+    <h2>5. Retenção</h2>
+    <ul>
+      <li><strong>Dados de conta:</strong> armazenados enquanto a conta estiver ativa e por até 12 meses após a exclusão, para fins administrativos e legais.</li>
+      <li><strong>Demais dados:</strong> mantidos enquanto necessários para a melhoria do serviço, sem prazo fixo para exclusão, salvo exigência legal em contrário.</li>
+    </ul>
+
+    <h2>6. Segurança</h2>
+    <p>Adotamos medidas técnicas para proteger os dados contra acesso não autorizado, uso indevido e divulgação. Embora empreguemos boas práticas de segurança, nenhum sistema é totalmente imune a riscos.</p>
+
+    <h2>7. Direitos do usuário</h2>
+    <ul>
+      <li>Acessar e corrigir seus dados.</li>
+      <li>Solicitar exclusão da conta.</li>
+      <li>Revogar consentimento quando aplicável.</li>
+    </ul>
+
+    <h2>8. Contato</h2>
+    <p>Para dúvidas, solicitações ou reclamações relacionadas a esta política, entre em contato pelo e-mail: <a href="mailto:evolveplaystudio@gmail.com">evolveplaystudio@gmail.com</a>.</p>
   </div>
 
+  <!-- Rodapé da página -->
   <footer>
     <a href="{{ url_for('home') }}" style="color: white; font-weight: bold;">Home</a> |
-    <a href="{{ url_for('politica_privacidade') }}" style="color: white; font-weight: bold;">Política de Privacidade</a> |
+    <a href="{{ url_for('politica_privacidade') }}" style="color: var(--cor-pagina-selecionada);" class="active">Política de Privacidade</a> |
     <a href="{{ url_for('sobre_app') }}" style="color: white; font-weight: bold;">Sobre o App</a>
   </footer>
 
-  <script src="{{ url_for('static', filename='policy_privacy.js') }}"></script>
 </body>
 </html>
+
+
+
+
