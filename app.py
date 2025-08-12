@@ -472,6 +472,10 @@ def home():
 def politica_privacidade():
     return render_template("privacy_policy.html")
 
+@app.route("/termos-de-uso")
+def termos_uso():
+    return render_template("termos_de_uso.html")
+
 @app.route("/sobre-o-app")
 def sobre_app():
     return render_template("policy.html") # MUDANÇA NECESSÁRIA AQUI
