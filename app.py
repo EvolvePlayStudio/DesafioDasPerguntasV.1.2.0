@@ -26,6 +26,7 @@ handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
+
 temas_disponiveis = ["Astronomia", "Biologia", "Esportes", "História"]
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
@@ -39,6 +40,43 @@ dominios_descartaveis = {
 }
 CAPTCHA_BASE_DIR = "static/captcha_imgs"
 FUSO_SERVIDOR = timezone(timedelta(hours=-3))
+QUESTION_CONFIG = {
+    'discursiva': {
+        'table': 'perguntas_discursivas',
+        'select_cols': [
+            'p.id_pergunta',
+            'p.subtemas',
+            'p.enunciado',
+            'p.respostas_corretas',   
+            'p.dica',
+            'p.nota',
+            "COALESCE(f.estrelas, NULL) AS estrelas",
+            "r.id_resposta IS NOT NULL AS respondida",
+            "p.dificuldade",
+            "p.versao"
+        ],
+        'tipo_str': 'Discursiva'
+    },
+    'objetiva': {
+        'table': 'perguntas_objetivas',
+        'select_cols': [
+            'p.id_pergunta',
+            'p.subtemas',
+            'p.enunciado',
+            'p.alternativa_a',
+            'p.alternativa_b',
+            'p.alternativa_c',
+            'p.alternativa_d',
+            'p.resposta_correta',
+            'p.nota',
+            "COALESCE(f.estrelas, NULL) AS estrelas",
+            "r.id_resposta IS NOT NULL AS respondida",
+            "p.dificuldade",
+            "p.versao"
+        ],
+        'tipo_str': 'Objetiva'
+    }
+}
 
 # Função para iniciar o scheduler
 def iniciar_agendamento():
@@ -549,124 +587,172 @@ def enviar_feedback():
 
 def buscar_pontuacoes_usuario(id_usuario):
     """Busca pontuações do usuário em cada tema de perguntas"""
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        "SELECT tema, pontuacao FROM pontuacoes_usuarios WHERE id_usuario = %s",
-        (id_usuario,)
-    )
-    pontuacoes_usuario = {tema: pontuacao for tema, pontuacao in cur.fetchall()}
-    conn.close()
+    pontuacoes_usuario = {}
+    conn = cur = None
+
+    # Conexão com o servidor
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+    except Exception as e:
+        app.logger.exception("Erro ao tentar conectar para buscar pontuações do usuário com id %s: %s", id_usuario, e)
+        return pontuacoes_usuario
+    
+    # Busca das pontuações do usuário
+    try:
+        cur.execute(
+            "SELECT tema, pontuacao FROM pontuacoes_usuarios WHERE id_usuario = %s",
+            (id_usuario,)
+        )
+        pontuacoes_usuario = {tema: pontuacao for tema, pontuacao in cur.fetchall()}
+    except Exception as e:
+        app.logger.exception("Erro ao tentar obter pontuações do usuário %s", id_usuario)
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
     return pontuacoes_usuario
 
 @app.route('/api/perguntas', methods=['GET'])
 def listar_perguntas():
+    """
+    Retorna perguntas agrupadas por dificuldade conforme tipo (discursiva/objetiva) e modo (desafio/revisao).
+    Retorna também as pontuações atuais do usuário em cada tema.
+    """
+    # parâmetros de query
     tema = request.args.get('tema')
-    modo = request.args.get('modo', '').lower()
-    tipo_pergunta = request.args.get('tipo_pergunta', 'Discursiva').capitalize()
+    modo = (request.args.get('modo') or '').lower()
+    tipo_pergunta = (request.args.get('tipo-de-pergunta') or '').lower()
     id_usuario = session.get('id_usuario')
 
-    # Validações básicas
-    if not tema or modo not in ('desafio', 'revisao'):
-        return jsonify({'erro': 'Parâmetros inválidos ou ausentes'}), 400
+    # configurações locais
+    limit = 90
+    privileged_ids = (4, 6)  # ids com permissão para ver perguntas inativas
 
+    # validações
+    if not tema or modo not in ('desafio', 'revisao') or tipo_pergunta not in ('objetiva', 'discursiva'):
+        return jsonify({'erro': 'Parâmetros inválidos ou ausentes'}), 400
     if not id_usuario:
         return jsonify({'erro': 'Usuário não autenticado'}), 401
+    
+    cfg = QUESTION_CONFIG.get(tipo_pergunta)
+    if not cfg:
+        return jsonify({'erro': 'Tipo de pergunta inválido'}), 400
+    
+    # Conexão com servidor
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+    except Exception:
+        app.logger.exception("Erro ao tentar conectar para buscar perguntas para o usuário com id %s", id_usuario)
+        return jsonify({'erro': 'Erro ao tentar conectar para buscar novas perguntas'}), 500
+    
+    # Busca das perguntas
+    try:
+        is_privileged = int(id_usuario) in privileged_ids
 
-    if tipo_pergunta == 'Discursiva':
-        perguntas_por_dificuldade = listar_perguntas_discursivas(id_usuario, tema, modo)
-    elif tipo_pergunta == 'Objetiva':
-        perguntas_por_dificuldade = listar_perguntas_objetivas(id_usuario, tema, modo)  # ainda a implementar
-    else:
-        return jsonify({'erro': f'Tipo de pergunta "{tipo_pergunta}" não suportado'}), 400
+        select_clause = ",\n".join(cfg['select_cols'])
+        tipo_str = cfg['tipo_str']   # usado para filtrar feedbacks/respostas
+        table = cfg['table']         # nome da tabela — vindo do cfg interno (seguro)
 
-    # Pontuações do usuário em cada tema (dicionário com chave para tema e pontuação no valor)
+        where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
+
+        sql = f"""
+            SELECT {select_clause}
+            FROM {table} p
+            LEFT JOIN respostas_usuarios r
+                ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s AND r.tipo_pergunta = %s
+            LEFT JOIN feedbacks f
+                ON p.id_pergunta = f.id_pergunta AND f.id_usuario = %s AND f.tipo_pergunta = %s
+            WHERE p.tema = %s AND {where_status}
+            LIMIT %s
+        """
+
+        params = (id_usuario, tipo_str, id_usuario, tipo_str, tema, limit)
+        cur.execute(sql, params)
+        linhas = cur.fetchall()
+
+        perguntas_por_dificuldade = {'Fácil': [], 'Médio': [], 'Difícil': []}
+
+        for row in linhas:
+            dificuldade = row.get('dificuldade') or 'Médio'  # se por algum motivo for nulo, evita KeyError
+            respondida = bool(row.get('respondida'))
+
+            sb = row.get('subtemas') or []
+            try:
+                subtemas = [s.strip() if isinstance(s, str) else s for s in sb]
+            except Exception:
+                app.logger.exception("Erro ao tentar listar subtemas do usuário com id %s para a pergunta com id %s", id_usuario, row['id_pergunta'])
+                subtemas = list(sb)
+
+            if tipo_pergunta == 'discursiva':
+                rc = row.get('respostas_corretas') or []
+                # garante que cada resposta seja string "trimmed" quando aplicável
+                try:
+                    respostas_corretas = [r.strip() if isinstance(r, str) else r for r in rc]
+                except Exception:
+                    respostas_corretas = list(rc)
+
+                item = {
+                    'id_pergunta': row['id_pergunta'],
+                    'enunciado': row['enunciado'],
+                    'subtemas': subtemas,
+                    'respostas_corretas': respostas_corretas,
+                    'dica': row.get('dica'),
+                    'nota': row.get('nota'),
+                    'dificuldade': dificuldade,
+                    'versao_pergunta': row.get('versao'),
+                    'estrelas': row.get('estrelas'),
+                }
+
+            else:  # objetiva
+                item = {
+                    'id_pergunta': row['id_pergunta'],
+                    'enunciado': row['enunciado'],
+                    'subtemas': subtemas,
+                    'alternativa_a': row.get('alternativa_a'),
+                    'alternativa_b': row.get('alternativa_b'),
+                    'alternativa_c': row.get('alternativa_c'),
+                    'alternativa_d': row.get('alternativa_d'),
+                    'resposta_correta': row.get('resposta_correta'),
+                    'nota': row.get('nota'),
+                    'dificuldade': dificuldade,
+                    'versao_pergunta': row.get('versao'),
+                    'estrelas': row.get('estrelas')
+                }
+
+            # filtra por modo
+            if modo == 'desafio' and not respondida:
+                perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
+            elif modo == 'revisao' and respondida:
+                perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
+    except Exception:
+        app.logger.exception("Erro ao buscar perguntas para o usuário com id %s", id_usuario)
+        return jsonify({'erro': 'Erro interno ao consultar perguntas'}), 500
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
     pontuacoes_usuario = buscar_pontuacoes_usuario(id_usuario)
 
     return jsonify({
         'perguntas': perguntas_por_dificuldade,
         'pontuacoes_usuario': pontuacoes_usuario
-                    })
-
-def listar_perguntas_discursivas(id_usuario, tema, modo):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    if int(id_usuario) not in (4, 6):
-        query = """
-            SELECT p.id_pergunta, p.enunciado, p.dica, p.nota, p.respostas_corretas,
-                COALESCE(f.estrelas, NULL) AS estrelas,
-                r.id_resposta IS NOT NULL AS respondida, p.dificuldade, p.versao
-            FROM perguntas_discursivas p
-            LEFT JOIN respostas_usuarios r
-                ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s AND r.tipo_pergunta = 'Discursiva'
-            LEFT JOIN feedbacks f
-                ON p.id_pergunta = f.id_pergunta AND f.id_usuario = %s AND f.tipo_pergunta = 'Discursiva'
-            WHERE p.tema = %s AND p.status = 'Ativa' LIMIT 90
-        """
-    else:
-        query = """
-            SELECT p.id_pergunta, p.enunciado, p.dica, p.nota, p.respostas_corretas,
-                COALESCE(f.estrelas, NULL) AS estrelas,
-                r.id_resposta IS NOT NULL AS respondida, p.dificuldade, p.versao
-            FROM perguntas_discursivas p
-            LEFT JOIN respostas_usuarios r
-                ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s AND r.tipo_pergunta = 'Discursiva'
-            LEFT JOIN feedbacks f
-                ON p.id_pergunta = f.id_pergunta AND f.id_usuario = %s AND f.tipo_pergunta = 'Discursiva'
-            WHERE p.tema = %s AND p.status != 'Deletada' LIMIT 90
-        """
-
-    cursor.execute(query, (id_usuario, id_usuario, tema))
-    
-    perguntas_por_dificuldade = {
-        'Fácil': [],
-        'Médio': [],
-        'Difícil': []
-    }
-
-    for row in cursor.fetchall():
-        try:
-            if row[4]:
-                respostas_corretas = [resp.strip() for resp in row[4]]
-            else:
-                respostas_corretas = []
-        except Exception:
-            respostas_corretas = []
-        
-        pergunta = {
-            'id_pergunta': row[0],
-            'enunciado': row[1],
-            'dica': row[2],
-            'nota': row[3],
-            'respostas_corretas': respostas_corretas,
-            'estrelas': row[5],
-            'dificuldade': row[7],
-            'versao_pergunta': row[8]
-        }
-
-        respondida = row[6]
-
-        if modo == 'desafio' and not respondida:
-            perguntas_por_dificuldade.get(row[7], []).append(pergunta)
-        elif modo == 'revisao' and respondida:
-            perguntas_por_dificuldade.get(row[7], []).append(pergunta)
-
-    conn.close()
-    return perguntas_por_dificuldade
-
-def listar_perguntas_objetivas(id_usuario, tema, modo):
-    # Implementar depois com lógica específica para perguntas objetivas
-    # Tabela perguntas_objetivas, respostas_objetivas, etc.
-    pass
+    })
 
 @app.route("/registrar_resposta", methods=["POST"])
 def registrar_resposta():
     dados = request.get_json()
+    dados["tipo_pergunta"] = dados["tipo_pergunta"].capitalize()
     id_usuario = session.get("id_usuario")
     if not id_usuario:
         return jsonify({"sucesso": False, "mensagem": "Usuário não autenticado"})
-    
+    conn = cur = None
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
@@ -688,11 +774,7 @@ def registrar_resposta():
                 dados["pontos_ganhos"],
                 dados["tempo_gasto"]
             ))
-
             # Atualiza a pontuação do usuário
-            """
-            nova_pontuacao_usuario = Math.max(0, (pontuacoes_usuario[tema_atual] || 0) + pontos_ganhos);"""
-            # ATENÇÃO: AQUI É NECESSÁRIO TRATAR OS CASOS DE PONTOS ABAIXO DE 0 E ACIMA DO MÁXIMO PERMITIDO NO RANKING LENDA
             cur.execute("""
                 INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao)
                 VALUES (%s, %s, %s)
@@ -715,8 +797,14 @@ def registrar_resposta():
             conn.commit()
             return jsonify({"sucesso": True, "nova_pontuacao": nova_pontuacao, "perguntas_restantes": nova_perguntas_restantes})
 
-    except Exception as e:
-        return jsonify({"sucesso": False, "mensagem": "Erro interno"})
+    except Exception:
+        conn.rollback()
+        app.logger.exception("Erro ao tentar registrar pergunta com id %s perguntas para o usuário com id %s", dados["id_pergunta"], id_usuario)
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 if not database_url:
     if __name__ == '__main__':

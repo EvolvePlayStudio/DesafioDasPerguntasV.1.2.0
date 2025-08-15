@@ -148,18 +148,32 @@
       margin-bottom: 1rem;
       color: white;
     }
-    .modo-jogo-container,
-    .tema-container {
+    .opcoes-container {
+      display: flex;
+      justify-content: center;
+      gap: 7rem; /* Espaço entre as seções */
+      margin-top: -0.8em;
+      margin-bottom: 3em;
+    }
+    .bloco-opcao {
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-bottom: 2rem;
+      color: white;
+      font-weight: bold;
+    }
+    .bloco-opcao h2 {
+      margin-bottom: 0.7rem;
+    }
+    .bloco-opcao .opcoes {
+      display: flex;
+      gap: 1.5rem;
     }
     .cards-container {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 1.5rem;
+      gap: 2.5rem;
       padding: 0 1rem;
     }
     .card {
@@ -216,22 +230,30 @@
     </div>
   </header>
 
-
   <main>
-    <!-- Título do modo de jogo -->
-    <div class="modo-jogo-container">
-      <h2 class="titulo">Modo de jogo</h2>
-      <!-- Radiobuttons de escolha de modo de jogo -->
-      <div style="color: white; font-weight: bold; display: flex; gap: 1.5rem;">
-        <label><input type="radio" name="modo" value="desafio" checked> Desafio</label>
-        <label><input type="radio" name="modo" value="revisao"> Revisão</label>
+    
+    <div class="opcoes-container">
+
+      <!-- Bloco Modo de jogo -->
+      <div class="bloco-opcao">
+        <h2 class="titulo">Modo de Jogo</h2>
+        <div class="opcoes">
+          <label><input type="radio" name="modo" value="desafio" checked>Desafio</label>
+          <label><input type="radio" name="modo" value="revisao">Revisão</label>
+        </div>
       </div>
+
+      <!-- Bloco Tipo de pergunta -->
+      <div class="bloco-opcao">
+        <h2 class="titulo">Tipo de Pergunta</h2>
+        <div class="opcoes">
+          <label><input type="radio" name="tipo-de-pergunta" value="objetiva" checked>Objetiva</label>
+          <label><input type="radio" name="tipo-de-pergunta" value="discursiva">Discursiva</label>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Título de escolha do tema -->
-    <div class="tema-container">
-      <h2 class="titulo">Tema das perguntas</h2>
-    </div>
 
     <!-- Cards de temas -->
     <div class="cards-container">

@@ -9,8 +9,12 @@ function iniciarQuiz(event) {
   const modo_jogo = document.querySelector('input[name="modo"]:checked').value;
   localStorage.setItem("modo_jogo", modo_jogo)
 
-  if (!tema_atual || !modo_jogo) {
-    console.error("Tema ou modo de jogo não definidos na URL.");
+  // Atualiza o tipo de pergunta no localStorage (objetiva ou discursiva)
+  const tipo_pergunta = document.querySelector('input[name="tipo-de-pergunta"]:checked').value;
+  localStorage.setItem("tipo_pergunta", tipo_pergunta)
+
+  if (!tema_atual || !modo_jogo || !tipo_pergunta) {
+    console.error("Tema, modo de jogo ou tipo de pergunta não definidos na URL.");
     return;
   }
 
@@ -20,7 +24,7 @@ function iniciarQuiz(event) {
   }
 
   // Carrega as perguntas para o quiz
-  fetch(`/api/perguntas?tema=${tema_atual}&modo=${modo_jogo}`)
+  fetch(`/api/perguntas?tema=${tema_atual}&modo=${modo_jogo}&tipo-de-pergunta=${tipo_pergunta}`)
     .then(response => response.json())
     .then(data => {
       // Atualiza as pontuações do usuário no tema e as perguntas no localStorage
@@ -31,10 +35,10 @@ function iniciarQuiz(event) {
       const perguntas_filtradas = obterPerguntasDisponiveis(data["perguntas"])
       const ha_perguntas_disponiveis = Object.values(perguntas_filtradas).some(arr => Array.isArray(arr) && arr.length > 0)
       if (ha_perguntas_disponiveis) {
-        window.location.href = `/quiz?tema=${tema_atual}&modo=${modo_jogo}`;
+        window.location.href = `/quiz?tema=${tema_atual}&modo=${modo_jogo}&tipo-de-pergunta=${tipo_pergunta}`;
       }
       else {
-        alert(`Você não possui perguntas disponíveis para o modo ${modo_jogo} no momento`)
+        alert(`Você não possui perguntas ${tipo_pergunta}s disponíveis para o modo ${modo_jogo} no momento`)
       }
     })
   .catch(error => {

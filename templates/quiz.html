@@ -15,7 +15,7 @@
       font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
     .quiz-container {
-      background: #7f7f47;
+      background: var(--cor-fundo-claro);
       padding: 2rem;
       border-radius: 16px;
       box-shadow: 0 0 15px rgba(0,0,0,0.2);
@@ -30,14 +30,79 @@
       margin-top: 1rem;
       margin-bottom: 40px;
     }
-    #comentarios {
-      transition: all 0.4s ease;
+    #alternativas-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    .alternativa-btn {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: .5rem;
+      width: 100%;
+      text-align: left;
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: var(--peso-fonte-botoes);
+      background: #b8b88a;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      transition: transform 300ms ease, opacity 300ms ease, background-color 200ms ease;
+    }
+    .nota-box {
+      font-weight: var(--peso-fonte-botoes);
+    }
+    .alternativa-btn[aria-hidden="true"] {
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      user-select: none;
+    }
+    .alternativa-btn[data-letter="A"] {
+      margin-top: -1rem;
+    }
+    .alternativa-btn.selected {
+      background: lightyellow;
+      transform: scale(1.02);
+      z-index: 1;
+    }
+    .alternativa-btn.correct {
+      background: lime !important;
+    }
+    .alternativa-btn.wrong {
+      background: var(--vermelho-tela-quiz) !important;
+    }
+    .alternativa-btn.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .alternativa-btn .letter {
+      font-weight: bold;
+      width: 2.2ch;
+      flex: 0 0 auto;
+    }
+    .alternativa-btn .full-text {
+      font-weight: var(--peso-fonte-botoes);
+      flex: 0 0 auto;
+      margin-top: 0.22rem; 
+    }
+    .alternativa-btn.text-visible .full-text {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .alternativa-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
     input, button {
       width: 100%;
       padding: 0.75rem;
       font-size: 1rem;
-      margin-top: 0.5rem;
       border-radius: 8px;
       border: none;
     }
@@ -141,6 +206,9 @@
     .estrela.dourada {
       color: gold;
     }
+    #comentarios {
+      transition: all 0.4s ease;
+    }
   </style>
 </head>
   <body style="margin: 0; font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1E1E14, #1E1E14);">
@@ -151,7 +219,6 @@
         Pontuação: <span id="pontuacao"></span>
         <!-- Pontuação ganha ou perdida pela pergunta (fica invisível a princípio) -->
         <span id="incremento-pontuacao" style="
-          color: limegreen;
           font-weight: bold;
           font-size: 1.2rem;
           transition: transform 0.8s ease-out;
@@ -199,29 +266,37 @@
         <!-- Enunciado da pergunta -->
         <p id="pergunta-enunciado"></p>
 
-        <!-- Caixa para digitar a resposta -->
-        <input type="text" id="resposta-input" maxlength="50" placeholder="Digite sua resposta" autocomplete="off"/>
+        <!-- Caixa para digitar a resposta (para discursivas) -->
+        <input type="text" id="resposta-input" style="display: none;" maxlength="50" placeholder="Digite sua resposta" autocomplete="off"/>
 
+        <!-- Container das alternativas (para objetivas) -->
+        <div id="alternativas-container" style="display:none; margin-top: 12px;">
+          <button class="alternativa-btn" data-letter="A" tabindex="-1"><strong>A)</strong></button>
+          <button class="alternativa-btn" data-letter="B" tabindex="-1"><strong>B)</strong></button>
+          <button class="alternativa-btn" data-letter="C" tabindex="-1"><strong>C)</strong></button>
+          <button class="alternativa-btn" data-letter="D" tabindex="-1"><strong>D)</strong></button>
+        </div>
+        
         <!-- Botão para enviar a resposta -->
-        <button id="btn-enviar" class="btn-azul" disabled>Enviar</button>
+        <button id="btn-enviar" class="btn-azul" style="display: none; margin-top: 0.8rem" disabled>Enviar</button>
 
         <!-- Botões de finalizar o quiz e chamar próxima pergunta -->
-        <div id="botoes-acao" style="display: none; margin-top: 20px; justify-content: space-between; gap: 12px;">
+        <div id="botoes-acao" style="display: none; margin-top: 0.8rem; justify-content: space-between; gap: 12px;">
           <button id="btn-finalizar" class="btn-vermelho">Finalizar</button>
           <button id="btn-proxima" class="btn-azul">Próxima</button>
         </div>
         
         <!-- Resultado após o envio da resposta -->
-        <div id="resultado" style="display: none; margin-top: 12px;"></div>
-        <div id="respostas-aceitas" class="respostas-aceitas" style="display: none; font-weight: 500;">
+        <div id="resultado" style="display: none; font-size: 20px; font-family: 'Noto Serif', 'Roboto', serif, sans-serif; margin-top: 12px;"></div>
+        <div id="respostas-aceitas" class="respostas-aceitas" style="display: none; font-weight: var(--peso-fonte-padrao);">
         <strong>Respostas aceitas:</strong> <span id="lista-respostas"></span>
         </div>
         <div id="dica-final" style="display: none; margin-top: 10px;"></div>
-        <div id="nota" style="display: none; margin-top: 8px; font-weight: 500;"></div>
-        <div id="dica-box" style="display: none; font-weight: 500;">
+        <div id="nota" style="display: none; margin-top: 1rem;"></div>
+        <div id="dica-box" style="display: none; font-weight: var(--peso-fonte-padrao);">
           <strong>Dica:</strong> <span id="dica-texto"></span>
         </div>
-        <div id="nota-box" style="display: none; font-weight: 500;">
+        <div id="nota-box" style="display: none; font-weight: var(--peso-fonte-padrao)">
           <span id="nota-texto"></span>
         </div>
         <!-- Estrelas para avaliar a pergunta -->

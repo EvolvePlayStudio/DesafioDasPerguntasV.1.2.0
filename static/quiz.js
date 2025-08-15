@@ -1,11 +1,8 @@
 import { obterDificuldadesDisponiveis, obterInfoRankingAtual } from "./utils.js"
-
 let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"))
 let aguardando_proxima = false // Variável que evita uso de dica após já ter respondido a pergunta
 let dica_gasta = false
 let inicio_pergunta = null  // horário inicial da pergunta
-let tema_atual = decodeURIComponent(localStorage.getItem("tema_atual"))
-let modo_jogo = localStorage.getItem("modo_jogo")
 let pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario")) // DEVERÁ SER REMOVIDA EM BREVE
 let animacao_concluida = false
 let pergunta_selecionada = null
@@ -15,9 +12,16 @@ let regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"))
 let info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1]
 let regras_usuario = null
 let ranking_usuario = null
+const tema_atual = decodeURIComponent(localStorage.getItem("tema_atual"))
+const modo_jogo = localStorage.getItem("modo_jogo")
+const tipo_pergunta = localStorage.getItem("tipo_pergunta")
 const lbl_pontuacao_usuario = document.getElementById('pontuacao')
 const lbl_pontos_ganhos = document.getElementById('incremento-pontuacao')
 const btn_enviar = document.getElementById("btn-enviar")
+const alternativasContainer = document.getElementById("alternativas-container")
+const alternativaBtns = Array.from(alternativasContainer.querySelectorAll(".alternativa-btn"))
+const resultado = document.getElementById('resultado')
+let alternativaSelecionada = null; // guarda a letra clicada (A, B, C, D)
 // Círculo amarelo com interrogação preta para símbolo de pergunta pulada
 const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
   viewBox="0 0 24 24" style="vertical-align: middle;">
@@ -28,6 +32,13 @@ const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
           font-weight="700" fill="#111">?</text>
   </g>
 </svg>`;
+// Tempos para as alternativas
+const sleep = ms => new Promise(res => setTimeout(res, ms));
+const PAUSA_ANTES_DA_A        = 500;
+const GAP_ANTES_DA_LETRA      = 120
+const GAP_LETRA_PARA_TEXTO    = 180;
+const GAP_ENTRE_ALTERNATIVAS  = 380;
+const VELOCIDADE_LETRA        = 25
 
 function atualizarRankingVisual() {
   // Declara as variáveis que serão úteis
@@ -73,6 +84,8 @@ function atualizarRankingVisual() {
 
 function mostrarPergunta() {
   animacao_concluida = false;
+  btn_enviar.style.display = "none";
+  btn_enviar.disabled = true;
   
   // Seleciona uma dificuldade aleatória dentre as disponíveis para o ranking do usuário atual
   function selecionarDificuldadeComPerguntas() {
@@ -105,7 +118,7 @@ function mostrarPergunta() {
 
   // Faz animação do enunciado da pergunta
   const enunciadoElemento = document.getElementById("pergunta-enunciado");
-  animarTexto(pergunta_selecionada.enunciado, enunciadoElemento);
+  mostrarEnunciado(pergunta_selecionada.enunciado, enunciadoElemento);
 
   // Mostra o nível da pergunta
   const dificuldade = pergunta_selecionada.dificuldade
@@ -127,39 +140,40 @@ function mostrarPergunta() {
       titulo.style.color = "black";
   }
 
-  // Ativa e esvazia a caixa de texto 
-  document.getElementById("resposta-input").disabled = false;
-  document.getElementById("resposta-input").value = "";
-
-  // Decide se deve mostrar o ícone de dica
   ranking_usuario = obterInfoRankingAtual().ranking
   regras_usuario = regras_pontuacao.find(r => r.ranking === ranking_usuario); // Estas regras do usuário, assim como o ranking_usuario são utilizadas na parte de calcular pontos também, portanto cuidado ao apagar aqui
-  if (!regras_usuario) {
-        console.error("Ranking do usuário não encontrado nas regras de pontuação.");
-        return 0;
-  }
-  let dica_permitida = true
-  if (pergunta_selecionada.dificuldade === 'Fácil' && regras_usuario.pontos_acerto_facil <= 10 || pergunta_selecionada.dificuldade === 'Médio' && regras_usuario.pontos_acerto_medio <= 10 || !pergunta_selecionada.dica) {
-    dica_permitida = false
-  }
-  if (dica_permitida) {
-  document.getElementById("dica-icon").style.display = "flex";
-    } 
-  else {
-  document.getElementById("dica-icon").style.display = "none";
+
+  if (tipo_pergunta.toLowerCase() === 'discursiva') {
+    // Ativa e esvazia a caixa de texto 
+    document.getElementById("resposta-input").disabled = false;
+    document.getElementById("resposta-input").value = "";
+  
+    // Decide se deve mostrar o ícone de dica
+    if (!regras_usuario) {
+          console.error("Ranking do usuário não encontrado nas regras de pontuação.");
+          return 0;
     }
-  
-  // No modo revisão não exibe contador de dicas
-  if (modo_jogo === 'revisao') {
-    document.getElementById("contador-dicas").textContent = ''
-  }
-  
-  document.getElementById("resposta-input").value = "";
+    let dica_permitida = true
+    if (pergunta_selecionada.dificuldade === 'Fácil' && regras_usuario.pontos_acerto_facil <= 10 || pergunta_selecionada.dificuldade === 'Médio' && regras_usuario.pontos_acerto_medio <= 10 || !pergunta_selecionada.dica) {
+      dica_permitida = false
+    }
+    if (dica_permitida) {
+    document.getElementById("dica-icon").style.display = "flex";
+      } 
+    else {
+    document.getElementById("dica-icon").style.display = "none";
+      }
+
+    // No modo revisão não exibe contador de dicas
+    if (modo_jogo === 'revisao') {
+      document.getElementById("contador-dicas").textContent = ''
+    }
+    document.getElementById("dica-box").style.display = "none";
+  } 
+
   document.getElementById("resultado").style.display = "none";
   document.getElementById("avaliacao").style.display = "none";
-  document.getElementById("dica-box").style.display = "none";
   document.getElementById("nota-box").style.display = "none";
-  document.getElementById('btn-enviar').disabled = false;
   aguardando_proxima = false;
 
   // Resetar estrelas
@@ -171,11 +185,12 @@ function mostrarPergunta() {
   });
 }
 
-function calcularPontuacao(dificuldade, acertou) {
+function calcularPontuacao(acertou) {
+  const dificuldade = pergunta_selecionada.dificuldade;
   if (!acertou) {
     let pontos_ganhos = 0;
     const resposta_usuario = document.getElementById("resposta-input").value.trim()
-    if (resposta_usuario === "") {
+    if (resposta_usuario === "" && tipo_pergunta === 'discursiva') {
       pontos_ganhos = regras_usuario.pontos_pular_pergunta; // Penalidade menor por não responder
     } else {
       pontos_ganhos = regras_usuario.pontos_erro; // Erro com tentativa
@@ -205,7 +220,7 @@ function calcularPontuacao(dificuldade, acertou) {
 
   let pontos_ganhos = pontosBase;
 
-  if (dica_gasta) {
+  if (dica_gasta && tipo_pergunta === 'discursiva') {
       const percentualPenalidade = regras_usuario.percentual_penalidade_dica / 100;
       const inteiroPenalidade = Math.round((pontosBase * percentualPenalidade) / 10) * 10;
       pontos_ganhos = pontosBase - inteiroPenalidade;
@@ -226,24 +241,24 @@ function calcularPontuacao(dificuldade, acertou) {
 
 function mostrarResultadoResposta(correto, pontos_ganhos) {
   // ATENÇÃO: TALVEZ SÓ SEJA NECESSÁRIO OS PONTOS_GANHOS AQUI E NÃO A BOOLEANA CORRETO
-  const resultado = document.getElementById("resultado");
-  const respostas_corretas = pergunta_selecionada.respostas_corretas
   resultado.style.display = "block";
-
-  // Desativa caixa de texto da resposta e mostra as possibilidades de respostas corretas para a pergunta
-  document.getElementById("resposta-input").disabled = true;
-  mostrarRespostasAceitas(respostas_corretas);
-  
-  // Exibe dica
-  if (pergunta_selecionada.dica && pergunta_selecionada.dica.trim() !== "") {
-    mostrarDica()
-  } else {
-    document.getElementById("dica-box").style.display = "none";
+  if (tipo_pergunta === 'discursiva') {
+    // Desativa caixa de texto da resposta
+    document.getElementById("resposta-input").disabled = true;
+    // mostra as possibilidades de respostas corretas para a pergunta
+    const respostas_corretas = pergunta_selecionada.respostas_corretas
+    mostrarRespostasAceitas(respostas_corretas);
+    // Exibe dica
+    if (pergunta_selecionada.dica && pergunta_selecionada.dica.trim() !== "") {
+      mostrarDica()
+    } else {
+      document.getElementById("dica-box").style.display = "none";
+    }
   }
 
    // Exibe nota, curiosidade ou explicação
    if (pergunta_selecionada.nota && pergunta_selecionada.nota.trim() !== "") {
-    let textoFormatado = pergunta_selecionada.nota.replace(/^(Nota|Explicação|Curiosidade)/i, '<strong>$1</strong>');
+    let textoFormatado = pergunta_selecionada.nota.replace(/^(Nota:|Explicação:|Curiosidade:)/i, '<strong>$1</strong>');
     document.getElementById("nota-texto").innerHTML = textoFormatado;
     document.getElementById("nota-box").style.display = "block";
    } else {
@@ -252,19 +267,23 @@ function mostrarResultadoResposta(correto, pontos_ganhos) {
 
   // Exibe a mensagem que indica se a resposta foi correta, errada ou se o usuário pulou
   const resposta_usuario = document.getElementById("resposta-input").value.trim();
-  if (!resposta_usuario || resposta_usuario.trim() === "") {
+  console.log("Resposta do usuário: ", resposta_usuario)
+  if (tipo_pergunta === 'discursiva' && resposta_usuario.trim() === "") {
     const svgEscolhido = svg1;
     resultado.innerHTML = `${svgEscolhido} <strong style="color: #FFD700; margin-left:6px;">Não respondida</strong>`;
+    console.log("Pergunta pulada")
   } else if (correto) {
       resultado.innerHTML = '✅ <strong>Resposta correta!</strong>';
-      resultado.style.color = "green";
+      resultado.style.color = "lime";
+      console.log("Pergunta acertada")
   } else {
       resultado.innerHTML = '❌ <strong>Resposta incorreta</strong>';
       resultado.style.color = "red";
+      console.log("Pergunta errada")
   }
 
   aguardando_proxima = true;
-  document.getElementById("btn-enviar").style.display = "none";
+  btn_enviar.style.display = "none";
 
   // Chama as estrelas de feedback e carrega as anteriores enviadas pelo usuário caso esteja no modo Revisão
   if (modo_jogo === "revisao") {
@@ -278,21 +297,19 @@ function mostrarResultadoResposta(correto, pontos_ganhos) {
 
   // Exibe os pontos ganhos ou perdidos
   if (pontos_ganhos > 0) {
-    lbl_pontos_ganhos.style.color = 'green'
-    //lbl_pontos_ganhos.style.opacity = 1
+    lbl_pontos_ganhos.style.color = 'lime'
     lbl_pontos_ganhos.style.display = 'flex'
     lbl_pontos_ganhos.textContent = `+${pontos_ganhos}`
   }
   else if (pontos_ganhos < 0) {
     lbl_pontos_ganhos.style.color = 'red'
-    //lbl_pontos_ganhos.style.opacity = 1
     lbl_pontos_ganhos.style.display = 'flex'
     lbl_pontos_ganhos.textContent = `${pontos_ganhos}`
   }
   
 }
 
-function respostaEstaCorreta(resposta_usuario, respostas_aceitas) {
+function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
   const stopwords = ["a", "o", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "no", "na", "nos", "nas", "por", "com", "para", "um", "uma", "uns", "umas", "ao", "aos", "à", "às"];
 
   function removerAcentos(texto) {
@@ -348,7 +365,7 @@ async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ga
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        tipo_pergunta: 'Discursiva',
+        tipo_pergunta: tipo_pergunta,
         resposta_usuario: resposta_usuario,
         acertou: acertou,
         usou_dica: usou_dica,
@@ -383,6 +400,13 @@ async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ga
   } catch (err) {
     console.error('Erro na comunicação:', err);
     return false;
+  }
+}
+
+function respostaObjetivaCorreta() {
+  if (!alternativaSelecionada) return false;
+  if (pergunta_selecionada.resposta_correta) {
+    return alternativaSelecionada === pergunta_selecionada.resposta_correta;
   }
 }
 
@@ -482,22 +506,44 @@ function configurarEstrelas() {
 
 async function enviarResposta() {
   if (!animacao_concluida || btn_enviar.disabled) return;
-  btn_enviar.disabled = true
+  btn_enviar.disabled = true;
 
-  // Analisa se a resposta enviada está correta
-  const resposta_usuario = document.getElementById("resposta-input").value.trim();
-  const respostas_corretas = pergunta_selecionada.respostas_corretas;
-  const acertou = respostaEstaCorreta(resposta_usuario, respostas_corretas);
-  let prosseguir_com_resultado = true
+  let resposta_usuario;
+  let acertou;
+
+  if (tipo_pergunta === 'objetiva') {
+    const widgetAlternativaSelecionada = document.querySelector('.alternativa-btn.selected');
+
+    acertou = respostaObjetivaCorreta();
+    resposta_usuario = alternativaSelecionada;
+
+    // Marca a alternativa correta pelo data-letter
+    const letraCorreta = pergunta_selecionada.resposta_correta;
+    const correta = document.querySelector(`.alternativa-btn[data-letter="${letraCorreta}"]`);
+    if (correta) {
+        correta.classList.add('correct'); // verde sempre
+    }
+
+    // Se errou, marca a selecionada como errada
+    if (!acertou && widgetAlternativaSelecionada && widgetAlternativaSelecionada !== correta) {
+        widgetAlternativaSelecionada.classList.add('wrong'); // vermelho
+    }
+  } else {
+    resposta_usuario = document.getElementById("resposta-input").value.trim();
+    const respostas_corretas = pergunta_selecionada.respostas_corretas;
+    acertou = respostaDiscursivaCorreta(resposta_usuario, respostas_corretas);
+  }
   
-  // ATENÇÃO: AQUI DEVERÁ CHAMAR O registrarRespostaObjetiva SE FOR O CASO NO FUTURO
-  let pontos_ganhos = 0
-  if (modo_jogo == 'desafio') {
-    const dificuldade = pergunta_selecionada.dificuldade
-    pontos_ganhos = calcularPontuacao(dificuldade, acertou);
+  let prosseguir_com_resultado = true;
+
+  let pontos_ganhos = 0;
+  if (modo_jogo === 'desafio') {
+    
+    pontos_ganhos = calcularPontuacao(acertou);
     const id_pergunta = pergunta_selecionada.id_pergunta;
     const versao_pergunta = pergunta_selecionada.versao_pergunta;
     const tempo_gasto = calcularTempoGasto();
+  
     prosseguir_com_resultado = await registrarResposta(
       resposta_usuario,
       acertou,
@@ -506,15 +552,15 @@ async function enviarResposta() {
       tempo_gasto,
       id_pergunta,
       versao_pergunta
-  )};
+    );
+  }
 
   if (prosseguir_com_resultado) {
     mostrarResultadoResposta(acertou, pontos_ganhos);
-    mostrarBotoesAcao()
-  }
-  else  {
-    alert("Não foi possível se conectar com o servidor. Por favor, verifique sua conexão e tente novamente.")
-    btn_enviar.disabled = false
+    mostrarBotoesAcao();
+  } else {
+    alert("Não foi possível se conectar com o servidor. Por favor, verifique sua conexão e tente novamente.");
+    btn_enviar.disabled = false;
   }
 }
 
@@ -558,15 +604,19 @@ function mostrarBotoesAcao() {
 function proximaPergunta() {
   lbl_pontos_ganhos.style.display = 'none'
   if (ha_perguntas_disponiveis) {
+    if (tipo_pergunta === 'objetiva') {
+      resetarAlternativas();
+    } else {
+      document.getElementById("dica-box").style.display = "none";
+      document.getElementById("resposta-input").value = "";
+    }
     mostrarPergunta();
     document.getElementById('botoes-acao').style.display = "none";
     document.getElementById("avaliacao").style.display = "none";
     document.getElementById("resultado").style.display = "none";
-    document.getElementById("dica-box").style.display = "none";
     document.getElementById("nota-box").style.display = "none";
-    document.getElementById("resposta-input").value = "";
     document.getElementById('comentarios').style.display = 'none';
-    document.getElementById("btn-enviar").style.display= "inline-block";
+    //document.getElementById("btn-enviar").style.display= "inline-block";
     aguardando_proxima = false;
   }
 }
@@ -605,7 +655,7 @@ function usarDica() {
   }
 }
 
-function animarTexto(texto, elemento, callback) {
+function mostrarEnunciado(texto, elemento, callback) {
   elemento.textContent = "";
   let i = 0;
   const intervalo = setInterval(() => {
@@ -614,12 +664,163 @@ function animarTexto(texto, elemento, callback) {
       i++;
     } else {
       clearInterval(intervalo);
-      animacao_concluida = true
-      inicio_pergunta = Date.now()
-      document.getElementById('resposta-input').focus()
-      if (callback) callback();
+      if (tipo_pergunta === 'discursiva') {
+        animacao_concluida = true
+        inicio_pergunta = Date.now()
+        document.getElementById('resposta-input').focus()
+        if (callback) callback();
+      } else {
+        mostrarAlternativas()
+      }
     }
-  }, 25); // velocidade da animação
+  }, VELOCIDADE_LETRA); // velocidade da animação
+}
+
+function selecionarAlternativa(btn) {
+  if (aguardando_proxima) return;
+  // Visual
+  alternativaBtns.forEach(b => b.classList.remove("selected"));
+  btn.classList.add("selected");
+
+  // Estado
+  alternativaSelecionada = btn.dataset.letter || null;
+}
+
+function resetarAlternativas() {
+  alternativaBtns.forEach(btn => {
+    // Remove seleção visual
+    btn.classList.remove('selected', 'correct', 'wrong');
+
+    // Oculta o botão visualmente
+    btn.style.opacity = '0';
+    //btn.style.transform = 'translateY(8px)'; // ou valor que você já usa para animação
+
+    // Limpa o texto da alternativa
+    const fullText = btn.querySelector('.full-text');
+    if (fullText) {
+      fullText.textContent = '';
+      fullText.style.opacity = '0';
+      //fullText.style.transform = 'translateY(6px)'; // volta para posição inicial de animação
+    }
+
+    // Opcional: oculta a letra também, se quiser reiniciar animação
+    const letraEl = btn.querySelector('strong, .letter');
+    if (letraEl) letraEl.style.opacity = '0';
+  });
+
+  // Reseta a variável de alternativa selecionada
+  alternativaSelecionada = null;
+}
+
+async function mostrarAlternativas() {
+  const container = document.getElementById('alternativas-container');
+  if (!container || !pergunta_selecionada) return;
+
+  // assegura que o container está visível e com coluna
+  container.style.display = 'flex';
+  container.style.flexDirection = 'column';
+  container.style.gap = '8px';
+
+  const alternativas = Array.from(container.querySelectorAll('.alternativa-btn'));
+
+  // Inicializa estado: layout presente, mas letra/texto invisíveis
+  alternativas.forEach(btn => {
+    // garante layout inline (letra + texto lado a lado)
+    btn.style.display = 'flex';
+    btn.style.alignItems = 'center';
+    btn.style.justifyContent = 'flex-start';
+    btn.style.gap = '8px';
+
+    // coloca o texto vindo da pergunta no data-text
+    const letra = btn.dataset.letter;
+    let texto = '';
+    if (letra === 'A') texto = pergunta_selecionada.alternativa_a || '';
+    else if (letra === 'B') texto = pergunta_selecionada.alternativa_b || '';
+    else if (letra === 'C') texto = pergunta_selecionada.alternativa_c || '';
+    else if (letra === 'D') texto = pergunta_selecionada.alternativa_d || '';
+    btn.dataset.text = texto;
+
+    // garante elemento full-text dentro do botão
+    let fullText = btn.querySelector('.full-text');
+    if (!fullText) {
+      fullText = document.createElement('span');
+      fullText.className = 'full-text';
+      btn.appendChild(fullText);
+    }
+
+    // estado inicial: vazio e invisível (reserva o espaço do botão)
+    fullText.textContent = '';
+    fullText.style.opacity = '0';
+    fullText.style.transform = 'translateY(6px)'; // começa "ligeiramente abaixo"
+
+    // letra (strong) invisível inicialmente
+    const letraEl = btn.querySelector('strong');
+    if (letraEl) {
+      letraEl.style.opacity = '0';
+      letraEl.style.display = 'inline-block';
+      letraEl.style.width = '2.2ch';
+      letraEl.style.textAlign = 'right';
+    }
+
+    // faz o botão ocupar o espaço mas invisível
+    btn.style.opacity = '0';
+  });
+
+  // pequena pausa entre fim do enunciado e início das alternativas
+  await sleep(PAUSA_ANTES_DA_A);
+
+  // anima alternativas uma a uma
+  for (let i = 0; i < alternativas.length; i++) {
+    const btn = alternativas[i];
+
+    // 1) fade-in do botão (layout aparece)
+    btn.style.opacity = '1';
+
+    // 2) mostrar letra (fade)
+    const letraEl = btn.querySelector('strong');
+    if (letraEl) {
+      // pequena pausa para entre a letra da alternativa e o
+      await sleep(GAP_ANTES_DA_LETRA);
+      letraEl.style.opacity = '1';
+    }
+
+    // pausa pequena antes de começar o texto
+    await sleep(GAP_LETRA_PARA_TEXTO);
+
+    // 3) animar o texto letra-a-letra
+    const fullText = btn.querySelector('.full-text');
+    const texto = btn.dataset.text || '';
+    // garante transição suave para o transform/opacidade
+    fullText.style.opacity = '1';
+    fullText.style.transform = 'translateY(0)';
+
+    // escreve letra a letra
+    fullText.textContent = '';
+    for (let k = 0; k < texto.length; k++) {
+      fullText.textContent += texto[k];
+      await sleep(VELOCIDADE_LETRA); // velocidade da letra
+    }
+
+    // pausa antes da próxima alternativa (mais longa para dar ritmo)
+    await sleep(GAP_ENTRE_ALTERNATIVAS);
+  }
+
+  // animação completa
+  animacao_concluida = true;
+  inicio_pergunta = Date.now();
+
+  // Seleciona A por padrão apenas se nenhuma estiver selecionada
+  const algumaSelecionada = alternativas.some(b => b.classList.contains('selected'));
+  if (!algumaSelecionada) {
+    const btnA = alternativas.find(b => b.dataset.letter === 'A');
+    if (btnA) selecionarAlternativa(btnA);
+  }
+  
+  // Exibe o botão enviar após tudo
+  if (btn_enviar) {
+    btn_enviar.style.display = 'inline-block';
+    btn_enviar.disabled = false;
+  }
 }
 
 function mostrarRespostasAceitas(lista) {
@@ -647,19 +848,6 @@ function calcularTempoGasto() {
     return Math.floor((Date.now() - inicio_pergunta) / 1000);  // segundos
 }
 
-document.getElementById('resposta-input').addEventListener('keydown', function(event) {
-  if (event.key === 'Enter') {
-    event.preventDefault();
-
-    const botao = document.getElementById('btn-enviar');
-
-    if (botao && botao.offsetParent !== null) {
-      // offsetParent !== null garante que está visível (não display: none)
-      enviarResposta();
-    }
-  }
-});
-
 document.addEventListener("DOMContentLoaded", () => {
   // Declara as variáveis que serão úteis
   const dicas = JSON.parse(localStorage.getItem("dicas_restantes"));
@@ -686,10 +874,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Implementa a função para usar dica
-  if (dica_icon) {
-    dica_icon.addEventListener("click", () => {
-      usarDica()
-    })
+  if (tipo_pergunta === 'discursiva') {
+    
+    if (dica_icon) {
+      dica_icon.addEventListener("click", () => {
+        usarDica()
+      })
+    }
   }
 
   // Implementa a função de chamar próxima pergunta
@@ -712,6 +903,25 @@ document.addEventListener("DOMContentLoaded", () => {
       enviarResposta()
     })
   }
+
+  // Implementa a função de marcar alternativas
+  if (tipo_pergunta === 'objetiva') {
+    alternativaBtns.forEach(btn => {
+      btn.addEventListener('click', () => selecionarAlternativa(btn));
+    });
+  }
+
+  // Implementa a função para enviar resposta com enter
+  window.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+
+      // verifica se o botão de enviar está visível
+      if (btn_enviar && btn_enviar.offsetParent !== null) {
+        enviarResposta();
+      }
+    }
+  });
 
   // Chama as funções que são necessárias na inicialização
   callbackAtualizarUI (pontuacoes_usuario[tema_atual])
