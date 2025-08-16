@@ -78,11 +78,10 @@ QUESTION_CONFIG = {
     }
 }
 
-# Função para iniciar o scheduler
 def iniciar_agendamento():
     scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
-    # Executa todo dia às 3:00
-    scheduler.add_job(atualizar_perguntas_dicas, 'cron', hour=3, minute=0)
+    # Executa a cada 6 horas
+    scheduler.add_job(atualizar_perguntas_dicas, 'interval', hours=6)
     scheduler.start()
 
 iniciar_agendamento()
