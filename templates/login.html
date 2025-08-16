@@ -7,17 +7,16 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: var(--cor-fundo-padrao);
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            padding-top: 6vh;
-            height: 100vh;
+            padding-top: 8vh;
             overflow-y: auto;
         }
-
         .auth-container {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             max-height: calc(100vh - 8vh);
             overflow: auto;
             background-color: var(--cor-fundo-claro);
@@ -30,23 +29,22 @@
             flex-direction: column;
             align-items: stretch;
         }
-
         .title {
             text-align: center;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             font-size: 1.6em;
             margin-bottom: 16px;
             color: black;
             font-weight: bold;
         }
-
         .auth-tabs {
             display: flex;
             justify-content: space-around;
             margin-bottom: 20px;
             border-bottom: 1px solid #eee;
         }
-
         .auth-tabs button {
+            color: var(--bg-botao-login);
             background: none;
             border: none;
             font-weight: bold;
@@ -56,8 +54,9 @@
             transition: color 0.3s, border-bottom 0.3s;
         }
         .auth-tabs button.active {
-            border-bottom: 2px solid var(--bg-botao-azul);
-            color: var(--bg-botao-azul);
+            border-bottom: 2px solid var(--bg-hover-botao-login);
+            color: var(--bg-hover-botao-login);
+            cursor: default;
         }
         form {
             display: none;
@@ -65,6 +64,39 @@
         }
         form.active {
             display: flex;
+        }
+        #forgot-form {
+            width: 100%;
+            display: none;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        #forgot-form input,
+        #forgot-form button {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.8rem;
+            border-radius: 6px;
+            margin-top: 0.6rem;
+        }
+        #forgot-form .btn-primary {
+            background: var(--bg-botao-login);
+            border: none;
+            cursor: pointer;
+        }
+        #forgot-form .btn-primary:hover {
+            background: var(--bg-hover-botao-login);
+        }
+        #forgot-form .btn-secondary {
+            color: white;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-weight: var(--peso-fonte-botoes);
+            background: var(--bg-botao-login);
+            border: none;
+            cursor: pointer;
+        }
+        #forgot-form .btn-secondary:hover {
+            background: var(--bg-hover-botao-login);
         }
         input[type="text"],
         input[type="email"],
@@ -74,9 +106,10 @@
             border-radius: 6px;
             border: 1px solid #ccc;
         }
-        button[type="submit"] {
+        button[type="submit"], button[type="botao-retorno"] {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             padding: 12px;
-            background-color: var(--bg-botao-azul);
+            background-color: var(--bg-botao-login);
             border: none;
             border-radius: 6px;
             color: white;
@@ -84,8 +117,8 @@
             cursor: pointer;
             transition: background-color 0.3s;
         }
-        button[type="submit"]:hover {
-            background-color: var(--bg-hover-botao-azul);
+        button[type="submit"]:hover, button[type="botao-retorno"]:hover {
+            background-color: var(--bg-hover-botao-login);
         }
         .info-section {
             margin-top: 25px;
@@ -123,19 +156,53 @@
         <!-- Título do app -->
         <div class="title">Desafio das Perguntas</div>
 
+        <!-- Abas de login e registro (a de recuperação de senha fica oculta)-->
         <div class="auth-tabs">
             <button id="login-tab" class="active" onclick="showForm('login')">Login</button>
             <button id="register-tab" onclick="showForm('register')">Registrar</button>
+            <button id="forgot-tab" style="display:none;">Recuperação de Senha</button>
         </div>
 
         <!-- Formulário de Login -->
         <form id="login-form" class="active">
-          <input type="email" id="email" name="email" placeholder="Email" maxlength="50" required>
-          <input type="password" id="senha" name="senha" placeholder="Senha" maxlength="50" required>
-          <button type="submit">Entrar</button>
+            <!-- Caixas de texto para digitar e-mail e senha-->
+            <input type="email" id="email" name="email" placeholder="Email" maxlength="50" required>
+            <input type="password" id="senha" name="senha" placeholder="Senha" maxlength="50" required>
 
-          <!-- Mensagem na tela de login -->
-          <div id="login-message" style="color: red; font-weight: bold; margin-top: 0.8rem; min-height: 0.1em; visibility: hidden; transition: 0.3s ease; text-align: center;">Digite seu email e senha</div>
+            <!-- Link para esqueci a senha -->
+            <div style="text-align: left; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; margin-left: 2px; margin-top: -0.6rem; margin-bottom: 1rem;">
+                <a onclick="showForm('forgot')" 
+                style="font-size: 14px; font-weight: bold; text-decoration: none; cursor: pointer; color: var(--bg-botao-login);"
+                onmouseover="this.style.color='var(--bg-hover-botao-login)'"
+                onmouseout="this.style.color='var(--bg-botao-login)'">
+                Esqueci minha senha
+                </a>
+            </div>
+            
+            <!-- Botão para entrar -->
+            <button type="submit">Entrar</button>
+
+            <!-- Mensagem na tela de login -->
+            <div id="login-message" style="color: red; font-weight: bold; margin-top: 0.8rem; min-height: 0.1em; visibility: hidden; transition: 0.3s ease; text-align: center;">
+                Digite seu email e senha
+            </div>
+        </form>
+
+        <!-- Formulário de recuperação de senha -->
+        <form id="forgot-form" method="POST" action="{{ url_for('esqueci_senha') }}">
+            <!-- Caixa para digitar o e-mail -->
+            <input type="email" id="forgot-email" name="email" placeholder="Digite seu email cadastrado" maxlength="50" required>
+            
+            <!-- Botão enviar -->
+            <button type="submit" class="btn-primary">Enviar link de recuperação</button>
+            
+            <!-- Botão voltar -->
+            <button type="button" class="btn-secondary" onclick="showForm('login')">Retornar à tela de login</button>
+
+            <!-- Mensagem de feedback -->
+            <div id="forgot-message" style="color: green; font-weight: bold; margin-top: 0.8rem; min-height: 0.1em; visibility: hidden; text-align: center;">
+                Se o email estiver cadastrado, enviaremos instruções.
+            </div>
         </form>
 
         <!-- Formulário de Registro -->

@@ -7,13 +7,22 @@ document.addEventListener('DOMContentLoaded', function () {
   let selecoes = [];
   let carregando_captcha = false;
 
-  // Elementos
+  // Abas
   const login_tab = document.getElementById('login-tab');
   const register_tab = document.getElementById('register-tab');
+  const forgot_tab = document.getElementById('forgot-tab');
+
+  // Formulários
   const login_form = document.getElementById('login-form');
   const register_form = document.getElementById('register-form');
+  const forgot_form = document.getElementById("forgot-form");
+
+  // Mensagens
+  const forgot_message = document.getElementById("forgot-message");
   const lbl_mensagem_login = document.getElementById("login-message");
   const lbl_mensagem_registro = document.getElementById("registro-message");
+
+  // Outras variáveis
   const info_section = document.querySelector('.info-section');
   const btnRegister = register_form?.querySelector('button[type="submit"]');
   
@@ -116,6 +125,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // Submissão do formulário de registro
+  if (register_form) {
   register_form?.addEventListener('submit', async function (event) {
     event.preventDefault();
 
@@ -262,8 +273,10 @@ document.addEventListener('DOMContentLoaded', function () {
       console.error('register submit error:', error);
     }
   });
-  
+  }
+
   // Submissão do formulário de login
+  if (login_form) {
   login_form?.addEventListener("submit", async function (event) {
     event.preventDefault();
 
@@ -310,10 +323,79 @@ document.addEventListener('DOMContentLoaded', function () {
       console.error('login submit error:', error);
     }
   });
+  }
+
+  // Submissão do formulário "esqueci a senha"
+  if (forgot_form) {
+    forgot_form?.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const email = document.getElementById('forgot-email')?.value?.trim();
+      if (!email) {
+        if (forgot_message) {
+          forgot_message.style.visibility = 'visible';
+          forgot_message.style.color = 'red';
+          forgot_message.textContent = 'Informe um e-mail válido.';
+        }
+        return;
+      }
+
+      // feedback visual
+      if (forgot_message) {
+        forgot_message.style.visibility = 'visible';
+        forgot_message.style.color = '#333';
+        forgot_message.textContent = 'Enviando...';
+      }
+
+      try {
+        const resp = await fetch('/recuperação-de-senha', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+
+        if (!resp.ok) {
+          const txt = await resp.text().catch(() => '');
+          throw new Error(`Erro servidor: ${resp.status} ${txt}`);
+        }
+
+        const data = await resp.json();
+        if (data.success) {
+          if (forgot_message) {
+            forgot_message.style.color = 'green';
+            forgot_message.textContent = data.message || 'E-mail enviado. Verifique sua caixa de entrada.';
+          }
+          // opcional: limpar campo
+          forgot_form.reset();
+
+          // volta para o login após 2s
+          setTimeout(() => showForm('login'), 2500);
+        } else {
+          if (forgot_message) {
+            forgot_message.style.color = 'red';
+            forgot_message.textContent = 'Não foi possível enviar o e-mail para redefinir senha.';
+          }
+        }
+      } catch (err) {
+        console.error('Erro forgot_password:', err);
+        if (forgot_message) {
+          forgot_message.style.color = 'red';
+          forgot_message.textContent = 'Erro na comunicação com o servidor.';
+        }
+      }
+    });
+  }
 
   // Função para exibir o formulário correto
   async function showForm(type) {
+    // Abas
+    login_tab.style.display = (type === "forgot") ? "none" : "inline-block";
+    register_tab.style.display = (type === "forgot") ? "none" : "inline-block";
+    forgot_tab.style.display = (type === "forgot") ? "inline-block" : "none";
+
     if (type === 'login') {
+      if (forgot_form) forgot_form.style.display = 'none';
+      if (forgot_tab) forgot_tab.classList.remove('active');
+
       login_form.classList.add('active');
       register_form.classList.remove('active');
       login_tab.classList.add('active');
@@ -369,6 +451,37 @@ document.addEventListener('DOMContentLoaded', function () {
       selecoes = [];
       captchaToken = null;
     }
+    else if (type === 'forgot') {
+      // Esconde login e registro
+      if (login_form) login_form.classList.remove('active');
+      if (register_form) register_form.classList.remove('active');
+
+      // Esconde abas (nenhuma deve ficar ativa)
+      if (login_tab) login_tab.classList.remove('active');
+      if (register_tab) register_tab.classList.remove('active');
+
+      if (forgot_tab) forgot_tab.classList.add('active');
+
+      // Esconde info extra
+      if (info_section) info_section.style.display = 'none';
+
+      // Mostra forgot
+      if (forgot_form) {
+        forgot_form.style.display = 'block';
+        forgot_form.reset();
+      }
+
+      // Limpa mensagens
+      if (lbl_mensagem_login) lbl_mensagem_login.textContent = '';
+      if (lbl_mensagem_registro) {
+        lbl_mensagem_registro.textContent = '';
+        lbl_mensagem_registro.style.visibility = 'hidden';
+      }
+      if (forgot_message) {
+        forgot_message.style.visibility = 'hidden';
+        forgot_message.textContent = '';
+      }
+    }
   }
 
   function bloquearRegistro(info_bloqueio) {
@@ -391,3 +504,8 @@ document.addEventListener('DOMContentLoaded', function () {
   window.showForm = showForm;
   showForm('login');
 });
+
+
+
+
+ 

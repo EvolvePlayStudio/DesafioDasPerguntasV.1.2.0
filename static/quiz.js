@@ -21,6 +21,7 @@ const btn_enviar = document.getElementById("btn-enviar")
 const alternativasContainer = document.getElementById("alternativas-container")
 const alternativaBtns = Array.from(alternativasContainer.querySelectorAll(".alternativa-btn"))
 const resultado = document.getElementById('resultado')
+const caixa_para_resposta =  document.getElementById('resposta-input')
 let alternativaSelecionada = null; // guarda a letra clicada (A, B, C, D)
 // Círculo amarelo com interrogação preta para símbolo de pergunta pulada
 const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
@@ -69,11 +70,15 @@ function atualizarRankingVisual() {
   }
 
   // Calcula progresso percentual
+  let intervalo;
   if (ranking_proximo) {
-    const intervalo = ranking_proximo.pontos_minimos - info_ranking_atual.pontos_minimos;
-    progresso = ((pontuacao - info_ranking_atual.pontos_minimos) / intervalo) * 100;
-    progresso = Math.min(100, Math.max(0, progresso));
+    intervalo = ranking_proximo.pontos_minimos - info_ranking_atual.pontos_minimos;
   }
+  else {
+    intervalo = info_ranking_atual.pontos_maximos - info_ranking_atual.pontos_minimos;
+  }
+  progresso = ((pontuacao - info_ranking_atual.pontos_minimos) / intervalo) * 100;
+  progresso = Math.min(100, Math.max(0, progresso));
 
   // Atualiza a interface
   document.getElementById("ranking").textContent = info_ranking_atual.ranking;
@@ -145,8 +150,8 @@ function mostrarPergunta() {
 
   if (tipo_pergunta.toLowerCase() === 'discursiva') {
     // Ativa e esvazia a caixa de texto 
-    document.getElementById("resposta-input").disabled = false;
-    document.getElementById("resposta-input").value = "";
+    caixa_para_resposta.disabled = false;
+    caixa_para_resposta.value = "";
   
     // Decide se deve mostrar o ícone de dica
     if (!regras_usuario) {
@@ -189,7 +194,7 @@ function calcularPontuacao(acertou) {
   const dificuldade = pergunta_selecionada.dificuldade;
   if (!acertou) {
     let pontos_ganhos = 0;
-    const resposta_usuario = document.getElementById("resposta-input").value.trim()
+    const resposta_usuario = caixa_para_resposta.value.trim()
     if (resposta_usuario === "" && tipo_pergunta === 'discursiva') {
       pontos_ganhos = regras_usuario.pontos_pular_pergunta; // Penalidade menor por não responder
     } else {
@@ -244,7 +249,7 @@ function mostrarResultadoResposta(correto, pontos_ganhos) {
   resultado.style.display = "block";
   if (tipo_pergunta === 'discursiva') {
     // Desativa caixa de texto da resposta
-    document.getElementById("resposta-input").disabled = true;
+    caixa_para_resposta.disabled = true;
     // mostra as possibilidades de respostas corretas para a pergunta
     const respostas_corretas = pergunta_selecionada.respostas_corretas
     mostrarRespostasAceitas(respostas_corretas);
@@ -266,20 +271,16 @@ function mostrarResultadoResposta(correto, pontos_ganhos) {
    }
 
   // Exibe a mensagem que indica se a resposta foi correta, errada ou se o usuário pulou
-  const resposta_usuario = document.getElementById("resposta-input").value.trim();
-  console.log("Resposta do usuário: ", resposta_usuario)
+  const resposta_usuario = caixa_para_resposta.value.trim();
   if (tipo_pergunta === 'discursiva' && resposta_usuario.trim() === "") {
     const svgEscolhido = svg1;
     resultado.innerHTML = `${svgEscolhido} <strong style="color: #FFD700; margin-left:6px;">Não respondida</strong>`;
-    console.log("Pergunta pulada")
   } else if (correto) {
       resultado.innerHTML = '✅ <strong>Resposta correta!</strong>';
       resultado.style.color = "lime";
-      console.log("Pergunta acertada")
   } else {
       resultado.innerHTML = '❌ <strong>Resposta incorreta</strong>';
       resultado.style.color = "red";
-      console.log("Pergunta errada")
   }
 
   aguardando_proxima = true;
@@ -447,7 +448,7 @@ function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtuali
 
 function callbackAtualizarUI (pontuacao) {
   lbl_pontuacao_usuario.textContent = pontuacao
-  }
+}
 
 function renderizarEstrelas(valor) {
   const estrelas = document.querySelectorAll(".estrela");
@@ -469,8 +470,7 @@ function configurarEstrelas() {
     estrela.addEventListener("click", () => {
       const valor = i + 1;
       const id_pergunta = pergunta_selecionada.id_pergunta;
-      const tipo_pergunta = "Discursiva";
-      versao_pergunta = pergunta_selecionada.versao_pergunta;
+      const versao_pergunta = pergunta_selecionada.versao_pergunta;
 
       // Esta variável serve para economizar memória caso o usuário clique duas vezes na mesma estrela
       let avaliacao_anterior = window.avaliacoes?.[id_pergunta] || 0;
@@ -480,17 +480,15 @@ function configurarEstrelas() {
 
       window.avaliacoes = window.avaliacoes || {};
       window.avaliacoes[id_pergunta] = valor;
-
+      
       fetch("/enviar_feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id_pergunta: id_pergunta,
           tipo_pergunta: tipo_pergunta,
-          email_usuario: email_usuario,
           estrelas: valor,
           versao_pergunta: versao_pergunta,
-          id_usuario: id_usuario
         })
       })
       .then(res => res.json())
@@ -529,7 +527,7 @@ async function enviarResposta() {
         widgetAlternativaSelecionada.classList.add('wrong'); // vermelho
     }
   } else {
-    resposta_usuario = document.getElementById("resposta-input").value.trim();
+    resposta_usuario = caixa_para_resposta.value.trim();
     const respostas_corretas = pergunta_selecionada.respostas_corretas;
     acertou = respostaDiscursivaCorreta(resposta_usuario, respostas_corretas);
   }
@@ -608,7 +606,7 @@ function proximaPergunta() {
       resetarAlternativas();
     } else {
       document.getElementById("dica-box").style.display = "none";
-      document.getElementById("resposta-input").value = "";
+      caixa_para_resposta.value = "";
     }
     mostrarPergunta();
     document.getElementById('botoes-acao').style.display = "none";
@@ -667,7 +665,9 @@ function mostrarEnunciado(texto, elemento, callback) {
       if (tipo_pergunta === 'discursiva') {
         animacao_concluida = true
         inicio_pergunta = Date.now()
-        document.getElementById('resposta-input').focus()
+        caixa_para_resposta.focus()
+        btn_enviar.style.display = 'inline-block';
+        btn_enviar.disabled = false;
         if (callback) callback();
       } else {
         mostrarAlternativas()
@@ -824,14 +824,14 @@ async function mostrarAlternativas() {
 }
 
 function mostrarRespostasAceitas(lista) {
-  const container = document.getElementById("respostas-aceitas");
+  const container = document.getElementById("respostas-aceitas-box");
   const span = document.getElementById("lista-respostas");
   span.textContent = lista.join(", ");
   container.style.display = "block";
 }
 
 function esconderRespostasAceitas() {
-  document.getElementById("respostas-aceitas").style.display = "none";
+  document.getElementById("respostas-aceitas-box").style.display = "none";
 }
 
 function mostrarDica() {
@@ -875,12 +875,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Implementa a função para usar dica
   if (tipo_pergunta === 'discursiva') {
-    
+    caixa_para_resposta.style.display = ''
     if (dica_icon) {
       dica_icon.addEventListener("click", () => {
         usarDica()
       })
     }
+    if (btn_enviar) {
+      btn_enviar.style.marginTop = '1.5rem'
+    }
+    document.getElementById('botoes-acao').style.marginTop = '1.5rem'
   }
 
   // Implementa a função de chamar próxima pergunta

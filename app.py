@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, request, session, redirect, flash, send_file
+from flask import Flask, jsonify, render_template, request, session, redirect, flash, send_file, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from utils import *
 import secrets
@@ -458,8 +458,9 @@ def confirmar_email():
 
         return render_template('mensagem.html', titulo="Sucesso", mensagem="E-mail confirmado com sucesso! Agora você pode fazer login.")
     
-    except Exception as e:
-        conn.rollback()
+    except Exception:
+        if conn:
+            conn.rollback()
         return render_template('mensagem.html', titulo="Erro", mensagem="Erro ao confirmar o e-mail. Tente novamente mais tarde.")
     
     finally:
@@ -477,15 +478,15 @@ def enviar_email_confirmacao(email_destinatario, nome_destinatario, link_confirm
 
     assunto = "Confirmação de cadastro - Desafio das Perguntas"
     corpo = f"""
-Olá, {nome_destinatario}!
+    Olá, {nome_destinatario}!
 
-Clique no link abaixo para confirmar seu cadastro:
+    Clique no link abaixo para confirmar seu cadastro:
 
-{link_confirmacao}
+    {link_confirmacao}
 
-O link expira em 24 horas.
+    O link expira em 24 horas.
 
-"""
+    """
 
     msg = MIMEMultipart()
     msg['From'] = remetente
@@ -499,12 +500,159 @@ O link expira em 24 horas.
             servidor.login(remetente, senha)
             servidor.send_message(msg)
         return True
-    except Exception as e:
+    except Exception:
         return False
 
 @app.route("/home")
 def home():
     return render_template("home.html")
+
+@app.route("/recuperação-de-senha", methods=["POST"])
+def esqueci_senha():
+    data = request.get_json()
+    email = data.get("email", "").strip()
+
+    # mensagem padrão
+    mensagem_padrao = "Se o e-mail estiver cadastrado, enviaremos instruções."
+
+    if not email:
+        return jsonify(success=False, message="Informe um e-mail válido.")
+
+    # Busca email do usuário no banco
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("SELECT id_usuario, nome FROM usuarios_registrados WHERE email = %s", (email,))
+        usuario = cur.fetchone()
+    
+        if usuario:
+            token = secrets.token_urlsafe(32)
+            expira = datetime.utcnow() + timedelta(hours=1)
+
+            cur.execute("""
+                UPDATE usuarios_registrados
+                SET token_recuperacao = %s, expiracao_token_recuperacao = %s
+                WHERE id_usuario = %s
+            """, (token, expira, usuario[0]))
+            conn.commit()
+            
+            # construir link de recuperação
+            link_recuperacao = url_for('reset_senha', token=token, _external=True)
+
+            # montar mensagem
+            conteudo_email = f"""
+            Olá {usuario[1]},
+
+            Recebemos uma solicitação para redefinir sua senha.
+            Clique no link abaixo para criar uma nova senha:
+
+            {link_recuperacao}
+
+            Se você não solicitou a recuperação de senha, ignore esta mensagem.
+            """
+
+            # enviar email
+            try:
+                enviar_email_recuperacao(email, "Recuperação de Senha - Desafio das Perguntas", conteudo_email)
+            except Exception as e:
+                print("Erro ao enviar email:", e)
+                return jsonify(success=False, message=mensagem_padrao)
+    except Exception:
+        if conn:
+            conn.rollback()
+        app.logger.exception(f"Erro na recuperação de senha")
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+    # Retorna mensagem padrão sempre, mesmo que o e-mail não exista
+    return jsonify(success=True, message=mensagem_padrao)
+
+def enviar_email_recuperacao(destinatario, assunto, conteudo):
+
+    remetente = email_remetente
+    senha = senha_app
+
+    msg = MIMEMultipart()
+    msg['From'] = remetente
+    msg['To'] = destinatario
+    msg['Subject'] = assunto
+
+    msg.attach(MIMEText(conteudo, 'plain'))
+
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        server.login(remetente, senha)
+        server.send_message(msg)
+
+@app.route("/reset_senha", methods=["GET", "POST"])
+def reset_senha():
+    token = request.args.get("token") if request.method == "GET" else request.form.get("token")
+    if not token:
+        return render_template("mensagem.html", titulo="Erro", mensagem="Token ausente.")
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Busca usuário com token válido
+        cur.execute("""
+            SELECT id_usuario, expiracao_token_recuperacao
+            FROM usuarios_registrados
+            WHERE token_recuperacao = %s
+        """, (token,))
+        usuario = cur.fetchone()
+
+        if not usuario:
+            return render_template("mensagem.html", titulo="Erro", mensagem="Token inválido.")
+
+        id_usuario, expira = usuario
+
+        if not expira or expira < datetime.utcnow():
+            return render_template("mensagem.html", titulo="Token expirado", mensagem="O token de recuperação expirou.")
+        
+        if request.method == "POST":
+            # Recebe novas senhas
+            nova_senha = request.form.get("senha", "").strip()
+            confirmar_senha = request.form.get("confirmar_senha", "").strip()
+
+            if not nova_senha or not confirmar_senha:
+                return render_template("reset_senha.html", token=token, erro="Preencha ambos os campos.")
+            if nova_senha != confirmar_senha:
+                return render_template("reset_senha.html", token=token, erro="As senhas não coincidem.")
+
+            # Hash da nova senha
+            senha_hash = generate_password_hash(nova_senha)
+
+            # Atualiza senha e remove token
+            cur.execute("""
+                UPDATE usuarios_registrados
+                SET senha_hash = %s,
+                    token_recuperacao = NULL,
+                    expiracao_token_recuperacao = NULL
+                WHERE id_usuario = %s
+            """, (senha_hash, id_usuario))
+            conn.commit()
+
+            return render_template("mensagem.html", titulo="Sucesso", mensagem="Senha redefinida com sucesso! Agora você pode fazer login.")
+
+        # GET: exibe formulário
+        return render_template("reset_senha.html", token=token)
+
+    except Exception:
+        if conn:
+            conn.rollback()
+        app.logger.exception(f"Erro reset_senha:")
+        return render_template("mensagem.html", titulo="Erro", mensagem="Erro ao redefinir a senha. Tente novamente.")
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 @app.route("/politica-de-privacidade")
 def politica_privacidade():
@@ -558,13 +706,12 @@ def usar_dica():
 @app.route("/enviar_feedback", methods=["POST"])
 def enviar_feedback():
     data = request.get_json()
-
     id_pergunta = data.get("id_pergunta")
-    tipo_pergunta = data.get("tipo_pergunta")
-    email_usuario = data.get("email_usuario")
+    tipo_pergunta = data.get("tipo_pergunta").capitalize()
+    email_usuario = session.get("email")
     estrelas = data.get("estrelas")
     versao_pergunta = data.get("versao_pergunta")
-    id_usuario = data.get("id_usuario")
+    id_usuario = session.get("id_usuario")
 
     if not all([id_pergunta, tipo_pergunta, email_usuario, estrelas, versao_pergunta, id_usuario]):
         return jsonify({"erro": "Dados incompletos"}), 400
@@ -582,7 +729,8 @@ def enviar_feedback():
         cur.close()
         return jsonify({"sucesso": True})
     except Exception as e:
-        conn.rollback()
+        if conn:
+            conn.rollback()
         return jsonify({"erro": str(e)}), 500
 
 def buscar_pontuacoes_usuario(id_usuario):
@@ -798,7 +946,8 @@ def registrar_resposta():
             return jsonify({"sucesso": True, "nova_pontuacao": nova_pontuacao, "perguntas_restantes": nova_perguntas_restantes})
 
     except Exception:
-        conn.rollback()
+        if conn:
+            conn.rollback()
         app.logger.exception("Erro ao tentar registrar pergunta com id %s perguntas para o usuário com id %s", dados["id_pergunta"], id_usuario)
     finally:
         if cur:

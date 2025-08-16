@@ -1,16 +1,19 @@
 import { obterPerguntasDisponiveis } from "./utils.js";
 
+let modo_jogo = null;
+let tipo_pergunta = null;
+
 function iniciarQuiz(event) {
   // Atualiza o tema atual no localStorage
   const tema_atual = decodeURIComponent(event.currentTarget.dataset.tema);
   localStorage.setItem("tema_atual", tema_atual)
 
   // Atualiza o modo de jogo no localStorage (desafio ou revisao)
-  const modo_jogo = document.querySelector('input[name="modo"]:checked').value;
+  modo_jogo = document.querySelector('input[name="modo"]:checked').value;
   localStorage.setItem("modo_jogo", modo_jogo)
 
   // Atualiza o tipo de pergunta no localStorage (objetiva ou discursiva)
-  const tipo_pergunta = document.querySelector('input[name="tipo-de-pergunta"]:checked').value;
+  tipo_pergunta = document.querySelector('input[name="tipo-de-pergunta"]:checked').value;
   localStorage.setItem("tipo_pergunta", tipo_pergunta)
 
   if (!tema_atual || !modo_jogo || !tipo_pergunta) {
@@ -47,11 +50,35 @@ function iniciarQuiz(event) {
     });
 }
 
-document.querySelectorAll(".tema-card").forEach(card => {
-  card.addEventListener("click", iniciarQuiz);
-});
+function carregarPreferenciasQuiz() {
+  // Pega valores salvos
+  modo_jogo = localStorage.getItem("modo_jogo");
+  tipo_pergunta = localStorage.getItem("tipo_pergunta");
+
+  // Se não existirem, define valores padrão
+  if (!modo_jogo) {
+    modo_jogo = "desafio";
+    localStorage.setItem("modo_jogo", modo_jogo);
+  }
+  if (!tipo_pergunta) {
+    tipo_pergunta = "objetiva";
+    localStorage.setItem("tipo_pergunta", tipo_pergunta);
+  }
+
+  // Marca os inputs na tela com os valores recuperados
+  const modoRadio = document.querySelector(`input[name="modo"][value="${modo_jogo}"]`);
+  if (modoRadio) modoRadio.checked = true;
+
+  const tipoRadio = document.querySelector(`input[name="tipo-de-pergunta"][value="${tipo_pergunta}"]`);
+  if (tipoRadio) tipoRadio.checked = true;
+}
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Implementa a função de clique nos temas
+  document.querySelectorAll(".tema-card").forEach(card => {
+  card.addEventListener("click", iniciarQuiz);
+  });
+
   // Define as variáveis do cabeçalho
   const nome_usuario = document.getElementById("user-name")
   const perguntas_restantes = document.getElementById("perguntas-count")
@@ -79,4 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Define as perguntas e dicas disponíveis e máximas para o usuário
   perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}/${max_perguntas}`
   dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes")}/${max_dicas}`
+
+  // Carrega as preferências de modo de jogo e tipo de pergunta
+  carregarPreferenciasQuiz();
 })
