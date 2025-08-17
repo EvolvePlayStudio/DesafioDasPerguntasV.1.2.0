@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nome, email, senha, invite_token,
+          nome, email, senha,
           captcha_token: captchaToken,
           captcha_selecoes: selecoes
         })
