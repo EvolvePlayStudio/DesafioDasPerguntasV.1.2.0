@@ -198,7 +198,7 @@ def login():
             regras_plano=regras_plano
         ), 200
 
-def checar_dados_registro(nome, email, senha, token_recebido):
+def checar_dados_registro(nome, email, senha):
     if not nome or not email or not senha:
         return False, "Preencha todos os campos"
 
@@ -212,10 +212,6 @@ def checar_dados_registro(nome, email, senha, token_recebido):
 
     if dominio not in dominios_permitidos:
         return False, "O provedor de e-mail fornecido não é confiável"
-
-    # Validação do token de convite
-    if token_recebido != invite_token:
-        return False, "Token de convite inválido"
 
     conn = get_db_connection()
     cur = conn.cursor()
