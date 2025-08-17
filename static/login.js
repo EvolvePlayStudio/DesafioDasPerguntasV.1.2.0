@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         this.reset();
         if (captchaContainer) captchaContainer.hidden = true;
-        showForm('login');
+        showForm('login', registro_realizado=true);
       } else {
           // Registra a falha no CAPTCHA
           const resposta_captcha = await fetch('/registrar_falha_captcha', {
@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Função para exibir o formulário correto
-  async function showForm(type) {
+  async function showForm(type, registro_realizado=false) {
     // Abas
     login_tab.style.display = (type === "forgot") ? "none" : "inline-block";
     register_tab.style.display = (type === "forgot") ? "none" : "inline-block";
@@ -400,7 +400,9 @@ document.addEventListener('DOMContentLoaded', function () {
       login_tab.classList.add('active');
       register_tab.classList.remove('active');
       if (info_section) info_section.style.display = '';
-      if (lbl_mensagem_login) lbl_mensagem_login.textContent = '';
+      if (lbl_mensagem_login && !registro_realizado) {
+        lbl_mensagem_login.textContent = '';
+      }
       if (lbl_mensagem_registro) {
         lbl_mensagem_registro.textContent = '';
         lbl_mensagem_registro.style.visibility = 'hidden';
