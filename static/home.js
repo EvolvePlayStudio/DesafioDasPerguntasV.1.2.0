@@ -79,6 +79,11 @@ document.addEventListener("DOMContentLoaded", () => {
   card.addEventListener("click", iniciarQuiz);
   });
 
+  // Implementa função de clique no botão "Premium"
+  document.getElementById("btn-premium").addEventListener("click", function() {
+      window.location.href = "/premium";
+  });
+
   // Define as variáveis do cabeçalho
   const nome_usuario = document.getElementById("user-name")
   const perguntas_restantes = document.getElementById("perguntas-count")

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Versão Premium — Desafio das Perguntas</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body{
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--cor-fundo-padrao);
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 6vh 16px 24px;
+    }
+    .premium-container{
+      background: var(--cor-fundo-claro);
+      width: 100%;
+      max-width: 860px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,.1);
+      padding: 28px;
+    }
+    .title{ font-size: 1.6rem; font-weight: 800; color: black; margin: 0; }
+    .sub{ color: var(--cor-textos-pequenos); margin: 8px 0 20px 0; line-height: 1.5; font-weight: 500; }
+    .card{ background: white; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.06); padding: 18px; margin-bottom: 20px; }
+    .compare{ width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    .compare th, .compare td{ padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+    .compare thead th{ font-size: 0.85rem; text-transform: uppercase; color: var(--cor-textos-pequenos); }
+    .badge{ display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .badge-premium{ background: var(--bg-botao-login); color: white; }
+    .badge-free{ background: #eef3ff; color: var(--bg-botao-login); font-weight: 800; }
+    .actions{ display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+    .btn{ border: none; border-radius: 10px; padding: 12px 16px; font-weight: 700; cursor: pointer; }
+    .btn-primary{ background: var(--bg-botao-login); color: white; font-weight: var(--peso-fonte-botoes);}
+    .btn-outline{ background: var(--bg-botao-login); color: white; font-weight: var(--peso-fonte-botoes);}
+    .btn-primary:hover{ background: var(--bg-hover-botao-login); }
+    .btn-outline:hover{ background: var(--bg-hover-botao-login); }
+    .muted{ color: var(--cor-textos-pequenos); font-size: 0.9rem; margin-top: 12px; line-height: 1.4; }
+    .compare th:nth-child(2),
+    .compare td:nth-child(2),
+    .compare th:nth-child(3),
+    .compare td:nth-child(3) {
+        text-align: center;
+    }
+    .compare {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+        table-layout: fixed;
+    }
+    .compare th, .compare td {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .compare th:first-child,
+    .compare td:first-child {
+        text-align: left;
+        width: 50%;
+        padding-left: 8rem;
+    }
+    .compare td:first-child {
+        padding-left: 3rem;
+    }
+    .compare th:nth-child(2),
+    .compare td:nth-child(2),
+    .compare th:nth-child(3),
+    .compare td:nth-child(3) {
+        width: 25%;
+    }
+  </style>
+</head>
+<body>
+
+  
+  <div class="premium-container">
+    <!-- Título da tela -->
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <img src="{{ url_for('static', filename='img/Premium.png') }}" alt="Premium" style="height: 36px; margin-bottom: 0.4rem;">
+      <h1 class="title">Versão Premium</h1>
+    </div>
+
+    <!-- Texto introdutório abaixo do título -->
+    <p class="sub">
+      Obtenha mais perguntas e dicas diárias, limites ampliados e acesso a perguntas exclusivas pagando uma única vez.
+    </p>
+
+    <div class="card">
+      <table class="compare">
+        <thead>
+          <tr>
+            <th>Recurso</th>
+            <th><span class="badge badge-free">Grátis</span></th>
+            <th><span class="badge badge-premium">Premium</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>⚡ Incremento diário de perguntas</td><td>+10</td><td>+20</td></tr>
+          <tr><td>💡 Incremento diário de dicas</td><td>+2</td><td>+4</td></tr>
+          <tr><td>⚡ Limite máximo de perguntas</td><td>50</td><td>100</td></tr>
+          <tr><td>💡 Limite máximo de dicas</td><td>20</td><td>40</td></tr>
+          <tr>
+            <td>🌟 Perguntas disponibilizadas</td>
+            <td>Gratuitas</td>
+            <td>Todas</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="muted">
+        Observações: Nestas primeiras versões do app, todas as perguntas estão na versão gratuita para coleta de avaliações, no entanto um parte delas irá para versão Premium. No futuro, as perguntas serão quase sempre lançadas primeiro na versão Premium e, após feedback dos usuários, cerca de 10-30% (as melhores avaliadas) serão mantidas na Premium, enquanto o restante irá para a versão grátis.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top: 0.1rem;">Possíveis adições no futuro</h3>
+      <div class="future-feature">
+        <p>🔍 Pesquisa de perguntas em listas ou por subtemas</p>
+        <p>⭐ Possibilidade de salvar perguntas nos favoritos</p>
+      </div>
+      <p class="muted">Estes recursos estão em estudo, não são garantidos e podem mudar conforme o app evolui. Também não foi decidido ainda quais deles serão disponibilizados na versão gratuita e quais serão disponibilizados na versão Premium.</p>
+    </div>
+
+    <p class="p-politica-de-privacidade">
+       <strong>Versão atual:</strong> Grátis
+    </p>
+
+    <!-- Botões no fim da tela -->
+    <div class="actions">
+      <button class="btn btn-outline" type="button" onclick="history.back()">Voltar</button>
+      <form method="POST">
+        <button class="btn btn-primary" type="submit" style="display: none;">Comprar Premium</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

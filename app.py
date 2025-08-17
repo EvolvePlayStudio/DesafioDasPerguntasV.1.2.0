@@ -502,6 +502,10 @@ def enviar_email_confirmacao(email_destinatario, nome_destinatario, link_confirm
 def home():
     return render_template("home.html")
 
+@app.route("/premium")
+def premium():
+    return render_template("premium.html")
+
 @app.route("/recuperação-de-senha", methods=["POST"])
 def esqueci_senha():
     data = request.get_json()
@@ -772,7 +776,7 @@ def listar_perguntas():
 
     # configurações locais
     limit = 90
-    privileged_ids = (4, 6)  # ids com permissão para ver perguntas inativas
+    privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
 
     # validações
     if not tema or modo not in ('desafio', 'revisao') or tipo_pergunta not in ('objetiva', 'discursiva'):
