@@ -134,7 +134,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const email = this.email?.value.trim();
     const senha = this.senha?.value;
     const confirmar_senha = this.confirmar_senha?.value;
-    const invite_token = this.invite_token?.value;
 
     // Validações locais simples
     if (!nome) {
@@ -171,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const validaResponse = await fetch('/register_validate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nome, email, senha, invite_token })
+          body: JSON.stringify({ nome, email, senha })
         });
 
         if (!validaResponse.ok) {

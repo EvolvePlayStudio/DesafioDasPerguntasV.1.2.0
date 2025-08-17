@@ -232,7 +232,7 @@ def checar_dados_registro(nome, email, senha, token_recebido):
 @app.route("/register_validate", methods=["POST"])
 def validar_registro():
     data = request.get_json()
-    ok, msg = checar_dados_registro(data.get("nome"), data.get("email"), data.get("senha"), data.get("invite_token"))
+    ok, msg = checar_dados_registro(data.get("nome"), data.get("email"), data.get("senha"))
     if not ok:
         return jsonify(success=False, message=msg)
 
