@@ -15,6 +15,7 @@
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      overflow-y: hidden;
     }
     header {
       display:flex;
@@ -138,8 +139,9 @@
     }
     main {
       flex: 1;
-      padding: 2rem;
       text-align: center;
+      display: flex;
+      flex-direction: column;
     }
     .titulo {
       font-size: 24px;
@@ -151,9 +153,9 @@
     .opcoes-container {
       display: flex;
       justify-content: center;
-      gap: 7rem; /* Espaço entre as seções */
-      margin-top: -0.8em;
-      margin-bottom: 3em;
+      margin-top: 0.8rem;
+      margin-bottom: 1.8rem;
+      gap: 12rem;
     }
     .bloco-opcao {
       display: flex;
@@ -169,12 +171,19 @@
       display: flex;
       gap: 1.5rem;
     }
+    .cards-scroll-wrapper {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 61.5vh;
+    }
     .cards-container {
       display: grid;
       grid-template-columns:repeat(3, 1fr);
-      gap: 1.5rem;
-      padding: 0 1rem;
+      /*grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); Para quando tiverem 8 temas*/
+      row-gap: 3.5rem;
+      column-gap: 1.5rem;
       justify-items: center;
+      padding: 1rem;
     }
     @media (max-width: 900px) {
       .cards-container {
@@ -189,9 +198,7 @@
       border-radius: 12px;
       overflow: hidden;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       transition: transform 0.2s ease;
-      background-color: #fff;
     }
     .card img {
       margin-top: -0.21rem;
@@ -209,6 +216,12 @@
       padding: 0.3rem 0;
       background-color: var(--cor-fundo-claro);
       font-size: 16px;
+    }
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
     }
   </style>
 </head>
@@ -258,35 +271,38 @@
       </div>
     </div>
 
-    <!-- Cards de temas -->
-    <div class="cards-container">
-      <div class="card tema-card" data-tema="Astronomia">
-        <img src="{{ url_for('static', filename='img/Astronomia.jpeg') }}" alt="Astronomia">
-        <span>Astronomia</span>
-      </div>
-      <div class="card tema-card" data-tema="Biologia">
-        <img src="{{ url_for('static', filename='img/Biologia.jpeg') }}" alt="Biologia">
-        <span>Biologia</span>
-      </div>
-      <div class="card tema-card" data-tema="Esportes">
-        <img src="{{ url_for('static', filename='img/Esportes.jpeg') }}" alt="Esportes">
-        <span>Esportes</span>
-      </div>
-      <div class="card tema-card" data-tema="Geografia">
-        <img src="{{ url_for('static', filename='img/Geografia.jpeg') }}" alt="Geografia">
-        <span>Geografia</span>
-      </div>
-      <div class="card tema-card" data-tema="História">
-        <img src="{{ url_for('static', filename='img/Historia.jpeg') }}" alt="História">
-        <span>História</span>
-      </div>
-      <div class="card tema-card" data-tema="Mídia">
-        <img src="{{ url_for('static', filename='img/Midia.jpeg') }}" alt="Mídia">
-        <span>Mídia</span>
+    <!-- Scroll com os cards de temas -->
+    <div class="cards-scroll-wrapper">
+      <div class="cards-container">
+        <div class="card tema-card" data-tema="Astronomia">
+          <img src="{{ url_for('static', filename='img/Astronomia.jpeg') }}" alt="Astronomia">
+          <span>Astronomia</span>
+        </div>
+        <div class="card tema-card" data-tema="Biologia">
+          <img src="{{ url_for('static', filename='img/Biologia.jpeg') }}" alt="Biologia">
+          <span>Biologia</span>
+        </div>
+        <div class="card tema-card" data-tema="Esportes">
+          <img src="{{ url_for('static', filename='img/Esportes.jpeg') }}" alt="Esportes">
+          <span>Esportes</span>
+        </div>
+        <div class="card tema-card" data-tema="Geografia">
+          <img src="{{ url_for('static', filename='img/Geografia.jpeg') }}" alt="Geografia">
+          <span>Geografia</span>
+        </div>
+        <div class="card tema-card" data-tema="História">
+          <img src="{{ url_for('static', filename='img/Historia.jpeg') }}" alt="História">
+          <span>História</span>
+        </div>
+        <div class="card tema-card" data-tema="Mídia">
+          <img src="{{ url_for('static', filename='img/Midia.jpeg') }}" alt="Mídia">
+          <span>Mídia</span>
+        </div>
       </div>
     </div>
   </main>
 
+  <!-- Rodapé da página -->
   <footer>
     <a href="{{ url_for('home') }}" style="color: var(--cor-pagina-selecionada)">Home</a> |
     <a href="{{ url_for('politica_privacidade') }}">Política de Privacidade</a> |

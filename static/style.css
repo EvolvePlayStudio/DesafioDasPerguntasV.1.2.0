@@ -70,7 +70,6 @@ footer a:hover {
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    background: var(--cor-fundo-padrao);
     font-family: Inter, Arial, sans-serif;
     color: black;
     background: var(--cor-fundo-padrao);
