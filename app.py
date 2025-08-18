@@ -80,8 +80,11 @@ QUESTION_CONFIG = {
 
 def iniciar_agendamento():
     scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
-    # Executa a cada 6 horas
-    scheduler.add_job(atualizar_perguntas_dicas, 'interval', hours=6)
+    # Analisa 4 vezes por dia se o incremento no número de dicas e perguntas dos usuários foi feita
+    scheduler.add_job(atualizar_perguntas_dicas, 'cron', hour=2, minute=0)
+    scheduler.add_job(atualizar_perguntas_dicas, 'cron', hour=8, minute=0)
+    scheduler.add_job(atualizar_perguntas_dicas, 'cron', hour=14, minute=0)
+    scheduler.add_job(atualizar_perguntas_dicas, 'cron', hour=20, minute=0)
     scheduler.start()
 
 iniciar_agendamento()
