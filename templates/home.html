@@ -170,11 +170,16 @@
       gap: 1.5rem;
     }
     .cards-container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 2.5rem;
+      display: grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap: 1.5rem;
       padding: 0 1rem;
+      justify-items: center;
+    }
+    @media (max-width: 900px) {
+      .cards-container {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
     .card {
       width: 200px;
@@ -267,9 +272,17 @@
         <img src="{{ url_for('static', filename='img/Esportes.jpeg') }}" alt="Esportes">
         <span>Esportes</span>
       </div>
+      <div class="card tema-card" data-tema="Geografia">
+        <img src="{{ url_for('static', filename='img/Geografia.jpeg') }}" alt="Geografia">
+        <span>Geografia</span>
+      </div>
       <div class="card tema-card" data-tema="História">
         <img src="{{ url_for('static', filename='img/Historia.jpeg') }}" alt="História">
         <span>História</span>
+      </div>
+      <div class="card tema-card" data-tema="Mídia">
+        <img src="{{ url_for('static', filename='img/Midia.jpeg') }}" alt="Mídia">
+        <span>Mídia</span>
       </div>
     </div>
   </main>

@@ -27,7 +27,7 @@ formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(mess
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
 
-temas_disponiveis = ["Astronomia", "Biologia", "Esportes", "História"]
+temas_disponiveis = ["Astronomia", "Biologia", "Esportes", "Geografia", "História", "Mídia"]
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
