@@ -938,6 +938,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (btn_enviar && btn_enviar.offsetParent !== null) {
         enviarResposta();
       }
+      else if (aguardando_proxima) {
+        if (btn_proxima.offsetParent === null && !btn_proxima.disabled) {
+          finalizarQuiz()
+        }
+        else if (!btn_proxima.disabled) {
+          proximaPergunta()
+        }
+      }
     }
   });
 
