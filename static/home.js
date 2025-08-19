@@ -37,10 +37,11 @@ function iniciarQuiz(event) {
       localStorage.setItem("pontuacoes_usuario", JSON.stringify(data["pontuacoes_usuario"]));
       localStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
 
-      // Chama a tela de quiz ou emite um alert caso não haja perguntas disponíveis
+      // Chama a tela de quiz ou exibe mensagem caso não haja perguntas disponíveis
       const perguntas_filtradas = obterPerguntasDisponiveis(data["perguntas"])
       const ha_perguntas_disponiveis = Object.values(perguntas_filtradas).some(arr => Array.isArray(arr) && arr.length > 0)
       if (ha_perguntas_disponiveis) {
+        mensagem.style.opacity = 0
         window.location.href = `/quiz?tema=${tema_atual}&modo=${modo_jogo}&tipo-de-pergunta=${tipo_pergunta}`;
       }
       else {
@@ -88,6 +89,7 @@ function exibirMensagem(texto, cor, temporaria=true) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+
   // Implementa a função de clique nos temas
   document.querySelectorAll(".tema-card").forEach(card => {
   card.addEventListener("click", iniciarQuiz);

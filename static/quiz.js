@@ -176,7 +176,7 @@ function mostrarPergunta() {
     document.getElementById("dica-box").style.display = "none";
   } 
 
-  document.getElementById("resultado").style.display = "none";
+  resultado.style.display = "none";
   document.getElementById("avaliacao").style.display = "none";
   document.getElementById("nota-box").style.display = "none";
   aguardando_proxima = false;
@@ -274,13 +274,16 @@ function mostrarResultadoResposta(correto, pontos_ganhos) {
   const resposta_usuario = caixa_para_resposta.value.trim();
   if (tipo_pergunta === 'discursiva' && resposta_usuario.trim() === "") {
     const svgEscolhido = svg1;
-    resultado.innerHTML = `${svgEscolhido} <strong style="color: #FFD700; margin-left:6px;">Não respondida</strong>`;
-  } else if (correto) {
-      resultado.innerHTML = '✅ <strong>Resposta correta!</strong>';
-      resultado.style.color = "lime";
-  } else {
-      resultado.innerHTML = '❌ <strong>Resposta incorreta</strong>';
-      resultado.style.color = "red";
+    resultado.style.color = "#FFD700"
+    resultado.innerHTML = `${svgEscolhido} Não respondida`;
+  }
+  else if (correto) {
+    resultado.style.color = "lime";
+    resultado.innerHTML = '✅ Resposta correta!';
+  }
+  else {
+    resultado.style.color = "red";
+    resultado.innerHTML = '❌ Resposta incorreta';
   }
 
   aguardando_proxima = true;
@@ -503,7 +506,10 @@ function configurarEstrelas() {
 }
 
 async function enviarResposta() {
+  resultado.style.display = "block";
   if (!animacao_concluida || btn_enviar.disabled) return;
+  resultado.style.color = "#FFD700";
+  resultado.innerHTML = 'Enviando resposta...';
   btn_enviar.disabled = true;
 
   let resposta_usuario;
@@ -526,7 +532,8 @@ async function enviarResposta() {
     if (!acertou && widgetAlternativaSelecionada && widgetAlternativaSelecionada !== correta) {
         widgetAlternativaSelecionada.classList.add('wrong'); // vermelho
     }
-  } else {
+  } 
+  else {
     resposta_usuario = caixa_para_resposta.value.trim();
     const respostas_corretas = pergunta_selecionada.respostas_corretas;
     acertou = respostaDiscursivaCorreta(resposta_usuario, respostas_corretas);
@@ -557,7 +564,8 @@ async function enviarResposta() {
     mostrarResultadoResposta(acertou, pontos_ganhos);
     mostrarBotoesAcao();
   } else {
-    alert("Não foi possível se conectar com o servidor. Por favor, verifique sua conexão e tente novamente.");
+    resultado.style.color = "red";
+    resultado.innerHTML = 'Não foi possível se conectar com o servidor';
     btn_enviar.disabled = false;
   }
 }
@@ -611,7 +619,7 @@ function proximaPergunta() {
     mostrarPergunta();
     document.getElementById('botoes-acao').style.display = "none";
     document.getElementById("avaliacao").style.display = "none";
-    document.getElementById("resultado").style.display = "none";
+    resultado.style.display = "none";
     document.getElementById("nota-box").style.display = "none";
     document.getElementById('comentarios').style.display = 'none';
     //document.getElementById("btn-enviar").style.display= "inline-block";
@@ -624,7 +632,6 @@ function usarDica() {
   if (modo_jogo == 'desafio') {
     let dicas_restantes = parseInt(localStorage.getItem("dicas_restantes") || "0");
     if (dicas_restantes <= 0) {
-      alert("Você não possui mais dicas.");
       return;
     }
 
@@ -636,15 +643,22 @@ function usarDica() {
     .then(response => response.json())
     .then(data => {
       if (data.success) {
+        resultado.style.display = "none";
         dicas_restantes -= 1;
         localStorage.setItem("dicas_restantes", dicas_restantes);
         document.getElementById("contador-dicas").textContent = dicas_restantes;
         mostrarDica();
-      } else {
-        alert(data.message || "Erro ao usar a dica.");
+      } 
+      else {
+        resultado.style.display = "block";
+        resultado.style.color = "red";
+        resultado.innerHTML = 'Erro ao usar a dica';
       }
     })
     .catch(error => {
+      resultado.style.display = "block";
+      resultado.style.color = "red";
+      resultado.innerHTML = 'Erro ao usar a dica';
       console.error("Erro ao requisitar o backend:", error);
     });
   }
