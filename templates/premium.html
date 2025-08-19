@@ -72,11 +72,71 @@
     .compare td:nth-child(3) {
         width: 25%;
     }
+    .modal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .modal.hidden { display: none; }
+    .modal-content {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px 16px 20px;
+      width: min(92vw, 520px);
+      box-shadow: 0 12px 30px rgba(0,0,0,.2);
+    }
+    /* Cabeçalho do modal: título + X perfeitamente alinhados */
+    .modal-header{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
+      min-height: 8vh;
+    }
+    .modal-header h2{
+      margin: 0;
+      font-size: 1.35rem;
+      white-space: nowrap; /* mantém em uma linha no desktop */
+    }
+    .modal-close{
+      background: transparent;
+      border: 0;
+      font-size: 26px;
+      line-height: 1;
+      cursor: pointer;
+      color: #666;
+    }
+    .modal-close:hover{ color: #111; }
+
+    /* Botões de pagamento lado a lado */
+    .pay-grid{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .pay-btn{
+      border: none;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--bg-botao-login);
+      color: #fff;
+    }
+    .pay-btn:hover{ background: var(--bg-hover-botao-login); }
+
+    @media (max-width: 520px){
+      .pay-grid{ grid-template-columns: 1fr; }
+    }
+
   </style>
 </head>
 <body>
 
-  
   <div class="premium-container">
     <!-- Título da tela -->
     <div style="display: flex; align-items: center; gap: 10px;">
@@ -86,7 +146,7 @@
 
     <!-- Texto introdutório abaixo do título -->
     <p class="sub">
-      Obtenha mais perguntas e dicas diárias, limites ampliados e acesso a perguntas exclusivas pagando uma única vez.
+      Pague uma única vez e obtenha mais perguntas e dicas diárias, limites ampliados e acesso a perguntas exclusivas.
     </p>
 
     <div class="card">
@@ -124,17 +184,55 @@
       <p class="muted">Estes recursos estão em estudo, não são garantidos e podem mudar conforme o app evolui. Também não foi decidido ainda quais deles serão disponibilizados na versão gratuita e quais serão disponibilizados na versão Premium.</p>
     </div>
 
-    <p class="p-politica-de-privacidade">
-       <strong>Versão atual:</strong> Grátis
-    </p>
+    <!-- Textos da versão atual e preço -->
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span style="padding: 2px"><strong>Versão atual:</strong> Grátis</span>
+      <span style="padding: 4px"><strong>Preço:</strong> R$ 10,00</span>
+    </div>
+
+    <!-- Modal de pagamento -->
+    <div id="modalPagamento" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h2 id="modalTitulo">Escolha a forma de pagamento</h2>
+          <button class="modal-close" aria-label="Fechar" onclick="fecharModal()">×</button>
+        </div>
+
+        <div class="pay-grid">
+          <button id="payCard" class="pay-btn" data-method="cartao">Cartão de crédito</button>
+          <button id="payPix" class="pay-btn" data-method="pix">Pix</button>
+          <button id="payPaypal" class="pay-btn" data-method="boleto">Boleto</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Botões no fim da tela -->
     <div class="actions">
       <button class="btn btn-outline" type="button" onclick="history.back()">Voltar</button>
-      <form method="POST">
-        <button class="btn btn-primary" type="submit" style="display: none;">Comprar Premium</button>
-      </form>
+      <button class="btn btn-primary" onclick="abrirModal()">Comprar Premium</button>
     </div>
   </div>
+
+  <script>
+    function abrirModal() {
+      document.getElementById("modalPagamento").classList.remove("hidden");
+    }
+    function fecharModal() {
+      document.getElementById("modalPagamento").classList.add("hidden");
+    }
+    // Funções de clique nos métodos de pagamento
+    document.getElementById("payCard").addEventListener("click", () => {
+      window.location.href = "/checkout/cartao/2";
+    });
+
+    document.getElementById("payPix").addEventListener("click", () => {
+      window.location.href = "/checkout/pix/2";
+    });
+
+    document.getElementById("payPaypal").addEventListener("click", () => {
+      window.location.href = "/checkout/boleto/2";
+    });
+  </script>
+
 </body>
 </html>

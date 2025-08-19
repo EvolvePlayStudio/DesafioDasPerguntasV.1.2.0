@@ -124,13 +124,13 @@ def login():
         cur = conn.cursor()
 
         # Verifica se o usuário existe
-        cur.execute("SELECT id_usuario, senha_hash, email_confirmado, nome, plano, dicas_restantes, perguntas_restantes FROM usuarios_registrados WHERE email = %s", (email,))
+        cur.execute("SELECT id_usuario, senha_hash, email_confirmado, nome, dicas_restantes, perguntas_restantes FROM usuarios_registrados WHERE email = %s", (email,))
         usuario = cur.fetchone()
 
         if not usuario:
             return jsonify(success=False, message="E-mail não registrado")
 
-        id_usuario, senha_hash, email_confirmado, nome_usuario, plano, dicas_restantes, perguntas_restantes = usuario
+        id_usuario, senha_hash, email_confirmado, nome_usuario, dicas_restantes, perguntas_restantes = usuario
 
         if not check_password_hash(senha_hash, senha):
             return jsonify(success=False, message="A senha está incorreta")
@@ -163,12 +163,6 @@ def login():
                 "INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao) VALUES (%s, %s, %s)",
                 (id_usuario, tema, 0)
             )
-
-        # Pega as regras dos planos de assinatura
-        cur.execute("SELECT * FROM regras_plano ORDER BY id")
-        colunas = [desc[0] for desc in cur.description]  # nomes das colunas
-        linhas_regras_plano = cur.fetchall()
-        regras_plano = [dict(zip(colunas, linha)) for linha in linhas_regras_plano]
         
         # Pega as regras de pontuação para acertos, erros e uso de dicas da pergunta
         cur.execute("SELECT * FROM regras_pontuacao ORDER BY id_ranking")
@@ -206,9 +200,7 @@ def login():
             regras_pontuacao=regras_pontuacao,
             dicas_restantes=dicas_restantes,
             perguntas_restantes=perguntas_restantes,
-            nome_usuario=nome_usuario,
-            plano=plano, # Plano atual do usuário (Gratuito ou Premium)
-            regras_plano=regras_plano
+            nome_usuario=nome_usuario
         ), 200
 
 def checar_dados_registro(nome, email, senha):
@@ -514,6 +506,40 @@ def enviar_email_confirmacao(email_destinatario, nome_destinatario, link_confirm
 @app.route("/home")
 def home():
     return render_template("home.html")
+
+@app.route("/checkout/<metodo>/<int:plano_id>")
+def checkout(metodo, plano_id):
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT plano, preco FROM regras_plano WHERE id = %s", (plano_id,))
+        plano = cur.fetchone()
+        if not plano:
+            return "Plano não encontrado", 404
+        
+        plano_nome, preco = plano
+
+        if metodo == "cartao":
+            checkout_url = f"https://provedor.com/checkout?plano={plano_id}&metodo=cartao"
+            checkout_url = f"https://www.mercadopago.com.br/developers/pt/guides/checkout"
+        elif metodo == "pix":
+            checkout_url = f"https://provedor.com/checkout?plano={plano_id}&metodo=pix"
+            checkout_url = f"https://dev.pagseguro.uol.com.br/docs/checkout"
+        elif metodo == "boleto":
+            checkout_url = f"https://provedor.com/checkout?plano={plano_id}&metodo=boleto"
+            checkout_url = f"https://docs.pagar.me/"
+        else:
+            return "Método de pagamento inválido", 400
+
+        return redirect(checkout_url)
+
+    except Exception:
+        app.logger.exception("Erro ao iniciar checkout:")
+        return "Erro interno", 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
 
 @app.route("/premium")
 def premium():

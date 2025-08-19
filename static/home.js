@@ -79,11 +79,6 @@ document.addEventListener("DOMContentLoaded", () => {
   card.addEventListener("click", iniciarQuiz);
   });
 
-  // Implementa função de clique no botão "Premium"
-  document.getElementById("btn-premium").addEventListener("click", function() {
-      window.location.href = "/premium";
-  });
-
   // Define as variáveis do cabeçalho
   const nome_usuario = document.getElementById("user-name")
   const perguntas_restantes = document.getElementById("perguntas-count")
@@ -92,25 +87,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Define o nome do usuário
   nome_usuario.textContent = localStorage.getItem("nome_usuario")
   
-  // Identifica os limites para dicas e perguntas
-  const tot_regras_plano = JSON.parse(localStorage.getItem("regras_plano"))
-  const plano_usuario = localStorage.getItem("plano")
-
-  let max_dicas = 0
-  let max_perguntas = 0
-
-  for (const index_regras in tot_regras_plano) {
-    const regras = tot_regras_plano[index_regras]
-    if (regras["plano"] === plano_usuario) {
-      max_perguntas = regras["limite_maximo_perguntas"]
-      max_dicas = regras["limite_maximo_dicas"]
-      break
-    }
-  }
-  
   // Define as perguntas e dicas disponíveis e máximas para o usuário
-  perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}/${max_perguntas}`
-  dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes")}/${max_dicas}`
+  perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}/100`
+  dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes")}/20`
 
   // Carrega as preferências de modo de jogo e tipo de pergunta
   carregarPreferenciasQuiz();

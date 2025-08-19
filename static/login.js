@@ -301,8 +301,6 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.setItem("regras_pontuacao", JSON.stringify(data.regras_pontuacao || []));
         localStorage.setItem("dicas_restantes", JSON.stringify(data.dicas_restantes || 0));
         localStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes || 0));
-        localStorage.setItem("plano", data.plano || 'Gratuito');
-        localStorage.setItem("regras_plano", JSON.stringify(data.regras_plano || []));
         localStorage.setItem("nome_usuario", data.nome_usuario || '');
 
         window.location.href = "/home";

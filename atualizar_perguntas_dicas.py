@@ -5,23 +5,26 @@ def atualizar_perguntas_dicas():
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            query = """
-                UPDATE usuarios_registrados u
+            # Valores fixos definidos
+            incremento_perguntas = 20
+            limite_maximo_perguntas = 100
+            incremento_dicas = 4
+            limite_maximo_dicas = 20
+
+            query = f"""
+                UPDATE usuarios_registrados
                 SET 
                     perguntas_restantes = LEAST(
-                        u.perguntas_restantes + rp.incremento_perguntas, 
-                        rp.limite_maximo_perguntas
+                        perguntas_restantes + {incremento_perguntas},
+                        {limite_maximo_perguntas}
                     ),
                     dicas_restantes = LEAST(
-                        u.dicas_restantes + rp.incremento_dicas,
-                        rp.limite_maximo_dicas
+                        dicas_restantes + {incremento_dicas},
+                        {limite_maximo_dicas}
                     ),
                     ultima_atualizacao = date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')
-                FROM regras_plano rp
-                WHERE u.plano = rp.plano
-                  AND (u.ultima_atualizacao IS NULL OR
-                       u.ultima_atualizacao < date_trunc('day', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')
-                  );
+                WHERE ultima_atualizacao IS NULL
+                   OR ultima_atualizacao < date_trunc('day', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo');
             """
             cur.execute(query)
             conn.commit()
@@ -33,3 +36,4 @@ def atualizar_perguntas_dicas():
 
 if __name__ == "__main__":
     atualizar_perguntas_dicas()
+    
