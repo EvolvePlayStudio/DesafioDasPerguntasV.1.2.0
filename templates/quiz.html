@@ -38,8 +38,7 @@
     }
     .alternativa-btn {
       display: flex;
-      align-items: center;
-      justify-content: flex-start;
+      align-items: flex-start;
       gap: .5rem;
       width: 100%;
       text-align: left;
@@ -51,9 +50,6 @@
       font-weight: var(--peso-fonte-botoes);
       background: #b8b88a;
       box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-    }
-    .nota-box {
-      font-weight: var(--peso-fonte-botoes);
     }
     .alternativa-btn[aria-hidden="true"] {
       opacity: 0;
@@ -86,8 +82,9 @@
     }
     .alternativa-btn .full-text {
       font-weight: var(--peso-fonte-botoes);
-      flex: 0 0 auto;
-      margin-top: 0.22rem; 
+      flex: 1;
+      margin-top: 0.22rem;
+      white-space: normal;
     }
     .alternativa-btn:focus {
       outline: none;
@@ -96,11 +93,6 @@
     .alternativa-btn.text-visible .full-text {
       opacity: 1;
       transform: translateY(0);
-    }
-    .alternativa-btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
     }
     input, button {
       width: 100%;
@@ -127,6 +119,9 @@
       font-size: 20px;
       color: gold;
     }
+    .nota-box {
+      font-weight: var(--peso-fonte-botoes);
+    }
     .btn-enviar, .btn-finalizar {
       flex: 1;
       color: white;
@@ -141,10 +136,14 @@
       background: var(--bg-botao-vermelho);
     }
     .btn-enviar:hover {
-      background: var(--bg-hover-botao-login); 
+      background: var(--bg-hover-botao-login);
     }
     .btn-finalizar:hover {
       background: var(--bg-hover-botao-vermelho); 
+    }
+    .btn-enviar:focus, .btn-finalizar:focus{
+      outline: none;
+      box-shadow: none;
     }
     #dica-box, #nota-box, #respostas-aceitas-box {
       display: none;

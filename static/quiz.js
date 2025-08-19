@@ -741,11 +741,11 @@ async function mostrarAlternativas() {
   alternativas.forEach(btn => {
     // garante layout inline (letra + texto lado a lado)
     btn.style.display = 'flex';
-    btn.style.alignItems = 'center';
     btn.style.justifyContent = 'flex-start';
     btn.style.gap = '8px';
+    btn.style.verticalAlign = 'top'
 
-    // coloca o texto vindo da pergunta no data-text
+    // Coloca o texto vindo da pergunta no data-text
     const letra = btn.dataset.letter;
     let texto = '';
     if (letra === 'A') texto = pergunta_selecionada.alternativa_a || '';
@@ -754,7 +754,7 @@ async function mostrarAlternativas() {
     else if (letra === 'D') texto = pergunta_selecionada.alternativa_d || '';
     btn.dataset.text = texto;
 
-    // garante elemento full-text dentro do botão
+    // Garante elemento full-text dentro do botão
     let fullText = btn.querySelector('.full-text');
     if (!fullText) {
       fullText = document.createElement('span');
