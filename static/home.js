@@ -2,6 +2,7 @@ import { obterPerguntasDisponiveis } from "./utils.js";
 
 let modo_jogo = null;
 let tipo_pergunta = null;
+const mensagem = document.getElementById("mensagem")
 
 function iniciarQuiz(event) {
   // Atualiza o tema atual no localStorage
@@ -22,9 +23,11 @@ function iniciarQuiz(event) {
   }
 
   if (modo_jogo.toLowerCase() === 'desafio' && localStorage.getItem("perguntas_restantes") <= 0) {
-    alert('Você precisa aguardar para obter mais perguntas no modo desafio')
+    exibirMensagem('Você precisa aguardar para obter mais perguntas no modo desafio', 'red')
     return;
   }
+  
+  exibirMensagem("Preparando quiz...", '#d1d1d1ff', false)
 
   // Carrega as perguntas para o quiz
   fetch(`/api/perguntas?tema=${tema_atual}&modo=${modo_jogo}&tipo-de-pergunta=${tipo_pergunta}`)
@@ -41,7 +44,7 @@ function iniciarQuiz(event) {
         window.location.href = `/quiz?tema=${tema_atual}&modo=${modo_jogo}&tipo-de-pergunta=${tipo_pergunta}`;
       }
       else {
-        alert(`Você não possui perguntas ${tipo_pergunta}s disponíveis para o modo ${modo_jogo} no momento`)
+        exibirMensagem(`Você não possui perguntas ${tipo_pergunta}s disponíveis neste tema para o modo ${modo_jogo} no momento`, 'red')
       }
     })
   .catch(error => {
@@ -71,6 +74,17 @@ function carregarPreferenciasQuiz() {
 
   const tipoRadio = document.querySelector(`input[name="tipo-de-pergunta"][value="${tipo_pergunta}"]`);
   if (tipoRadio) tipoRadio.checked = true;
+}
+
+function exibirMensagem(texto, cor, temporaria=true) {
+  mensagem.style.color = cor;
+  mensagem.textContent = texto;
+  mensagem.style.opacity = 1
+  if (temporaria) {
+    setTimeout(() => {
+        mensagem.style.opacity = 0
+      }, 10000)
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
