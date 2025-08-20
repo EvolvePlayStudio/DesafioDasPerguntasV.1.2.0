@@ -17,6 +17,7 @@ import random, string, time
 from PIL import Image, ImageEnhance, ImageFilter
 from io import BytesIO
 import urllib.parse
+import qrcode
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 # Para fazer depuração na render
@@ -80,7 +81,11 @@ QUESTION_CONFIG = {
 
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
 
-# E assim por diante
+# Código copia e cola gerado pelo Nubank
+codigo_pix = os.getenv("QR_CODE")
+img = qrcode.make(codigo_pix)
+img.save("static/qrcode.png")
+
 def iniciar_agendamento():
     # Analisa 4 vezes por dia se o incremento no número de dicas e perguntas dos usuários foi feita
     scheduler.add_job(
@@ -506,6 +511,11 @@ def enviar_email_confirmacao(email_destinatario, nome_destinatario, link_confirm
 @app.route("/home")
 def home():
     return render_template("home.html")
+
+@app.route("/doações")
+def doacoes():
+    chave_pix = os.getenv("CHAVE_PIX")
+    return render_template("doacoes.html", chave_pix=chave_pix)
 
 @app.route("/checkout/<metodo>/<int:plano_id>")
 def checkout(metodo, plano_id):

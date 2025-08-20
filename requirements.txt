@@ -17,3 +17,4 @@ zipp==3.23.0
 gunicorn
 APScheduler
 Pillow
+qrcode==8.2

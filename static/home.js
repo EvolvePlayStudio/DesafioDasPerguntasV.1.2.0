@@ -89,6 +89,10 @@ function exibirMensagem(texto, cor, temporaria=true) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Implementa a função de clique no botão de doações
+  document.getElementById("btn-doacoes").addEventListener("click", () => {
+    window.location.href = "/doações"
+  })
 
   // Implementa a função de clique nos temas
   document.querySelectorAll(".tema-card").forEach(card => {
