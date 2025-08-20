@@ -194,10 +194,8 @@ def login():
         # Retorna erro genérico para o cliente
         return jsonify(success=False, message="Erro interno no servidor, não foi possível fazer login"), 500
     finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+        if cur: cur.close()
+        if conn: conn.close()
 
     return jsonify(
             success=True,
@@ -469,8 +467,8 @@ def confirmar_email():
         return render_template('mensagem.html', titulo="Erro", mensagem="Erro ao confirmar o e-mail. Tente novamente mais tarde.")
     
     finally:
-        cur.close()
-        conn.close()
+        if cur: cur.close()
+        if conn: conn.close()
 
 def gerar_token_confirmacao(tamanho=32):
     alfabeto = string.ascii_letters + string.digits
@@ -612,10 +610,8 @@ def esqueci_senha():
             conn.rollback()
         app.logger.exception(f"Erro na recuperação de senha")
     finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+        if cur: cur.close()
+        if conn: conn.close()
 
     # Retorna mensagem padrão sempre, mesmo que o e-mail não exista
     return jsonify(success=True, message=mensagem_padrao)
@@ -697,10 +693,8 @@ def reset_senha():
         app.logger.exception(f"Erro reset_senha:")
         return render_template("mensagem.html", titulo="Erro", mensagem="Erro ao redefinir a senha. Tente novamente.")
     finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+        if cur: cur.close()
+        if conn: conn.close()
 
 @app.route("/politica-de-privacidade")
 def politica_privacidade():
@@ -713,6 +707,62 @@ def termos_uso():
 @app.route("/sobre-o-app")
 def sobre_app():
     return render_template("sobre_o_app.html")
+
+@app.route("/pergunta/<int:id_pergunta>/<tipo_pergunta>/gabarito", methods=["GET"])
+def get_gabarito(id_pergunta, tipo_pergunta):
+    """Função para só pegar o gabarito, dica e nota da pergunta após resposta enviada pelo usuário no modo desafio (evita expor o gabarito no localStorage)"""
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Consulta para objetivas
+        if tipo_pergunta == 'objetiva':
+            cur.execute("""
+                SELECT resposta_correta, nota
+                FROM perguntas_objetivas
+                WHERE id_pergunta = %s
+            """, (id_pergunta,))
+            row = cur.fetchone()
+
+            if not row:
+                return {"erro": "Pergunta não encontrada"}, 404
+            resposta_correta, nota = row
+
+            return {
+                "resposta_correta": resposta_correta,
+                "nota": nota
+            }
+        # Consulta para discursivas
+        else:
+            cur.execute("""
+                SELECT respostas_corretas, dica, nota
+                FROM perguntas_discursivas
+                WHERE id_pergunta = %s
+            """, (id_pergunta,))
+            row = cur.fetchone()
+
+            if not row:
+                return {"erro": "Pergunta não encontrada"}, 404
+            rc, dica, nota = row
+
+            # Função abaixo repetida em listar_perguntas
+            try:
+                respostas_corretas = [r.strip() if isinstance(r, str) else r for r in rc]
+            except Exception:
+                respostas_corretas = list(rc)
+
+            return {
+                "respostas_corretas": respostas_corretas,
+                "dica": dica,
+                "nota": nota
+            }
+    except Exception:
+        app.logger.exception("Erro ao buscar gabarito")
+        return {"erro": "Erro interno"}, 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
 
 @app.route("/quiz")
 def quiz():
@@ -804,10 +854,8 @@ def buscar_pontuacoes_usuario(id_usuario):
     except Exception as e:
         app.logger.exception("Erro ao tentar obter pontuações do usuário %s", id_usuario)
     finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+        if cur: cur.close()
+        if conn: conn.close()
 
     return pontuacoes_usuario
 
@@ -886,7 +934,6 @@ def listar_perguntas():
 
             if tipo_pergunta == 'discursiva':
                 rc = row.get('respostas_corretas') or []
-                # garante que cada resposta seja string "trimmed" quando aplicável
                 try:
                     respostas_corretas = [r.strip() if isinstance(r, str) else r for r in rc]
                 except Exception:
@@ -895,31 +942,40 @@ def listar_perguntas():
                 item = {
                     'id_pergunta': row['id_pergunta'],
                     'enunciado': row['enunciado'],
-                    'subtemas': subtemas,
-                    'respostas_corretas': respostas_corretas,
-                    'dica': row.get('dica'),
-                    'nota': row.get('nota'),
                     'dificuldade': dificuldade,
                     'versao_pergunta': row.get('versao'),
                     'estrelas': row.get('estrelas'),
                 }
 
+                # Campos extras só no modo revisão
+                if modo == 'revisao':
+                    item.update({
+                        'subtemas': subtemas,
+                        'respostas_corretas': respostas_corretas,
+                        'dica': row.get('dica'),
+                        'nota': row.get('nota'),
+                    })
+
             else:  # objetiva
                 item = {
                     'id_pergunta': row['id_pergunta'],
                     'enunciado': row['enunciado'],
-                    'subtemas': subtemas,
                     'alternativa_a': row.get('alternativa_a'),
                     'alternativa_b': row.get('alternativa_b'),
                     'alternativa_c': row.get('alternativa_c'),
                     'alternativa_d': row.get('alternativa_d'),
-                    'resposta_correta': row.get('resposta_correta'),
-                    'nota': row.get('nota'),
                     'dificuldade': dificuldade,
                     'versao_pergunta': row.get('versao'),
-                    'estrelas': row.get('estrelas')
+                    'estrelas': row.get('estrelas'),
                 }
 
+                # No modo revisão pode mandar resposta correta e nota
+                if modo == 'revisao':
+                    item.update({
+                        'resposta_correta': row.get('resposta_correta'),
+                        'nota': row.get('nota'),
+                        'subtemas': subtemas,
+                    })
             # filtra por modo
             if modo == 'desafio' and not respondida:
                 perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
@@ -929,10 +985,8 @@ def listar_perguntas():
         app.logger.exception("Erro ao buscar perguntas para o usuário com id %s", id_usuario)
         return jsonify({'erro': 'Erro interno ao consultar perguntas'}), 500
     finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+        if cur: cur.close()
+        if conn: conn.close()
 
     pontuacoes_usuario = buscar_pontuacoes_usuario(id_usuario)
 
@@ -998,10 +1052,8 @@ def registrar_resposta():
             conn.rollback()
         app.logger.exception("Erro ao tentar registrar pergunta com id %s perguntas para o usuário com id %s", dados["id_pergunta"], id_usuario)
     finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+        if cur: cur.close()
+        if conn: conn.close()
 
 if not database_url:
     if __name__ == '__main__':
