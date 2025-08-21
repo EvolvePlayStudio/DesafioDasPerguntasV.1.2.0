@@ -1,9 +1,10 @@
 import { obterDificuldadesDisponiveis, obterInfoRankingAtual } from "./utils.js"
 let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"))
-let aguardando_proxima = false // Variável que evita uso de dica após já ter respondido a pergunta
+console.log("Perguntas por dificuldade:", perguntas_por_dificuldade)
+let aguardando_proxima = false // Variável que indica quando se está aguardando próxima pergunta
 let dica_gasta = false
 let inicio_pergunta = null  // horário inicial da pergunta
-let pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario")) // DEVERÁ SER REMOVIDA EM BREVE
+let pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario"))
 let animacao_concluida = false
 let pergunta_selecionada = null
 let dificuldades_permitidas = ['Fácil']
@@ -37,10 +38,10 @@ const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
 // Tempos para as alternativas
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 const PAUSA_ANTES_DA_A        = 500;
-const GAP_ANTES_DA_LETRA      = 120
+const GAP_ANTES_DA_LETRA      = 120;
 const GAP_LETRA_PARA_TEXTO    = 180;
 const GAP_ENTRE_ALTERNATIVAS  = 380;
-const VELOCIDADE_LETRA        = 25
+const VELOCIDADE_LETRA        = 25;
 
 function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
   const intervaloMin = 20; // ms entre frames no máximo, para smooth
@@ -225,7 +226,7 @@ function configurarEstrelas() {
 }
 
 async function enviarResposta() {
-  function armazenarDicaENota(nota, dica=null) {
+  function armazenarDicaENota(nota) {
     
     let perguntas = JSON.parse(localStorage.getItem("perguntas")) || [];
 
@@ -241,9 +242,8 @@ async function enviarResposta() {
         return
       }
       
-      // Atualiza nota e dica e resposta correta da pergunta
+      // Atualiza nota e resposta correta da pergunta
       if (pergunta) {
-        if (dica) pergunta.dica = pergunta_selecionada.dica = dica;
         pergunta.nota = pergunta_selecionada.nota = nota;
         if (tipo_pergunta === 'objetiva') {
           pergunta.resposta_correta = pergunta_selecionada.resposta_correta;
@@ -372,7 +372,7 @@ async function enviarResposta() {
     else {
       const info_pergunta = await fetch(`pergunta/${pergunta_selecionada.id_pergunta}/${tipo_pergunta}/gabarito`).then(r => r.json());
       respostas_corretas = pergunta_selecionada.respostas_corretas = info_pergunta["respostas_corretas"];
-      armazenarDicaENota(info_pergunta["nota"], info_pergunta["dica"])
+      armazenarDicaENota(info_pergunta["nota"])
     }
     acertou = respostaDiscursivaCorreta(resposta_usuario, respostas_corretas);
   }
@@ -568,11 +568,11 @@ function mostrarBotoesAcao() {
 function mostrarDica() {
   if (pergunta_selecionada.dica?.trim()) {
     document.getElementById("dica-texto").textContent = pergunta_selecionada.dica;
-    dica_box.style.display = "block;"
+    dica_box.style.display = "block";
     dica_gasta = true;   
   }
   else {
-    dica_box.style.display = "none"
+    dica_box.style.display = "none";
   }
 }
 
@@ -665,11 +665,12 @@ function mostrarPergunta() {
     caixa_para_resposta.disabled = false;
     caixa_para_resposta.value = "";
   
-    // Decide se deve mostrar o ícone de dica
     if (!regras_usuario) {
           console.error("Ranking do usuário não encontrado nas regras de pontuação.");
           return 0;
     }
+
+    // Decide se deve mostrar o ícone de dica
     let dica_permitida = true
     if (pergunta_selecionada.dificuldade === 'Fácil' && regras_usuario.pontos_acerto_facil <= 10 || pergunta_selecionada.dificuldade === 'Médio' && regras_usuario.pontos_acerto_medio <= 10 || !pergunta_selecionada.dica) {
       dica_permitida = false

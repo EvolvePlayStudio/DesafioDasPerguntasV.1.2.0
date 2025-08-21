@@ -710,7 +710,7 @@ def sobre_app():
 
 @app.route("/pergunta/<int:id_pergunta>/<tipo_pergunta>/gabarito", methods=["GET"])
 def get_gabarito(id_pergunta, tipo_pergunta):
-    """Função para só pegar o gabarito, dica e nota da pergunta após resposta enviada pelo usuário no modo desafio (evita expor o gabarito no localStorage)"""
+    """Função para só pegar o gabarito e nota da pergunta após resposta enviada pelo usuário no modo desafio (evita expor o gabarito no localStorage)"""
     conn = cur = None
     try:
         conn = get_db_connection()
@@ -736,7 +736,7 @@ def get_gabarito(id_pergunta, tipo_pergunta):
         # Consulta para discursivas
         else:
             cur.execute("""
-                SELECT respostas_corretas, dica, nota
+                SELECT respostas_corretas, nota
                 FROM perguntas_discursivas
                 WHERE id_pergunta = %s
             """, (id_pergunta,))
@@ -744,7 +744,7 @@ def get_gabarito(id_pergunta, tipo_pergunta):
 
             if not row:
                 return {"erro": "Pergunta não encontrada"}, 404
-            rc, dica, nota = row
+            rc, nota = row
 
             # Função abaixo repetida em listar_perguntas
             try:
@@ -754,7 +754,6 @@ def get_gabarito(id_pergunta, tipo_pergunta):
 
             return {
                 "respostas_corretas": respostas_corretas,
-                "dica": dica,
                 "nota": nota
             }
     except Exception:
@@ -871,11 +870,11 @@ def listar_perguntas():
     tipo_pergunta = (request.args.get('tipo-de-pergunta') or '').lower()
     id_usuario = session.get('id_usuario')
 
-    # configurações locais
+    # Configurações locais
     limit = 90
     privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
 
-    # validações
+    # Validações
     if not tema or modo not in ('desafio', 'revisao') or tipo_pergunta not in ('objetiva', 'discursiva'):
         return jsonify({'erro': 'Parâmetros inválidos ou ausentes'}), 400
     if not id_usuario:
@@ -899,10 +898,14 @@ def listar_perguntas():
         is_privileged = int(id_usuario) in privileged_ids
 
         select_clause = ",\n".join(cfg['select_cols'])
-        tipo_str = cfg['tipo_str']   # usado para filtrar feedbacks/respostas
-        table = cfg['table']         # nome da tabela — vindo do cfg interno (seguro)
+        tipo_str = cfg['tipo_str']   # Usado para filtrar feedbacks/respostas
+        table = cfg['table']         # Nome da tabela — vindo do cfg interno (seguro)
 
+        """
         where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
+        """
+
+        where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
 
         sql = f"""
             SELECT {select_clause}
@@ -922,7 +925,7 @@ def listar_perguntas():
         perguntas_por_dificuldade = {'Fácil': [], 'Médio': [], 'Difícil': []}
 
         for row in linhas:
-            dificuldade = row.get('dificuldade') or 'Médio'  # se por algum motivo for nulo, evita KeyError
+            dificuldade = row.get('dificuldade') or 'Médio'  # Se por algum motivo for nulo, evita KeyError
             respondida = bool(row.get('respondida'))
 
             sb = row.get('subtemas') or []
@@ -942,6 +945,7 @@ def listar_perguntas():
                 item = {
                     'id_pergunta': row['id_pergunta'],
                     'enunciado': row['enunciado'],
+                    'dica': row.get('dica'),
                     'dificuldade': dificuldade,
                     'versao_pergunta': row.get('versao'),
                     'estrelas': row.get('estrelas'),
@@ -952,7 +956,6 @@ def listar_perguntas():
                     item.update({
                         'subtemas': subtemas,
                         'respostas_corretas': respostas_corretas,
-                        'dica': row.get('dica'),
                         'nota': row.get('nota'),
                     })
 
