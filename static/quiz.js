@@ -1,4 +1,5 @@
-import { obterDificuldadesDisponiveis, obterInfoRankingAtual } from "./utils.js"
+import { obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado } from "./utils.js"
+
 let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"))
 console.log("Perguntas por dificuldade:", perguntas_por_dificuldade)
 let aguardando_proxima = false // Variável que indica quando se está aguardando próxima pergunta
@@ -333,6 +334,8 @@ async function enviarResposta() {
 
   let resposta_usuario;
   let acertou;
+  let prosseguir_com_resultado = true;
+  let pontos_ganhos = 0;
 
   if (tipo_pergunta === 'objetiva') {
     const widgetAlternativaSelecionada = document.querySelector('.alternativa-btn.selected');
@@ -345,10 +348,16 @@ async function enviarResposta() {
       acertou = respostaObjetivaCorreta();
     }
     else {
-      const info_pergunta = await fetch(`/pergunta/${pergunta_selecionada.id_pergunta}/${tipo_pergunta}/gabarito`).then(r => r.json());
-      letra_correta = pergunta_selecionada.resposta_correta = info_pergunta["resposta_correta"];
-      acertou = respostaObjetivaCorreta();
-      armazenarDicaENota(info_pergunta["nota"])
+      const response = await fetchAutenticado(`/pergunta/${pergunta_selecionada.id_pergunta}/${tipo_pergunta}/gabarito`);
+      if (response.ok) {
+        const info_pergunta = await response.json();
+        letra_correta = pergunta_selecionada.resposta_correta = info_pergunta["resposta_correta"];
+        acertou = respostaObjetivaCorreta();
+        armazenarDicaENota(info_pergunta["nota"]);
+      }
+      else {
+        return;
+      }
     }
     
     const correta = document.querySelector(`.alternativa-btn[data-letter="${letra_correta}"]`);
@@ -370,15 +379,18 @@ async function enviarResposta() {
       respostas_corretas = pergunta_selecionada.respostas_corretas;
     }
     else {
-      const info_pergunta = await fetch(`pergunta/${pergunta_selecionada.id_pergunta}/${tipo_pergunta}/gabarito`).then(r => r.json());
-      respostas_corretas = pergunta_selecionada.respostas_corretas = info_pergunta["respostas_corretas"];
-      armazenarDicaENota(info_pergunta["nota"])
+      const response = await fetchAutenticado(`/pergunta/${pergunta_selecionada.id_pergunta}/${tipo_pergunta}/gabarito`);
+      if (response.ok) {
+        const info_pergunta = await response.json();
+        respostas_corretas = pergunta_selecionada.respostas_corretas = info_pergunta["respostas_corretas"];
+        armazenarDicaENota(info_pergunta["nota"]);
+      }
+      else {
+        return;
+      }
     }
     acertou = respostaDiscursivaCorreta(resposta_usuario, respostas_corretas);
   }
-  
-  let prosseguir_com_resultado = true;
-  let pontos_ganhos = 0;
 
   if (modo_jogo === 'desafio') {
     
@@ -888,40 +900,20 @@ function selecionarAlternativa(btn) {
   alternativaSelecionada = btn.dataset.letter || null;
 }
 
-function usarDica() {
+async function usarDica() {
   if (aguardando_proxima || dica_gasta) return;
   if (modo_jogo == 'desafio') {
     let dicas_restantes = parseInt(localStorage.getItem("dicas_restantes") || "0");
     if (dicas_restantes <= 0) {
       return;
     }
-
-    fetch("/usar_dica", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({})
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        resultado.style.display = "none";
-        dicas_restantes -= 1;
-        localStorage.setItem("dicas_restantes", dicas_restantes);
-        document.getElementById("contador-dicas").textContent = dicas_restantes;
-        mostrarDica();
-      } 
-      else {
-        resultado.style.display = "block";
-        resultado.style.color = "red";
-        resultado.innerHTML = 'Erro ao usar a dica';
-      }
-    })
-    .catch(error => {
-      resultado.style.display = "block";
-      resultado.style.color = "red";
-      resultado.innerHTML = 'Erro ao usar a dica';
-      console.error("Erro ao requisitar o backend:", error);
-    });
+    const response = await fetchAutenticado("/usar_dica")
+    if (response.ok) {
+      dicas_restantes -= 1;
+      localStorage.setItem("dicas_restantes", dicas_restantes);
+      document.getElementById("contador-dicas").textContent = dicas_restantes;
+      mostrarDica();
+    }
   }
   else {
     mostrarDica();
@@ -1000,7 +992,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (event.key === 'Enter') {
       event.preventDefault();
 
-      // verifica se o botão de enviar está visível
+      // Verifica se o botão de enviar está visível
       if (btn_enviar && btn_enviar.offsetParent !== null) {
         enviarResposta();
       }

@@ -1,10 +1,10 @@
-import { obterPerguntasDisponiveis } from "./utils.js";
+import { obterPerguntasDisponiveis, fetchAutenticado } from "./utils.js";
 
 let modo_jogo = null;
 let tipo_pergunta = null;
-const mensagem = document.getElementById("mensagem")
+const mensagem = document.getElementById("mensagem");
 
-function iniciarQuiz(event) {
+async function iniciarQuiz(event) {
   // Atualiza o tema atual no localStorage
   const tema_atual = decodeURIComponent(event.currentTarget.dataset.tema);
   localStorage.setItem("tema_atual", tema_atual)
@@ -30,13 +30,15 @@ function iniciarQuiz(event) {
   exibirMensagem("Preparando quiz...", '#d1d1d1ff', false)
 
   // Carrega as perguntas para o quiz
-  fetch(`/api/perguntas?tema=${tema_atual}&modo=${modo_jogo}&tipo-de-pergunta=${tipo_pergunta}`)
-    .then(response => response.json())
-    .then(data => {
+  try {
+    const response = await fetchAutenticado(`/api/perguntas?tema=${tema_atual}&modo=${modo_jogo}&tipo-de-pergunta=${tipo_pergunta}`)
+    if (response.ok) {
+      const data = await response.json();
+
       // Atualiza as pontuações do usuário no tema e as perguntas no localStorage
       localStorage.setItem("pontuacoes_usuario", JSON.stringify(data["pontuacoes_usuario"]));
       localStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
-
+    
       // Chama a tela de quiz ou exibe mensagem caso não haja perguntas disponíveis
       const perguntas_filtradas = obterPerguntasDisponiveis(data["perguntas"])
       const ha_perguntas_disponiveis = Object.values(perguntas_filtradas).some(arr => Array.isArray(arr) && arr.length > 0)
@@ -47,11 +49,11 @@ function iniciarQuiz(event) {
       else {
         exibirMensagem(`Você não possui perguntas ${tipo_pergunta}s disponíveis neste tema para o modo ${modo_jogo} no momento`, 'red')
       }
-    })
-  .catch(error => {
-      console.error("Erro ao carregar perguntas:", error);
-      return
-    });
+    }
+  }
+  catch (error) {
+    console.error("Erro ao carregar perguntas", error)
+  }
 }
 
 function carregarPreferenciasQuiz() {
@@ -90,9 +92,18 @@ function exibirMensagem(texto, cor, temporaria=true) {
 
 document.addEventListener("DOMContentLoaded", () => {
   // Implementa a função de clique no botão de doações
-  document.getElementById("btn-doacoes").addEventListener("click", () => {
-    window.location.href = "/doações"
-  })
+  document.getElementById("btn-doacoes").addEventListener("click", async () => {
+    const response = await fetchAutenticado("/doações");
+    if (response.ok) {
+      window.location.href = "/doações";
+    }
+    });
+
+  // Implementa a função de ir para a página home
+  document.getElementById("link-home").addEventListener("click", async (e) => {
+    e.preventDefault();
+    window.location.href = "/home";
+  });
 
   // Implementa a função de clique nos temas
   document.querySelectorAll(".tema-card").forEach(card => {

@@ -183,7 +183,7 @@
             <button type="submit">Entrar</button>
 
             <!-- Mensagem na tela de login -->
-            <div id="login-message" style="color: red; font-weight: bold; margin-top: 0.8rem; min-height: 0.1em; visibility: hidden; transition: 0.3s ease; text-align: center;">
+            <div id="login-message" style="color: red; font-weight: bold; margin-top: 0.6rem; margin-bottom: 0.6rem; min-height: 0.1em; visibility: hidden; transition: 0.3s ease; text-align: center;">
                 Digite seu email e senha
             </div>
         </form>
@@ -199,7 +199,7 @@
             <!-- Botão voltar -->
             <button type="button" class="btn-secondary" onclick="showForm('login')">Retornar à tela de login</button>
 
-            <!-- Mensagem de feedback -->
+            <!-- Mensagem na tela de recuperação de senha -->
             <div id="forgot-message" style="color: green; font-weight: bold; margin-top: 0.8rem; min-height: 0.1em; visibility: hidden; text-align: center;">
                 Se o email estiver cadastrado, enviaremos instruções.
             </div>
@@ -236,6 +236,6 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='login.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='login.js') }}"></script>
 </body>
 </html>

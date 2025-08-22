@@ -1,4 +1,17 @@
+export async function fetchAutenticado(url) {
+  const token = sessionStorage.getItem("token_sessao")
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {"Authorization": `Bearer ${token}`}
+  })
 
+  if (!response.ok) {
+    localStorage.setItem("auth_message", "Sessão expirada");
+    window.location.href = "/login";
+  }
+
+  return response;
+}
 
 export function obterInfoRankingAtual() {
   const pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario")) || {}

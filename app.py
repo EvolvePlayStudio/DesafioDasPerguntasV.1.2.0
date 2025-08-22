@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, request, session, redirect, flash, send_file, url_for
+from flask import Flask, jsonify, render_template, request, session, redirect, flash, send_file, url_for, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from utils import *
 import secrets
@@ -18,6 +18,7 @@ from PIL import Image, ImageEnhance, ImageFilter
 from io import BytesIO
 import urllib.parse
 import qrcode
+from functools import wraps
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 # Para fazer depuração na render
@@ -78,6 +79,7 @@ QUESTION_CONFIG = {
         'tipo_str': 'Objetiva'
     }
 }
+EMAILS_PROIBIDOS = ['admin@gmail.com']
 
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
 
@@ -104,107 +106,156 @@ def iniciar_agendamento():
 
 iniciar_agendamento()
 
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        print("Irei validar token de sessão")
+        token = None
+
+        # 1️⃣ Tenta extrair do header Authorization
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+
+        # 2️⃣ Se não tiver no header, tenta pegar do cookie
+        if not token:
+            token = request.cookies.get("token_sessao")
+        if not token:
+            return redirect("/login")
+
+        # 3️⃣ Verifica token no banco
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT id_usuario, ativo
+                FROM sessoes 
+                WHERE token = %s AND ativo=TRUE AND expira_em > NOW()
+            """, (token,))
+            row = cur.fetchone()
+            print(f"Token é {token}")
+            print(f"Token ativo? {row[1]}")
+        except Exception:
+            return jsonify({"message": "Erro ao validar sessão"}), 500
+        finally:
+            if cur: cur.close()
+            if conn: conn.close()
+
+        if not row:
+            return jsonify({"message": "Sessão expirada"}), 401
+
+        # Passa o user_id para a rota
+        return f(user_id=row[0], *args, **kwargs)
+
+    return decorated
+
 @app.route("/", methods=["GET"])
 def index():
     return render_template("login.html")  # ou sua página inicial real
 
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["GET","POST"])
 def login():
     conn = cur = None
     try:
-        if not request.is_json:
-            return jsonify(success=False, message="Content-Type deve ser application/json"), 415
+        if request.method == "POST":
+            if not request.is_json:
+                return jsonify(success=False, message="Content-Type deve ser application/json"), 415
 
-        data = request.get_json()
-        email = data.get("email")
-        senha = data.get("senha")
+            data = request.get_json()
+            email = data.get("email")
+            senha = data.get("senha")
 
-        if not email or not senha:
-            return jsonify(success=False, message="Email e senha são obrigatórios.")
-        
-        if not re.match(email_regex, email):
-            return jsonify(success=False, message="Formato de e-mail inválido"), 400
+            if not email or not senha:
+                return jsonify(success=False, message="Email e senha são obrigatórios.")
+            
+            if not re.match(email_regex, email):
+                return jsonify(success=False, message="Formato de e-mail inválido"), 400
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+            conn = get_db_connection()
+            cur = conn.cursor()
 
-        # Verifica se o usuário existe
-        cur.execute("SELECT id_usuario, senha_hash, email_confirmado, nome, dicas_restantes, perguntas_restantes FROM usuarios_registrados WHERE email = %s", (email,))
-        usuario = cur.fetchone()
+            # Verifica usuário
+            cur.execute("""
+                SELECT id_usuario, senha_hash, email_confirmado, nome, dicas_restantes, perguntas_restantes
+                FROM usuarios_registrados WHERE email = %s
+            """, (email,))
+            usuario = cur.fetchone()
 
-        if not usuario:
-            return jsonify(success=False, message="E-mail não registrado")
+            if not usuario:
+                return jsonify(success=False, message="E-mail não registrado")
 
-        id_usuario, senha_hash, email_confirmado, nome_usuario, dicas_restantes, perguntas_restantes = usuario
+            id_usuario, senha_hash, email_confirmado, nome_usuario, dicas_restantes, perguntas_restantes = usuario
+            session["id_usuario"] = id_usuario
+            session["email"] = email
+            print(f"Id usuário na sessão: {session['id_usuario']}")
 
-        if not check_password_hash(senha_hash, senha):
-            return jsonify(success=False, message="A senha está incorreta")
+            if not check_password_hash(senha_hash, senha):
+                return jsonify(success=False, message="Senha incorreta")
 
-        if not email_confirmado:
-            return jsonify(success=False, message="Você precisa confirmar seu e-mail antes de fazer login")
+            if not email_confirmado:
+                return jsonify(success=False, message="Você precisa confirmar seu e-mail antes de fazer login")
 
-        # Define sessão
-        session["id_usuario"] = id_usuario
-        session["email"] = email
+            # 🔒 Invalida sessões antigas
+            cur.execute("UPDATE sessoes SET ativo = FALSE WHERE id_usuario = %s", (id_usuario,))
 
-        # Busca as pontuações atuais do usuário
-        cur.execute(
-            "SELECT tema FROM pontuacoes_usuarios WHERE id_usuario = %s",
-            (id_usuario,)
-        )
-        temas_ja_registrados = {row[0].strip().lower() for row in cur.fetchall()}
+            # 🔑 Cria nova sessão/token
+            token = secrets.token_urlsafe(64)
+            expira_em = datetime.utcnow() + timedelta(hours=6)
 
-        # Normaliza os temas disponíveis (garante consistência de capitalização e espaços)
-        temas_normalizados = {tema.strip().lower(): tema for tema in temas_disponiveis}
+            cur.execute("""
+                INSERT INTO sessoes (id_usuario, token, expira_em, ativo)
+                VALUES (%s, %s, %s, TRUE)
+            """, (id_usuario, token, expira_em))
 
-        # Descobre quais rankings estão faltando
-        temas_faltantes = [
-            nome_original for chave, nome_original in temas_normalizados.items()
-            if chave not in temas_ja_registrados
-        ]
+            # Continua sua lógica de ranking/pontuação
+            cur.execute("SELECT tema FROM pontuacoes_usuarios WHERE id_usuario = %s", (id_usuario,))
+            temas_ja_registrados = {row[0].strip().lower() for row in cur.fetchall()}
+            temas_normalizados = {tema.strip().lower(): tema for tema in temas_disponiveis}
+            temas_faltantes = [nome_original for chave, nome_original in temas_normalizados.items() if chave not in temas_ja_registrados]
 
-        for tema in temas_faltantes:
-            cur.execute(
-                "INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao) VALUES (%s, %s, %s)",
-                (id_usuario, tema, 0)
-            )
-        
-        # Pega as regras de pontuação para acertos, erros e uso de dicas da pergunta
-        cur.execute("SELECT * FROM regras_pontuacao ORDER BY id_ranking")
-        linhas = cur.fetchall()
+            for tema in temas_faltantes:
+                cur.execute("INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao) VALUES (%s, %s, %s)", (id_usuario, tema, 0))
+            
+            cur.execute("SELECT * FROM regras_pontuacao ORDER BY id_ranking")
+            linhas = cur.fetchall()
+            colunas = [desc[0] for desc in cur.description]
+            conn.commit()
 
-        colunas = [desc[0] for desc in cur.description]
-        conn.commit()
-        # Transforma em lista de dicionários
-        regras_pontuacao = []
-        for linha in linhas:
-            regra = dict(zip(colunas, linha))
-            regras_pontuacao.append(regra)
+            regras_pontuacao = [dict(zip(colunas, linha)) for linha in linhas]
+
+        else:
+            return render_template("login.html")
+
     except Exception:
-        # Se a conexão existir, reverte transação
-        if conn:
-            conn.rollback()
-
-        # Captura o stack trace completo
-        tb = traceback.format_exc()
-
-        # Registra no logger (que você já direcionou para stdout)
-        app.logger.error("Erro no login:\n" + tb)
-
-        # Retorna erro genérico para o cliente
-        return jsonify(success=False, message="Erro interno no servidor, não foi possível fazer login"), 500
+        if conn: conn.rollback()
+        app.logger.error("Erro no login:\n" + traceback.format_exc())
+        return jsonify(success=False, message="Erro interno no servidor"), 500
     finally:
         if cur: cur.close()
         if conn: conn.close()
 
-    return jsonify(
-            success=True,
-            message="Login realizado com sucesso",
-            regras_pontuacao=regras_pontuacao,
-            dicas_restantes=dicas_restantes,
-            perguntas_restantes=perguntas_restantes,
-            nome_usuario=nome_usuario
-        ), 200
+    # 🔑 Retorna JSON e define cookie HttpOnly
+    resp = make_response(jsonify(
+        success=True,
+        message="Login realizado com sucesso",
+        token=token,
+        regras_pontuacao=regras_pontuacao,
+        dicas_restantes=dicas_restantes,
+        perguntas_restantes=perguntas_restantes,
+        nome_usuario=nome_usuario
+    ), 200)
+
+    # Cookie HttpOnly, expirando junto com o token
+    resp.set_cookie(
+        "token_sessao",
+        token,
+        httponly=True,
+        secure=False,       # mudar para True se usar HTTPS
+        samesite="Lax",
+        max_age=6*3600      # 6 horas em segundos
+    )
+
+    return resp
 
 def checar_dados_registro(nome, email, senha):
     if not nome or not email or not senha:
@@ -250,6 +301,9 @@ def registrar():
     senha = data.get("senha")
     captcha_token = data.get("captcha_token")
     captcha_selecoes = list(map(int, data.get("captcha_selecoes", [])))
+
+    if email in EMAILS_PROIBIDOS:
+        return jsonify(success=False, message="E-mail inválido")
 
     # Validação do CAPTCHA
     if not captcha_token:
@@ -384,7 +438,6 @@ def formatar_hora_servidor(timestamp):
         return None
     dt = datetime.fromtimestamp(timestamp, FUSO_SERVIDOR)
     offset = FUSO_SERVIDOR.utcoffset(None)
-    hours = int(offset.total_seconds() // 3600)
     return dt.strftime("%H:%M")
 
 @app.route('/verificar_bloqueio')
@@ -511,7 +564,8 @@ def home():
     return render_template("home.html")
 
 @app.route("/doações")
-def doacoes():
+@token_required
+def doacoes(user_id):
     chave_pix = os.getenv("CHAVE_PIX")
     return render_template("doacoes.html", chave_pix=chave_pix)
 
@@ -548,10 +602,6 @@ def checkout(metodo, plano_id):
     finally:
         if cur: cur.close()
         if conn: conn.close()
-
-@app.route("/premium")
-def premium():
-    return render_template("premium.html")
 
 @app.route("/recuperação-de-senha", methods=["POST"])
 def esqueci_senha():
@@ -632,84 +682,9 @@ def enviar_email_recuperacao(destinatario, assunto, conteudo):
         server.login(remetente, senha)
         server.send_message(msg)
 
-@app.route("/reset_senha", methods=["GET", "POST"])
-def reset_senha():
-    token = request.args.get("token") if request.method == "GET" else request.form.get("token")
-    if not token:
-        return render_template("mensagem.html", titulo="Erro", mensagem="Token ausente.")
-
-    conn = cur = None
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-
-        # Busca usuário com token válido
-        cur.execute("""
-            SELECT id_usuario, expiracao_token_recuperacao
-            FROM usuarios_registrados
-            WHERE token_recuperacao = %s
-        """, (token,))
-        usuario = cur.fetchone()
-
-        if not usuario:
-            return render_template("mensagem.html", titulo="Erro", mensagem="Token inválido.")
-
-        id_usuario, expira = usuario
-
-        if not expira or expira < datetime.utcnow():
-            return render_template("mensagem.html", titulo="Token expirado", mensagem="O token de recuperação expirou.")
-        
-        if request.method == "POST":
-            # Recebe novas senhas
-            nova_senha = request.form.get("senha", "").strip()
-            confirmar_senha = request.form.get("confirmar_senha", "").strip()
-
-            if not nova_senha or not confirmar_senha:
-                return render_template("reset_senha.html", token=token, erro="Preencha ambos os campos.")
-            if nova_senha != confirmar_senha:
-                return render_template("reset_senha.html", token=token, erro="As senhas não coincidem.")
-
-            # Hash da nova senha
-            senha_hash = generate_password_hash(nova_senha)
-
-            # Atualiza senha e remove token
-            cur.execute("""
-                UPDATE usuarios_registrados
-                SET senha_hash = %s,
-                    token_recuperacao = NULL,
-                    expiracao_token_recuperacao = NULL
-                WHERE id_usuario = %s
-            """, (senha_hash, id_usuario))
-            conn.commit()
-
-            return render_template("mensagem.html", titulo="Sucesso", mensagem="Senha redefinida com sucesso! Agora você pode fazer login.")
-
-        # GET: exibe formulário
-        return render_template("reset_senha.html", token=token)
-
-    except Exception:
-        if conn:
-            conn.rollback()
-        app.logger.exception(f"Erro reset_senha:")
-        return render_template("mensagem.html", titulo="Erro", mensagem="Erro ao redefinir a senha. Tente novamente.")
-    finally:
-        if cur: cur.close()
-        if conn: conn.close()
-
-@app.route("/politica-de-privacidade")
-def politica_privacidade():
-    return render_template("privacy_policy.html")
-
-@app.route("/termos-de-uso")
-def termos_uso():
-    return render_template("termos_de_uso.html")
-
-@app.route("/sobre-o-app")
-def sobre_app():
-    return render_template("sobre_o_app.html")
-
 @app.route("/pergunta/<int:id_pergunta>/<tipo_pergunta>/gabarito", methods=["GET"])
-def get_gabarito(id_pergunta, tipo_pergunta):
+@token_required
+def get_gabarito(id_pergunta, tipo_pergunta, user_id):
     """Função para só pegar o gabarito e nota da pergunta após resposta enviada pelo usuário no modo desafio (evita expor o gabarito no localStorage)"""
     conn = cur = None
     try:
@@ -763,103 +738,9 @@ def get_gabarito(id_pergunta, tipo_pergunta):
         if cur: cur.close()
         if conn: conn.close()
 
-@app.route("/quiz")
-def quiz():
-    tema = request.args.get("tema", "Geral")
-    nivel = request.args.get("nivel", "Médio")
-    return render_template("quiz.html", tema=tema, nivel=nivel)
-
-@app.route("/usar_dica", methods=["POST"])
-def usar_dica():
-    if "id_usuario" not in session:
-        return jsonify(success=False, message="Usuário não autenticado."), 401
-
-    id_usuario = session["id_usuario"]
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    # Verifica se ainda tem dicas
-    cur.execute("SELECT dicas_restantes FROM usuarios_registrados WHERE id_usuario = %s", (id_usuario,))
-    row = cur.fetchone()
-
-    if not row or row[0] <= 0:
-        cur.close()
-        conn.close()
-        return jsonify(success=False, message="Você não possui mais dicas."), 400
-
-    novas_dicas = row[0] - 1
-    cur.execute(
-        "UPDATE usuarios_registrados SET dicas_restantes = %s WHERE id_usuario = %s",
-        (novas_dicas, id_usuario)
-    )
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return jsonify(success=True, dicas_restantes=novas_dicas)
-
-@app.route("/enviar_feedback", methods=["POST"])
-def enviar_feedback():
-    data = request.get_json()
-    id_pergunta = data.get("id_pergunta")
-    tipo_pergunta = data.get("tipo_pergunta").capitalize()
-    email_usuario = session.get("email")
-    estrelas = data.get("estrelas")
-    versao_pergunta = data.get("versao_pergunta")
-    id_usuario = session.get("id_usuario")
-
-    if not all([id_pergunta, tipo_pergunta, email_usuario, estrelas, versao_pergunta, id_usuario]):
-        return jsonify({"erro": "Dados incompletos"}), 400
-    
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO feedbacks (id_pergunta, tipo_pergunta, email_usuario, estrelas, versao_pergunta, id_usuario)
-            VALUES (%s, %s, %s, %s, %s, %s)
-            ON CONFLICT (id_pergunta, tipo_pergunta, id_usuario)
-            DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
-        """, (id_pergunta, tipo_pergunta, email_usuario, estrelas, versao_pergunta, id_usuario))
-        conn.commit()
-        cur.close()
-        return jsonify({"sucesso": True})
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        return jsonify({"erro": str(e)}), 500
-
-def buscar_pontuacoes_usuario(id_usuario):
-    """Busca pontuações do usuário em cada tema de perguntas"""
-    pontuacoes_usuario = {}
-    conn = cur = None
-
-    # Conexão com o servidor
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-    except Exception as e:
-        app.logger.exception("Erro ao tentar conectar para buscar pontuações do usuário com id %s: %s", id_usuario, e)
-        return pontuacoes_usuario
-    
-    # Busca das pontuações do usuário
-    try:
-        cur.execute(
-            "SELECT tema, pontuacao FROM pontuacoes_usuarios WHERE id_usuario = %s",
-            (id_usuario,)
-        )
-        pontuacoes_usuario = {tema: pontuacao for tema, pontuacao in cur.fetchall()}
-    except Exception as e:
-        app.logger.exception("Erro ao tentar obter pontuações do usuário %s", id_usuario)
-    finally:
-        if cur: cur.close()
-        if conn: conn.close()
-
-    return pontuacoes_usuario
-
 @app.route('/api/perguntas', methods=['GET'])
-def listar_perguntas():
+@token_required
+def listar_perguntas(user_id):
     """
     Retorna perguntas agrupadas por dificuldade conforme tipo (discursiva/objetiva) e modo (desafio/revisao).
     Retorna também as pontuações atuais do usuário em cada tema.
@@ -869,6 +750,7 @@ def listar_perguntas():
     modo = (request.args.get('modo') or '').lower()
     tipo_pergunta = (request.args.get('tipo-de-pergunta') or '').lower()
     id_usuario = session.get('id_usuario')
+    print(f"2.ID do usuário: {id_usuario}")
 
     # Configurações locais
     limit = 90
@@ -876,12 +758,15 @@ def listar_perguntas():
 
     # Validações
     if not tema or modo not in ('desafio', 'revisao') or tipo_pergunta not in ('objetiva', 'discursiva'):
+        print("Parâmetros inválidos ou ausentes")
         return jsonify({'erro': 'Parâmetros inválidos ou ausentes'}), 400
     if not id_usuario:
+        print("Usuário não autenticado")
         return jsonify({'erro': 'Usuário não autenticado'}), 401
     
     cfg = QUESTION_CONFIG.get(tipo_pergunta)
     if not cfg:
+        print("Tipo de pergunta inválido")
         return jsonify({'erro': 'Tipo de pergunta inválido'}), 400
     
     # Conexão com servidor
@@ -890,9 +775,10 @@ def listar_perguntas():
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
     except Exception:
+        print("Erro ao tentar conectar para buscar perguntas")
         app.logger.exception("Erro ao tentar conectar para buscar perguntas para o usuário com id %s", id_usuario)
         return jsonify({'erro': 'Erro ao tentar conectar para buscar novas perguntas'}), 500
-    
+
     # Busca das perguntas
     try:
         is_privileged = int(id_usuario) in privileged_ids
@@ -901,12 +787,13 @@ def listar_perguntas():
         tipo_str = cfg['tipo_str']   # Usado para filtrar feedbacks/respostas
         table = cfg['table']         # Nome da tabela — vindo do cfg interno (seguro)
 
-        """
+        
         where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
+        
         """
-
         where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
-
+        """
+        
         sql = f"""
             SELECT {select_clause}
             FROM {table} p
@@ -985,6 +872,7 @@ def listar_perguntas():
             elif modo == 'revisao' and respondida:
                 perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
     except Exception:
+        print(f"Erro ao buscar perguntas para o usuário")
         app.logger.exception("Erro ao buscar perguntas para o usuário com id %s", id_usuario)
         return jsonify({'erro': 'Erro interno ao consultar perguntas'}), 500
     finally:
@@ -998,8 +886,184 @@ def listar_perguntas():
         'pontuacoes_usuario': pontuacoes_usuario
     })
 
+@app.route("/reset_senha", methods=["GET", "POST"])
+def reset_senha():
+    token = request.args.get("token") if request.method == "GET" else request.form.get("token")
+    if not token:
+        return render_template("mensagem.html", titulo="Erro", mensagem="Token ausente.")
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Busca usuário com token válido
+        cur.execute("""
+            SELECT id_usuario, expiracao_token_recuperacao
+            FROM usuarios_registrados
+            WHERE token_recuperacao = %s
+        """, (token,))
+        usuario = cur.fetchone()
+
+        if not usuario:
+            return render_template("mensagem.html", titulo="Erro", mensagem="Token inválido.")
+
+        id_usuario, expira = usuario
+
+        if not expira or expira < datetime.utcnow():
+            return render_template("mensagem.html", titulo="Token expirado", mensagem="O token de recuperação expirou.")
+        
+        if request.method == "POST":
+            # Recebe novas senhas
+            nova_senha = request.form.get("senha", "").strip()
+            confirmar_senha = request.form.get("confirmar_senha", "").strip()
+
+            if not nova_senha or not confirmar_senha:
+                return render_template("reset_senha.html", token=token, erro="Preencha ambos os campos.")
+            if nova_senha != confirmar_senha:
+                return render_template("reset_senha.html", token=token, erro="As senhas não coincidem.")
+
+            # Hash da nova senha
+            senha_hash = generate_password_hash(nova_senha)
+
+            # Atualiza senha e remove token
+            cur.execute("""
+                UPDATE usuarios_registrados
+                SET senha_hash = %s,
+                    token_recuperacao = NULL,
+                    expiracao_token_recuperacao = NULL
+                WHERE id_usuario = %s
+            """, (senha_hash, id_usuario))
+            conn.commit()
+
+            return render_template("mensagem.html", titulo="Sucesso", mensagem="Senha redefinida com sucesso! Agora você pode fazer login.")
+
+        # GET: exibe formulário
+        return render_template("reset_senha.html", token=token)
+
+    except Exception:
+        if conn:
+            conn.rollback()
+        app.logger.exception(f"Erro reset_senha:")
+        return render_template("mensagem.html", titulo="Erro", mensagem="Erro ao redefinir a senha. Tente novamente.")
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route("/politica-de-privacidade")
+def politica_privacidade():
+    return render_template("privacy_policy.html")
+
+@app.route("/sobre-o-app")
+def sobre_app():
+    return render_template("sobre_o_app.html")
+
+@app.route("/termos-de-uso")
+def termos_uso():
+    return render_template("termos_de_uso.html")
+
+@app.route("/quiz")
+@token_required
+def quiz(user_id):
+    tema = request.args.get("tema", "Geral")
+    nivel = request.args.get("nivel", "Médio")
+    return render_template("quiz.html", tema=tema, nivel=nivel)
+
+@app.route("/usar_dica", methods=["GET","POST"])
+@token_required
+def usar_dica(user_id):
+    if "id_usuario" not in session:
+        return jsonify(success=False, message="Usuário não autenticado."), 401
+
+    id_usuario = session["id_usuario"]
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Verifica se ainda tem dicas
+    cur.execute("SELECT dicas_restantes FROM usuarios_registrados WHERE id_usuario = %s", (id_usuario,))
+    row = cur.fetchone()
+
+    if not row or row[0] <= 0:
+        cur.close()
+        conn.close()
+        return jsonify(success=False, message="Você não possui mais dicas."), 400
+
+    novas_dicas = row[0] - 1
+    cur.execute(
+        "UPDATE usuarios_registrados SET dicas_restantes = %s WHERE id_usuario = %s",
+        (novas_dicas, id_usuario)
+    )
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify(success=True, dicas_restantes=novas_dicas)
+
+@app.route("/enviar_feedback", methods=["POST"])
+@token_required
+def enviar_feedback(user_id):
+    data = request.get_json()
+    id_pergunta = data.get("id_pergunta")
+    tipo_pergunta = data.get("tipo_pergunta").capitalize()
+    email_usuario = session.get("email")
+    estrelas = data.get("estrelas")
+    versao_pergunta = data.get("versao_pergunta")
+    id_usuario = session.get("id_usuario")
+
+    if not all([id_pergunta, tipo_pergunta, email_usuario, estrelas, versao_pergunta, id_usuario]):
+        return jsonify({"erro": "Dados incompletos"}), 400
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO feedbacks (id_pergunta, tipo_pergunta, email_usuario, estrelas, versao_pergunta, id_usuario)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (id_pergunta, tipo_pergunta, id_usuario)
+            DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
+        """, (id_pergunta, tipo_pergunta, email_usuario, estrelas, versao_pergunta, id_usuario))
+        conn.commit()
+        cur.close()
+        return jsonify({"sucesso": True})
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return jsonify({"erro": str(e)}), 500
+
+def buscar_pontuacoes_usuario(id_usuario):
+    """Busca pontuações do usuário em cada tema de perguntas"""
+    pontuacoes_usuario = {}
+    conn = cur = None
+
+    # Conexão com o servidor
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+    except Exception as e:
+        app.logger.exception("Erro ao tentar conectar para buscar pontuações do usuário com id %s: %s", id_usuario, e)
+        return pontuacoes_usuario
+    
+    # Busca das pontuações do usuário
+    try:
+        cur.execute(
+            "SELECT tema, pontuacao FROM pontuacoes_usuarios WHERE id_usuario = %s",
+            (id_usuario,)
+        )
+        pontuacoes_usuario = {tema: pontuacao for tema, pontuacao in cur.fetchall()}
+        print(f"Pontuações do usuário recebidas: {pontuacoes_usuario}")
+    except Exception as e:
+        app.logger.exception("Erro ao tentar obter pontuações do usuário %s", id_usuario)
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+    return pontuacoes_usuario
+
 @app.route("/registrar_resposta", methods=["POST"])
-def registrar_resposta():
+@token_required
+def registrar_resposta(user_id):
     dados = request.get_json()
     dados["tipo_pergunta"] = dados["tipo_pergunta"].capitalize()
     id_usuario = session.get("id_usuario")

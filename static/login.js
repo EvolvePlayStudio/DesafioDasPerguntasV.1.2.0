@@ -1,7 +1,6 @@
-document.addEventListener('DOMContentLoaded', function () {
-  // Limpa o armazenamento local para evitar dados de sessões anteriores
-  localStorage.clear();
+import { fetchAutenticado } from "./utils.js";
 
+document.addEventListener('DOMContentLoaded', function () {
   // Variáveis globais para CAPTCHA
   let captchaToken = null;
   let selecoes = [];
@@ -32,6 +31,13 @@ document.addEventListener('DOMContentLoaded', function () {
   const captchaGrid = document.getElementById('captcha-grid');
   const inputCaptchaToken = document.getElementById('captcha-token');
   const inputCaptchaSelecoes = document.getElementById('captcha-selecoes');
+
+  const msg = localStorage.getItem("auth_message");
+  if (msg) {
+    lbl_mensagem_login.style.visibility = 'visible';
+    lbl_mensagem_login.style.color = 'red';
+    lbl_mensagem_login.textContent = msg;
+  }
 
   // Estado inicial
   if (captchaContainer) captchaContainer.hidden = true;  // garantia extra
@@ -302,9 +308,11 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.setItem("dicas_restantes", JSON.stringify(data.dicas_restantes || 0));
         localStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes || 0));
         localStorage.setItem("nome_usuario", data.nome_usuario || '');
+        sessionStorage.setItem("token_sessao", data.token);
 
         window.location.href = "/home";
-      } else {
+      } 
+      else {
         if (lbl_mensagem_login) {
           lbl_mensagem_login.style.visibility = 'visible';
           lbl_mensagem_login.style.color = 'red';
@@ -398,14 +406,15 @@ document.addEventListener('DOMContentLoaded', function () {
       login_tab.classList.add('active');
       register_tab.classList.remove('active');
       if (info_section) info_section.style.display = '';
-      if (lbl_mensagem_login && !registro_realizado) {
+      if (lbl_mensagem_login && !registro_realizado && lbl_mensagem_login.textContent != "Sessão expirada") {
         lbl_mensagem_login.textContent = '';
       }
       if (lbl_mensagem_registro) {
         lbl_mensagem_registro.textContent = '';
         lbl_mensagem_registro.style.visibility = 'hidden';
       }
-    } else if (type === 'register') {
+    }
+    else if (type === 'register') {
       try {
         const response = await fetch("/verificar_bloqueio", {
           method: "GET",
