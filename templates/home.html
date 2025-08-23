@@ -180,7 +180,7 @@
     }
     .cards-container {
       display: grid;
-      grid-template-columns:repeat(3, 1fr);
+      grid-template-columns:repeat(4, 1fr);
       /*grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); Para quando tiverem 8 temas*/
       row-gap: 3.5rem;
       column-gap: 1.5rem;
@@ -289,6 +289,10 @@
         <div class="card tema-card" data-tema="Esportes">
           <img src="{{ url_for('static', filename='img/Esportes.jpeg') }}" alt="Esportes">
           <span>Esportes</span>
+        </div>
+        <div class="card tema-card" data-tema="Filosofia">
+          <img src="{{ url_for('static', filename='img/Filosofia.jpeg') }}" alt="Filosofia">
+          <span>Filosofia</span>
         </div>
         <div class="card tema-card" data-tema="Geografia">
           <img src="{{ url_for('static', filename='img/Geografia.jpeg') }}" alt="Geografia">
