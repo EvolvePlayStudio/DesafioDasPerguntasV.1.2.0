@@ -37,11 +37,12 @@ document.addEventListener('DOMContentLoaded', function () {
     lbl_mensagem_login.style.visibility = 'visible';
     lbl_mensagem_login.style.color = 'red';
     lbl_mensagem_login.textContent = msg;
+    localStorage.removeItem("auth_message");
   }
 
   // Estado inicial
-  if (captchaContainer) captchaContainer.hidden = true;  // garantia extra
-  if (btnRegister) btnRegister.disabled = false;         // botão ativo até usuário clicar (submit controlará)
+  if (captchaContainer) captchaContainer.hidden = true;  // Garantia extra
+  if (btnRegister) btnRegister.disabled = false;         // Botão ativo até usuário clicar (submit controlará)
 
   // Função para carregar CAPTCHA da API e montar interface
   async function carregarCaptcha() {
@@ -303,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const data = await response.json();
 
       if (data.success) {
-        // grava localStorage só se login OK
+        // Grava localStorage só se login OK
         localStorage.setItem("regras_pontuacao", JSON.stringify(data.regras_pontuacao || []));
         localStorage.setItem("dicas_restantes", JSON.stringify(data.dicas_restantes || 0));
         localStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes || 0));

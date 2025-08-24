@@ -745,7 +745,7 @@ def listar_perguntas(user_id):
     Retorna perguntas agrupadas por dificuldade conforme tipo (discursiva/objetiva) e modo (desafio/revisao).
     Retorna também as pontuações atuais do usuário em cada tema.
     """
-    # parâmetros de query
+    # Parâmetros de query
     tema = request.args.get('tema')
     modo = (request.args.get('modo') or '').lower()
     tipo_pergunta = (request.args.get('tipo-de-pergunta') or '').lower()
@@ -844,7 +844,7 @@ def listar_perguntas(user_id):
                         'nota': row.get('nota'),
                     })
 
-            else:  # objetiva
+            else:  # Objetiva
                 item = {
                     'id_pergunta': row['id_pergunta'],
                     'enunciado': row['enunciado'],
@@ -864,7 +864,7 @@ def listar_perguntas(user_id):
                         'nota': row.get('nota'),
                         'subtemas': subtemas,
                     })
-            # filtra por modo
+            # Filtra por modo
             if modo == 'desafio' and not respondida:
                 perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
             elif modo == 'revisao' and respondida:

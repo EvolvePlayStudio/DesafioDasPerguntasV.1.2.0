@@ -1,7 +1,6 @@
 import { obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado } from "./utils.js"
 
 let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"))
-console.log("Perguntas por dificuldade:", perguntas_por_dificuldade)
 let aguardando_proxima = false // Variável que indica quando se está aguardando próxima pergunta
 let dica_gasta = false
 let inicio_pergunta = null  // horário inicial da pergunta
