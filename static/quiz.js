@@ -14,8 +14,8 @@ let info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1]
 let regras_usuario = null
 let ranking_usuario = null
 const tema_atual = decodeURIComponent(localStorage.getItem("tema_atual"))
-const modo_jogo = localStorage.getItem("modo_jogo")
-const tipo_pergunta = localStorage.getItem("tipo_pergunta")
+const modo_jogo = localStorage.getItem("modo_jogo").toLocaleLowerCase()
+const tipo_pergunta = localStorage.getItem("tipo_pergunta").toLocaleLowerCase()
 const lbl_pontuacao_usuario = document.getElementById('pontuacao')
 const lbl_pontos_ganhos = document.getElementById('incremento-pontuacao')
 const btn_enviar = document.getElementById("btn-enviar")
@@ -425,7 +425,12 @@ function esconderRespostasAceitas() {
 }
 
 function finalizarQuiz() {
-  window.location.href = "/home";
+  if (modo_jogo === 'desafio') {
+    window.location.href = "/home";
+  }
+  else {
+    window.location.href = "/pesquisa";
+  }
 }
 
 async function mostrarAlternativas() {

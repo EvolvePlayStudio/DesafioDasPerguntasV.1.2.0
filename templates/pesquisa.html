@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Montar Quiz – Desafio das Perguntas</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+  <style>
+    body {
+      width: 100%;
+      overflow-x: hidden;
+      box-sizing: border-box;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--cor-fundo-padrao);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      overflow-y: hidden;
+    }
+    .pesquisa-header {
+      display: flex;
+      align-items: center;
+      padding: 0.6rem 1rem;
+      background-color: var(--cor-fundo-escuro);
+    }
+    .pesquisa-header .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .pesquisa-icon {
+      width: 2.2rem;
+      height: 2.2rem;
+    }
+    .header-titulo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: white;
+    }
+    .top-bar {
+      display: grid;
+      grid-template-columns: 10% 90%;
+      align-items: start;
+      gap: 2rem;
+      font-size: 1.25rem;
+      font-weight: bold;
+      color:white;
+      text-align: left;
+      justify-content: space-between;
+      gap: 6rem;
+    }
+    select {
+      padding: 0.3rem 0.5rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: var(--peso-fonte-botoes);
+      margin-top: 0.6rem;
+      border: 2px solid black;
+    }
+    .selectors {
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+    .selector {
+      display: inline-block;
+      width: 70px;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    main {
+      flex: 1;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+    }
+    .filtros-container {
+      display: flex;
+      justify-content: space-between;
+      margin: 0.5rem;
+      gap: 2rem;
+    }
+    .filtro-esquerda, .filtro-direita {
+      font-size: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      color: white;
+    }
+    .subtemas {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      color: white;
+    }
+    .subtemas-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .subtemas-label {
+      font-size: 1.25rem;
+      font-weight: var(--peso-fonte-botoes);
+      white-space: nowrap;
+    }
+    .subtemas-grid {
+      display: flex;
+      flex-wrap: wrap;
+      grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+      gap: 0.5rem;
+      max-width: 90%;
+    }
+    .subtema-btn {
+      font-size: 0.85rem;
+      padding: 0.4rem 0.8rem;
+      margin-bottom: 0.5rem;
+      border-radius: 6px;
+      background: white;
+      color: black;
+      border: 2px solid black;
+      background-color: #eee;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .subtema-btn:hover {
+      background-color: #eee;
+      border-color: black;
+      transform: scale(1.05);
+    }
+    .subtema-btn.selected {
+      background-color: goldenrod;
+      border-color: black;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      color: white;
+    }
+    th, td {
+      border: 2px solid black;
+      padding: 0.5rem;
+      text-align: center;
+    }
+    th {
+      background-color: var(--cor-fundo-escuro);
+    }
+    td {
+      color: black;
+      background-color: var(--cor-fundo-claro);
+      font-weight: bold;
+    }
+    .tabela-scroll-wrapper {
+      overflow-y: auto;
+      max-height: 48vh;
+      margin-top: 0.5rem;
+    }
+    .bottom-bar {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+    button {
+      padding: 8px 16px;
+      border: none;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;;
+      font-weight: bold;
+      background-color: var(--bg-botao-login);
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: var(--bg-hover-botao-login);
+    }
+  </style>
+</head>
+<body>
+  <header class="pesquisa-header">
+    <div class="header-left">
+      <img src="{{ url_for('static', filename='img/pesquisa.png') }}" alt="Pesquisa" class="pesquisa-icon">
+      <span class="header-titulo">Pesquisa</span>
+    </div>
+  </header>
+  <main>
+    <div class="top-bar">
+        <div class="selectors">
+            <div class="selector">
+                <label for="tema">Tema:</label>
+                <select id="tema">
+                    <option>Artes</option>
+                    <option>Astronomia</option>
+                    <option>Biologia</option>
+                    <option>Esportes</option>
+                    <option>Geografia</option>
+                    <option>História</option>
+                    <option>Mídia</option>
+                </select>
+            </div>
+            <div class="selector" style="margin-top: 0.5rem; margin-bottom: 1rem">
+                <label for="tipo">Tipo:</label>
+                <select id="tipo-pergunta">
+                    <option>Objetiva</option>
+                    <option>Discursiva</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="subtemas">
+        <span class="subtemas-label">Subtemas:</span>
+        <div id="container-subtemas" class="subtemas-grid">
+        </div>
+        </div>
+    </div>
+
+    <div class="tabela-scroll-wrapper">
+      <table id="tabela-perguntas">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Subtemas</th>
+                <th>Enunciado</th>
+                <th>Dificuldade</th>
+                <th>Selecionar</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="bottom-bar">
+        <button id="btn-voltar">Voltar</button>
+        <button id="btn-revisar">Revisar</button>
+    </div>
+  </main>
+
+  <script type="module" src="{{ url_for('static', filename='pesquisa.js') }}"></script>
+</body>
+</html>

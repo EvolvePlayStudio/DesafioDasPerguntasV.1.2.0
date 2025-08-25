@@ -8,9 +8,8 @@
   <style>
     body {
       width: 100%;
-      overflow-x: hidden; /* evita scroll horizontal */
-      box-sizing: border-box; /* para facilitar cálculos de largura */
-      /*font-family: 'Segoe UI', sans-serif; fonte antiga*/
+      overflow-x: hidden;
+      box-sizing: border-box;
       font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       background: var(--cor-fundo-padrao);
       display: flex;
@@ -139,7 +138,6 @@
         flex-shrink: 0; /* Impede encolhimento se dentro de flexbox */
     }
     .titulo {
-      font-size: 24px;
       font-size: 1.5rem;
       font-weight: bold;
       margin-bottom: 1rem;
@@ -245,6 +243,7 @@
       <nav>
         <button id="btn-perfil" style="display: none;" disabled>Perfil</button>
         <button id="btn-opcoes" style="display: none;" disabled>Opções</button>
+        <button id="btn-pesquisa">Pesquisa</button>
         <button id="btn-doacoes">Doações</button>
       </nav>
     </div>

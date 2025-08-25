@@ -29,7 +29,7 @@ formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(mess
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
 
-temas_disponiveis = ["Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia"]
+temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia"]
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -80,6 +80,7 @@ QUESTION_CONFIG = {
     }
 }
 EMAILS_PROIBIDOS = ['admin@gmail.com']
+privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
 
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
 
@@ -569,6 +570,11 @@ def doacoes(user_id):
     chave_pix = os.getenv("CHAVE_PIX")
     return render_template("doacoes.html", chave_pix=chave_pix)
 
+@app.route("/pesquisa")
+@token_required
+def pesquisa(user_id):
+    return render_template("pesquisa.html")
+
 @app.route("/checkout/<metodo>/<int:plano_id>")
 def checkout(metodo, plano_id):
     conn = cur = None
@@ -752,8 +758,7 @@ def listar_perguntas(user_id):
     id_usuario = session.get('id_usuario')
 
     # Configurações locais
-    limit = 90
-    privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
+    limit = 90 if modo == 'desafio' else 300
 
     # Validações
     if not tema or modo not in ('desafio', 'revisao') or tipo_pergunta not in ('objetiva', 'discursiva'):
@@ -786,12 +791,12 @@ def listar_perguntas(user_id):
         tipo_str = cfg['tipo_str']   # Usado para filtrar feedbacks/respostas
         table = cfg['table']         # Nome da tabela — vindo do cfg interno (seguro)
 
-        """
         where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
+        
         """
-        
         where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
-        
+        """
+
         sql = f"""
             SELECT {select_clause}
             FROM {table} p
@@ -810,6 +815,7 @@ def listar_perguntas(user_id):
         perguntas_por_dificuldade = {'Fácil': [], 'Médio': [], 'Difícil': []}
 
         for row in linhas:
+            
             dificuldade = row.get('dificuldade') or 'Médio'  # Se por algum motivo for nulo, evita KeyError
             respondida = bool(row.get('respondida'))
 
@@ -817,6 +823,7 @@ def listar_perguntas(user_id):
             try:
                 subtemas = [s.strip() if isinstance(s, str) else s for s in sb]
             except Exception:
+                print(f"Erro ao tentar listar subtemas")
                 app.logger.exception("Erro ao tentar listar subtemas do usuário com id %s para a pergunta com id %s", id_usuario, row['id_pergunta'])
                 subtemas = list(sb)
 

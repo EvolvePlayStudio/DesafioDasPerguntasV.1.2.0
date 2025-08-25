@@ -99,6 +99,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     });
 
+  // Implementa a função de clique no botão de pesquisa
+    document.getElementById("btn-pesquisa").addEventListener("click", async () => {
+    const response = await fetchAutenticado("/pesquisa");
+    if (response.ok) {
+      window.location.href = "/pesquisa";
+    }
+    });
+
   // Implementa a função de ir para a página home
   document.getElementById("link-home").addEventListener("click", async (e) => {
     e.preventDefault();
