@@ -6,6 +6,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
   <style>
+    :root {
+      --footer-h: 60px;
+    }
     body {
       width: 100%;
       overflow-x: hidden;
@@ -17,16 +20,20 @@
       min-height: 100vh;
       overflow-y: hidden;
     }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 1rem;
+      padding-bottom: calc(var(--footer-h) + 8px);
+      max-height: calc(88.2vh - var(--footer-h));
+    }
     .pesquisa-header {
       display: flex;
       align-items: center;
       padding: 0.6rem 1rem;
       background-color: var(--cor-fundo-escuro);
-    }
-    .pesquisa-header .header-left {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
     }
     .pesquisa-icon {
       width: 2.2rem;
@@ -39,41 +46,13 @@
     }
     .top-bar {
       display: grid;
-      grid-template-columns: 10% 90%;
+      grid-template-columns: 1fr 1fr 1fr;
       align-items: start;
       gap: 2rem;
       font-size: 1.25rem;
       font-weight: bold;
       color:white;
       text-align: left;
-      justify-content: space-between;
-      gap: 6rem;
-    }
-    select {
-      padding: 0.3rem 0.5rem;
-      border-radius: 6px;
-      font-size: 1rem;
-      font-weight: var(--peso-fonte-botoes);
-      margin-top: 0.6rem;
-      border: 2px solid black;
-    }
-    .selectors {
-      display: flex;
-      flex-direction: column;
-      gap: 0.9rem;
-    }
-    .selector {
-      display: inline-block;
-      width: 70px;
-      align-items: center;
-      gap: 0.6rem;
-    }
-    main {
-      flex: 1;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      padding: 1rem;
     }
     .filtros-container {
       display: flex;
@@ -84,15 +63,57 @@
     .filtro-esquerda, .filtro-direita {
       font-size: 1.2rem;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
       gap: 0.8rem;
       color: white;
     }
-    .subtemas {
+    .filtro-centro {
+      font-size: 1.2rem;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    .filtro-centro label {
+      display: block;
+      font-size: 1.1rem;
+      font-weight: normal;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    select {
+      padding: 0.3rem 0.5rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: var(--peso-fonte-botoes);
+      border: 2px solid black;
+      align-self: center;
+      text-align: center;
+    }
+    .selectors {
       display: flex;
       flex-direction: column;
+      gap: 0.9rem;
+      align-items: center;
+    }
+    .selector {
+      display: inline-block;
+      width: 70px;
+      align-items: center;
       gap: 0.6rem;
+    }
+    .subtemas-wrap {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      column-gap: 0.75rem;
+      align-items: start;
+      margin-top: 0.5rem;
       color: white;
+    }
+    .subtemas span {
+      margin-top: 1rem;
     }
     .subtemas-row {
       display: flex;
@@ -103,18 +124,20 @@
       font-size: 1.25rem;
       font-weight: var(--peso-fonte-botoes);
       white-space: nowrap;
+      align-self: start;
+      margin-top: 0.5rem;
     }
     .subtemas-grid {
       display: flex;
       flex-wrap: wrap;
       grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
       gap: 0.5rem;
-      max-width: 90%;
+      margin-top: 0.5rem;
     }
     .subtema-btn {
       font-size: 0.85rem;
       padding: 0.4rem 0.8rem;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.3rem;
       border-radius: 6px;
       background: white;
       color: black;
@@ -132,10 +155,16 @@
       background-color: goldenrod;
       border-color: black;
     }
+    .tabela-scroll-wrapper {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      margin-top: 1rem;
+      height: 30vh;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1rem;
       color: white;
     }
     th, td {
@@ -151,10 +180,26 @@
       background-color: var(--cor-fundo-claro);
       font-weight: bold;
     }
-    .tabela-scroll-wrapper {
-      overflow-y: auto;
-      max-height: 48vh;
-      margin-top: 0.5rem;
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      background: var(--cor-fundo-escuro);
+      height: var(--footer-h);
+      padding: 0 1rem;
+      z-index: 10;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer-left, .footer-right  {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
     }
     .bottom-bar {
       display: flex;
@@ -178,40 +223,50 @@
 </head>
 <body>
   <header class="pesquisa-header">
-    <div class="header-left">
+    <div style="display: flex; align-items: center; gap: 0.6rem;">
       <img src="{{ url_for('static', filename='img/pesquisa.png') }}" alt="Pesquisa" class="pesquisa-icon">
       <span class="header-titulo">Pesquisa</span>
     </div>
   </header>
   <main>
+    
     <div class="top-bar">
-        <div class="selectors">
-            <div class="selector">
-                <label for="tema">Tema:</label>
-                <select id="tema">
-                    <option>Artes</option>
-                    <option>Astronomia</option>
-                    <option>Biologia</option>
-                    <option>Esportes</option>
-                    <option>Geografia</option>
-                    <option>História</option>
-                    <option>Mídia</option>
-                </select>
-            </div>
-            <div class="selector" style="margin-top: 0.5rem; margin-bottom: 1rem">
-                <label for="tipo">Tipo:</label>
-                <select id="tipo-pergunta">
-                    <option>Objetiva</option>
-                    <option>Discursiva</option>
-                </select>
-            </div>
-        </div>
+    <!-- Coluna Esquerda: Tema -->
+    <div class="filtro-esquerda">
+      <label for="tema">Tema:</label>
+      <select id="tema">
+      <option>Artes</option>
+      <option>Astronomia</option>
+      <option>Biologia</option>
+      <option>Esportes</option>
+      <option>Geografia</option>
+      <option>História</option>
+      <option>Mídia</option>
+      </select>
+    </div>
 
-        <div class="subtemas">
-        <span class="subtemas-label">Subtemas:</span>
-        <div id="container-subtemas" class="subtemas-grid">
-        </div>
-        </div>
+    <!-- Coluna Centro: Dificuldade -->
+    <div class="filtro-centro" style="margin-top: 0.15rem;">
+      <span>Dificuldade:</span>
+      <label><input type="checkbox" value="Fácil" checked> Fácil</label>
+      <label><input type="checkbox" value="Médio" checked> Médio</label>
+      <label><input type="checkbox" value="Difícil" checked> Difícil</label>
+    </div>
+
+    <!-- Coluna Direita: Tipo -->
+    <div class="filtro-direita">
+      <label for="tipo-pergunta">Tipo:</label>
+      <select id="tipo-pergunta">
+      <option>Objetiva</option>
+      <option>Discursiva</option>
+    </select>
+    </div>
+    </div>
+
+    <!-- Subtemas abaixo centralizado -->
+    <div class="subtemas-wrap">
+      <span class="subtemas-label">Subtemas:</span>
+      <div id="container-subtemas" class="subtemas-grid"></div>
     </div>
 
     <div class="tabela-scroll-wrapper">
@@ -229,9 +284,15 @@
       </table>
     </div>
 
-    <div class="bottom-bar">
-        <button id="btn-voltar">Voltar</button>
-        <button id="btn-revisar">Revisar</button>
+    <!-- Layout inferior com os botões -->
+  <div class="footer">
+    <div class="footer-left">
+      <button id="btn-voltar">Voltar</button>
+    </div>
+    <div class="footer-right" style="padding-right: 2rem;">
+      <button id="aplicar-filtro">Aplicar filtro</button>
+      <button id="btn-revisar">Revisar</button>
+    </div>
     </div>
   </main>
 

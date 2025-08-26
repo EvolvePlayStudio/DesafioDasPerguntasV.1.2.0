@@ -1,20 +1,89 @@
 import { fetchAutenticado } from "./utils.js";
 
-
 let tema_atual;
 let tipo_pergunta;
 const tabela_body = document.querySelector("#tabela-perguntas tbody");
+const ordem_dificuldades = ["Fácil", "Médio", "Difícil"];
 
 // Implementa a função para retornar para a home
 document.getElementById("btn-voltar").addEventListener("click", () => {
   window.location.href = '/home';
 })
 
+document.getElementById("aplicar-filtro").addEventListener("click", () => {
+  aplicarFiltro();
+});
+
+function aplicarFiltro() {
+  const perguntasPorDificuldade = JSON.parse(localStorage.getItem("perguntas_para_revisar")) || {
+    "Fácil": [],
+    "Médio": [],
+    "Difícil": []
+  };
+
+  // 1. Dificuldades selecionadas
+  const dificuldadesSelecionadas = Array.from(document.querySelectorAll(".filtro-centro input[type='checkbox']:checked"))
+    .map(cb => cb.value);
+
+  // 2. Subtemas selecionados
+  const subtemasSelecionados = Array.from(document.querySelectorAll(".subtema-btn.selected"))
+    .map(btn => btn.textContent);
+
+  tabela_body.innerHTML = ""; // limpa antes de renderizar de novo
+
+  ordem_dificuldades.forEach(dificuldade => {
+    if (!dificuldadesSelecionadas.includes(dificuldade)) return; // só mantém dificuldades ativas
+
+    (perguntasPorDificuldade[dificuldade] || []).forEach(p => {
+      // Verifica se tem ao menos 1 subtema em comum
+      const temSubtemaValido = 
+        subtemasSelecionados.length === 0 || // Se não tiver filtro de subtema, mostra tudo
+        (p.subtemas && p.subtemas.some(st => subtemasSelecionados.includes(st)));
+
+      if (!temSubtemaValido) return;
+
+      const tr = document.createElement("tr");
+
+      // ID
+      const tdId = document.createElement("td");
+      tr.dataset.id = p.id_pergunta;
+      tdId.textContent = p.id_pergunta;
+      tr.appendChild(tdId);
+
+      // Subtemas
+      const tdSubtemas = document.createElement("td");
+      tdSubtemas.textContent = p.subtemas ? p.subtemas.join(" / ") : "";
+      tr.appendChild(tdSubtemas);
+
+      // Enunciado
+      const tdEnunciado = document.createElement("td");
+      tdEnunciado.textContent = p.enunciado;
+      tr.appendChild(tdEnunciado);
+
+      // Dificuldade
+      const tdDificuldade = document.createElement("td");
+      tr.dataset.dificuldade = p.dificuldade
+      tdDificuldade.textContent = p.dificuldade;
+      tr.appendChild(tdDificuldade);
+
+      // Selecionar
+      const tdSelecionar = document.createElement("td");
+      tdSelecionar.classList.add("checkbox-center");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.dataset.id = p.id_pergunta;
+      tdSelecionar.appendChild(checkbox);
+      tr.appendChild(tdSelecionar);
+
+      tabela_body.appendChild(tr);
+    });
+  });
+}
+
 // Implementa a função para iniciar uma revisão
 document.getElementById("btn-revisar").addEventListener("click", () => {
   const linhas = tabela_body.querySelectorAll("tr");
   const perguntas_totais = JSON.parse(localStorage.getItem("perguntas_para_revisar"));
-  console.log("Perguntas locais: ", perguntas_totais)
   const perguntas_filtradas = {Fácil: [], Médio: [], Difícil: []}
   tema_atual = document.getElementById("tema").value;
   tipo_pergunta = document.getElementById("tipo-pergunta").value;
@@ -44,12 +113,12 @@ document.getElementById("btn-revisar").addEventListener("click", () => {
 })
 
 // Atualiza quando o tema muda
-document.getElementById("tema").addEventListener("change", (event) => {
+document.getElementById("tema").addEventListener("change", () => {
     atualizarTabela();
 });
 
 // Atualiza quando o tipo de pergunta muda
-document.getElementById("tipo-pergunta").addEventListener("change", (event) => {
+document.getElementById("tipo-pergunta").addEventListener("change", () => {
     atualizarTabela();
 });
 
@@ -85,53 +154,50 @@ function renderizarTabela() {
 
     tabela_body.innerHTML = ""; // limpa antes de renderizar
     const todosSubtemas = new Set();
-
+    
     // Percorre todas as dificuldades
-    Object.keys(perguntasPorDificuldade).forEach(dificuldade => {
-        perguntasPorDificuldade[dificuldade].forEach(p => {
-            const tr = document.createElement("tr");
+    ordem_dificuldades.forEach(dificuldade => {(perguntasPorDificuldade[dificuldade] || []).forEach(p => {
+      const tr = document.createElement("tr");
 
-            // ID
-            const tdId = document.createElement("td");
-            tr.dataset.id = p.id_pergunta;
-            tdId.textContent = p.id_pergunta;
-            tr.appendChild(tdId);
+      // ID
+      const tdId = document.createElement("td");
+      tr.dataset.id = p.id_pergunta;
+      tdId.textContent = p.id_pergunta;
+      tr.appendChild(tdId);
 
-            // Subtemas
-            const tdSubtemas = document.createElement("td");
-            if (p.subtemas && p.subtemas.length > 0) {
-              tdSubtemas.textContent = p.subtemas ? p.subtemas.join(" / ") : "";
-              p.subtemas.forEach(st => todosSubtemas.add(st));
-            }
-            else {
-              tdSubtemas.textContent = "";
-            }
-            tr.appendChild(tdSubtemas);
+      // Subtemas
+      const tdSubtemas = document.createElement("td");
+      if (p.subtemas && p.subtemas.length > 0) {
+        tdSubtemas.textContent = p.subtemas ? p.subtemas.join(" / ") : "";
+        p.subtemas.forEach(st => todosSubtemas.add(st));
+      }
+      else {tdSubtemas.textContent = ""};
+      tr.appendChild(tdSubtemas);
 
-            // Enunciado
-            const tdEnunciado = document.createElement("td");
-            tdEnunciado.textContent = p.enunciado;
-            tr.appendChild(tdEnunciado);
+      // Enunciado
+      const tdEnunciado = document.createElement("td");
+      tdEnunciado.textContent = p.enunciado;
+      tr.appendChild(tdEnunciado);
 
-            // Dificuldade
-            const tdDificuldade = document.createElement("td");
-            tr.dataset.dificuldade = p.dificuldade
-            tdDificuldade.textContent = p.dificuldade;
-            tr.appendChild(tdDificuldade);
+      // Dificuldade
+      const tdDificuldade = document.createElement("td");
+      tr.dataset.dificuldade = p.dificuldade
+      tdDificuldade.textContent = p.dificuldade;
+      tr.appendChild(tdDificuldade);
 
-            // Selecionar
-            const tdSelecionar = document.createElement("td");
-            tdSelecionar.classList.add("checkbox-center");
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.dataset.id = p.id_pergunta;
-            tdSelecionar.appendChild(checkbox);
-            tr.appendChild(tdSelecionar);
+      // Selecionar
+      const tdSelecionar = document.createElement("td");
+      tdSelecionar.classList.add("checkbox-center");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.dataset.id = p.id_pergunta;
+      tdSelecionar.appendChild(checkbox);
+      tr.appendChild(tdSelecionar);
 
-            tabela_body.appendChild(tr);
-        });
+      tabela_body.appendChild(tr);
+      });
     });
-    atualizarBotoesSubtemas([...todosSubtemas].sort());
+    atualizarBotoesSubtemas([...todosSubtemas].sort((a,b) => a.localeCompare(b,'pt',{ sensitivy:'base'})));
 }
 
 function atualizarBotoesSubtemas(subtemas) {
@@ -143,9 +209,7 @@ function atualizarBotoesSubtemas(subtemas) {
     btn.textContent = st;
     btn.addEventListener("click", () => {
       btn.classList.toggle("selected")
-
       let subtemas_selecionados = Array.from(document.querySelectorAll(".subtema-btn.selected")).map(btn => btn.textContent);
-      console.log("Subtemas selecionados: ", subtemas_selecionados)
     })
     container.appendChild(btn)
   })

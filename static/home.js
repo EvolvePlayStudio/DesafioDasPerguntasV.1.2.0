@@ -1,28 +1,24 @@
 import { obterPerguntasDisponiveis, fetchAutenticado } from "./utils.js";
 
-let modo_jogo = null;
 let tipo_pergunta = null;
 const mensagem = document.getElementById("mensagem");
 
 async function iniciarQuiz(event) {
-  // Atualiza o tema atual no localStorage
+  // Atualiza o tema atual e modo de jogo no localStorage
   const tema_atual = decodeURIComponent(event.currentTarget.dataset.tema);
   localStorage.setItem("tema_atual", tema_atual)
-
-  // Atualiza o modo de jogo no localStorage (desafio ou revisao)
-  modo_jogo = document.querySelector('input[name="modo"]:checked').value;
-  localStorage.setItem("modo_jogo", modo_jogo)
+  localStorage.setItem("modo_jogo", 'desafio')
 
   // Atualiza o tipo de pergunta no localStorage (objetiva ou discursiva)
   tipo_pergunta = document.querySelector('input[name="tipo-de-pergunta"]:checked').value;
   localStorage.setItem("tipo_pergunta", tipo_pergunta)
 
-  if (!tema_atual || !modo_jogo || !tipo_pergunta) {
-    console.error("Tema, modo de jogo ou tipo de pergunta não definidos na URL.");
+  if (!tema_atual || !tipo_pergunta) {
+    console.error("Tema ou tipo de pergunta não definidos na URL.");
     return;
   }
 
-  if (modo_jogo.toLowerCase() === 'desafio' && localStorage.getItem("perguntas_restantes") <= 0) {
+  if (localStorage.getItem("perguntas_restantes") <= 0) {
     exibirMensagem('Você precisa aguardar para obter mais perguntas no modo desafio', 'red')
     return;
   }
@@ -31,7 +27,7 @@ async function iniciarQuiz(event) {
 
   // Carrega as perguntas para o quiz
   try {
-    const response = await fetchAutenticado(`/api/perguntas?tema=${tema_atual}&modo=${modo_jogo}&tipo-de-pergunta=${tipo_pergunta}`)
+    const response = await fetchAutenticado(`/api/perguntas?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`)
     if (response.ok) {
       const data = await response.json();
 
@@ -44,10 +40,10 @@ async function iniciarQuiz(event) {
       const ha_perguntas_disponiveis = Object.values(perguntas_filtradas).some(arr => Array.isArray(arr) && arr.length > 0)
       if (ha_perguntas_disponiveis) {
         mensagem.style.opacity = 0
-        window.location.href = `/quiz?tema=${tema_atual}&modo=${modo_jogo}&tipo-de-pergunta=${tipo_pergunta}`;
+        window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;
       }
       else {
-        exibirMensagem(`Você não possui perguntas ${tipo_pergunta}s disponíveis neste tema para o modo ${modo_jogo} no momento`, 'red')
+        exibirMensagem(`Você não possui novas perguntas ${tipo_pergunta}s disponíveis neste tema no momento`, 'red')
       }
     }
   }
@@ -58,23 +54,15 @@ async function iniciarQuiz(event) {
 
 function carregarPreferenciasQuiz() {
   // Pega valores salvos
-  modo_jogo = localStorage.getItem("modo_jogo");
   tipo_pergunta = localStorage.getItem("tipo_pergunta");
 
   // Se não existirem, define valores padrão
-  if (!modo_jogo) {
-    modo_jogo = "desafio";
-    localStorage.setItem("modo_jogo", modo_jogo);
-  }
   if (!tipo_pergunta) {
     tipo_pergunta = "objetiva";
     localStorage.setItem("tipo_pergunta", tipo_pergunta);
   }
 
   // Marca os inputs na tela com os valores recuperados
-  const modoRadio = document.querySelector(`input[name="modo"][value="${modo_jogo}"]`);
-  if (modoRadio) modoRadio.checked = true;
-
   const tipoRadio = document.querySelector(`input[name="tipo-de-pergunta"][value="${tipo_pergunta}"]`);
   if (tipoRadio) tipoRadio.checked = true;
 }
