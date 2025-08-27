@@ -723,7 +723,7 @@ function mostrarRespostasAceitas(lista) {
   try {
     const container = document.getElementById("respostas-aceitas-box");
     const lista_respostas_aceitas = document.getElementById("lista-respostas");
-    lista_respostas_aceitas.textContent = lista.join(", ");
+    lista_respostas_aceitas.textContent = lista.join(" / ");
     container.style.display = "block";
   }
   catch (err) {
@@ -848,6 +848,7 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
     return texto
       .trim()
       .toLowerCase()
+      .replace(/[.\-:!;?]/g, " ")
       .split(/\s+/)
       .map(removerAcentos)
       .filter(palavra => !stopwords.includes(palavra))
