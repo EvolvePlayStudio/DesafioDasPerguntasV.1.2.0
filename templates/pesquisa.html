@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Montar Quiz – Desafio das Perguntas</title>
+  <title>Desafio das Perguntas - Pesquisa</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
   <style>
@@ -82,6 +82,11 @@
       font-weight: normal;
       align-items: center;
       gap: 0.3rem;
+    }
+    .filtro-centro input[type="checkbox"] {
+      transform: scale(1.6);
+      -webkit-transform: scale(1.6);
+      margin-right: 0.3rem;
     }
     select {
       padding: 0.3rem 0.5rem;
@@ -180,6 +185,19 @@
       background-color: var(--cor-fundo-claro);
       font-weight: bold;
     }
+    .checkbox-selecionar {
+      transform: scale(1.6);
+      -webkit-transform: scale(1.6);
+    }
+    .estrela {
+      cursor: pointer;
+      font-size: 1.85rem;
+      transition: color 0.3s ease;
+      color: black;
+    }
+    .estrela.favorito {
+      color: gold;
+    }
     .footer {
       position: fixed;
       bottom: 0;
@@ -195,7 +213,7 @@
       justify-content: space-between;
       align-items: center;
     }
-    .footer-left, .footer-right  {
+    .footer-left,.footer-center, .footer-right  {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -269,6 +287,9 @@
       <div id="container-subtemas" class="subtemas-grid"></div>
     </div>
 
+    <!-- Mensagem -->
+    <div id="mensagem" style="font-weight: bold; text-align: center; color: white; margin-top: 0.5rem; opacity: 0; cursor: default"></div>  
+
     <div class="tabela-scroll-wrapper">
       <table id="tabela-perguntas">
         <thead>
@@ -278,20 +299,24 @@
                 <th>Enunciado</th>
                 <th>Dificuldade</th>
                 <th>Selecionar</th>
+                <th>Favoritar</th>
             </tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
 
-    <!-- Layout inferior com os botões -->
+  <!-- Layout inferior com os botões -->
   <div class="footer">
-    <div class="footer-left">
-      <button id="btn-voltar">Voltar</button>
+    <div class="footer-left" style="color: white; font-weight: bold;">
+      <span>Perguntas selecionadas: <span id="contador">0</span></span>
     </div>
-    <div class="footer-right" style="padding-right: 2rem;">
-      <button id="aplicar-filtro">Aplicar filtro</button>
-      <button id="btn-revisar">Revisar</button>
+    <div class="footer-right">
+      <button id="btn-voltar">Voltar</button>
+      <button id="marcar-todas">Marcar Todas</button>
+      <button id="aplicar-filtro">Aplicar Filtro</button>
+      <button id="btn-salvar-favoritos">Salvar Favoritos</button>
+      <button id="btn-revisar" style="margin-right: 2rem;">Revisar</button>
     </div>
     </div>
   </main>

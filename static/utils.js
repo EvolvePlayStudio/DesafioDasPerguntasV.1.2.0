@@ -1,9 +1,14 @@
-export async function fetchAutenticado(url) {
+export async function fetchAutenticado(url, options= {}) {
   const token = sessionStorage.getItem("token_sessao")
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {"Authorization": `Bearer ${token}`}
-  })
+  const config = {
+    method: options.method || "GET",
+    headers: {"Authorization": `Bearer ${token}`,
+    ...(options.body? {"Content-Type": "application/json"}: {})
+  },
+  ...(options.body? {body:JSON.stringify(options.body)}: {})
+  };
+
+  const response = await fetch(url, config);
 
   if (!response.ok) {
     localStorage.setItem("auth_message", "Sessão expirada");
@@ -54,4 +59,19 @@ export function obterDificuldadesDisponiveis() {
     dificuldades_disponiveis.push('Difícil');
   }
   return dificuldades_disponiveis
+}
+
+export function exibirMensagem(label, texto, cor, temporaria=true, remover_display=false) {
+  label.style.display = ''
+  label.style.color = cor;
+  label.textContent = texto;
+  label.style.opacity = 1
+  if (temporaria) {
+    setTimeout(() => {
+        label.style.opacity = 0
+        if (remover_display) {
+          label.style.display = 'none'
+        }
+      }, 10000)
+  }
 }

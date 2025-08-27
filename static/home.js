@@ -1,4 +1,4 @@
-import { obterPerguntasDisponiveis, fetchAutenticado } from "./utils.js";
+import { obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem } from "./utils.js";
 
 let tipo_pergunta = null;
 const mensagem = document.getElementById("mensagem");
@@ -19,11 +19,11 @@ async function iniciarQuiz(event) {
   }
 
   if (localStorage.getItem("perguntas_restantes") <= 0) {
-    exibirMensagem('Você precisa aguardar para obter mais perguntas no modo desafio', 'red')
+    exibirMensagem(mensagem, 'Você precisa aguardar para obter mais perguntas no modo desafio', 'red')
     return;
   }
   
-  exibirMensagem("Preparando quiz...", '#d1d1d1ff', false)
+  exibirMensagem(mensagem, "Preparando quiz...", '#d1d1d1ff', false)
 
   // Carrega as perguntas para o quiz
   try {
@@ -43,7 +43,7 @@ async function iniciarQuiz(event) {
         window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;
       }
       else {
-        exibirMensagem(`Você não possui novas perguntas ${tipo_pergunta}s disponíveis neste tema no momento`, 'red')
+        exibirMensagem(mensagem, `Você não possui novas perguntas ${tipo_pergunta}s disponíveis neste tema no momento`, 'red')
       }
     }
   }
@@ -66,7 +66,7 @@ function carregarPreferenciasQuiz() {
   const tipoRadio = document.querySelector(`input[name="tipo-de-pergunta"][value="${tipo_pergunta}"]`);
   if (tipoRadio) tipoRadio.checked = true;
 }
-
+/*
 function exibirMensagem(texto, cor, temporaria=true) {
   mensagem.style.color = cor;
   mensagem.textContent = texto;
@@ -76,7 +76,7 @@ function exibirMensagem(texto, cor, temporaria=true) {
         mensagem.style.opacity = 0
       }, 10000)
   }
-}
+}*/
 
 document.addEventListener("DOMContentLoaded", () => {
   // Implementa a função de clique no botão de doações

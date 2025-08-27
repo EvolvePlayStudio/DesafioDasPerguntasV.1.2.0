@@ -110,7 +110,6 @@ iniciar_agendamento()
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        print("Irei validar token de sessão")
         token = None
 
         # 1️⃣ Tenta extrair do header Authorization
@@ -134,8 +133,6 @@ def token_required(f):
                 WHERE token = %s AND ativo=TRUE AND expira_em > NOW()
             """, (token,))
             row = cur.fetchone()
-            print(f"Token é {token}")
-            print(f"Token ativo? {row[1]}")
         except Exception:
             return jsonify({"message": "Erro ao validar sessão"}), 500
         finally:
@@ -575,6 +572,84 @@ def doacoes(user_id):
 def pesquisa(user_id):
     return render_template("pesquisa.html")
 
+@app.route("/api/carregar-favoritos", methods=["GET"])
+def get_favoritos_usuario():
+    tema = request.args.get("tema-atual")
+    tipo_pergunta = request.args.get("tipo-pergunta")
+    id_usuario = session["id_usuario"]
+
+    if not id_usuario or not tema or not tipo_pergunta:
+        return jsonify({"error": "Parâmetros inválidos"}), 400
+
+    conn = cur = None
+    try:        
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        query = """
+            SELECT id_pergunta
+            FROM favoritos_usuarios
+            WHERE id_usuario = %s AND tema = %s AND tipo_pergunta = %s
+        """
+        cur.execute(query, (id_usuario, tema, tipo_pergunta))
+        favoritos = [row[0] for row in cur.fetchall()]
+    except Exception as e:
+        print("Erro ao carregar favoritos")
+        app.logger.exception("Erro ao carregar favoritos do usuário com id %s", id_usuario)
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+    return jsonify({"favoritos": favoritos})
+
+@app.route("/api/favoritos", methods=["POST"])
+@token_required
+def salvar_favoritos(user_id):
+    data = request.get_json(force=True)
+
+    tema = data.get("tema_atual")
+    tipo_pergunta = data.get("tipo_pergunta")
+    adicionar = set(map(int, data.get("adicionar", [])))
+    remover   = set(map(int, data.get("remover", [])))
+
+    if not tema or not tipo_pergunta:
+        return jsonify({"success": False, "msg": "Parâmetros inválidos."}), 400
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Remover apenas os IDs explicitamente enviados
+        if remover:
+            cur.execute("""
+                DELETE FROM favoritos_usuarios
+                WHERE id_usuario = %s
+                  AND tipo_pergunta = %s
+                  AND tema = %s
+                  AND id_pergunta = ANY(%s)
+            """, (user_id, tipo_pergunta, tema, list(remover)))
+
+        # Inserir os IDs explicitamente enviados
+        for id_pergunta in adicionar:
+            cur.execute("""
+                INSERT INTO favoritos_usuarios (id_usuario, id_pergunta, tipo_pergunta, tema)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (id_usuario, id_pergunta, tipo_pergunta) DO NOTHING
+            """, (user_id, id_pergunta, tipo_pergunta, tema))
+
+        conn.commit()
+        return jsonify({"success": True, "msg": "Favoritos atualizados com sucesso."}), 200
+
+    except Exception as e:
+        if conn: conn.rollback()
+        app.logger.exception("Erro ao salvar favoritos do usuário %s", user_id)
+        return jsonify({"success": False, "msg": "Erro ao salvar favoritos."}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+
 @app.route("/checkout/<metodo>/<int:plano_id>")
 def checkout(metodo, plano_id):
     conn = cur = None
@@ -792,10 +867,13 @@ def listar_perguntas(user_id):
         table = cfg['table']         # Nome da tabela — vindo do cfg interno (seguro)
 
         where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
-        
+
         """
         where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
         """
+        
+        print(f"Where status é: {where_status}")
+        print()
 
         sql = f"""
             SELECT {select_clause}
