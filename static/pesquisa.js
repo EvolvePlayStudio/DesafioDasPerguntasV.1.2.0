@@ -287,6 +287,7 @@ function toggleFavorito(estrelaEl, id_pergunta)  {
 }
 
 async function carregarFavoritos() {
+  btn_marcar_todas.textContent = 'Marcar Todas';
   try {
     const response = await fetch(`/api/carregar-favoritos?tema-atual=${tema_atual}&tipo-pergunta=${tipo_pergunta}`);
     const result = await response.json();
@@ -303,7 +304,7 @@ async function carregarFavoritos() {
         contador_perguntas ++;
       }
     contadorEl.textContent = contador_perguntas
-
+    
     if (favoritos_selecionados.size === tabela_body.rows.length) {
       btn_marcar_todas.textContent = 'Desmarcar Todas';
     }
