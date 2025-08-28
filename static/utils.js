@@ -18,9 +18,9 @@ export async function fetchAutenticado(url, options= {}) {
   return response;
 }
 
-export function obterInfoRankingAtual() {
+export function obterInfoRankingAtual(tema=null) {
   const pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario")) || {}
-  const tema_atual = localStorage.getItem("tema_atual");
+  const tema_atual = tema || localStorage.getItem("tema_atual");
   const pontuacao_no_tema = pontuacoes_usuario[tema_atual] || 0;
   const regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao")) || [];
 

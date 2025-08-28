@@ -1,4 +1,4 @@
-import { obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem } from "./utils.js";
+import { obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual } from "./utils.js";
 
 let tipo_pergunta = null;
 const mensagem = document.getElementById("mensagem");
@@ -32,8 +32,15 @@ async function iniciarQuiz(event) {
       const data = await response.json();
 
       // Atualiza as pontuações do usuário no tema e as perguntas no localStorage
+      
       localStorage.setItem("pontuacoes_usuario", JSON.stringify(data["pontuacoes_usuario"]));
       localStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
+      const rankings_usuario = {};
+      Object.keys(data["pontuacoes_usuario"]).forEach(tema => {
+        const ranking_no_tema = obterInfoRankingAtual(tema).ranking
+        rankings_usuario[tema] = ranking_no_tema
+      })
+      localStorage.setItem("rankings_usuario", JSON.stringify(rankings_usuario))
     
       // Chama a tela de quiz ou exibe mensagem caso não haja perguntas disponíveis
       const perguntas_filtradas = obterPerguntasDisponiveis(data["perguntas"])

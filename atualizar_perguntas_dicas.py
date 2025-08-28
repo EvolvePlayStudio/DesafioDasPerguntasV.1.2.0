@@ -8,7 +8,7 @@ def atualizar_perguntas_dicas():
             # Valores fixos definidos
             incremento_perguntas = 20
             limite_maximo_perguntas = 100
-            incremento_dicas = 4
+            incremento_dicas = 2
             limite_maximo_dicas = 20
 
             query = f"""

@@ -561,6 +561,10 @@ def enviar_email_confirmacao(email_destinatario, nome_destinatario, link_confirm
 def home():
     return render_template("home.html")
 
+@app.route("/resultado")
+def resultado():
+    return render_template("resultado.html")
+
 @app.route("/doações")
 @token_required
 def doacoes(user_id):

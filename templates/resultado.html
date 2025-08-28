@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Desafio das Perguntas - Resultado</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/Favicon.png') }}">
+  <meta name="description" content="Teste seus conhecimentos em História, Filosofia, Esportes e muito mais em um quiz interativo e divertido">
+  <style>
+    :root {
+      --footer-h: 60px;
+    }
+    body {
+      font-family: "Noto Serif", Roboto, serif, sans-serif;
+      background: var(--cor-fundo-padrao);
+      margin: 0;
+      padding: 2rem;
+      height: 20vh;
+      display: flex;
+      flex-direction: column;
+      overflow-y: hidden;
+    }
+    .main {
+      padding-bottom: calc(var(--footer-h) + 8px);
+      max-height: calc(88.2vh - var(--footer-h));
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: var(--cor-fundo-claro);
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      padding: 20px;
+      flex: 1;
+      overflow-y: auto;
+      height: calc(85vh - var(--footer-h));
+    }
+    h1 {
+      text-align: center;
+      color: black;
+    }
+    .pontuacao {
+      margin: 20px 0;
+      padding: 15px;
+      background: #f0f0f0;
+      border-radius: 8px;
+    }
+    .pontuacao p {
+      font-family: "Noto Serif", Roboto, serif, sans-serif;
+      margin: 5px 0;
+    }
+    .perguntas-revisao {
+      margin-top: 30px;
+      font-family: "Noto Serif", Roboto, serif, sans-serif;
+      flex: 1;
+      overflow: auto;
+    }
+    .pergunta {
+      border-top: 1px solid #ddd;
+      padding: 10px 0;
+    }
+    .pergunta span {
+      font-weight: bold;
+    }
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      background: var(--cor-fundo-escuro);
+      height: var(--footer-h);
+      padding: 0 1rem;
+      z-index: 10;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 40px);
+      max-width: 820px;
+      text-align: center;
+      padding: 0.8rem;
+      background: var(--bg-botao-login);
+      color: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: var(--peso-fonte-botao);
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 18px;
+      transition: background 0.3s;
+      z-index: 1000; /* garante que não fique escondido */
+    }
+    .btn:hover {
+      background: var(--bg-hover-botao-login);
+      font-weight: var(--peso-fonte-botao);
+    }
+  </style>
+</head>
+<body>
+  <div class="main">
+    <div class="container">
+      <h1>Resultado</h1>
+
+      <div class="pontuacao">
+        <p><strong>Tema:</strong> <span id="tema-perguntas"></span></p>
+        <p><strong>Pontuação anterior:</strong> <span id="pontuacao-anterior">0</span></p>
+        <p><strong>Pontuação final:</strong> <span id="pontuacao-final">0</span></p>
+        <p><strong>Saldo:</strong> <span id="pontuacao-saldo">0</span></p>
+        <p><strong>Ranking atual:</strong> <span id="ranking-atual"></span></p>
+      </div>
+
+      <div class="perguntas-revisao">
+        <h1>Revisão</h1>
+        <div id="lista-perguntas"></div>
+      </div>
+    </div>
+
+    <!-- Layout inferior com o botão para retornar -->
+    <div class="footer">
+      <a href="{{ url_for('home') }}" class="btn">Prosseguir</a>
+    </div>
+    </div>
+
+  <script src="{{ url_for('static', filename='resultado.js')}}"></script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import { obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado } from "./utils.js"
 
-let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"))
+let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"));
+let perguntas_respondidas = [];
 let aguardando_proxima = false // Variável que indica quando se está aguardando próxima pergunta
 let dica_gasta = false
 let inicio_pergunta = null  // horário inicial da pergunta
@@ -13,7 +14,9 @@ let regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"))
 let info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1]
 let regras_usuario = null
 let ranking_usuario = null
+const rankings_usuario = JSON.parse(localStorage.getItem("rankings_usuario"))
 const tema_atual = decodeURIComponent(localStorage.getItem("tema_atual"))
+localStorage.setItem("pontuacao_anterior", pontuacoes_usuario[tema_atual])
 const modo_jogo = localStorage.getItem("modo_jogo").toLocaleLowerCase()
 const tipo_pergunta = localStorage.getItem("tipo_pergunta").toLocaleLowerCase()
 const lbl_pontuacao_usuario = document.getElementById('pontuacao')
@@ -81,6 +84,7 @@ function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtuali
 function atualizarRankingVisual() {
   // Declara as variáveis que serão úteis
   const info_ranking_atual = obterInfoRankingAtual();
+  rankings_usuario[tema_atual] = info_ranking_atual.ranking
   const pontuacao = pontuacoes_usuario[tema_atual] || 0;
   let ranking_anterior = "";
   let ranking_proximo = null;
@@ -335,10 +339,11 @@ async function enviarResposta() {
   let acertou;
   let prosseguir_com_resultado = true;
   let pontos_ganhos = 0;
+  let respostas_corretas;
+  let letra_correta;
 
   if (tipo_pergunta === 'objetiva') {
     const widgetAlternativaSelecionada = document.querySelector('.alternativa-btn.selected');
-    let letra_correta;
     resposta_usuario = alternativaSelecionada;
     
     // Marca a alternativa correta pelo data-letter
@@ -371,7 +376,6 @@ async function enviarResposta() {
   }
   // Caso das perguntas discursivas
   else {
-    let respostas_corretas;
     resposta_usuario = caixa_para_resposta.value.trim();
     
     if (modo_jogo === 'revisao') {
@@ -407,6 +411,17 @@ async function enviarResposta() {
       id_pergunta,
       versao_pergunta
     );
+    // Armazena informações que serão úteis depois na tela de resultado
+    if (prosseguir_com_resultado) {
+      let info_resposta;
+      if (tipo_pergunta === 'discursiva') {
+        info_resposta = {"enunciado": pergunta_selecionada.enunciado, "respostas_aceitas": respostas_corretas, "resposta_usuario": resposta_usuario, "usou_dica": dica_gasta, "pontos_ganhos": pontos_ganhos, "dificuldade": pergunta_selecionada.dificuldade}
+      }
+      else {
+        info_resposta = {"enunciado": pergunta_selecionada.enunciado, "alternativa_a": pergunta_selecionada.alternativa_a, "alternativa_b": pergunta_selecionada.alternativa_b, "alternativa_c": pergunta_selecionada.alternativa_c, "alternativa_d": pergunta_selecionada.alternativa_d, "resposta_correta": letra_correta, "resposta_usuario": resposta_usuario, "pontos_ganhos": pontos_ganhos, "dificuldade": pergunta_selecionada.dificuldade}
+      }
+      perguntas_respondidas.push(info_resposta)
+    }
   }
 
   if (prosseguir_com_resultado) {
@@ -426,7 +441,9 @@ function esconderRespostasAceitas() {
 
 function finalizarQuiz() {
   if (modo_jogo === 'desafio') {
-    window.location.href = "/home";
+    localStorage.setItem("perguntas_respondidas", JSON.stringify(perguntas_respondidas));
+    localStorage.setItem("rankings_usuario", JSON.stringify(rankings_usuario));
+    window.location.href = "/resultado";
   }
   else {
     window.location.href = "/pesquisa";
