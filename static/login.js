@@ -226,6 +226,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Envia dados para registrar usuário com CAPTCHA
     try {
+      lbl_mensagem_registro.style.visibility = 'visible';
+      lbl_mensagem_registro.style.color = '#d1d1d1ff';
+      lbl_mensagem_registro.textContent = 'Fazendo registro...';
       const response = await fetch('/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -252,7 +255,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         this.reset();
         if (captchaContainer) captchaContainer.hidden = true;
-        showForm('login', registro_realizado=true);
+        showForm('login', true);
       } else {
           // Registra a falha no CAPTCHA
           const resposta_captcha = await fetch('/registrar_falha_captcha', {

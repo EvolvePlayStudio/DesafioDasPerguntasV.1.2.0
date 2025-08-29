@@ -860,9 +860,21 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
   function removerAcentos(texto) {
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   }
+  console.log("Cheguei aqui")
+  // Converte subscritos e sobrescritos para dígitos normais e sinais normais
+  function normalizarNotacaoQuimica(texto) {
+    console.log("Irei normalizar notações químicas")
+    const mapa = {
+      "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9",
+      "₀": "0", "₁": "1", "₂": "2", "₃": "3", "₄": "4", "₅": "5", "₆": "6", "₇": "7", "₈": "8", "₉": "9",
+      "⁺": "+", "₊": "+", "⁻": "-", "₋": "-"
+    };
+    console.log("Texto retornado: ", texto.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉⁺₊⁻₋]/g, c => mapa[c] || c))
+    return texto.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉⁺₊⁻₋]/g, c => mapa[c] || c);
+  }
 
   function limparTexto(texto) {
-    return texto
+    return normalizarNotacaoQuimica(texto)
       .trim()
       .toLowerCase()
       .replace(/[.\-:!;?]/g, " ")

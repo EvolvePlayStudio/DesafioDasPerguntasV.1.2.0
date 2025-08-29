@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, request, session, redirect, send_file, url_for, make_response
+from flask import Flask, jsonify, render_template, request, session, redirect, send_file, url_for, make_response, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 from utils import *
 import secrets
@@ -29,7 +29,7 @@ formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(mess
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
 
-temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia"]
+temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Química"]
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -150,6 +150,11 @@ def token_required(f):
 @app.route("/", methods=["GET"])
 def index():
     return render_template("login.html")  # ou sua página inicial real
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static', 'img'),
+                               'Favicon.png', mimetype='image/png')
 
 @app.route("/login", methods=["GET","POST"])
 def login():
@@ -338,7 +343,7 @@ def registrar():
     link_confirmacao = f"{base_url}/confirmar_email?token={token}"
     enviar_email_confirmacao(email, nome, link_confirmacao)
 
-    return jsonify(success=True, message="Registro realizado! Verifique seu e-mail para confirmar")
+    return jsonify(success=True, message="Registro realizado! Verifique seu e-mail para confirmar (dica: olhe na caixa de spam também)")
 
 def carregar_e_transformar(caminho_img):
     """Carrega a imagem do CAPTCHA com alguns ajustes para evitar identificação automática"""
@@ -869,11 +874,13 @@ def listar_perguntas(user_id):
         select_clause = ",\n".join(cfg['select_cols'])
         tipo_str = cfg['tipo_str']   # Usado para filtrar feedbacks/respostas
         table = cfg['table']         # Nome da tabela — vindo do cfg interno (seguro)
-
+        
+        """
         where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
         """
+
         where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'" 
-        """
+
 
         sql = f"""
             SELECT {select_clause}
