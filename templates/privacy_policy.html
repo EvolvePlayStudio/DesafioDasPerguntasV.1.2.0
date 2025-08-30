@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <title>Política de Privacidade - Desafio das Perguntas</title>
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/Favicon.png') }}">
-  <meta name="description" content="Teste seus conhecimentos em História, Filosofia, Esportes e muito mais em um quiz interativo e divertido">
+  <meta name="description" content="🎁 Aplicativo 100% gratuito 🧠 Três níveis de dificuldade ✨ Vários temas de perguntas 🏆 Ranking pessoal e histórico">
 </head>
 <body class="body-politica-de-privacidade">
   <main class="main-politica-de-privacidade">
@@ -67,12 +67,19 @@
 
   <!-- Rodapé da página -->
   <footer>
-    <a href="{{ url_for('home') }}">Home</a> |
-    <a href="{{ url_for('politica_privacidade') }}" style="color: var(--cor-pagina-selecionada);">Política de Privacidade</a> |
-    <a href="{{ url_for('termos_uso') }}">Termos de Uso</a> |
-    <a href="{{ url_for('sobre_app') }}">Sobre o App</a>
+    {% if session.get('from_login') %}
+      <a href="{{ url_for('login') }}">Início</a> |
+      <a href="{{ url_for('politica_privacidade_from_login') }}" style="color: var(--cor-pagina-selecionada);">Política de Privacidade</a> |
+      <a href="{{ url_for('termos_uso_from_login') }}">Termos de Uso</a> |
+      <a href="{{ url_for('sobre_app_from_login') }}">Sobre o App</a>
+    {% else %}
+      <a href="{{ url_for('home') }}">Home</a> |
+      <a href="{{ url_for('politica_privacidade') }}" style="color: var(--cor-pagina-selecionada);">Política de Privacidade</a> |
+      <a href="{{ url_for('termos_uso') }}">Termos de Uso</a> |
+      <a href="{{ url_for('sobre_app') }}">Sobre o App</a>
+    {% endif %}
+    
   </footer>
-
 </body>
 </html>
 

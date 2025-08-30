@@ -1,35 +1,46 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" style="height: 100%; box-sizing: border-box; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
 <head>
     <meta charset="UTF-8">
     <title>Login - Desafio das Perguntas</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/Favicon.png') }}?v=1">
-    <meta name="description" content="Teste seus conhecimentos em História, Filosofia, Esportes e muito mais em um quiz interativo e divertido">
+    <meta name="description" content="🎁 Aplicativo 100% gratuito 🧠 Três níveis de dificuldade ✨ Vários temas de perguntas 🏆 Ranking pessoal e histórico">
     <style>
+        :root {
+          --footer-h: 1.05rem;
+        }
         body {
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: var(--cor-fundo-padrao);
             display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-top: 8vh;
+            height: calc(93vh - var(--footer-h));
+            box-sizing: border-box;
+        }
+        main {
+            flex: 1;
+            display: flex;
             justify-content: center;
             align-items: flex-start;
-            padding-top: 8vh;
             overflow-y: auto;
         }
         .auth-container {
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            max-height: calc(100vh - 8vh);
             overflow: auto;
             background-color: var(--cor-fundo-claro);
-            padding: 30px;
+            padding: 2.5rem;
             border-radius: 16px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 420px;
+            width: 50%;
+            max-width: 400px;
             display: flex;
             flex-direction: column;
             align-items: stretch;
+            overflow-y: auto;
         }
         .title {
             text-align: center;
@@ -151,11 +162,17 @@
         #captcha-grid {
             justify-content: center;
         }
+        footer {
+            position: fixed;
+            width: 97.6%;
+            bottom: 0;
+            height: var(--footer-h);
+        }
     </style>
 </head>
 <body>
+  <main>
     <div class="auth-container">
-        <!-- Título do app -->
         <div class="title">Desafio das Perguntas</div>
 
         <!-- Abas de login e registro (a de recuperação de senha fica oculta)-->
@@ -237,6 +254,15 @@
             </ul>
         </div>
     </div>
+  </main>
+
+    <!-- Rodapé da página -->
+    <footer>
+      <a href="{{ url_for('login') }}" style="color: var(--cor-pagina-selecionada)">Início</a> |
+      <a href="{{ url_for('politica_privacidade_from_login') }}">Política de Privacidade</a> |
+      <a href="{{ url_for('termos_uso_from_login') }}">Termos de Uso</a> |
+      <a href="{{ url_for('sobre_app_from_login') }}">Sobre o App</a>
+    </footer>
 
     <script type="module" src="{{ url_for('static', filename='login.js') }}"></script>
 </body>

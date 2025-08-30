@@ -658,7 +658,6 @@ def salvar_favoritos(user_id):
         if cur: cur.close()
         if conn: conn.close()
 
-
 @app.route("/checkout/<metodo>/<int:plano_id>")
 def checkout(metodo, plano_id):
     conn = cur = None
@@ -1042,15 +1041,33 @@ def reset_senha():
 
 @app.route("/politica-de-privacidade")
 def politica_privacidade():
+    session['from_login'] = False
     return render_template("privacy_policy.html")
-
-@app.route("/sobre-o-app")
-def sobre_app():
-    return render_template("sobre_o_app.html")
 
 @app.route("/termos-de-uso")
 def termos_uso():
+    session['from_login'] = False
     return render_template("termos_de_uso.html")
+
+@app.route("/sobre-o-app")
+def sobre_app():
+    session['from_login'] = False
+    return render_template("sobre_o_app.html")
+
+@app.route('/politica-de-privacidade-from-login')
+def politica_privacidade_from_login():
+    session['from_login'] = True
+    return render_template('privacy_policy.html')
+
+@app.route('/termos-de-uso-from-login')
+def termos_uso_from_login():
+    session['from_login'] = True
+    return render_template('termos_de_uso.html')
+
+@app.route('/sobre-o-app-from-login')
+def sobre_app_from_login():
+    session['from_login'] = True
+    return render_template('sobre_o_app.html')
 
 @app.route("/quiz")
 @token_required

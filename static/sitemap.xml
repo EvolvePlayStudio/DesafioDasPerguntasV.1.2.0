@@ -3,7 +3,7 @@
 
   <url>
     <loc>https://desafiodasperguntas.com.br/</loc>
-    <lastmod>2025-08-22</lastmod>
+    <lastmod>2025-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -45,7 +45,7 @@
 
   <url>
     <loc>https://desafiodasperguntas.com.br/sobre_o_app</loc>
-    <lastmod>2025-08-22</lastmod>
+    <lastmod>2025-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -67,7 +67,7 @@
   <!-- Páginas técnicas: indexáveis mas prioridade baixa -->
   <url>
     <loc>https://desafiodasperguntas.com.br/login</loc>
-    <lastmod>2025-08-22</lastmod>
+    <lastmod>2025-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.2</priority>
   </url>

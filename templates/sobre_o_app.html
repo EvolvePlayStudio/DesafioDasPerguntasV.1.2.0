@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/Favicon.png') }}">
-  <meta name="description" content="Teste seus conhecimentos em História, Filosofia, Esportes e muito mais em um quiz interativo e divertido">
+  <meta name="description" content="🎁 Aplicativo 100% gratuito 🧠 Três níveis de dificuldade ✨ Vários temas de perguntas 🏆 Ranking pessoal e histórico">
   <title>Sobre o App - Desafio das Perguntas</title>
 </head>
 <style>
@@ -40,17 +40,20 @@
       <!-- Conteúdo -->
       <h2 class="h2-politica-de-privacidade">1. Informações Gerais</h2>
       <p class="p-politica-de-privacidade">
-        Desafio das perguntas é um app gratuito (contamos com doações dos usuários), criado para proporcionar uma experiência desafiadora e educativa, com um sistema de rankings e pontuações em cada tema para estimular a evolução do jogador ao longo do tempo. Atualmente oferecemos 6 temas (Astronomia, Biologia, Esportes, Geografia, História e Mídia) e um sistema para avaliar a qualidade da pergunta após cada resposta enviada.
+        Desafio das perguntas é um app gratuito (contamos com doações dos usuários), criado para proporcionar uma experiência desafiadora e educativa, com um sistema de rankings e pontuações em cada tema para estimular a evolução do jogador ao longo do tempo. Atualmente oferecemos 9 temas (Artes, Astronomia, Biologia, Esportes, Filosofia, Geografia, História, Mídia e Química) e um sistema para avaliar a qualidade da pergunta após cada resposta enviada.
       </p>
 
       <h2 class="h2-politica-de-privacidade">2. Perguntas discursivas</h2>
-        <p class="p-politica-de-privacidade"> Procure responder de forma simples e não se preocupe com possíveis erros de acentuação ou uso de letra maiúsculas e minúsculas, pois usamos um sistema que ignora pequenos erros de digitação ao analisar a resposta enviada. Se não souber a resposta, você deve decidir entre arriscar um "chute" ou enviar uma resposta vazia para pular a pergunta e diminuir a penalidade recebida.</p>
+        <p class="p-politica-de-privacidade"> Procure responder de forma simples e não se preocupe com possíveis erros de acentuação ou uso de letra maiúsculas e minúsculas, pois o sistema ignora pequenos erros de digitação ao analisar a resposta enviada. Se não souber a resposta, você deve decidir entre arriscar um "chute" ou enviar uma resposta vazia para pular a pergunta e diminuir a penalidade recebida.</p>
 
-      <h2 class="h2-politica-de-privacidade">3. Regras do Modo Desafio</h2>
+      <h2 class="h2-politica-de-privacidade">3. Perguntas objetivas</h2>
+        <p class="p-politica-de-privacidade"> As perguntas objetivas possuem 4 alternativas cada, não oferecem dicas e nem opção de pular a pergunta.</p>
+
+      <h2 class="h2-politica-de-privacidade">4. Regras do Modo Desafio</h2>
       <ul class="ul-politica-de-privacidade">
-        <li class="li-politica-de-privacidade">Cada pergunta respondida corretamente adiciona novos pontos ao jogador no tema selecionado e cada erro ou pergunta não respondida reduz sua pontuação. No ranking "Lenda", apenas as perguntas de nível médio e difícil contam para pontuação.</li>
+        <li class="li-politica-de-privacidade">Cada pergunta respondida corretamente adiciona novos pontos ao jogador no tema selecionado e cada erro ou pergunta não respondida reduz sua pontuação.</li>
         <li class="li-politica-de-privacidade">Caso você acerte uma pergunta em que utilizou dica, você será penalizado em 30 pontos nas perguntas que valem 100, 20 pontos nas que valem 70 e 10 pontos nas que valem 40. Nas perguntas que valem 10 pontos você não poderá utilizar dica.</li>
-        <li class="li-politica-de-privacidade">Cada erro penaliza em 80 pontos e cada resposta pulada nas perguntas discursivas penaliza em 60 pontos.</li>
+        <li class="li-politica-de-privacidade">Cada erro penaliza em 80 pontos e cada pergunta discursiva não respondida penaliza em 60 pontos.</li>
         <li class="li-politica-de-privacidade">O jogador pode promover ou ser rebaixado de ranking de acordo com a pontuação que possui atualmente. Cada novo ranking exige 1000 pontos, sendo 4000 o necessário para chegar no último e 5000 a pontuação máxima que se pode obter.</li>
         <li class="li-politica-de-privacidade">Veja abaixo as regras para pontos ganhos em cada pergunta:</li>
       </ul>
@@ -108,10 +111,17 @@
 
   <!-- Rodapé da página -->
   <footer>
+    {% if session.get('from_login') %}
+      <a href="{{ url_for('login') }}">Início</a> |
+      <a href="{{ url_for('politica_privacidade_from_login') }}">Política de Privacidade</a> |
+      <a href="{{ url_for('termos_uso_from_login') }}">Termos de Uso</a> |
+      <a href="{{ url_for('sobre_app_from_login') }}" style="color: var(--cor-pagina-selecionada)">Sobre o App</a>
+    {% else %}
       <a href="{{ url_for('home') }}">Home</a> |
       <a href="{{ url_for('politica_privacidade') }}">Política de Privacidade</a> |
       <a href="{{ url_for('termos_uso') }}">Termos de Uso</a> |
       <a href="{{ url_for('sobre_app') }}" style="color: var(--cor-pagina-selecionada)">Sobre o App</a>
+    {% endif %}
   </footer>
 
 </body>
