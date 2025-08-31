@@ -25,10 +25,16 @@
       grid-template-columns: auto 1fr auto; /* textos justos e barra expandindo */
       align-items: center;
       font-weight: bold;
-      margin: -11px auto 1.5rem auto;
+      margin: -0.85rem auto 1.5rem auto;
       width: 100%;
       max-width: 650px;
       gap: 1rem;
+    }
+    @media (max-width: 480px) {
+      .ranking-container {
+        max-width: 87%;
+        gap: 0.8rem
+      }
     }
     .ranking-anterior, .ranking-proximo {
       flex: 0 0 auto;
@@ -62,6 +68,11 @@
       width: 100%;
       max-width: 600px;
       position: relative;
+    }
+    @media (max-width: 480px) {
+      .quiz-container {
+        width: 40%;
+      }
     }
     #pergunta-enunciado {
       font-size: 22px;
