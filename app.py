@@ -29,7 +29,7 @@ formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(mess
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
 
-temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Química"]
+temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química"]
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -874,11 +874,12 @@ def listar_perguntas(user_id):
         tipo_str = cfg['tipo_str']   # Usado para filtrar feedbacks/respostas
         table = cfg['table']         # Nome da tabela — vindo do cfg interno (seguro)
         
-        """
+        
         where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
+        
         """
-
-        where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'" 
+        where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
+        """
 
 
         sql = f"""
