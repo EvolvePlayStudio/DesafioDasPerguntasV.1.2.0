@@ -7,7 +7,11 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/Favicon.png') }}">
   <meta name="description" content="🎁 Aplicativo 100% gratuito 🧠 Três níveis de dificuldade ✨ Vários temas de perguntas 🏆 Ranking pessoal e histórico">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    :root {
+      --largura-barra: 29.8rem;
+    }
     body {
       background: var(--cor-fundo-padrao);
       display: block;
@@ -16,48 +20,82 @@
     .pontuacoes {
       font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
+    
 
-    .ranking-container {
-      justify-content: center;
-      position: relative;
-      color: white;
-      display: flex;
-      grid-template-columns: auto 1fr auto; /* textos justos e barra expandindo */
-      align-items: center;
-      font-weight: bold;
-      margin: -0.85rem auto 1.5rem auto;
-      width: 100%;
-      max-width: 650px;
-      gap: 1rem;
-    }
-    @media (max-width: 800px) {
-      .ranking-container {
-        max-width: 85%;
-        gap: 0.8rem
-      }
-    }
-    .ranking-anterior, .ranking-proximo {
-      flex: 0 0 auto;
-      width: 2rem;
-      text-align: center;
-      font-size: 1rem;
-      white-space: nowrap;
-    }
+
+    
+  /* Container do ranking */
+  .ranking-container {
+    position: relative;
+    width: 100%;
+    max-width: 650px;
+    height: 2rem; /* altura do ranking */
+    margin-top: -0.8rem;
+    margin-bottom: 1.5rem;
+    color: white;
+    font-weight: bold;
+  }
+
+  /* Barra central fixa */
+  .barra-container {
+    position: absolute;
+    left: 50%; /* centraliza horizontalmente */
+    transform: translateX(-50%);
+    width: var(--largura-barra); /* tamanho fixo da barra */
+    height: 1rem;
+    background-color: #444;
+    border-radius: 10px;
+    overflow: hidden;
+    z-index: 1;
+    margin-top: 0.25rem;
+  }
+
+  /* Progresso da barra */
+  #barra-progresso {
+    height: 100%;
+    width: 40%; /* valor inicial do progresso */
+    background: linear-gradient(to right, #f9a825, #fdd835);
+    transition: width 0.5s;
+  }
+
+  /* Texto do ranking anterior (lado esquerdo) */
+  #ranking-anterior {
+    position: absolute;
+    left: calc(48% - var(--largura-barra) / 2);
+    transform: translateX(-100%); /* posiciona à esquerda da barra */
+    white-space: nowrap;
+    text-align: right;
+    margin-right: 0.4rem; /* distância da barra */
+    z-index: 2;
+    font-size: 1rem;
+  }
+
+  /* Texto do próximo ranking (lado direito) */
+  #ranking-proximo {
+    position: absolute;
+    left: calc(52% + var(--largura-barra) / 2);
+    transform: translateX(0); /* colado à borda direita da barra */
+    white-space: nowrap;
+    text-align: left;
+    margin-left: 0.4rem; /* distância da barra */
+    z-index: 2;
+    font-size: 1rem;
+  }
+
+  /* Responsivo */
+  @media (max-width: 480px) {
     .barra-container {
-      flex: 0 0 30rem;
-      height: 1rem;
-      background-color: #444;
-      border-radius: 10px;
-      overflow: hidden;
-      margin: 0 0.2rem;
-      position: relative;
+      width: 250px; /* barra menor no mobile */
+      height: 0.8rem;
     }
-    #barra-progresso {
-      height: 100%;
-      width: 40%;
-      background: linear-gradient(to right, #f9a825, #fdd835);
-      transition: width 0.5s;
+    #ranking-anterior, #ranking-proximo {
+      font-size: 0.9rem;
     }
+  }
+
+
+
+
 
 
     .quiz-container {
