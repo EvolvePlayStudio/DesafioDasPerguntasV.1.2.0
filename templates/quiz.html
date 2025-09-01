@@ -19,6 +19,30 @@
   }
   .pontuacoes {
     font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: white;
+    position: absolute;
+    top: 1.1rem;
+    left: 1rem;
+    font-weight: bold;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #incremento-pontuacoes {
+    font-weight: bold;
+    font-size: 1.2rem;
+    transition: transform 0.8s ease-out;
+    display: none;
+    user-select: none;
+  }
+  .ranking-atual {
+    color: white;
+     position: absolute;
+     top: 1.1rem;
+     right: 1rem;
+     font-weight: bold;
+     font-size: 1.2rem
   }
   /* Container do ranking */
   .ranking-container {
@@ -228,6 +252,12 @@
   #dica-icon {
     justify-content: flex-end
   }
+  #perguntas-count, #contador-dicas {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-left: 6px;
+    color: black;
+  }
   #tema-nivel-pergunta {
     font-weight: bold;
     margin: 0;
@@ -270,23 +300,23 @@
     transition: all 0.4s ease;
   }
   /* Responsivo */
-  @media (max-width: 1480px) {
+  @media (max-width: 1200px) {
     .barra-container {
-      width: 280px; /* barra menor no mobile */
+      width: 300px; /* barra menor no mobile */
       height: 0.8rem;
     }
     #ranking-anterior, #ranking-proximo {
       font-size: 0.9rem;
     }
     #ranking-anterior {
-      left: calc(48% - 140px);
+      left: calc(48% - 150px);
     }
     #ranking-proximo {
-      left: calc(52% + 135px);
+      left: calc(52% + 145px);
     }
     .quiz-container {
       width: 100%;
-      max-width: 280px;
+      max-width: 360px;
       }
     #tema-nivel-pergunta,
     #pergunta-enunciado
@@ -294,7 +324,12 @@
       font-size: 1.1rem;
     }
     #perguntas-restantes-icon,
-    #dica-icon {
+    #dica-icon,
+    #perguntas-count,
+    #contador-dicas,
+    .pontuacoes,
+    #incremento-pontuacoes,
+    .ranking-atual {
       font-size: 1rem;
     }
     #dica-icon img {
@@ -308,20 +343,14 @@
     <div style="display: flex; flex-direction: column; align-items: center; padding: 2rem 0;">
 
       <!-- Pontuação atual do jogador (à esquerda) -->
-      <header class="pontuacoes" style="color: white; position: absolute; top: 1.1rem; left: 1rem; font-weight: bold; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+      <header class="pontuacoes">
         Pontuação: <span id="pontuacao"></span>
         <!-- Pontuação ganha ou perdida pela pergunta (fica invisível a princípio) -->
-        <span id="incremento-pontuacao" style="
-          font-weight: bold;
-          font-size: 1.2rem;
-          transition: transform 0.8s ease-out;
-          display: none;
-          user-select: none;
-        "></span>
+        <span id="incremento-pontuacao"></span>
       </header>
 
       <!-- Ranking atual do jogador (à direita) -->
-      <header style="color: white; position: absolute; top: 1.1rem; right: 1rem; font-weight: bold; font-size: 1.2rem;">
+      <header class="ranking-atual">
         Ranking: <span id="ranking"></span>
       </header>
 
@@ -344,7 +373,7 @@
           <!-- Ícone do raio (Perguntas restantes) à esquerda -->
           <div id="perguntas-restantes-icon" class="dica-icon" title="Perguntas restantes">
             <span>⚡</span>
-            <span id="perguntas-count" style="font-weight: bold; font-size: 18px; margin-left: 6px; color: black;">0</span>
+            <span id="perguntas-count">0</span>
           </div>
 
           <!-- Tema e nível da pergunta no centro -->
@@ -353,7 +382,7 @@
           <!-- Ícone de dica à direita -->
           <div id="dica-icon" class="dica-icon" title="Dica">
             <span>💡</span>
-            <span id="contador-dicas" style="color: black; font-size: 20px; font-weight: bold; margin-left: 4px;">0</span>
+            <span id="contador-dicas">0</span>
           </div>
       </div>
       <div id="quiz-box">
