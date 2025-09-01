@@ -9,21 +9,17 @@
   <meta name="description" content="🎁 Aplicativo 100% gratuito 🧠 Três níveis de dificuldade ✨ Vários temas de perguntas 🏆 Ranking pessoal e histórico">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    :root {
-      --largura-barra: 29.8rem;
-    }
-    body {
-      background: var(--cor-fundo-padrao);
-      display: block;
-      min-height: 100vh;
-    }
-    .pontuacoes {
-      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    }
-    
-
-
-    
+  :root {
+    --largura-barra: 29.8rem;
+  }
+  body {
+    background: var(--cor-fundo-padrao);
+    display: block;
+    min-height: 100vh;
+  }
+  .pontuacoes {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
   /* Container do ranking */
   .ranking-container {
     position: relative;
@@ -35,7 +31,6 @@
     color: white;
     font-weight: bold;
   }
-
   /* Barra central fixa */
   .barra-container {
     position: absolute;
@@ -49,7 +44,6 @@
     z-index: 1;
     margin-top: 0.25rem;
   }
-
   /* Progresso da barra */
   #barra-progresso {
     height: 100%;
@@ -57,7 +51,6 @@
     background: linear-gradient(to right, #f9a825, #fdd835);
     transition: width 0.5s;
   }
-
   /* Texto do ranking anterior (lado esquerdo) */
   #ranking-anterior {
     position: absolute;
@@ -69,7 +62,6 @@
     z-index: 2;
     font-size: 1rem;
   }
-
   /* Texto do próximo ranking (lado direito) */
   #ranking-proximo {
     position: absolute;
@@ -81,7 +73,202 @@
     z-index: 2;
     font-size: 1rem;
   }
-
+  .quiz-container {
+    background: var(--cor-fundo-claro);
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    width: 100%;
+    max-width: 600px;
+    position: relative;
+  }
+  #pergunta-enunciado {
+    font-size: 22px;
+    font-family: 'Noto Serif', 'Roboto', serif, sans-serif;
+    font-weight: bold;
+    margin-top: 1rem;
+    margin-bottom: 40px;
+  }
+  #alternativas-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .alternativa-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: .5rem;
+    width: 100%;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    margin: 0.5rem 0;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: var(--peso-fonte-botoes);
+    background: #b8b88a;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  .alternativa-btn[aria-hidden="true"] {
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+    user-select: none;
+  }
+  .alternativa-btn[data-letter="A"] {
+    margin-top: -1rem;
+  }
+  .alternativa-btn.selected {
+    background: lightyellow;
+    transform: scale(1.02);
+    z-index: 1;
+  }
+  .alternativa-btn.correct {
+    background: lime !important;
+  }
+  .alternativa-btn.wrong {
+    background: var(--vermelho-tela-quiz) !important;
+  }
+  .alternativa-btn.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .alternativa-btn .letter {
+    font-weight: bold;
+    width: 2.2ch;
+    flex: 0 0 auto;
+  }
+  .alternativa-btn .full-text {
+    font-weight: var(--peso-fonte-botoes);
+    flex: 1;
+    margin-top: 0.22rem;
+    white-space: normal;
+  }
+  .alternativa-btn:focus {
+    outline: none;
+    box-shadow: none;
+  }
+  .alternativa-btn.text-visible .full-text {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  input, button {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: none;
+  }
+  input {
+    width: 95%;
+    max-width: 900px;
+    border: 1px solid #ccc;
+    display: block;
+    margin-top: -20px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .nota-box {
+    font-weight: var(--peso-fonte-botoes);
+  }
+  .btn-enviar, .btn-finalizar {
+    flex: 1;
+    color: white;
+    font-weight: var(--peso-fonte-botoes);
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  .btn-enviar {
+    background: var(--bg-botao-login);
+  }
+  .btn-finalizar{
+    background: var(--bg-botao-vermelho);
+  }
+  .btn-enviar:hover {
+    background: var(--bg-hover-botao-login);
+  }
+  .btn-finalizar:hover {
+    background: var(--bg-hover-botao-vermelho); 
+  }
+  .btn-enviar:focus, .btn-finalizar:focus{
+    outline: none;
+    box-shadow: none;
+  }
+  #dica-box, #nota-box, #respostas-aceitas-box {
+    display: none;
+    margin-top: 1rem;
+    background: #f0f0f0;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-weight: var(--peso-fonte-padrao);
+  }
+  .quiz-header {
+    display: grid;
+    grid-template-columns: 80px 1fr 80px;
+    align-items: center;
+    gap: 12px;
+    margin-top: -10px;
+    padding: 0;
+    color: white;
+  }
+  #perguntas-restantes-icon,
+  #dica-icon {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: gold;
+    font-size: 24px;
+    cursor: pointer;
+  }
+  #perguntas-restantes-icon {
+    justify-content: flex-start;
+    cursor: default
+  }
+  #dica-icon {
+    justify-content: flex-end
+  }
+  #tema-nivel-pergunta {
+    font-weight: bold;
+    margin: 0;
+    text-align: center;
+    white-space: nowrap; /* evita quebra */
+  }
+  .dica-icon {
+    display: none;
+    align-items: center;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  .dica-icon img {
+    width: 24px;
+    height: 24px;
+    margin-right: 0.3rem;
+  }
+  #avaliacao {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 50px;
+    margin: 20px 0;
+    font-size: 32px;
+    width: 100%;
+    text-align: center;
+  }
+  .estrela {
+    font-size: 36px;
+    cursor: pointer;
+    color: black;
+    user-select: none;
+    transition: color 0.3s ease;
+    padding: 0 30px;
+  }
+  .estrela.dourada {
+    color: gold;
+  }
+  #comentarios {
+    transition: all 0.4s ease;
+  }
   /* Responsivo */
   @media (max-width: 1480px) {
     .barra-container {
@@ -91,223 +278,30 @@
     #ranking-anterior, #ranking-proximo {
       font-size: 0.9rem;
     }
-
     #ranking-anterior {
       left: calc(48% - 140px);
     }
     #ranking-proximo {
       left: calc(52% + 135px);
     }
-  }
-
-
-
-
-
-
     .quiz-container {
-      background: var(--cor-fundo-claro);
-      padding: 2rem;
-      border-radius: 16px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.2);
       width: 100%;
-      max-width: 600px;
-      position: relative;
-    }
-    @media (max-width: 800px) {
-      .quiz-container {
-        width: 40%;
+      max-width: 280px;
       }
-    }
-    #pergunta-enunciado {
-      font-size: 22px;
-      font-family: 'Noto Serif', 'Roboto', serif, sans-serif;
-      font-weight: bold;
-      margin-top: 1rem;
-      margin-bottom: 40px;
-    }
-    #alternativas-container {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.5rem;
-    }
-    .alternativa-btn {
-      display: flex;
-      align-items: flex-start;
-      gap: .5rem;
-      width: 100%;
-      text-align: left;
-      padding: 0.75rem 1rem;
-      margin: 0.5rem 0;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-weight: var(--peso-fonte-botoes);
-      background: #b8b88a;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-    }
-    .alternativa-btn[aria-hidden="true"] {
-      opacity: 0;
-      transform: translateY(8px);
-      pointer-events: none;
-      user-select: none;
-    }
-    .alternativa-btn[data-letter="A"] {
-      margin-top: -1rem;
-    }
-    .alternativa-btn.selected {
-      background: lightyellow;
-      transform: scale(1.02);
-      z-index: 1;
-    }
-    .alternativa-btn.correct {
-      background: lime !important;
-    }
-    .alternativa-btn.wrong {
-      background: var(--vermelho-tela-quiz) !important;
-    }
-    .alternativa-btn.revealed {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .alternativa-btn .letter {
-      font-weight: bold;
-      width: 2.2ch;
-      flex: 0 0 auto;
-    }
-    .alternativa-btn .full-text {
-      font-weight: var(--peso-fonte-botoes);
-      flex: 1;
-      margin-top: 0.22rem;
-      white-space: normal;
-    }
-    .alternativa-btn:focus {
-      outline: none;
-      box-shadow: none;
-    }
-    .alternativa-btn.text-visible .full-text {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    input, button {
-      width: 100%;
-      padding: 0.75rem;
-      font-size: 1rem;
-      border-radius: 8px;
-      border: none;
-    }
-    input {
-      width: 95%;
-      max-width: 900px;
-      border: 1px solid #ccc;
-      display: block;
-      margin-top: -20px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .icon-left.stat {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .icon-left.stat .icon {
-      font-size: 20px;
-      color: gold;
-    }
-    .nota-box {
-      font-weight: var(--peso-fonte-botoes);
-    }
-    .btn-enviar, .btn-finalizar {
-      flex: 1;
-      color: white;
-      font-weight: var(--peso-fonte-botoes);
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-    .btn-enviar {
-      background: var(--bg-botao-login);
-    }
-    .btn-finalizar{
-      background: var(--bg-botao-vermelho);
-    }
-    .btn-enviar:hover {
-      background: var(--bg-hover-botao-login);
-    }
-    .btn-finalizar:hover {
-      background: var(--bg-hover-botao-vermelho); 
-    }
-    .btn-enviar:focus, .btn-finalizar:focus{
-      outline: none;
-      box-shadow: none;
-    }
-    #dica-box, #nota-box, #respostas-aceitas-box {
-      display: none;
-      margin-top: 1rem;
-      background: #f0f0f0;
-      padding: 0.75rem;
-      border-radius: 8px;
-      font-weight: var(--peso-fonte-padrao);
-    }
-    .quiz-header {
-      display: grid;
-      grid-template-columns: 80px 1fr 80px;
-      align-items: center;
-      gap: 12px;
-      margin-top: -10px;
-      padding: 0;
-      color: white;
+    #tema-nivel-pergunta,
+    #pergunta-enunciado
+    {
+      font-size: 1.1rem;
     }
     #perguntas-restantes-icon,
     #dica-icon {
-      display: none;
-      align-items: center;
-      justify-content: center;
-      color: gold;
-      font-size: 24px;
-      cursor: pointer;
-    }
-    #tema-nivel-pergunta {
-      font-weight: bold;
-      margin: 0;
-      text-align: center;
-      white-space: nowrap; /* evita quebra */
-    }
-    .dica-icon {
-      display: none;
-      align-items: center;
-      cursor: pointer;
       font-size: 1rem;
     }
-    .dica-icon img {
-      width: 24px;
-      height: 24px;
-      margin-right: 0.3rem;
+    #dica-icon img {
+      width: 1rem;
+      height: 1rem;
     }
-    #avaliacao {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 50px;
-      margin: 20px 0;
-      font-size: 32px;
-      width: 100%;
-      text-align: center;
-    }
-    .estrela {
-        font-size: 36px;
-        cursor: pointer;
-        color: black;
-        user-select: none;
-        transition: color 0.3s ease;
-        padding: 0 30px;
-    }
-    .estrela.dourada {
-      color: gold;
-    }
-    #comentarios {
-      transition: all 0.4s ease;
-    }
+  }
   </style>
 </head>
   <body style="margin: 0; font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1E1E14, #1E1E14);">
@@ -348,7 +342,7 @@
       <div class="quiz-container">
         <div class="quiz-header">
           <!-- Ícone do raio (Perguntas restantes) à esquerda -->
-          <div id="perguntas-restantes-icon" class="dica-icon" title="Perguntas restantes" style="justify-content: flex-start; cursor:default">
+          <div id="perguntas-restantes-icon" class="dica-icon" title="Perguntas restantes">
             <span>⚡</span>
             <span id="perguntas-count" style="font-weight: bold; font-size: 18px; margin-left: 6px; color: black;">0</span>
           </div>
@@ -357,7 +351,7 @@
           <h2 id="tema-nivel-pergunta" style="font-family:'Noto Serif', 'Roboto', serif, sans-serif ;font-weight: bold; margin: 0; flex-grow: 1; text-align: center;"></h2>
 
           <!-- Ícone de dica à direita -->
-          <div id="dica-icon" class="dica-icon" title="Dica" style="justify-content: flex-end;">
+          <div id="dica-icon" class="dica-icon" title="Dica">
             <span>💡</span>
             <span id="contador-dicas" style="color: black; font-size: 20px; font-weight: bold; margin-left: 4px;">0</span>
           </div>
