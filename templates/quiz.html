@@ -17,18 +17,6 @@
     display: block;
     min-height: 100vh;
   }
-  .pontuacoes {
-    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    color: white;
-    position: absolute;
-    top: 1.1rem;
-    left: 1rem;
-    font-weight: bold;
-    font-size: 1.2rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
   #incremento-pontuacoes {
     font-weight: bold;
     font-size: 1.2rem;
@@ -36,13 +24,22 @@
     display: none;
     user-select: none;
   }
-  .ranking-atual {
+  .pontuacoes, .ranking-atual {
+    position: absolute;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 1.2rem;
+    font-weight: bold;
     color: white;
-     position: absolute;
-     top: 1.1rem;
-     right: 1rem;
-     font-weight: bold;
-     font-size: 1.2rem
+    top: 1.1rem;
+  }
+  .pontuacoes {
+    left: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .ranking-atual {
+    right: 1rem;
   }
   /* Container do ranking */
   .ranking-container {
@@ -103,7 +100,7 @@
     border-radius: 16px;
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
     width: 100%;
-    max-width: 600px;
+    max-width: 38rem;
     position: relative;
   }
   #pergunta-enunciado {
@@ -193,6 +190,9 @@
     margin-left: auto;
     margin-right: auto;
   }
+  #resposta-input {
+    font-size: 1rem;
+  }
   .nota-box {
     font-weight: var(--peso-fonte-botoes);
   }
@@ -205,6 +205,7 @@
   }
   .btn-enviar {
     background: var(--bg-botao-login);
+    display: none;
   }
   .btn-finalizar{
     background: var(--bg-botao-vermelho);
@@ -219,14 +220,6 @@
     outline: none;
     box-shadow: none;
   }
-  #dica-box, #nota-box, #respostas-aceitas-box {
-    display: none;
-    margin-top: 1rem;
-    background: #f0f0f0;
-    padding: 0.75rem;
-    border-radius: 8px;
-    font-weight: var(--peso-fonte-padrao);
-  }
   .quiz-header {
     display: grid;
     grid-template-columns: 80px 1fr 80px;
@@ -236,8 +229,7 @@
     padding: 0;
     color: white;
   }
-  #perguntas-restantes-icon,
-  #dica-icon {
+  #perguntas-restantes-icon, #dica-icon {
     display: none;
     align-items: center;
     justify-content: center;
@@ -249,9 +241,6 @@
     justify-content: flex-start;
     cursor: default
   }
-  #dica-icon {
-    justify-content: flex-end
-  }
   #perguntas-count, #contador-dicas {
     font-weight: bold;
     font-size: 1.1rem;
@@ -259,34 +248,46 @@
     color: black;
   }
   #tema-nivel-pergunta {
+    text-align: center;
+    white-space: nowrap;
+    font-family: 'Noto Serif', 'Roboto', serif, sans-serif;
     font-weight: bold;
     margin: 0;
-    text-align: center;
-    white-space: nowrap; /* evita quebra */
+    flex-grow: 1
   }
   .dica-icon {
     display: none;
     align-items: center;
     cursor: pointer;
     font-size: 1rem;
+    justify-content: flex-end;
   }
   .dica-icon img {
-    width: 24px;
-    height: 24px;
+    width: 1.5rem;
+    height: 1.5rem;
     margin-right: 0.3rem;
   }
+  #dica-box, #nota-box, #respostas-aceitas-box {
+    display: none;
+    margin-top: 1rem;
+    background: #f0f0f0;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: var(--peso-fonte-padrao);
+  }
   #avaliacao {
-    display: flex;
+    display: none;
     justify-content: center;
     align-items: center;
     gap: 50px;
     margin: 20px 0;
-    font-size: 32px;
+    font-size: 2rem;
     width: 100%;
     text-align: center;
   }
   .estrela {
-    font-size: 36px;
+    font-size: 2.2rem;
     cursor: pointer;
     color: black;
     user-select: none;
@@ -296,27 +297,51 @@
   .estrela.dourada {
     color: gold;
   }
+  #botoes-acao {
+    display: none;
+    margin-top: 0.8rem;
+    justify-content: space-between;
+    gap: 12px
+  }
+  #resultado {
+    display: none;
+    font-size: 1.1rem;
+    font-family: 'Noto Serif', 'Roboto', serif, sans-serif;
+    margin-top: 12px;
+    font-weight: bold
+  }
   #comentarios {
     transition: all 0.4s ease;
+    display: none;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 1rem;
+    background: #fff8f0;
+    padding: 0.5rem 2rem 0.5rem 2rem;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    width: 100%;
+    max-width: 38rem;
+    font-size: 1rem;
   }
   /* Responsivo */
-  @media (max-width: 1200px) {
+  @media (max-width: 1180px) {
     .barra-container {
-      width: 300px; /* barra menor no mobile */
+      width: 22rem;
       height: 0.8rem;
     }
     #ranking-anterior, #ranking-proximo {
       font-size: 0.9rem;
     }
     #ranking-anterior {
-      left: calc(48% - 150px);
+      left: calc(48% - 11rem);
     }
     #ranking-proximo {
-      left: calc(52% + 145px);
+      left: calc(52% + 10.5rem);
     }
     .quiz-container {
       width: 100%;
-      max-width: 360px;
+      max-width: 28rem;
       }
     #tema-nivel-pergunta,
     #pergunta-enunciado
@@ -332,9 +357,25 @@
     .ranking-atual {
       font-size: 1rem;
     }
+    #resposta-input, #resultado, #dica-box, #nota-box, #respostas-aceitas-box, #comentarios {
+      font-size: 0.9rem;
+    }
+    #btn-finalizar, #btn-proxima, .btn-enviar {
+      font-size: 0.8rem;
+    }
+    .estrela {
+      font-size: 1.9rem;
+      padding: 0 1.5rem;
+    }
+    .pontuacoes {
+      gap: 0.3rem;
+    }
     #dica-icon img {
       width: 1rem;
       height: 1rem;
+    }
+    #comentarios {
+      max-width: 28rem;
     }
   }
   </style>
@@ -377,7 +418,7 @@
           </div>
 
           <!-- Tema e nível da pergunta no centro -->
-          <h2 id="tema-nivel-pergunta" style="font-family:'Noto Serif', 'Roboto', serif, sans-serif ;font-weight: bold; margin: 0; flex-grow: 1; text-align: center;"></h2>
+          <h2 id="tema-nivel-pergunta"></h2>
 
           <!-- Ícone de dica à direita -->
           <div id="dica-icon" class="dica-icon" title="Dica">
@@ -401,16 +442,16 @@
         </div>
         
         <!-- Botão para enviar a resposta -->
-        <button id="btn-enviar" class="btn-enviar" style="display: none; margin-top: 0.8rem" disabled>Enviar</button>
+        <button id="btn-enviar" class="btn-enviar" disabled>Enviar</button>
 
         <!-- Botões de finalizar o quiz e chamar próxima pergunta -->
-        <div id="botoes-acao" style="display: none; margin-top: 0.8rem; justify-content: space-between; gap: 12px;">
+        <div id="botoes-acao">
           <button id="btn-finalizar" class="btn-finalizar">Finalizar</button>
           <button id="btn-proxima" class="btn-enviar">Próxima</button>
         </div>
         
         <!-- Resultado que indica se a resposta foi correta -->
-        <div id="resultado" style="display: none; font-size: 18px; font-family: 'Noto Serif', 'Roboto', serif, sans-serif; margin-top: 12px; font-weight: bold;"></div>
+        <div id="resultado"></div>
 
         <!-- Box das respostas aceitas -->
         <div id="respostas-aceitas-box">
@@ -428,7 +469,7 @@
         </div>
 
         <!-- Estrelas para avaliação -->
-        <div id="avaliacao" style="display: none">
+        <div id="avaliacao">
           <span class="estrela" data-valor="1">☆</span>
           <span class="estrela" data-valor="2">☆</span>
           <span class="estrela" data-valor="3">☆</span>
@@ -438,9 +479,9 @@
       </div>
     </div>
     <!-- Comentários dos usuários para a pergunta -->
-    <div id="comentarios" style="display: none; max-height: 180px; overflow-y: auto; margin-top: 1rem; background: #fff8f0; padding: 1rem; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.05); width: 100%; max-width: 600px;">
+    <div id="comentarios">
       <h3>Comentários (não disponíveis na versão atual):</h3>
-      <ul id="lista-comentarios" style="padding-left: 1rem;"></ul>
+      <ul id="lista-comentarios"></ul>
     </div>
   </div>
 
