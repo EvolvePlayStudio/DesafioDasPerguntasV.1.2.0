@@ -83,13 +83,20 @@
   }
 
   /* Responsivo */
-  @media (max-width: 480px) {
+  @media (max-width: 1480px) {
     .barra-container {
-      width: 250px; /* barra menor no mobile */
+      width: 280px; /* barra menor no mobile */
       height: 0.8rem;
     }
     #ranking-anterior, #ranking-proximo {
       font-size: 0.9rem;
+    }
+
+    #ranking-anterior {
+      left: calc(48% - 140px);
+    }
+    #ranking-proximo {
+      left: calc(52% + 135px);
     }
   }
 
