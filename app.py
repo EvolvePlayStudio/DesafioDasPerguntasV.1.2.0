@@ -89,6 +89,24 @@ codigo_pix = os.getenv("QR_CODE")
 img = qrcode.make(codigo_pix)
 img.save("static/qrcode.png")
 
+def pagina_visitada(pagina, id_usuario=None):
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO acessos_paginas (pagina, id_usuario) 
+            VALUES (%s, %s)
+        """, (pagina, id_usuario))
+        conn.commit()
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.error("Erro ao tentar registrar página")
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+        
+
 def iniciar_agendamento():
     # Analisa 4 vezes por dia se o incremento no número de dicas e perguntas dos usuários foi feita
     scheduler.add_job(
@@ -149,6 +167,7 @@ def token_required(f):
 
 @app.route("/", methods=["GET"])
 def index():
+    pagina_visitada("Login")
     return render_template("login.html")  # ou sua página inicial real
 
 @app.route('/favicon.ico')
@@ -190,7 +209,6 @@ def login():
             id_usuario, senha_hash, email_confirmado, nome_usuario, dicas_restantes, perguntas_restantes = usuario
             session["id_usuario"] = id_usuario
             session["email"] = email
-            print(f"Id usuário na sessão: {session['id_usuario']}")
 
             if not check_password_hash(senha_hash, senha):
                 return jsonify(success=False, message="Senha incorreta")
@@ -445,6 +463,7 @@ def formatar_hora_servidor(timestamp):
 
 @app.route('/verificar_bloqueio')
 def verificar_bloqueio():
+    pagina_visitada("Registro")
     info = session.get('bloqueio_captcha', {'tentativas_registro': 0, 'bloqueado_ate': 0})
     agora = time.time()
 

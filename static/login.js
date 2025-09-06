@@ -430,7 +430,8 @@ document.addEventListener('DOMContentLoaded', function () {
           bloquearRegistro(info_bloqueio)
           return;
         }
-      } catch (error) {
+      } 
+      catch (error) {
         console.error("Erro ao verificar bloqueio", error);
       }
 
