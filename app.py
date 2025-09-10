@@ -214,7 +214,7 @@ def login():
                 return jsonify(success=False, message="Senha incorreta")
 
             if not email_confirmado:
-                return jsonify(success=False, message="Você precisa confirmar seu e-mail antes de fazer login")
+                return jsonify(success=False, message="Você precisa confirmar seu e-mail antes de fazer login (dica: verifique também na caixa de spam)")
 
             # 🔒 Invalida sessões antigas
             cur.execute("UPDATE sessoes SET ativo = FALSE WHERE id_usuario = %s", (id_usuario,))
