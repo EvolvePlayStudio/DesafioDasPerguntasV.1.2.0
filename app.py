@@ -19,6 +19,10 @@ from io import BytesIO
 import urllib.parse
 import qrcode
 from functools import wraps
+import pytz
+
+# Definir timezone de São Paulo
+tz_sp = pytz.timezone("America/Sao_Paulo")
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 # Para fazer depuração na render
@@ -30,6 +34,8 @@ handler.setFormatter(formatter)
 app.logger.addHandler(handler)
 
 temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Jogos", "Mídia", "Música", "Química", "Tecnologia"]
+# Pode ser bom corrigi a parte abaixo, pois os últimos 2 ids devem fazer referência apenas às discursivas e os 2 primeiros às objetivas
+ids_perguntas_visitante = {"Artes": [163, 176, 257, 267], "Astronomia": [8, 12, 111, 117], "Biologia": [22, 24, 8, 48], "Esportes": [55, 59, 79, 12], "Filosofia": [142, 149, 230, 237], "Geografia": [87, 84, 169, 170], "História": [36, 42, 2, 275], "Jogos": [290, 293, 379, 380], "Mídia": [109, 106, 188, 209], "Música": [255, 231, 313, 327], "Química": [189, 184, 303, 304], "Tecnologia": [243, 246, 152, 358]}
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -89,6 +95,11 @@ codigo_pix = os.getenv("QR_CODE")
 img = qrcode.make(codigo_pix)
 img.save("static/qrcode.png")
 
+@app.route("/entrar_visitante")
+def entrar_visitante():
+    session["visitante"] = True
+    return redirect("/home")
+    
 def pagina_visitada(pagina, id_usuario=None):
     conn = cur = None
     try:
@@ -106,7 +117,6 @@ def pagina_visitada(pagina, id_usuario=None):
         if cur: cur.close()
         if conn: conn.close()
         
-
 def iniciar_agendamento():
     # Analisa 4 vezes por dia se o incremento no número de dicas e perguntas dos usuários foi feita
     scheduler.add_job(
@@ -128,6 +138,8 @@ iniciar_agendamento()
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        if session.get("visitante"):
+            return f(user_id=None, *args, **kwargs)
         token = None
 
         # 1️⃣ Tenta extrair do header Authorization
@@ -209,6 +221,7 @@ def login():
             id_usuario, senha_hash, email_confirmado, nome_usuario, dicas_restantes, perguntas_restantes = usuario
             session["id_usuario"] = id_usuario
             session["email"] = email
+            session["visitante"] = False
 
             if not check_password_hash(senha_hash, senha):
                 return jsonify(success=False, message="Senha incorreta")
@@ -343,7 +356,12 @@ def registrar():
     # Gerar hash da senha e token de confirmação
     senha_hash = generate_password_hash(senha)
     token = gerar_token_confirmacao()
-    expiracao = datetime.utcnow() + timedelta(hours=24)
+
+    # Agora atual (truncado para segundos)
+    agora_sp = datetime.now(tz_sp).replace(microsecond=0)
+
+    # Exemplo: expiração em 24 horas (21 horas porque fuso de São Paulo é -3)
+    expiracao = agora_sp + timedelta(hours=21)
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -858,6 +876,8 @@ def listar_perguntas(user_id):
     modo = (request.args.get('modo') or '').lower()
     tipo_pergunta = (request.args.get('tipo-de-pergunta') or '').lower()
     id_usuario = session.get('id_usuario')
+    visitante = session.get("visitante")
+    print("Visitante?", visitante)
 
     # Configurações locais
     limit = 90 if modo == 'desafio' else 300
@@ -866,7 +886,7 @@ def listar_perguntas(user_id):
     if not tema or modo not in ('desafio', 'revisao') or tipo_pergunta not in ('objetiva', 'discursiva'):
         print("Parâmetros inválidos ou ausentes")
         return jsonify({'erro': 'Parâmetros inválidos ou ausentes'}), 400
-    if not id_usuario:
+    if not id_usuario and not visitante:
         print("Usuário não autenticado")
         return jsonify({'erro': 'Usuário não autenticado'}), 401
     
@@ -917,10 +937,13 @@ def listar_perguntas(user_id):
         perguntas_por_dificuldade = {'Fácil': [], 'Médio': [], 'Difícil': []}
 
         for row in linhas:
-            
-            dificuldade = row.get('dificuldade') or 'Médio'  # Se por algum motivo for nulo, evita KeyError
-            respondida = bool(row.get('respondida'))
+            if visitante:
+                if row["id_pergunta"] not in ids_perguntas_visitante[tema]:
+                    continue
 
+            respondida = bool(row.get('respondida'))
+            dificuldade = row.get('dificuldade') or 'Médio'  # Se por algum motivo for nulo, evita KeyError
+            
             sb = row.get('subtemas') or []
             try:
                 subtemas = [s.strip() if isinstance(s, str) else s for s in sb]
@@ -974,7 +997,9 @@ def listar_perguntas(user_id):
                         'subtemas': subtemas,
                     })
             # Filtra por modo
-            if modo == 'desafio' and not respondida:
+            if visitante:
+                perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
+            elif modo == 'desafio' and not respondida:
                 perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
             elif modo == 'revisao' and respondida:
                 perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
@@ -986,7 +1011,12 @@ def listar_perguntas(user_id):
         if cur: cur.close()
         if conn: conn.close()
 
-    pontuacoes_usuario = buscar_pontuacoes_usuario(id_usuario)
+    if not visitante:
+        pontuacoes_usuario = buscar_pontuacoes_usuario(id_usuario)
+    else:
+        pontuacoes_usuario = {}
+        for tema in temas_disponiveis:
+            pontuacoes_usuario[tema] = 2500
 
     return jsonify({
         'perguntas': perguntas_por_dificuldade,

@@ -1,6 +1,14 @@
-import { fetchAutenticado } from "./utils.js";
-
 document.addEventListener('DOMContentLoaded', function () {
+  const btnEntrarSemLogin = document.getElementById("entrar-visitante")
+
+  async function entrarVisitante() {
+    sessionStorage.setItem("modoVisitante", "true");
+    window.location.href = "/entrar_visitante";
+  }
+
+  // Implementa a função de click no botão de entrar sem login
+  btnEntrarSemLogin.addEventListener("click", () => entrarVisitante());
+
   // Variáveis globais para CAPTCHA
   let captchaToken = null;
   let selecoes = [];
@@ -313,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes || 0));
         localStorage.setItem("nome_usuario", data.nome_usuario || '');
         sessionStorage.setItem("token_sessao", data.token);
-
+        sessionStorage.setItem("modoVisitante", "false");
         window.location.href = "/home";
       } 
       else {
@@ -417,6 +425,7 @@ document.addEventListener('DOMContentLoaded', function () {
         lbl_mensagem_registro.textContent = '';
         lbl_mensagem_registro.style.visibility = 'hidden';
       }
+      btnEntrarSemLogin.style.display = "block"
     }
     else if (type === 'register') {
       try {
@@ -430,6 +439,7 @@ document.addEventListener('DOMContentLoaded', function () {
           bloquearRegistro(info_bloqueio)
           return;
         }
+        btnEntrarSemLogin.style.display = "none"
       } 
       catch (error) {
         console.error("Erro ao verificar bloqueio", error);
@@ -477,6 +487,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // Esconde info extra
       if (info_section) info_section.style.display = 'none';
+
+      // Esconde botão de entrar sem login
+      btnEntrarSemLogin.style.display = "none"
 
       // Mostra forgot
       if (forgot_form) {

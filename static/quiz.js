@@ -17,6 +17,7 @@ let ranking_usuario = null
 const rankings_usuario = JSON.parse(localStorage.getItem("rankings_usuario"))
 const tema_atual = decodeURIComponent(localStorage.getItem("tema_atual"))
 localStorage.setItem("pontuacao_anterior", pontuacoes_usuario[tema_atual])
+console.log("Pontuações do usuário: ", pontuacoes_usuario)
 const modo_jogo = localStorage.getItem("modo_jogo").toLocaleLowerCase()
 const tipo_pergunta = localStorage.getItem("tipo_pergunta").toLocaleLowerCase()
 const lbl_pontuacao_usuario = document.getElementById('pontuacao')
@@ -307,11 +308,13 @@ async function enviarResposta() {
   btn_enviar.style.display = "none";
 
   // Chama as estrelas de feedback e carrega as anteriores enviadas pelo usuário caso esteja no modo Revisão
-  if (modo_jogo === "revisao") {
-    const avaliacao_anterior = pergunta_selecionada.estrelas || 0;
-    renderizarEstrelas(avaliacao_anterior);
+  if (sessionStorage.getItem("modoVisitante") === "false") {
+    if (modo_jogo === "revisao") {
+      const avaliacao_anterior = pergunta_selecionada.estrelas || 0;
+      renderizarEstrelas(avaliacao_anterior);
+    }
+    document.getElementById("avaliacao").style.display = "block";
   }
-  document.getElementById("avaliacao").style.display = "block";
 
   // Exibe os comentários dos outros usuários
   document.getElementById('comentarios').style.display = 'block';
@@ -440,7 +443,10 @@ function esconderRespostasAceitas() {
 }
 
 function finalizarQuiz() {
-  if (modo_jogo === 'desafio') {
+  if (sessionStorage["modoVisitante"] === "true") {
+    window.location.href = "/home";
+  }
+  else if (modo_jogo === 'desafio') {
     localStorage.setItem("perguntas_respondidas", JSON.stringify(perguntas_respondidas));
     localStorage.setItem("rankings_usuario", JSON.stringify(rankings_usuario));
     window.location.href = "/resultado";

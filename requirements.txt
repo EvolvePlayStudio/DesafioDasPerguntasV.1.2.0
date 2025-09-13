@@ -18,3 +18,4 @@ gunicorn
 APScheduler
 Pillow
 qrcode==8.2
+pytz
