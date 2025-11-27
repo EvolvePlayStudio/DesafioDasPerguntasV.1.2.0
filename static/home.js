@@ -18,12 +18,16 @@ async function iniciarQuiz(event) {
     return;
   }
 
+  console.log("Modo visitante: ", sessionStorage["modoVisitante"])
+  const textoMensagem = sessionStorage["modoVisitante"]
   if (sessionStorage["modoVisitante"] === "false" && localStorage.getItem("perguntas_restantes") <= 0) {
-    exibirMensagem(mensagem, 'Você precisa aguardar para obter mais perguntas no modo desafio', 'red')
+    // exibirMensagem(mensagem, 'Você precisa aguardar para obter mais perguntas no modo desafio', 'red')
+    exibirMensagem(mensagem, textoMensagem, 'red')
     return;
   }
   
-  exibirMensagem(mensagem, "Preparando quiz...", '#d1d1d1ff', false)
+  // exibirMensagem(mensagem, "Preparando quiz...", '#d1d1d1ff', false)
+  exibirMensagem(mensagem, textoMensagem, 'red')
 
   // Carrega as perguntas para o quiz
   try {
