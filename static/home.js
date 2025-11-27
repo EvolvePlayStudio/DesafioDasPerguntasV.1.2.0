@@ -18,7 +18,7 @@ async function iniciarQuiz(event) {
     return;
   }
 
-  if (localStorage.getItem("perguntas_restantes") <= 0) {
+  if (sessionStorage["modoVisitante"] === "false" && localStorage.getItem("perguntas_restantes") <= 0) {
     exibirMensagem(mensagem, 'Você precisa aguardar para obter mais perguntas no modo desafio', 'red')
     return;
   }
