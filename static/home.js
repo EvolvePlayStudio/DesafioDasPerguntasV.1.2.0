@@ -22,7 +22,6 @@ async function iniciarQuiz(event) {
   const textoMensagem = sessionStorage["modoVisitante"]
   const textoMensagem2 = 'Preparando quiz' + sessionStorage["modoVisitante"]
   if (sessionStorage["modoVisitante"] === "false" && localStorage.getItem("perguntas_restantes") <= 0) {
-    // exibirMensagem(mensagem, 'Você precisa aguardar para obter mais perguntas no modo desafio', 'red')
     exibirMensagem(mensagem, textoMensagem, 'red')
     return;
   }
