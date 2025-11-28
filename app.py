@@ -99,6 +99,7 @@ img.save("static/qrcode.png")
 def entrar_visitante():
     session.clear()
     session["visitante"] = True
+    pagina_visitada("Home (Visitante)")
     return redirect("/home")
     
 def pagina_visitada(pagina, id_usuario=None):
