@@ -97,6 +97,7 @@ img.save("static/qrcode.png")
 
 @app.route("/entrar_visitante")
 def entrar_visitante():
+    session.clear()
     session["visitante"] = True
     return redirect("/home")
     
@@ -877,7 +878,6 @@ def listar_perguntas(user_id):
     tipo_pergunta = (request.args.get('tipo-de-pergunta') or '').lower()
     id_usuario = session.get('id_usuario')
     visitante = session.get("visitante")
-    print("Visitante?", visitante)
 
     # Configurações locais
     limit = 90 if modo == 'desafio' else 300
@@ -907,7 +907,10 @@ def listar_perguntas(user_id):
 
     # Busca das perguntas
     try:
-        is_privileged = int(id_usuario) in privileged_ids
+        if visitante:
+            is_privileged = False
+        else:
+            is_privileged = int(id_usuario) in privileged_ids
 
         select_clause = ",\n".join(cfg['select_cols'])
         tipo_str = cfg['tipo_str']   # Usado para filtrar feedbacks/respostas
