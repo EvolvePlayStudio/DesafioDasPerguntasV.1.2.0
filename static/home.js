@@ -23,6 +23,7 @@ async function iniciarQuiz(event) {
     return;
   }
   
+  console.log("Modo visitante?", sessionStorage["modoVisitante"])
   exibirMensagem(mensagem, "Preparando quiz...", '#d1d1d1ff', false)
 
   // Carrega as perguntas para o quiz
