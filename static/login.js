@@ -255,6 +255,11 @@ document.addEventListener('DOMContentLoaded', function () {
       const data = await response.json();
 
       if (data.success) {
+
+        if (typeof gtag_report_conversion === 'function') {
+            gtag_report_conversion(); 
+        }
+
         if (btnRegister) btnRegister.disabled = true;
         if (lbl_mensagem_login) {
           lbl_mensagem_login.style.visibility = 'visible'
