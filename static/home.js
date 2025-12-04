@@ -120,6 +120,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Implementa a função de clique no botão de logout
+  document.getElementById("btn-logout").addEventListener("click", async () => {
+    window.location.href = "/"
+  })
+
   // Implementa a função de ir para a página home
   document.getElementById("link-home").addEventListener("click", async (e) => {
     e.preventDefault();
