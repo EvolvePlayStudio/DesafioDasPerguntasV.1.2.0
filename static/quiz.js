@@ -23,6 +23,9 @@ const tipo_pergunta = localStorage.getItem("tipo_pergunta").toLocaleLowerCase()
 const lbl_pontuacao_usuario = document.getElementById('pontuacao')
 const lbl_pontos_ganhos = document.getElementById('incremento-pontuacao')
 const btn_enviar = document.getElementById("btn-enviar")
+const btn_pular = document.getElementById("btn-pular")
+const botoes_finalizar_div = document.getElementById("botoes-acao");
+const botoes_enviar_div = document.getElementById("botoes-envio");
 const alternativasContainer = document.getElementById("alternativas-container")
 const alternativaBtns = Array.from(alternativasContainer.querySelectorAll(".alternativa-btn"))
 const resultado = document.getElementById('resultado')
@@ -230,7 +233,13 @@ function configurarEstrelas() {
   });
 }
 
-async function enviarResposta() {
+async function enviarResposta(pulando = false) {
+  if (pulando) {
+    caixa_para_resposta.value = "";
+  }
+  // Desativa caixa de texto da resposta
+  caixa_para_resposta.disabled = true;
+
   function armazenarDicaENota(nota) {
     
     let perguntas = JSON.parse(localStorage.getItem("perguntas")) || [];
@@ -267,8 +276,6 @@ async function enviarResposta() {
     // ATENÇÃO: TALVEZ SÓ SEJA NECESSÁRIO OS PONTOS_GANHOS AQUI E NÃO A BOOLEANA CORRETO
     resultado.style.display = "block";
     if (tipo_pergunta === 'discursiva') {
-      // Desativa caixa de texto da resposta
-      caixa_para_resposta.disabled = true;
 
       // mostra as possibilidades de respostas corretas para a pergunta
       const respostas_corretas = pergunta_selecionada.respostas_corretas
@@ -305,7 +312,7 @@ async function enviarResposta() {
   }
 
   aguardando_proxima = true;
-  btn_enviar.style.display = "none";
+  botoes_enviar_div.style.display = "none";
 
   // Chama as estrelas de feedback e carrega as anteriores enviadas pelo usuário caso esteja no modo Revisão
   if (sessionStorage.getItem("modoVisitante") === "false") {
@@ -560,20 +567,20 @@ async function mostrarAlternativas() {
     if (btnA) selecionarAlternativa(btnA);
   }
   
-  // Exibe o botão enviar após tudo
+  // Exibe o botão enviar após tudo    
   if (btn_enviar) {
-    btn_enviar.style.display = 'inline-block';
+    botoes_enviar_div.style.display = "flex";
+    btn_enviar.style.display = "inline-flex";
     btn_enviar.disabled = false;
   }
 }
 
 function mostrarBotoesAcao() {
-  const botoes_div = document.getElementById("botoes-acao");
   const btn_finalizar = document.getElementById("btn-finalizar");
   const btn_proxima = document.getElementById("btn-proxima");
 
   // Mostra a div de botões
-  botoes_div.style.display = "flex";
+  botoes_finalizar_div.style.display = "flex";
   
   dificuldades_permitidas = obterDificuldadesDisponiveis()
   ha_perguntas_disponiveis = dificuldades_permitidas.some(dif => perguntas_por_dificuldade[dif].length > 0)
@@ -622,13 +629,16 @@ function mostrarEnunciado(texto, elemento, callback) {
     if (i < texto.length) {
       elemento.textContent += texto[i];
       i++;
-    } else {
+    } 
+    else {
       clearInterval(intervalo);
       if (tipo_pergunta === 'discursiva') {
         animacao_concluida = true
         inicio_pergunta = Date.now()
         caixa_para_resposta.focus()
-        btn_enviar.style.display = 'inline-block';
+        botoes_enviar_div.style.display = "flex";
+        btn_enviar.style.display = "inline-flex";
+        btn_pular.style.display = "inline-flex"
         btn_enviar.disabled = false;
         if (callback) callback();
       } else {
@@ -640,7 +650,7 @@ function mostrarEnunciado(texto, elemento, callback) {
 
 function mostrarPergunta() {
   animacao_concluida = false;
-  btn_enviar.style.display = "none";
+  botoes_enviar_div.style.display = "none";
   btn_enviar.disabled = true;
   
   // Seleciona uma dificuldade aleatória dentre as disponíveis para o ranking do usuário atual
@@ -992,7 +1002,7 @@ document.addEventListener("DOMContentLoaded", () => {
       })
     }
     if (btn_enviar) {
-      btn_enviar.style.marginTop = '1.5rem'
+      botoes_enviar_div.style.marginTop = "1.5rem";
     }
     document.getElementById('botoes-acao').style.marginTop = '1.5rem'
   }
@@ -1018,6 +1028,18 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   }
 
+  // Implementa a função para pular a resposta (no caso das discursivas)
+  if (tipo_pergunta === "discursiva") {
+    if (btn_pular) {
+      btn_pular.addEventListener("click", () => {
+        enviarResposta(true)
+      })
+    }
+  }
+  else {
+    botoes_enviar_div.style.marginTop = "0.8rem"
+  }
+  
   // Implementa a função de marcar alternativas
   if (tipo_pergunta === 'objetiva') {
     alternativaBtns.forEach(btn => {
@@ -1031,7 +1053,7 @@ document.addEventListener("DOMContentLoaded", () => {
       event.preventDefault();
 
       // Verifica se o botão de enviar está visível
-      if (btn_enviar && btn_enviar.offsetParent !== null) {
+      if (btn_enviar && botoes_enviar_div.style.display !== "none") {
         enviarResposta();
       }
       else if (aguardando_proxima) {

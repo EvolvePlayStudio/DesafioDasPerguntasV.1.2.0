@@ -334,6 +334,10 @@
     <a href="{{ url_for('politica_privacidade') }}">Política de Privacidade</a> |
     <a href="{{ url_for('termos_uso') }}">Termos de Uso</a> |
     <a href="{{ url_for('sobre_app') }}">Sobre o App</a>
+
+    {% if usuario_autorizado %}
+      | <a href="{{ url_for('pesquisa_avancada') }}">Pesquisa Avançada</a>
+    {% endif %}
   </footer>
 
   <script type="module" src="{{ url_for('static', filename='home.js') }}"></script>

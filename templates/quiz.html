@@ -200,7 +200,7 @@
   .nota-box {
     font-weight: var(--peso-fonte-botoes);
   }
-  .btn-enviar, .btn-finalizar {
+  .btn-enviar, .btn-finalizar, .btn-pular, .btn-proxima {
     flex: 1;
     color: white;
     font-weight: var(--peso-fonte-botoes);
@@ -208,13 +208,20 @@
     transition: background 0.3s ease;
   }
   .btn-enviar {
-    background: var(--bg-botao-login);
     display: none;
+    background: #2adf30;
+  }
+  .btn-pular, .btn-proxima {
+    display: none;
+    background: var(--bg-botao-login);
   }
   .btn-finalizar{
     background: var(--bg-botao-vermelho);
   }
   .btn-enviar:hover {
+    background: #14af1c
+  }
+  .btn-pular:hover, .btn-proxima:hover {
     background: var(--bg-hover-botao-login);
   }
   .btn-finalizar:hover {
@@ -301,12 +308,17 @@
   .estrela.dourada {
     color: gold;
   }
-  #btn-enviar {
-    margin-top: 0.8rem;
+  #btn-enviar, #btn-pular {
+    justify-content: center;
   }
   #botoes-acao {
     display: none;
     margin-top: 0.8rem;
+    justify-content: space-between;
+    gap: 12px
+  }
+  #botoes-envio {
+    display: flex;
     justify-content: space-between;
     gap: 12px
   }
@@ -372,7 +384,7 @@
     #resposta-input, #resultado, #dica-box, #nota-box, #respostas-aceitas-box, #comentarios {
       font-size: 0.9rem;
     }
-    #btn-finalizar, #btn-proxima, .btn-enviar {
+    #btn-finalizar, #btn-proxima, .btn-enviar, .btn-pular {
       font-size: 0.8rem;
     }
     .estrela {
@@ -453,13 +465,16 @@
           <button class="alternativa-btn" data-letter="D" tabindex="-1"><strong>D)</strong></button>
         </div>
         
-        <!-- Botão para enviar a resposta -->
-        <button id="btn-enviar" class="btn-enviar" disabled>Enviar</button>
+        <!-- Botões para enviar a resposta e pular perguntas (apenas nas discursivas) -->
+        <div id="botoes-envio">
+          <button id="btn-enviar" class="btn-enviar" disabled>Enviar</button>
+          <button id="btn-pular" class="btn-pular">Pular</button>
+        </div>
 
         <!-- Botões de finalizar o quiz e chamar próxima pergunta -->
         <div id="botoes-acao">
           <button id="btn-finalizar" class="btn-finalizar">Finalizar</button>
-          <button id="btn-proxima" class="btn-enviar">Próxima</button>
+          <button id="btn-proxima" class="btn-proxima">Próxima</button>
         </div>
         
         <!-- Resultado que indica se a resposta foi correta -->

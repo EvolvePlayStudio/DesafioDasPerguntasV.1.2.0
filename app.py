@@ -603,7 +603,11 @@ def enviar_email_confirmacao(email_destinatario, nome_destinatario, link_confirm
 
 @app.route("/home")
 def home():
-    return render_template("home.html")
+    id_usuario = session.get('id_usuario')
+    usuario_autorizado = False
+    if id_usuario in privileged_ids:
+        usuario_autorizado = True
+    return render_template("home.html", usuario_autorizado=usuario_autorizado)
 
 @app.route("/resultado")
 def resultado():
@@ -923,7 +927,6 @@ def listar_perguntas(user_id):
         where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
         """
         
-
         sql = f"""
             SELECT {select_clause}
             FROM {table} p
@@ -1107,6 +1110,92 @@ def sobre_app():
     session['from_login'] = False
     return render_template("sobre_o_app.html")
 
+@app.route("/pesquisa-avançada")
+def pesquisa_avancada():
+    return render_template("pesquisa_avancada.html")
+
+@app.route("/pesquisar_perguntas", methods=["POST"])
+def pesquisar_perguntas():
+    data = request.get_json()
+    tema = data.get("tema")
+    palavra = data.get("palavra", "").strip().lower()
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    resultados = []
+
+    # -------- OBJETIVAS --------
+    query_obj = """
+        SELECT id_pergunta, subtemas, enunciado,
+            alternativa_a, alternativa_b, alternativa_c, alternativa_d,
+            resposta_correta, dificuldade
+        FROM perguntas_objetivas
+        WHERE tema = %s 
+        AND (
+            LOWER(enunciado) LIKE %s
+            OR LOWER(CASE resposta_correta
+                        WHEN 'A' THEN alternativa_a
+                        WHEN 'B' THEN alternativa_b
+                        WHEN 'C' THEN alternativa_c
+                        WHEN 'D' THEN alternativa_d
+                    END) LIKE %s
+        )
+    """
+
+    cur.execute(query_obj, (tema, f"%{palavra}%", f"%{palavra}%"))
+
+    for row in cur.fetchall():
+
+        # Mapeia letra -> texto
+        alternativas = {
+            "A": row[3],
+            "B": row[4],
+            "C": row[5],
+            "D": row[6]
+        }
+        texto_correto = alternativas.get(row[7], "")
+
+        resultados.append({
+            "id_pergunta": row[0],
+            "tipo": "Objetiva",
+            "subtemas": row[1],
+            "enunciado": row[2],
+            "resposta": texto_correto,   # <<< AGORA ENVIA O TEXTO
+            "dificuldade": row[8]
+        })
+
+    # ================================
+    #   2. PERGUNTAS DISCURSIVAS
+    # ================================
+    query_disc = """
+        SELECT id_pergunta, subtemas, enunciado, respostas_corretas, dificuldade
+        FROM perguntas_discursivas
+        WHERE tema = %s 
+        AND (
+            LOWER(enunciado) LIKE %s
+            OR LOWER(respostas_corretas::text) LIKE %s
+        )
+    """
+
+    cur.execute(query_disc, (tema, f"%{palavra}%", f"%{palavra}%"))
+    for row in cur.fetchall():
+        id_p, subtemas, enunciado, respostas, dif = row
+
+        resultados.append({
+            "id_pergunta": id_p,
+            "tipo": "Discursiva",
+            "subtemas": subtemas,
+            "enunciado": enunciado,
+            "resposta": respostas,  # array do banco
+            "dificuldade": dif
+        })
+
+    cur.close()
+    conn.close()
+
+    return jsonify(resultados)
+
 @app.route('/politica-de-privacidade-from-login')
 def politica_privacidade_from_login():
     session['from_login'] = True
@@ -1212,7 +1301,6 @@ def buscar_pontuacoes_usuario(id_usuario):
             (id_usuario,)
         )
         pontuacoes_usuario = {tema: pontuacao for tema, pontuacao in cur.fetchall()}
-        print(f"Pontuações do usuário recebidas: {pontuacoes_usuario}")
     except Exception as e:
         app.logger.exception("Erro ao tentar obter pontuações do usuário %s", id_usuario)
     finally:
