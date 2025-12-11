@@ -939,7 +939,7 @@ function respostaObjetivaCorreta() {
 }
 
 function selecionarAlternativa(btn) {
-  if (aguardando_proxima || btn_enviar.disabled) return;
+  if (aguardando_proxima) return;
   // Visual
   alternativaBtns.forEach(b => b.classList.remove("selected"));
   btn.classList.add("selected");
