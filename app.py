@@ -33,9 +33,9 @@ formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(mess
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
 
-temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Jogos", "Mídia", "Música", "Química", "Tecnologia"]
+temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia"]
 # Pode ser bom corrigi a parte abaixo, pois os últimos 2 ids devem fazer referência apenas às discursivas e os 2 primeiros às objetivas
-ids_perguntas_visitante = {"Artes": [163, 176, 257, 267], "Astronomia": [8, 12, 111, 117], "Biologia": [22, 24, 8, 48], "Esportes": [55, 59, 79, 12], "Filosofia": [142, 149, 230, 237], "Geografia": [87, 84, 169, 170], "História": [36, 42, 2, 275], "Jogos": [290, 293, 379, 380], "Mídia": [109, 106, 188, 209], "Música": [255, 231, 313, 327], "Química": [189, 184, 303, 304], "Tecnologia": [243, 246, 152, 358]}
+ids_perguntas_visitante = {"Artes": [163, 176, 257, 267], "Astronomia": [8, 12, 111, 117], "Biologia": [22, 24, 8, 48], "Esportes": [55, 59, 79, 12], "Filosofia": [142, 149, 230, 237], "Geografia": [87, 84, 169, 170], "História": [36, 42, 2, 275], "Mídia": [109, 106, 188, 209], "Música": [255, 231, 313, 327], "Química": [189, 184, 303, 304], "Tecnologia": [243, 246, 152, 358]}
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -885,7 +885,7 @@ def listar_perguntas(user_id):
     visitante = session.get("visitante")
 
     # Configurações locais
-    limit = 90 if modo == 'desafio' else 300
+    limit = 100 if modo == 'desafio' else 1000
 
     # Validações
     if not tema or modo not in ('desafio', 'revisao') or tipo_pergunta not in ('objetiva', 'discursiva'):
@@ -923,9 +923,7 @@ def listar_perguntas(user_id):
 
         where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
 
-        """
         where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
-        """
         
         sql = f"""
             SELECT {select_clause}
@@ -1118,7 +1116,7 @@ def pesquisa_avancada():
 def pesquisar_perguntas():
     data = request.get_json()
     tema = data.get("tema")
-    palavra = data.get("palavra", "").strip().lower()
+    palavras = data.get("palavras", [])
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -1127,23 +1125,28 @@ def pesquisar_perguntas():
 
     # -------- OBJETIVAS --------
     query_obj = """
-        SELECT id_pergunta, subtemas, enunciado,
-            alternativa_a, alternativa_b, alternativa_c, alternativa_d,
-            resposta_correta, dificuldade
-        FROM perguntas_objetivas
-        WHERE tema = %s 
-        AND (
-            LOWER(enunciado) LIKE %s
-            OR LOWER(CASE resposta_correta
-                        WHEN 'A' THEN alternativa_a
-                        WHEN 'B' THEN alternativa_b
-                        WHEN 'C' THEN alternativa_c
-                        WHEN 'D' THEN alternativa_d
-                    END) LIKE %s
-        )
+    SELECT id_pergunta, subtemas, enunciado,
+        alternativa_a, alternativa_b, alternativa_c, alternativa_d,
+        resposta_correta, dificuldade
+    FROM perguntas_objetivas
+    WHERE (tema = %s OR tema = 'Variedades')
+    AND EXISTS (
+        SELECT 1
+        FROM unnest(%s::text[]) p
+        WHERE
+            unaccent(LOWER(enunciado)) LIKE unaccent('%%' || p || '%%')
+            OR unaccent(LOWER(
+                CASE resposta_correta
+                    WHEN 'A' THEN alternativa_a
+                    WHEN 'B' THEN alternativa_b
+                    WHEN 'C' THEN alternativa_c
+                    WHEN 'D' THEN alternativa_d
+                END
+            )) LIKE unaccent('%%' || p || '%%')
+    )
     """
 
-    cur.execute(query_obj, (tema, f"%{palavra}%", f"%{palavra}%"))
+    cur.execute(query_obj, (tema, palavras))
 
     for row in cur.fetchall():
 
@@ -1169,16 +1172,20 @@ def pesquisar_perguntas():
     #   2. PERGUNTAS DISCURSIVAS
     # ================================
     query_disc = """
-        SELECT id_pergunta, subtemas, enunciado, respostas_corretas, dificuldade
-        FROM perguntas_discursivas
-        WHERE tema = %s 
-        AND (
-            LOWER(enunciado) LIKE %s
-            OR LOWER(respostas_corretas::text) LIKE %s
-        )
+    SELECT id_pergunta, subtemas, enunciado, respostas_corretas, dificuldade
+    FROM perguntas_discursivas
+    WHERE (tema = %s OR tema = 'Variedades')
+    AND EXISTS (
+        SELECT 1
+        FROM unnest(%s::text[]) p
+        WHERE
+            unaccent(LOWER(enunciado)) LIKE unaccent('%%' || p || '%%')
+            OR unaccent(LOWER(respostas_corretas::text)) LIKE unaccent('%%' || p || '%%')
+    )
     """
 
-    cur.execute(query_disc, (tema, f"%{palavra}%", f"%{palavra}%"))
+    cur.execute(query_disc, (tema, palavras))
+    
     for row in cur.fetchall():
         id_p, subtemas, enunciado, respostas, dif = row
 
