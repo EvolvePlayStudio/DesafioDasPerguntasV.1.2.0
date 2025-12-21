@@ -191,6 +191,56 @@
       justify-items: center;
       padding: 1rem;
     }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .overlay.hidden {
+      display: none;
+    }
+    .modal {
+      background: #1f1f1f;
+      color: #ffffff;
+      max-width: 420px;
+      padding: 1.8rem;
+      border-radius: 14px;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    }
+    .modal h2 {
+      margin-bottom: 1rem;
+    }
+    .modal ul {
+      text-align: left;
+      margin: 0.8rem 0;
+    }
+    .modal button, .modal-content button {
+      margin-top: 1.2rem;
+      padding: 0.6rem 1.4rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+
+    .modal-content {
+      background: var(--cor-fundo-claro);
+      color: #000;
+      max-width: 420px;
+      padding: 1.5rem;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+
+
+
     @media (max-width: 900px) {
       .cards-container {
         grid-template-columns: repeat(2, 1fr);
@@ -335,6 +385,51 @@
       | <a href="{{ url_for('pesquisa_avancada') }}">Pesquisa Avançada</a>
     {% endif %}
   </footer>
+
+  <!-- Mensagem para modo visitante -->
+  <div id="overlay-visitante" class="overlay hidden">
+  <div class="modal">
+    <h2>Atenção</h2>
+
+    <p>
+      Caso esteja navegando por smartphone, recomenda-se utilizar o modo
+      <strong>“Site para computador”</strong> para melhor experiência.
+    </p>
+
+    <p>
+      Além disso, tenha em mente que no modo visitante:
+      <ul>
+        <li>A pontuação não é contabilizada</li>
+        <li>As perguntas são poucas, pois são apenas para amostra</li>
+        <li>O modo de pesquisa e revisão de perguntas não está disponível</li>
+      </ul>
+    </p>
+
+    <p>
+      Para liberar todas as funcionalidades do site, será necessário criar uma conta.
+    </p>
+
+    <button id="btn-entendi">Entendi</button>
+  </div>
+  </div>
+
+  <!-- Mensagem para quem loga pela primeira vez -->
+  <div id="modal-onboarding" class="overlay hidden">
+  <div class="modal">
+    <h2>Atenção</h2>
+
+    <p>
+      Caso esteja navegando por smartphone, recomenda-se utilizar o modo
+      <strong>“Site para computador”</strong> para melhor experiência.
+    </p>
+
+    <p>
+      Você pode acessar um guia explicando o funcionamento do jogo em "Sobre o app" no rodapé desta página, além da política de privacidade e termos de uso. Prosseguir com o uso do site implica em concondância com a política de privacidade.
+    </p>
+
+    <button id="btn-onboarding-ok">Entendi</button>
+  </div>
+</div>
 
   <script type="module" src="{{ url_for('static', filename='home.js') }}"></script>
 

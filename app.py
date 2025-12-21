@@ -212,7 +212,7 @@ def login():
 
             # Verifica usuário
             cur.execute("""
-                SELECT id_usuario, senha_hash, email_confirmado, nome, dicas_restantes, perguntas_restantes
+                SELECT id_usuario, senha_hash, email_confirmado, nome, dicas_restantes, perguntas_restantes, onboarding_concluido
                 FROM usuarios_registrados WHERE email = %s
             """, (email,))
             usuario = cur.fetchone()
@@ -220,7 +220,7 @@ def login():
             if not usuario:
                 return jsonify(success=False, message="E-mail não registrado")
 
-            id_usuario, senha_hash, email_confirmado, nome_usuario, dicas_restantes, perguntas_restantes = usuario
+            id_usuario, senha_hash, email_confirmado, nome_usuario, dicas_restantes, perguntas_restantes, onboarding_concluido = usuario
             session["id_usuario"] = id_usuario
             session["email"] = email
             session["visitante"] = False
@@ -278,7 +278,8 @@ def login():
         regras_pontuacao=regras_pontuacao,
         dicas_restantes=dicas_restantes,
         perguntas_restantes=perguntas_restantes,
-        nome_usuario=nome_usuario
+        nome_usuario=nome_usuario,
+        onboarding_concluido=onboarding_concluido
     ), 200)
 
     # Cookie HttpOnly, expirando junto com o token
@@ -292,6 +293,35 @@ def login():
     )
 
     return resp
+
+@app.route("/api/onboarding/concluir", methods=["POST"])
+@token_required
+def concluir_onboarding(user_id):
+    conn = cur = None
+    try:
+        id_usuario = session.get("id_usuario")
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            UPDATE usuarios_registrados
+            SET onboarding_concluido = TRUE
+            WHERE id_usuario = %s
+        """, (id_usuario,))
+
+        conn.commit()
+        return jsonify(success=True)
+
+    except Exception:
+        if conn:
+            conn.rollback()
+        app.logger.error("Erro ao concluir onboarding:\n" + traceback.format_exc())
+        return jsonify(success=False), 500
+
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
 
 def checar_dados_registro(nome, email, senha):
     if not nome or not email or not senha:

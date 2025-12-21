@@ -325,6 +325,11 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.setItem("dicas_restantes", JSON.stringify(data.dicas_restantes || 0));
         localStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes || 0));
         localStorage.setItem("nome_usuario", data.nome_usuario || '');
+
+        if (data.onboarding_concluido === false) {
+          localStorage.setItem("onboarding_concluido", "false");
+        }
+
         sessionStorage.setItem("token_sessao", data.token);
         sessionStorage.setItem("modoVisitante", "false");
         window.location.href = "/home";

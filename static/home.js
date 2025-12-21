@@ -3,6 +3,30 @@ import { obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoR
 let tipo_pergunta = null;
 const mensagem = document.getElementById("mensagem");
 
+
+// Abaixo estão códigos relacionados à mensagem que aparece quando o usuário entra no modo visitante ou loga pela primeira vez
+
+const overlayVisitante = document.getElementById("overlay-visitante");
+const btnEntendi = document.getElementById("btn-entendi");
+
+const modalOnboarding = document.getElementById("modal-onboarding");
+const btnOnboardingOk = document.getElementById("btn-onboarding-ok");
+
+if (sessionStorage.getItem("modoVisitante") === "true") {
+  const jaViuAviso = sessionStorage.getItem("avisoVisitanteExibido");
+
+  if (!jaViuAviso) {
+    overlayVisitante.classList.remove("hidden");
+  }
+}
+else {
+  const onboarding_concluido = localStorage.getItem("onboarding_concluido");
+  if (onboarding_concluido === "false") {
+    // Mandei printar no terminal, sei que está chegando aqui
+    modalOnboarding.classList.remove("hidden");
+  }
+}
+
 async function iniciarQuiz(event) {
   // Atualiza o tema atual e modo de jogo no localStorage
   const tema_atual = decodeURIComponent(event.currentTarget.dataset.tema);
@@ -106,6 +130,27 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.href = "/doações";
     }
     });
+  
+  // Implementa função de clique no botão para confirmar mensagem ao entrar em Home como visitante
+  btnEntendi.addEventListener("click", () => {
+    overlayVisitante.classList.add("hidden");
+    sessionStorage.setItem("avisoVisitanteExibido", "true");
+  });
+
+  // Implementa função de clique no botão para confirmar mensagem ao logar pela primeira vez
+  btnOnboardingOk.addEventListener("click", async () => {
+    modalOnboarding.classList.add("hidden");
+    try {
+      await fetchAutenticado("/api/onboarding/concluir", {
+        method: "POST",
+        credentials: "include"
+      });
+      localStorage.setItem("onboarding_concluido", "true");
+    }
+    catch (e) {
+      console.error("Erro ao concluir onboarding");
+    }
+  });
 
   // Implementa a função de clique no botão de pesquisa
   document.getElementById("btn-pesquisa").addEventListener("click", async () => {
