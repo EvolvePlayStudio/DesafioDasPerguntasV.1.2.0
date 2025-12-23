@@ -953,7 +953,9 @@ def listar_perguntas(user_id):
 
         where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
 
+        """
         where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
+        """
         
         sql = f"""
             SELECT {select_clause}
@@ -1157,7 +1159,7 @@ def pesquisar_perguntas():
     query_obj = """
     SELECT id_pergunta, subtemas, enunciado,
         alternativa_a, alternativa_b, alternativa_c, alternativa_d,
-        resposta_correta, dificuldade
+        resposta_correta, dificuldade, status
     FROM perguntas_objetivas
     WHERE (tema = %s OR tema = 'Variedades')
     AND EXISTS (
@@ -1195,14 +1197,15 @@ def pesquisar_perguntas():
             "subtemas": row[1],
             "enunciado": row[2],
             "resposta": texto_correto,   # <<< AGORA ENVIA O TEXTO
-            "dificuldade": row[8]
+            "dificuldade": row[8],
+            "status": row[9]
         })
 
     # ================================
     #   2. PERGUNTAS DISCURSIVAS
     # ================================
     query_disc = """
-    SELECT id_pergunta, subtemas, enunciado, respostas_corretas, dificuldade
+    SELECT id_pergunta, subtemas, enunciado, respostas_corretas, dificuldade, status
     FROM perguntas_discursivas
     WHERE (tema = %s OR tema = 'Variedades')
     AND EXISTS (
@@ -1217,7 +1220,7 @@ def pesquisar_perguntas():
     cur.execute(query_disc, (tema, palavras))
     
     for row in cur.fetchall():
-        id_p, subtemas, enunciado, respostas, dif = row
+        id_p, subtemas, enunciado, respostas, dif, status = row
 
         resultados.append({
             "id_pergunta": id_p,
@@ -1225,7 +1228,8 @@ def pesquisar_perguntas():
             "subtemas": subtemas,
             "enunciado": enunciado,
             "resposta": respostas,  # array do banco
-            "dificuldade": dif
+            "dificuldade": dif,
+            "status": status
         })
 
     cur.close()

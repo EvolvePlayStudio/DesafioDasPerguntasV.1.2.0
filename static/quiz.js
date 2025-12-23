@@ -137,15 +137,23 @@ function calcularPontuacao(acertou) {
   if (!acertou) {
     let pontos_ganhos = 0;
     const resposta_usuario = caixa_para_resposta.value.trim()
-    if (resposta_usuario === "" && tipo_pergunta === 'discursiva') {
-      pontos_ganhos = regras_usuario.pontos_pular_pergunta; // Penalidade menor por não responder
-    } else {
-      pontos_ganhos = regras_usuario.pontos_erro; // Erro com tentativa
+    // Caso em que a pergunta não vale pontos nem para acertos nem para erros
+    if (dificuldade === "Fácil" && regras_usuario.pontos_acerto_facil === 0 || dificuldade === "Médio" && regras_usuario.pontos_acerto_medio === 0) {
+      pontos_ganhos = 0
     }
-    // Trata casos em que a pontuação do usuário ficaria negativa
-    if (pontuacoes_usuario[tema_atual] + pontos_ganhos < 0) {
-      pontos_ganhos = -pontuacoes_usuario[tema_atual]
-    } 
+    else {
+      // Caso o usuário tenha enviado uma resposta vazia numa pergunta discursiva
+      if (resposta_usuario === "" && tipo_pergunta === 'discursiva') {
+        pontos_ganhos = regras_usuario.pontos_pular_pergunta;
+      } 
+      else {
+        pontos_ganhos = regras_usuario.pontos_erro;
+      }
+      // Trata casos em que a pontuação do usuário ficaria negativa
+      if (pontuacoes_usuario[tema_atual] + pontos_ganhos < 0) {
+        pontos_ganhos = -pontuacoes_usuario[tema_atual]
+      }
+    }
     return pontos_ganhos;
   }
 
@@ -926,7 +934,7 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
     const dist = distanciaLevenshtein(textoUsuario, textoCorreto);
 
     if (len <= 3) return false;
-    if (len <= 10) return dist === 1;
+    if (len <= 9) return dist === 1;
     return dist <= 2;
   });
 }

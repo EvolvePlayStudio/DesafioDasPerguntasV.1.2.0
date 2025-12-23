@@ -58,7 +58,7 @@ async function buscarPerguntas(tema, palavras) {
   const tabela = document.querySelector("#tabela-perguntas tbody");
   tabela.innerHTML = `
     <tr>
-      <td colspan="6" style="text-align:center; font-weight:bold;">
+      <td colspan="7" style="text-align:center; font-weight:bold;">
         Buscando...
       </td>
     </tr>
@@ -80,7 +80,7 @@ async function buscarPerguntas(tema, palavras) {
     if (dados.length === 0) {
       tabela.innerHTML = `
         <tr>
-          <td colspan="6" style="text-align:center; font-weight:bold;">
+          <td colspan="7" style="text-align:center; font-weight:bold;">
             Nenhuma pergunta encontrada.
           </td>
         </tr>
@@ -102,6 +102,7 @@ async function buscarPerguntas(tema, palavras) {
           <td>${item.enunciado}</td>
           <td>${resposta}</td>
           <td>${item.dificuldade}</td>
+          <td>${item.status}</td>
         </tr>
       `);
     });
@@ -110,7 +111,7 @@ async function buscarPerguntas(tema, palavras) {
     console.error(err);
     tabela.innerHTML = `
       <tr>
-        <td colspan="6" style="text-align:center; font-weight:bold; color:red;">
+        <td colspan="7" style="text-align:center; font-weight:bold; color:red;">
           Erro ao buscar perguntas.
         </td>
       </tr>
