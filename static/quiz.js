@@ -1,4 +1,4 @@
-import { obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado } from "./utils.js"
+import { deveEncerrarQuiz, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado } from "./utils.js"
 
 let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"));
 let perguntas_respondidas = [];
@@ -32,6 +32,14 @@ const resultado = document.getElementById('resultado')
 const caixa_para_resposta = document.getElementById('resposta-input')
 const dica_box = document.getElementById("dica-box")
 let alternativaSelecionada = null; // guarda a letra clicada (A, B, C, D)
+let respostasDesdeUltimaForcagem = 0; // para pegar a pergunta do nível que tem mais a cada x respondidas
+const PROBABILIDADES_POR_RANKING = {
+  Iniciante: {Fácil: 0.65, Médio: 0.35, Difícil: 0.00},
+  Aprendiz: {Fácil: 0.45, Médio: 0.40, Difícil: 0.15},
+  Estudante: {Fácil: 0.25, Médio: 0.50, Difícil: 0.25},
+  Sábio: {Fácil: 0.10, Médio: 0.55, Difícil: 0.35},
+  Lenda: {Fácil: 0.02, Médio: 0.48, Difícil: 0.50}
+}
 // Círculo amarelo com interrogação preta para símbolo de pergunta pulada
 const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
   viewBox="0 0 24 24" style="vertical-align: middle;">
@@ -592,16 +600,19 @@ function mostrarBotoesAcao() {
   
   dificuldades_permitidas = obterDificuldadesDisponiveis()
   ha_perguntas_disponiveis = dificuldades_permitidas.some(dif => perguntas_por_dificuldade[dif].length > 0)
-  if (!ha_perguntas_disponiveis || localStorage.getItem("perguntas_restantes") <= 0) {
-    // Mostrar apenas o botão Finalizar
+  const encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade)
+
+  // Mostrar apenas o botão Finalizar
+  if (encerrar_quiz || !ha_perguntas_disponiveis || localStorage.getItem("perguntas_restantes") <= 0) {
     btn_proxima.style.display = "none";
     btn_finalizar.style.display = "inline-block";
     btn_finalizar.style.flex = "unset"; // remove flex igual ao botão enviar
     btn_finalizar.style.width = "100%";
     btn_finalizar.style.margin = "0 auto";
 
-  } else {
-    // Mostrar ambos
+  }
+  // Mostrar ambos
+  else {
     btn_proxima.style.display = "inline-block";
     btn_finalizar.style.display = "inline-block";
     btn_finalizar.style.flex = "1";
@@ -660,23 +671,94 @@ function mostrarPergunta() {
   animacao_concluida = false;
   botoes_enviar_div.style.display = "none";
   btn_enviar.disabled = true;
-  
-  // Seleciona uma dificuldade aleatória dentre as disponíveis para o ranking do usuário atual
-  function selecionarDificuldadeComPerguntas() {
-    const dificuldades_disponiveis = obterDificuldadesDisponiveis()
-    const dificuldades_embaralhadas = [...dificuldades_disponiveis]
-      .sort(() => Math.random() - 0.5);  // Embaralha as dificuldades
 
-    for (const dificuldade of dificuldades_embaralhadas) {
-      const perguntas = perguntas_por_dificuldade[dificuldade];
-      if (perguntas && perguntas.length > 0) {
-        return dificuldade;  // Encontrou uma com perguntas restantes
+  function escolherProximaDificuldade() {
+    const ranking = obterInfoRankingAtual().ranking;
+    const disponiveis = obterDificuldadesDisponiveis();
+    const probsBase = PROBABILIDADES_POR_RANKING[ranking];
+
+    const estoque = {
+      "Fácil": perguntas_por_dificuldade["Fácil"]?.length || 0,
+      "Médio": perguntas_por_dificuldade["Médio"]?.length || 0,
+      "Difícil": perguntas_por_dificuldade["Difícil"]?.length || 0,
+    };
+
+    console.log("Estoque: ", estoque)
+
+    // 🔥 1. FORÇAGEM POR ESTOQUE
+    if (respostasDesdeUltimaForcagem === 5) {
+      console.log("Pegando a dificuldade com maior estoque...")
+      // Põe as dificuldades em ordem descrescente de estoque
+      const ordenadas = [...disponiveis].sort(
+        (a, b) => estoque[b] - estoque[a]
+      );
+
+      let escolhida = ordenadas[0]; // Pega a que tem o maior estoque
+
+      if ((probsBase[escolhida] ?? 0) <= 0.10 && ordenadas[1]) {
+        console.log("Pegarei a segunda com maior estoque")
+        escolhida = ordenadas[1];
+      }
+
+      respostasDesdeUltimaForcagem = 1;
+      return resolverFallback(escolhida, estoque, probsBase, disponiveis);
+    }
+
+    // 🎯 2. SORTEIO PROBABILÍSTICO NORMAL
+    const sorteio = Math.random(); // Número de 0 e 1
+    console.log("Sorteio foi: ", sorteio)
+    let acumulado = 0; // Probabilidade acumulada (ex: 0.2 da fácil + 0.3 da médio = 0.5)
+
+    for (const d of disponiveis) {
+      acumulado += probsBase[d] ?? 0;
+      if (sorteio <= acumulado) {
+        console.log("Dificuldade escolhida: ", d)
+        respostasDesdeUltimaForcagem++;
+        return resolverFallback(d, estoque, probsBase, disponiveis);
       }
     }
 
-    return null;  // Nenhuma dificuldade com perguntas restantes
+    // 🛟 3. SEGURANÇA ABSOLUTA
+    respostasDesdeUltimaForcagem++;
+    const fallback = [...disponiveis].sort(
+      (a, b) => estoque[b] - estoque[a]
+    )[0];
+
+    return fallback ?? null;
   }
-  const dificuldade_selecionada = selecionarDificuldadeComPerguntas();
+
+  function resolverFallback(escolhida, estoque, probsBase, disponiveis) {
+    if (estoque[escolhida] > 0) return escolhida;
+
+    // ❌ Difícil ou Fácil sem estoque → tenta Médio
+    if ((escolhida === "Difícil" || escolhida === "Fácil") && estoque["Médio"] > 0) {
+      console.log("O substituto correto para este caso é o nível médio")
+      return "Médio";
+    }
+
+    // ❌ Médio sem estoque
+    if (escolhida === "Médio") {
+      const pDif = probsBase["Difícil"] ?? 0;
+      const pFac = probsBase["Fácil"] ?? 0;
+
+      // Caso em que a diferença entre as probabilidades de pegar uma fácil ou difícil seja maior do que 10%
+      if (Math.abs(pDif - pFac) > 0.1) { 
+        console.log("Retornarei a dificuldade com maior probabilidade")
+        const preferida = pDif > pFac ? "Difícil" : "Fácil";
+        if (estoque[preferida] > 0) return preferida;  // Retorna a que tem maior probabiliddade
+      }
+      // Probabilidades próximas → usa estoque
+      else {
+        console.log("2. Retornarei a dificuldade com maior estoque")
+        return estoque["Difícil"] >= estoque["Fácil"] ? "Difícil" : "Fácil";
+      }
+    }
+
+    // Último recurso
+    console.log("Último recurso do fallback")
+    return disponiveis.find(d => estoque[d] > 0) ?? null;
+  }
+  const dificuldade_selecionada = escolherProximaDificuldade();
 
   // Pega uma pergunta aleatória da dificuldade selecionada
   const perguntas_disponiveis = perguntas_por_dificuldade[dificuldade_selecionada];

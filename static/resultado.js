@@ -74,7 +74,6 @@ resultado.perguntas_respondidas.forEach((p, i) => {
     default:
         cor_dificuldade = 'black'
     }
-    console.log("Cor da dificuldade: ", cor_dificuldade)
 
     if (tipo_pergunta === 'discursiva') {
       const texto_usou_dica = p.usou_dica? 'Sim': 'Não';

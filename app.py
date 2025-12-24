@@ -915,7 +915,7 @@ def listar_perguntas(user_id):
     visitante = session.get("visitante")
 
     # Configurações locais
-    limit = 100 if modo == 'desafio' else 1000
+    limit = 150 if modo == 'desafio' else 1000
 
     # Validações
     if not tema or modo not in ('desafio', 'revisao') or tipo_pergunta not in ('objetiva', 'discursiva'):

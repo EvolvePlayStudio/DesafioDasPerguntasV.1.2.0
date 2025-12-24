@@ -1,11 +1,10 @@
-import { obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual } from "./utils.js";
+import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual } from "./utils.js";
 
 let tipo_pergunta = null;
 const mensagem = document.getElementById("mensagem");
 
 
 // Abaixo estão códigos relacionados à mensagem que aparece quando o usuário entra no modo visitante ou loga pela primeira vez
-
 const overlayVisitante = document.getElementById("overlay-visitante");
 const btnEntendi = document.getElementById("btn-entendi");
 
@@ -60,6 +59,12 @@ async function iniciarQuiz(event) {
         // Atualiza as pontuações do usuário no tema e as perguntas no localStorage
         localStorage.setItem("pontuacoes_usuario", JSON.stringify(data["pontuacoes_usuario"]));
         localStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
+
+        // Analisar se pode prosseguir com o quiz de acordo com o estoque de perguntas
+        const perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"));
+        const encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade)
+        
+        // Analisa o ranking atual do usuário (ATENÇÃO, já procura ranking na função deveEncerrarQuiz, o que pode ser uma perda de eficiência aqui)
         const rankings_usuario = {};
         Object.keys(data["pontuacoes_usuario"]).forEach(tema => {
           const ranking_no_tema = obterInfoRankingAtual(tema).ranking
@@ -70,7 +75,7 @@ async function iniciarQuiz(event) {
         // Chama a tela de quiz ou exibe mensagem caso não haja perguntas disponíveis
         const perguntas_filtradas = obterPerguntasDisponiveis(data["perguntas"])
         const ha_perguntas_disponiveis = Object.values(perguntas_filtradas).some(arr => Array.isArray(arr) && arr.length > 0)
-        if (ha_perguntas_disponiveis) {
+        if (ha_perguntas_disponiveis && !encerrar_quiz) {
           mensagem.style.opacity = 0
           window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;
         }

@@ -1,3 +1,29 @@
+export function deveEncerrarQuiz(perguntas_por_dificuldade) {
+  const ranking = obterInfoRankingAtual().ranking;
+
+  const qtdFacil = perguntas_por_dificuldade["Fácil"]?.length ?? 0;
+  const qtdMedio = perguntas_por_dificuldade["Médio"]?.length ?? 0;
+  const qtdDificil = perguntas_por_dificuldade["Difícil"]?.length ?? 0;
+
+  // 🧠 SÁBIO ou LENDA
+  // Encerra se NÃO houver nenhuma média nem difícil
+  if (ranking === "Sábio" || ranking === "Lenda") {
+    if (qtdMedio === 0 && qtdDificil === 0) {
+      return true;
+    }
+  }
+
+  // 🧑‍🎓 APRENDIZ
+  // Encerra se SÓ houver difíceis
+  if (ranking === "Aprendiz") {
+    if (qtdFacil === 0 && qtdMedio === 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export async function fetchAutenticado(url, options= {}) {
   const token = sessionStorage.getItem("token_sessao")
   const config = {
