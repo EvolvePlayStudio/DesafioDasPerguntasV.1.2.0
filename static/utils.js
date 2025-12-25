@@ -73,15 +73,21 @@ export function obterPerguntasDisponiveis(perguntas_por_dificuldade) {
 }
 
 export function obterDificuldadesDisponiveis() {
-  // Obtém a informação de ranking atual do usuário
-  const info_ranking_atual = obterInfoRankingAtual();
-
-  // Define as dificuldades de perguntas disponíveis de acordo com o ranking atual
   const dificuldades_disponiveis = ['Fácil'];
-  if (info_ranking_atual.pode_receber_medio) {
-    dificuldades_disponiveis.push('Médio');
+  if (sessionStorage["modoVisitante"] === "false") {
+    // Obtém a informação de ranking atual do usuário
+    const info_ranking_atual = obterInfoRankingAtual();
+
+    // Define as dificuldades de perguntas disponíveis de acordo com o ranking atual
+    if (info_ranking_atual.pode_receber_medio) {
+      dificuldades_disponiveis.push('Médio');
+    }
+    if (info_ranking_atual.pode_receber_dificil) {
+      dificuldades_disponiveis.push('Difícil');
+    }
   }
-  if (info_ranking_atual.pode_receber_dificil) {
+  else {
+    dificuldades_disponiveis.push('Médio');
     dificuldades_disponiveis.push('Difícil');
   }
   return dificuldades_disponiveis
