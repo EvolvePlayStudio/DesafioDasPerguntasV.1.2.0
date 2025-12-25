@@ -692,7 +692,13 @@ function mostrarPergunta() {
   btn_enviar.disabled = true;
 
   function escolherProximaDificuldade() {
-    const ranking = obterInfoRankingAtual().ranking;
+    let ranking = null;
+    if (sessionStorage["modoVisitante"] === "false") {
+      ranking = obterInfoRankingAtual().ranking;
+    }
+    else {
+      ranking = "Estudante";
+      }
     const disponiveis = obterDificuldadesDisponiveis();
     const probsBase = PROBABILIDADES_POR_RANKING[ranking];
 
