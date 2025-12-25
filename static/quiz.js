@@ -834,9 +834,13 @@ function mostrarPergunta() {
       titulo.style.color = "black";
   }
 
-  ranking_usuario = obterInfoRankingAtual().ranking
+  let ranking_usuario = null
   if (sessionStorage["modoVisitante"] === "false") {
+    ranking_usuario = obterInfoRankingAtual().ranking
     regras_usuario = regras_pontuacao.find(r => r.ranking === ranking_usuario); // Estas regras do usuário, assim como o ranking_usuario são utilizadas na parte de calcular pontos também, portanto cuidado ao apagar aqui
+  }
+  else {
+    ranking_usuario = "Estudante"
   }
 
   if (tipo_pergunta.toLowerCase() === 'discursiva') {
