@@ -10,8 +10,12 @@ let animacao_concluida = false
 let pergunta_selecionada = null
 let dificuldades_permitidas = ['Fácil']
 let ha_perguntas_disponiveis = false
-let regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"))
-let info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1]
+let regras_pontuacao = null
+let info_ultimo_ranking = null
+if (sessionStorage["modoVisitante"] === "false") {
+  regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"))
+  info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1]
+}
 let regras_usuario = null
 let ranking_usuario = null
 const rankings_usuario = JSON.parse(localStorage.getItem("rankings_usuario"))
@@ -58,12 +62,11 @@ const GAP_LETRA_PARA_TEXTO    = 180;
 const GAP_ENTRE_ALTERNATIVAS  = 380;
 const VELOCIDADE_LETRA        = 25;
 
-
 try {
-  alert(`Perguntas médias: ${perguntas_por_dificuldade["Médio"].length?? 0}`)
+  // alert(`Perguntas médias: ${perguntas_por_dificuldade["Médio"].length?? 0}`)
 }
 catch {
-  alert(`Perguntas por dificuldade: ${perguntas_por_dificuldade}`)
+  // alert(`Perguntas por dificuldade: ${perguntas_por_dificuldade}`)
 }
 
 function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
@@ -102,6 +105,14 @@ function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtuali
 }
 
 function atualizarRankingVisual() {
+  if (sessionStorage["modoVisitante"] === "true") {
+    document.getElementById("ranking").textContent = "Estudante";
+    document.getElementById("ranking-anterior").textContent = "Aprendiz";
+    document.getElementById("ranking-proximo").textContent = "Sábio";
+    document.getElementById("barra-progresso").style.width = 50 + "%";
+    return
+  }
+
   // Declara as variáveis que serão úteis
   const info_ranking_atual = obterInfoRankingAtual();
   rankings_usuario[tema_atual] = info_ranking_atual.ranking
@@ -805,7 +816,9 @@ function mostrarPergunta() {
   }
 
   ranking_usuario = obterInfoRankingAtual().ranking
-  regras_usuario = regras_pontuacao.find(r => r.ranking === ranking_usuario); // Estas regras do usuário, assim como o ranking_usuario são utilizadas na parte de calcular pontos também, portanto cuidado ao apagar aqui
+  if (sessionStorage["modoVisitante"] === "false") {
+    regras_usuario = regras_pontuacao.find(r => r.ranking === ranking_usuario); // Estas regras do usuário, assim como o ranking_usuario são utilizadas na parte de calcular pontos também, portanto cuidado ao apagar aqui
+  }
 
   if (tipo_pergunta.toLowerCase() === 'discursiva') {
     // Ativa e esvazia a caixa de texto 
@@ -819,15 +832,25 @@ function mostrarPergunta() {
 
     // Decide se deve mostrar o ícone de dica
     let dica_permitida = true
-    if (pergunta_selecionada.dificuldade === 'Fácil' && regras_usuario.pontos_acerto_facil <= 10 || pergunta_selecionada.dificuldade === 'Médio' && regras_usuario.pontos_acerto_medio <= 10 || !pergunta_selecionada.dica) {
-      dica_permitida = false
+    if (sessionStorage["modoVisitante"] === "false") { // Modo com conta
+      if (pergunta_selecionada.dificuldade === 'Fácil' && regras_usuario.pontos_acerto_facil <= 10 || pergunta_selecionada.dificuldade === 'Médio' && regras_usuario.pontos_acerto_medio <= 10 || !pergunta_selecionada.dica) {
+        dica_permitida = false
+      }
     }
+    else { // Modo visitante
+      if (!pergunta_selecionada.dica) {
+        dica_permitida = false
+      }
+    }
+
+    // Exibe o ícone de dica
     if (dica_permitida) {
     document.getElementById("dica-icon").style.display = "flex";
       } 
     else {
     document.getElementById("dica-icon").style.display = "none";
       }
+    
 
     // No modo revisão não exibe contador de dicas
     if (modo_jogo === 'revisao') {
