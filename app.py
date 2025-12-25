@@ -35,7 +35,7 @@ app.logger.addHandler(handler)
 
 temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia"]
 # Pode ser bom corrigi a parte abaixo, pois os últimos 2 ids devem fazer referência apenas às discursivas e os 2 primeiros às objetivas
-ids_perguntas_visitante = {"Artes": [163, 176, 257, 267], "Astronomia": [8, 12, 111, 117], "Biologia": [22, 24, 8, 48], "Esportes": [55, 59, 79, 12], "Filosofia": [142, 149, 230, 237], "Geografia": [87, 84, 169, 170], "História": [36, 42, 2, 275], "Mídia": [109, 106, 188, 209], "Música": [255, 231, 313, 327], "Química": [189, 184, 303, 304], "Tecnologia": [243, 246, 152, 358]}
+ids_perguntas_visitante = {"Artes": [163, 176, 257, 267], "Astronomia": [8, 12, 111, 117], "Biologia": [22, 24, 8, 48], "Esportes": [72, 59, 79, 12], "Filosofia": [142, 149, 230, 237], "Geografia": [87, 84, 169, 170], "História": [36, 42, 2, 275], "Mídia": [109, 106, 188, 209], "Música": [255, 231, 313, 327], "Química": [189, 184, 303, 304], "Tecnologia": [243, 246, 152, 358]}
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"

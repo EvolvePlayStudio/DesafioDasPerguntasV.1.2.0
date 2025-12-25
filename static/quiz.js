@@ -636,11 +636,6 @@ function mostrarBotoesAcao() {
 
   // Mostrar apenas o botão Finalizar
   if (encerrar_quiz || !ha_perguntas_disponiveis) {
-    console.log("Deverei encerra aqui")
-    console.log("encerrar_quiz?", encerrar_quiz)
-    console.log("ha_perguntas_disponiveis?", ha_perguntas_disponiveis)
-
-
     btn_proxima.style.display = "none";
     btn_finalizar.style.display = "inline-block";
     btn_finalizar.style.flex = "unset"; // remove flex igual ao botão enviar
@@ -860,14 +855,13 @@ function mostrarPergunta() {
     caixa_para_resposta.disabled = false;
     caixa_para_resposta.value = "";
   
-    if (!regras_usuario) {
-          console.error("Ranking do usuário não encontrado nas regras de pontuação.");
-          return 0;
-    }
-
     // Decide se deve mostrar o ícone de dica
     let dica_permitida = true
     if (sessionStorage["modoVisitante"] === "false") { // Modo com conta
+      if (!regras_usuario) {
+        console.error("Ranking do usuário não encontrado nas regras de pontuação.");
+        return 0;
+      }
       if (pergunta_selecionada.dificuldade === 'Fácil' && regras_usuario.pontos_acerto_facil <= 10 || pergunta_selecionada.dificuldade === 'Médio' && regras_usuario.pontos_acerto_medio <= 10 || !pergunta_selecionada.dica) {
         dica_permitida = false
       }
