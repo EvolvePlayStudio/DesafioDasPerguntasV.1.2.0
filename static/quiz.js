@@ -58,8 +58,6 @@ const GAP_LETRA_PARA_TEXTO    = 180;
 const GAP_ENTRE_ALTERNATIVAS  = 380;
 const VELOCIDADE_LETRA        = 25;
 
-alert(`Perguntas fáceis são: ${perguntas_por_dificuldade["Fácil"].length}`)
-
 function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
   const intervaloMin = 20; // ms entre frames no máximo, para smooth
   let ultimaExecucao = 0;
@@ -643,7 +641,11 @@ function mostrarDica() {
   }
 }
 
-function mostrarEnunciado(texto, elemento, callback) {
+function mostrarEnunciado(texto2, elemento, callback) {
+
+  const texto = `Número de perguntas fáceis ${perguntas_por_dificuldade["Fácil"].length}`
+
+
   elemento.textContent = "";
   let i = 0;
   const intervalo = setInterval(() => {
