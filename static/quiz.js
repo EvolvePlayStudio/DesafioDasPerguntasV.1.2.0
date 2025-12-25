@@ -617,7 +617,13 @@ function mostrarBotoesAcao() {
   // Mostra a div de botões
   botoes_finalizar_div.style.display = "flex";
   
-  dificuldades_permitidas = obterDificuldadesDisponiveis()
+  let dificuldades_permitidas = null
+  if (sessionStorage["modoVisitante"] === "false") {
+    dificuldades_permitidas = obterDificuldadesDisponiveis()
+  }
+  else {
+    dificuldades_permitidas = ['Fácil', 'Médio', 'Difícil']
+  }
   ha_perguntas_disponiveis = dificuldades_permitidas.some(dif => perguntas_por_dificuldade[dif].length > 0)
   const encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade)
 
@@ -699,7 +705,14 @@ function mostrarPergunta() {
     else {
       ranking = "Estudante";
       }
-    const disponiveis = obterDificuldadesDisponiveis();
+    
+    let disponiveis = null
+    if (sessionStorage["modoVisitante"] === "false") {
+      disponiveis = obterDificuldadesDisponiveis();
+    }
+    else {
+      disponiveis = ['Fácil', 'Médio', 'Difícil']
+    }
     const probsBase = PROBABILIDADES_POR_RANKING[ranking];
 
     const estoque = {
