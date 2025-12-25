@@ -641,11 +641,7 @@ function mostrarDica() {
   }
 }
 
-function mostrarEnunciado(texto2, elemento, callback) {
-
-  const texto = `Número de perguntas fáceis ${perguntas_por_dificuldade["Fácil"].length}`
-
-
+function mostrarEnunciado(texto, elemento, callback) {
   elemento.textContent = "";
   let i = 0;
   const intervalo = setInterval(() => {
