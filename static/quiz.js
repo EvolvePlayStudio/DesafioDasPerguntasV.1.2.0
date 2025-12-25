@@ -625,7 +625,14 @@ function mostrarBotoesAcao() {
     dificuldades_permitidas = ['Fácil', 'Médio', 'Difícil']
   }
   ha_perguntas_disponiveis = dificuldades_permitidas.some(dif => perguntas_por_dificuldade[dif].length > 0)
-  const encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade)
+
+  let encerrar_quiz = null
+  if (sessionStorage["modoVisitante"] === "false") {
+    encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade)
+  }
+  else {
+    encerrar_quiz = false
+  }
 
   // Mostrar apenas o botão Finalizar
   if (encerrar_quiz || !ha_perguntas_disponiveis || localStorage.getItem("perguntas_restantes") <= 0) {
