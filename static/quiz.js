@@ -635,7 +635,12 @@ function mostrarBotoesAcao() {
   }
 
   // Mostrar apenas o botão Finalizar
-  if (encerrar_quiz || !ha_perguntas_disponiveis || localStorage.getItem("perguntas_restantes") <= 0) {
+  if (encerrar_quiz || !ha_perguntas_disponiveis) {
+    console.log("Deverei encerra aqui")
+    console.log("encerrar_quiz?", encerrar_quiz)
+    console.log("ha_perguntas_disponiveis?", ha_perguntas_disponiveis)
+
+
     btn_proxima.style.display = "none";
     btn_finalizar.style.display = "inline-block";
     btn_finalizar.style.flex = "unset"; // remove flex igual ao botão enviar
