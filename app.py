@@ -101,20 +101,44 @@ def entrar_visitante():
     session["visitante"] = True
     pagina_visitada("Home (Visitante)")
     return redirect("/home")
-    
+
+def identificar_dispositivo():
+    ua = (request.headers.get("User-Agent") or "").lower()
+
+    if not ua:
+        return "Indefinido"
+
+    # Mobile
+    if any(x in ua for x in ["mobile", "android", "iphone", "ipod"]):
+        return "Mobile"
+
+    # Tablet
+    if any(x in ua for x in ["ipad", "tablet"]):
+        return "Tablet"
+
+    # Desktop (apenas se houver indícios claros)
+    if any(x in ua for x in ["windows", "macintosh", "linux"]):
+        return "Desktop"
+
+    return "Indefinido"
+
 def pagina_visitada(pagina, id_usuario=None):
     conn = cur = None
     try:
+        dispositivo = identificar_dispositivo()
+
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO acessos_paginas (pagina, id_usuario) 
-            VALUES (%s, %s)
-        """, (pagina, id_usuario))
+            INSERT INTO acessos_paginas (pagina, id_usuario, dispositivo) 
+            VALUES (%s, %s, %s)
+        """, (pagina, id_usuario, dispositivo))
         conn.commit()
-    except Exception:
+
+    except Exception as e:
         if conn: conn.rollback()
-        app.logger.error("Erro ao tentar registrar página")
+        app.logger.error(f"Erro ao registrar página: {e}")
+
     finally:
         if cur: cur.close()
         if conn: conn.close()
