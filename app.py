@@ -977,7 +977,9 @@ def listar_perguntas(user_id):
 
         where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
         
+        """
         where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
+        """
         
         sql = f"""
             SELECT {select_clause}
@@ -1413,18 +1415,44 @@ def registrar_resposta(user_id):
             nova_pontuacao = cur.fetchone()[0]
 
             # Atualiza a quantidade de perguntas restantes do usuário
-            cur.execute("""
-                SELECT perguntas_restantes FROM usuarios_registrados WHERE id_usuario = %s
+            if dados["tipo_pergunta"] == "Objetiva":
+                cur.execute("""
+                    UPDATE usuarios_registrados
+                    SET
+                        perguntas_restantes = GREATEST(perguntas_restantes - 1, 0)
+                    WHERE id_usuario = %s
+                    RETURNING perguntas_restantes, dicas_restantes
                 """, (id_usuario,))
-            perguntas_restantes = cur.fetchone()[0]
-            nova_perguntas_restantes = max(0, perguntas_restantes - 1)
-            cur.execute("""
-                UPDATE usuarios_registrados SET perguntas_restantes = %s WHERE id_usuario = %s
-            """, (nova_perguntas_restantes, id_usuario))
+            else:
+                cur.execute("""
+                    UPDATE usuarios_registrados
+                    SET
+                        perguntas_restantes = GREATEST(perguntas_restantes - 1, 0),
 
+                        dicas_restantes = CASE
+                            WHEN discursivas_respondidas + 1 >= 10
+                                THEN LEAST(dicas_restantes + 1, 20)
+                            ELSE dicas_restantes
+                        END,
+
+                        discursivas_respondidas = CASE
+                            WHEN discursivas_respondidas + 1 >= 10 THEN 0
+                            ELSE discursivas_respondidas + 1
+                        END
+
+                    WHERE id_usuario = %s
+                    RETURNING perguntas_restantes, dicas_restantes
+                """, (id_usuario,))
+
+            perguntas_restantes, dicas_restantes = cur.fetchone()
             conn.commit()
-            return jsonify({"sucesso": True, "nova_pontuacao": nova_pontuacao, "perguntas_restantes": nova_perguntas_restantes})
 
+            return jsonify({
+                "sucesso": True,
+                "nova_pontuacao": nova_pontuacao,
+                "perguntas_restantes": perguntas_restantes,
+                "dicas_restantes": dicas_restantes
+            })
     except Exception:
         if conn:
             conn.rollback()

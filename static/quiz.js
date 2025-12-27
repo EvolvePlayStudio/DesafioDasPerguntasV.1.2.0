@@ -967,6 +967,12 @@ async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ga
       localStorage.setItem("perguntas_restantes", data.perguntas_restantes)
       document.getElementById("perguntas-count").textContent = data.perguntas_restantes
 
+      // Atualiza o número de dicas restantes do usuário no localStorage e no contador de dicas
+      if (tipo_pergunta === 'discursiva') {
+        document.getElementById("contador-dicas").textContent = data.dicas_restantes;
+        localStorage.setItem("dicas_restantes", data.dicas_restantes);
+      }
+
       atualizarRankingVisual();
       return true;
     } else {
