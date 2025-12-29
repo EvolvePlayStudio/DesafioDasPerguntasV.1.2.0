@@ -39,9 +39,9 @@ let alternativaSelecionada = null; // guarda a letra clicada (A, B, C, D)
 let respostasDesdeUltimaForcagem = 0; // para pegar a pergunta do nível que tem mais a cada x respondidas
 const PROBABILIDADES_POR_RANKING = {
   Iniciante: {Fácil: 0.65, Médio: 0.35, Difícil: 0.00},
-  Aprendiz: {Fácil: 0.45, Médio: 0.40, Difícil: 0.15},
-  Estudante: {Fácil: 0.25, Médio: 0.50, Difícil: 0.25},
-  Sábio: {Fácil: 0.10, Médio: 0.55, Difícil: 0.35},
+  Aprendiz: {Fácil: 0.40, Médio: 0.45, Difícil: 0.15},
+  Estudante: {Fácil: 0.20, Médio: 0.55, Difícil: 0.25},
+  Sábio: {Fácil: 0.10, Médio: 0.50, Difícil: 0.40},
   Lenda: {Fácil: 0.02, Médio: 0.48, Difícil: 0.50}
 }
 // Círculo amarelo com interrogação preta para símbolo de pergunta pulada
