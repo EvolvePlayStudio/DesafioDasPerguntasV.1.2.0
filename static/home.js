@@ -1,8 +1,15 @@
 import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual } from "./utils.js";
 
+const MODO_VISITANTE =
+  document.body.dataset.modoVisitante === "true";
+
+sessionStorage.setItem(
+  "modoVisitante",
+  MODO_VISITANTE ? "true" : "false"
+);
+
 let tipo_pergunta = null;
 const mensagem = document.getElementById("mensagem");
-
 
 // Abaixo estão códigos relacionados à mensagem que aparece quando o usuário entra no modo visitante ou loga pela primeira vez
 const overlayVisitante = document.getElementById("overlay-visitante");

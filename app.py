@@ -657,11 +657,16 @@ def enviar_email_confirmacao(email_destinatario, nome_destinatario, link_confirm
 
 @app.route("/home")
 def home():
-    id_usuario = session.get('id_usuario')
-    usuario_autorizado = False
-    if id_usuario in privileged_ids:
-        usuario_autorizado = True
-    return render_template("home.html", usuario_autorizado=usuario_autorizado)
+    id_usuario = session.get("id_usuario")
+    visitante = session.get("visitante", False)
+
+    usuario_autorizado = id_usuario in privileged_ids if id_usuario else False
+
+    return render_template(
+        "home.html",
+        usuario_autorizado=usuario_autorizado,
+        visitante=visitante
+    )
 
 @app.route("/resultado")
 def resultado():
