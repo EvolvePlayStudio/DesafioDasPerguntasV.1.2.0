@@ -197,11 +197,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Define o nome de usuário, as perguntas e dicas disponíveis e máximas para o usuário
   if (sessionStorage.getItem("modoVisitante") === "true") {
+    console.log("Estou no modo visitante")
     nome_usuario.textContent = "Visitante"
     perguntas_restantes.textContent = "100/100"
     dicas_restantes.textContent = "20/20"
   }
   else {
+    console.log("Não estou no modo visitante")
     nome_usuario.textContent = localStorage.getItem("nome_usuario")
     perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}/100`
     dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes")}/20`
