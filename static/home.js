@@ -52,8 +52,6 @@ async function iniciarQuiz(event) {
     exibirMensagem(mensagem, 'Você precisa aguardar para obter mais perguntas no modo desafio', 'red')
     return;
   }
-  
-  console.log("Modo visitante?", sessionStorage["modoVisitante"])
   exibirMensagem(mensagem, "Preparando quiz...", '#d1d1d1ff', false)
 
   // Carrega as perguntas para o quiz
@@ -93,6 +91,18 @@ async function iniciarQuiz(event) {
       }
     }
     else { // Modo visitante
+      // Registra a escolha do tema no SQL
+      fetch("/log/visitante", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          evento: "Tema escolhido",
+          tema: tema_atual
+        })
+      }).catch(() => {});
+      
       localStorage.setItem("modo_jogo", 'revisao')
       const response = await fetch(`/api/perguntas?tema=${tema_atual}&modo=revisao&tipo-de-pergunta=${tipo_pergunta}`)
 
@@ -204,13 +214,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Define o nome de usuário, as perguntas e dicas disponíveis e máximas para o usuário
   if (sessionStorage.getItem("modoVisitante") === "true") {
-    console.log("Estou no modo visitante")
     nome_usuario.textContent = "Visitante"
     perguntas_restantes.textContent = "100/100"
     dicas_restantes.textContent = "20/20"
   }
   else {
-    console.log("Não estou no modo visitante")
     nome_usuario.textContent = localStorage.getItem("nome_usuario")
     perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}/100`
     dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes")}/20`

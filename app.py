@@ -1088,6 +1088,54 @@ def listar_perguntas(user_id):
         'pontuacoes_usuario': pontuacoes_usuario
     })
 
+@app.route("/log/visitante", methods=["POST"])
+def log_visitante():
+    dados = request.get_json()
+
+    evento = dados.get("evento")
+    tema = dados.get("tema")
+    tipo_pergunta = dados.get("tipo_pergunta")
+    id_pergunta = dados.get("id_pergunta")
+    resposta_enviada = dados.get("resposta_enviada")
+    acertou = dados.get("acertou")
+    tempo_gasto = dados.get("tempo_gasto")
+
+    if evento not in (
+        "Tema escolhido",
+        "Pergunta carregada",
+        "Pergunta respondida"
+    ):
+        return jsonify({"erro": "tipo_registro inválido"}), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO acesso_modo_visitante (
+            evento,
+            tema,
+            tipo_pergunta,
+            id_pergunta,
+            resposta_enviada,
+            acertou,
+            tempo_gasto
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+    """, (
+        evento,
+        tema,
+        tipo_pergunta,
+        id_pergunta,
+        resposta_enviada,
+        acertou,
+        tempo_gasto
+    ))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify({"status": "ok"}), 200
+
 @app.route("/reset_senha", methods=["GET", "POST"])
 def reset_senha():
     token = request.args.get("token") if request.method == "GET" else request.form.get("token")

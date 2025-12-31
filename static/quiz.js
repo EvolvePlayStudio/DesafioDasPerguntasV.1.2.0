@@ -8,7 +8,6 @@ let inicio_pergunta = null  // horário inicial da pergunta
 let pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario"))
 let animacao_concluida = false
 let pergunta_selecionada = null
-let dificuldades_permitidas = ['Fácil']
 let ha_perguntas_disponiveis = false
 let regras_pontuacao = null
 let info_ultimo_ranking = null
@@ -386,6 +385,7 @@ async function enviarResposta(pulando = false) {
   let pontos_ganhos = 0;
   let respostas_corretas;
   let letra_correta;
+  const tempo_gasto = calcularTempoGasto();
 
   if (tipo_pergunta === 'objetiva') {
     const widgetAlternativaSelecionada = document.querySelector('.alternativa-btn.selected');
@@ -440,13 +440,12 @@ async function enviarResposta(pulando = false) {
     acertou = respostaDiscursivaCorreta(resposta_usuario, respostas_corretas);
   }
 
+  // Registra a resposta enviada no SQL
   if (modo_jogo === 'desafio') {
-    
     pontos_ganhos = calcularPontuacao(acertou);
     const id_pergunta = pergunta_selecionada.id_pergunta;
     const versao_pergunta = pergunta_selecionada.versao_pergunta;
-    const tempo_gasto = calcularTempoGasto();
-  
+    
     prosseguir_com_resultado = await registrarResposta(
       resposta_usuario,
       acertou,
@@ -467,6 +466,25 @@ async function enviarResposta(pulando = false) {
       }
       perguntas_respondidas.push(info_resposta)
     }
+  }
+  
+  // Registra o envio da resposta no SQL caso esteja no modo visitante
+  if (sessionStorage["modoVisitante"] === "true") {
+    fetch("/log/visitante", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      evento: "Pergunta respondida",
+      tema: tema_atual,
+      tipo_pergunta: tipo_pergunta,
+      id_pergunta: pergunta_selecionada.id_pergunta,
+      resposta_enviada: resposta_usuario,
+      acertou: acertou,
+      tempo_gasto: tempo_gasto
+    })
+    }).catch(() => {});
   }
 
   if (prosseguir_com_resultado) {
@@ -677,12 +695,29 @@ function mostrarEnunciado(texto, elemento, callback) {
   elemento.textContent = "";
   let i = 0;
   const intervalo = setInterval(() => {
-    if (i < texto.length) {
+    if (i < texto.length) { // Se ainda há letras para serem carregadas no enunciado
       elemento.textContent += texto[i];
       i++;
     } 
-    else {
+    else {  // Quando acaba a animação do enunciado da pergunta
       clearInterval(intervalo);
+
+      // Registra o carregamento da pergunta no SQL caso esteja no modo visitante
+      if (sessionStorage["modoVisitante"] === "true") {
+        fetch("/log/visitante", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          evento: "Pergunta carregada",
+          tema: tema_atual,
+          tipo_pergunta: tipo_pergunta,
+          id_pergunta: pergunta_selecionada.id_pergunta
+        })
+      }).catch(() => {});
+      }
+
       if (tipo_pergunta === 'discursiva') {
         animacao_concluida = true
         inicio_pergunta = Date.now()
@@ -692,7 +727,8 @@ function mostrarEnunciado(texto, elemento, callback) {
         btn_pular.style.display = "inline-flex"
         btn_enviar.disabled = false;
         if (callback) callback();
-      } else {
+      } 
+      else {
         mostrarAlternativas()
       }
     }
