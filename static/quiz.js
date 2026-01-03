@@ -1063,7 +1063,7 @@ function resetarAlternativas() {
 }
 
 function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
-  const stopwords = ["a", "o", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "no", "na", "nos", "nas", "por", "com", "para", "um", "uma", "uns", "umas", "ao", "aos", "à", "às"];
+  const stopwords = ["a", "o", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "no", "na", "nos", "nas", "por", "pelo", "pela", "com", "para", "um", "uma", "uns", "umas", "ao", "aos", "à", "às"];
 
   function removerAcentos(texto) {
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
