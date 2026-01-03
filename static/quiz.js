@@ -482,7 +482,8 @@ async function enviarResposta(pulando = false) {
       id_pergunta: pergunta_selecionada.id_pergunta,
       resposta_enviada: resposta_usuario,
       acertou: acertou,
-      tempo_gasto: tempo_gasto
+      tempo_gasto: tempo_gasto,
+      id_visitante: localStorage.getItem("id_visitante")
     })
     }).catch(() => {});
   }
@@ -713,7 +714,8 @@ function mostrarEnunciado(texto, elemento, callback) {
           evento: "Pergunta carregada",
           tema: tema_atual,
           tipo_pergunta: tipo_pergunta,
-          id_pergunta: pergunta_selecionada.id_pergunta
+          id_pergunta: pergunta_selecionada.id_pergunta,
+          id_visitante: localStorage.getItem("id_visitante")
         })
       }).catch(() => {});
       }

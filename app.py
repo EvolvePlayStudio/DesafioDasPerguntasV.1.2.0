@@ -34,8 +34,11 @@ handler.setFormatter(formatter)
 app.logger.addHandler(handler)
 
 temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia"]
-# Pode ser bom corrigi a parte abaixo, pois os últimos 2 ids devem fazer referência apenas às discursivas e os 2 primeiros às objetivas
-ids_perguntas_visitante = {"Artes": [163, 176, 257, 267], "Astronomia": [8, 12, 111, 117], "Biologia": [22, 24, 8, 48], "Esportes": [72, 59, 79, 12], "Filosofia": [142, 149, 230, 237], "Geografia": [87, 84, 169, 170], "História": [36, 42, 2, 275], "Mídia": [109, 106, 188, 209], "Música": [255, 231, 313, 327], "Química": [189, 184, 303, 304], "Tecnologia": [243, 246, 152, 358]}
+
+# IDs de perguntas para os usuários no modo visitante
+ids_perguntas_objetivas_visitante = {"Artes": [163, 172, 353], "Astronomia": [8, 12, 17], "Biologia": [22, 24], "Esportes": [72, 59], "Filosofia": [142, 149], "Geografia": [87, 84], "História": [118, 42], "Mídia": [109, 106], "Música": [255, 231], "Química": [189, 184], "Tecnologia": [243, 246]}
+ids_perguntas_discursivas_visitante = {"Artes": [257, 267, 272], "Astronomia": [111, 117], "Biologia": [8, 48], "Esportes": [79, 12], "Filosofia": [230, 237], "Geografia": [169, 170], "História": [2, 275], "Mídia": [188, 209], "Música": [313, 327], "Química": [303, 304], "Tecnologia": [152, 358]}
+
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -1003,8 +1006,12 @@ def listar_perguntas(user_id):
 
         for row in linhas:
             if visitante:
-                if row["id_pergunta"] not in ids_perguntas_visitante[tema]:
-                    continue
+                if tipo_pergunta == "discursiva":
+                    if row["id_pergunta"] not in ids_perguntas_discursivas_visitante[tema]:
+                        continue
+                else:
+                    if row["id_pergunta"] not in ids_perguntas_objetivas_visitante[tema]:
+                        continue
 
             respondida = bool(row.get('respondida'))
             dificuldade = row.get('dificuldade') or 'Médio'  # Se por algum motivo for nulo, evita KeyError
@@ -1099,6 +1106,7 @@ def log_visitante():
     resposta_enviada = dados.get("resposta_enviada")
     acertou = dados.get("acertou")
     tempo_gasto = dados.get("tempo_gasto")
+    id_visitante = dados.get("id_visitante")
 
     if evento not in (
         "Tema escolhido",
@@ -1118,8 +1126,9 @@ def log_visitante():
             id_pergunta,
             resposta_enviada,
             acertou,
-            tempo_gasto
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+            tempo_gasto,
+            id_visitante
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """, (
         evento,
         tema,
@@ -1127,7 +1136,8 @@ def log_visitante():
         id_pergunta,
         resposta_enviada,
         acertou,
-        tempo_gasto
+        tempo_gasto,
+        id_visitante
     ))
 
     conn.commit()
