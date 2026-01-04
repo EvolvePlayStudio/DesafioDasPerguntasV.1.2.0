@@ -98,6 +98,37 @@ codigo_pix = os.getenv("QR_CODE")
 img = qrcode.make(codigo_pix)
 img.save("static/qrcode.png")
 
+@app.route("/api/regras_pontuacao")
+def api_regras_pontuacao():
+    try:
+        regras_pontuacao = carregar_regras_pontuacao()
+        return jsonify(success=True, regras_pontuacoes=regras_pontuacao)
+    except Exception:
+        return jsonify(
+            success=False,
+            message="Erro ao carregar regras de pontuação"
+        ), 500
+
+def carregar_regras_pontuacao():
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("SELECT * FROM regras_pontuacao ORDER BY id_ranking")
+
+        linhas = cur.fetchall()
+        colunas = [desc[0] for desc in cur.description]
+
+        return [dict(zip(colunas, linha)) for linha in linhas]
+
+    except Exception:
+        app.logger.error("Erro ao buscar regras de pontuações\n" + traceback.format_exc())
+        raise
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
 @app.route("/entrar_visitante")
 def entrar_visitante():
     session.clear()
@@ -278,13 +309,7 @@ def login():
 
             for tema in temas_faltantes:
                 cur.execute("INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao) VALUES (%s, %s, %s)", (id_usuario, tema, 0))
-            
-            cur.execute("SELECT * FROM regras_pontuacao ORDER BY id_ranking")
-            linhas = cur.fetchall()
-            colunas = [desc[0] for desc in cur.description]
             conn.commit()
-
-            regras_pontuacao = [dict(zip(colunas, linha)) for linha in linhas]
 
         else:
             return render_template("login.html")
@@ -302,7 +327,6 @@ def login():
         success=True,
         message="Login realizado com sucesso",
         token=token,
-        regras_pontuacao=regras_pontuacao,
         dicas_restantes=dicas_restantes,
         perguntas_restantes=perguntas_restantes,
         nome_usuario=nome_usuario,

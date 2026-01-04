@@ -9,12 +9,8 @@ let pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario"))
 let animacao_concluida = false
 let pergunta_selecionada = null
 let ha_perguntas_disponiveis = false
-let regras_pontuacao = null
-let info_ultimo_ranking = null
-if (sessionStorage["modoVisitante"] === "false") {
-  regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"))
-  info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1]
-}
+let regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"))
+let info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1]
 let regras_usuario = null
 let ranking_usuario = null
 const rankings_usuario = JSON.parse(localStorage.getItem("rankings_usuario"))
@@ -103,13 +99,13 @@ function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtuali
 }
 
 function atualizarRankingVisual() {
-  if (sessionStorage["modoVisitante"] === "true") {
-    document.getElementById("ranking").textContent = "Estudante";
-    document.getElementById("ranking-anterior").textContent = "Aprendiz";
-    document.getElementById("ranking-proximo").textContent = "Sábio";
-    document.getElementById("barra-progresso").style.width = 50 + "%";
-    return
-  }
+  //if (sessionStorage["modoVisitante"] === "true") {
+    //document.getElementById("ranking").textContent = "Estudante";
+    //document.getElementById("ranking-anterior").textContent = "Aprendiz";
+    //document.getElementById("ranking-proximo").textContent = "Sábio";
+    //document.getElementById("barra-progresso").style.width = 50 + "%";
+    //return
+  //}
 
   // Declara as variáveis que serão úteis
   const info_ranking_atual = obterInfoRankingAtual();
@@ -440,8 +436,8 @@ async function enviarResposta(pulando = false) {
   }
 
   // Registra a resposta enviada no SQL
+  pontos_ganhos = calcularPontuacao(acertou);
   if (modo_jogo === 'desafio') {
-    pontos_ganhos = calcularPontuacao(acertou);
     const id_pergunta = pergunta_selecionada.id_pergunta;
     const versao_pergunta = pergunta_selecionada.versao_pergunta;
     
@@ -485,6 +481,11 @@ async function enviarResposta(pulando = false) {
       id_visitante: localStorage.getItem("id_visitante")
     })
     }).catch(() => {});
+
+    // Altera a pontuação do usuário após o envio da resposta
+    alterarPontuacaoUsuario(pontuacoes_usuario[tema_atual], pontuacoes_usuario[tema_atual] + pontos_ganhos, callbackAtualizarUI)
+    pontuacoes_usuario[tema_atual] = pontuacoes_usuario[tema_atual] + pontos_ganhos
+    atualizarRankingVisual();
   }
 
   if (prosseguir_com_resultado) {
@@ -878,14 +879,8 @@ function mostrarPergunta() {
       titulo.style.color = "black";
   }
 
-  let ranking_usuario = null
-  if (sessionStorage["modoVisitante"] === "false") {
-    ranking_usuario = obterInfoRankingAtual().ranking
-    regras_usuario = regras_pontuacao.find(r => r.ranking === ranking_usuario); // Estas regras do usuário, assim como o ranking_usuario são utilizadas na parte de calcular pontos também, portanto cuidado ao apagar aqui
-  }
-  else {
-    ranking_usuario = "Estudante"
-  }
+  let ranking_usuario = obterInfoRankingAtual().ranking
+  regras_usuario = regras_pontuacao.find(r => r.ranking === ranking_usuario);
 
   if (tipo_pergunta.toLowerCase() === 'discursiva') {
     // Ativa e esvazia a caixa de texto 
