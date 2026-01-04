@@ -36,8 +36,8 @@ app.logger.addHandler(handler)
 temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia"]
 
 # IDs de perguntas para os usuários no modo visitante
-ids_perguntas_objetivas_visitante = {"Artes": [163, 172, 353], "Astronomia": [8, 12, 17], "Biologia": [18, 22, 371], "Esportes": [59, 63, 471], "Filosofia": [142, 149, 150], "Geografia": [84, 323, 331], "História": [42, 118, 127], "Mídia": [99, 106, 381], "Música": [231, 255], "Química": [184, 189], "Tecnologia": [243, 246]}
-ids_perguntas_discursivas_visitante = {"Artes": [257, 267, 272], "Astronomia": [111, 117], "Biologia": [8, 48, 50], "Esportes": [12, 71, 79], "Filosofia": [230, 231, 237], "Geografia": [163, 169, 179], "História": [2, 5, 35], "Mídia": [188, 209, 652], "Música": [313, 327], "Química": [303, 304], "Tecnologia": [152, 358]}
+ids_perguntas_objetivas_visitante = {"Artes": [163, 172, 353], "Astronomia": [8, 12, 17], "Biologia": [18, 22, 371], "Esportes": [59, 63, 471], "Filosofia": [142, 149, 150], "Geografia": [84, 323, 331], "História": [42, 118, 127], "Mídia": [99, 106, 381], "Música": [229, 231, 236], "Química": [184, 188, 189], "Tecnologia": [243, 251, 415]}
+ids_perguntas_discursivas_visitante = {"Artes": [257, 267, 272], "Astronomia": [111, 117], "Biologia": [8, 48, 50], "Esportes": [12, 71, 79], "Filosofia": [230, 231, 237], "Geografia": [163, 169, 179], "História": [2, 5, 35], "Mídia": [188, 209, 652], "Música": [313, 327, 496], "Química": [301, 303, 594], "Tecnologia": [152, 358, 472]}
 
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
