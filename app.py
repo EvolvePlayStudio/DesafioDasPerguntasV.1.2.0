@@ -984,7 +984,7 @@ def listar_perguntas(user_id):
         table = cfg['table']         # Nome da tabela — vindo do cfg interno (seguro)
 
         where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
-        
+
         where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
         
         sql = f"""
@@ -1451,9 +1451,9 @@ def registrar_resposta(user_id):
             cur.execute("""
                 INSERT INTO respostas_usuarios (
                     id_usuario, id_pergunta, tipo_pergunta, versao_pergunta, resposta_usuario,
-                    acertou, usou_dica, pontos_ganhos, tempo_gasto
+                    acertou, usou_dica, pontos_ganhos, tempo_gasto, pontos_usuario
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 id_usuario,
                 dados["id_pergunta"],
@@ -1463,7 +1463,8 @@ def registrar_resposta(user_id):
                 dados["acertou"],
                 dados.get("usou_dica", False),
                 dados["pontos_ganhos"],
-                dados["tempo_gasto"]
+                dados["tempo_gasto"],
+                dados["pontos_usuario"]
             ))
             # Atualiza a pontuação do usuário
             cur.execute("""

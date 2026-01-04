@@ -975,6 +975,7 @@ function proximaPergunta() {
 }
 
 async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ganhos, tempo_gasto, id_pergunta, versao_pergunta) {
+  const pontuacao_atual = pontuacoes_usuario[tema_atual]
   try {
     const response = await fetch('/registrar_resposta', {
       method: 'POST',
@@ -988,15 +989,14 @@ async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ga
         tempo_gasto: tempo_gasto,
         id_pergunta: id_pergunta,
         versao_pergunta: versao_pergunta,
-        tema: tema_atual
+        tema: tema_atual,
+        pontos_usuario: pontuacao_atual
       })
     });
 
     const data = await response.json();
-
     if (data.sucesso) {
       // Atualiza a pontuação do usuário para o tema no localStorage
-      const pontuacao_atual = pontuacoes_usuario[tema_atual]
       pontuacoes_usuario[tema_atual] = data.nova_pontuacao;
       alterarPontuacaoUsuario(pontuacao_atual, pontuacoes_usuario[tema_atual], callbackAtualizarUI)
       localStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_usuario));
