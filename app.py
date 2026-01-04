@@ -36,8 +36,8 @@ app.logger.addHandler(handler)
 temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia"]
 
 # IDs de perguntas para os usuários no modo visitante
-ids_perguntas_objetivas_visitante = {"Artes": [163, 172, 353], "Astronomia": [8, 12, 17], "Biologia": [22, 24], "Esportes": [72, 59], "Filosofia": [142, 149], "Geografia": [87, 84], "História": [118, 42], "Mídia": [109, 106], "Música": [255, 231], "Química": [189, 184], "Tecnologia": [243, 246]}
-ids_perguntas_discursivas_visitante = {"Artes": [257, 267, 272], "Astronomia": [111, 117], "Biologia": [8, 48], "Esportes": [79, 12], "Filosofia": [230, 237], "Geografia": [169, 170], "História": [2, 275], "Mídia": [188, 209], "Música": [313, 327], "Química": [303, 304], "Tecnologia": [152, 358]}
+ids_perguntas_objetivas_visitante = {"Artes": [163, 172, 353], "Astronomia": [8, 12, 17], "Biologia": [18, 22, 371], "Esportes": [59, 63, 471], "Filosofia": [142, 149, 150], "Geografia": [84, 323, 331], "História": [42, 118, 127], "Mídia": [106, 109], "Música": [231, 255], "Química": [184, 189], "Tecnologia": [243, 246]}
+ids_perguntas_discursivas_visitante = {"Artes": [257, 267, 272], "Astronomia": [111, 117], "Biologia": [8, 48, 50], "Esportes": [12, 71, 79], "Filosofia": [230, 231, 237], "Geografia": [163, 169, 179], "História": [2, 275], "Mídia": [188, 209], "Música": [313, 327], "Química": [303, 304], "Tecnologia": [152, 358]}
 
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
@@ -1097,6 +1097,7 @@ def listar_perguntas(user_id):
 
 @app.route("/log/visitante", methods=["POST"])
 def log_visitante():
+    return jsonify({"status": "ok"}), 200
     dados = request.get_json()
 
     evento = dados.get("evento")

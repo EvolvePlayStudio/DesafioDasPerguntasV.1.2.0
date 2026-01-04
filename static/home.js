@@ -29,7 +29,6 @@ if (sessionStorage.getItem("modoVisitante") === "true") {
   // Gera ID de visitante para o usuário caso não tenha
   let idVisitante = localStorage.getItem("id_visitante");
   if (!idVisitante) {
-    console.log("Gerarei ID para o visitante")
     idVisitante = crypto.randomUUID();
     localStorage.setItem("id_visitante", idVisitante);
   }
@@ -41,8 +40,6 @@ else {
     modalOnboarding.classList.remove("hidden");
   }
 }
-
-console.log("ID de visitante é:", localStorage.getItem("id_visitante"))
 
 async function iniciarQuiz(event) {
   // Atualiza o tema atual e modo de jogo no localStorage

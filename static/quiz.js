@@ -20,7 +20,6 @@ let ranking_usuario = null
 const rankings_usuario = JSON.parse(localStorage.getItem("rankings_usuario"))
 const tema_atual = decodeURIComponent(localStorage.getItem("tema_atual"))
 localStorage.setItem("pontuacao_anterior", pontuacoes_usuario[tema_atual])
-console.log("Pontuações do usuário: ", pontuacoes_usuario)
 const modo_jogo = localStorage.getItem("modo_jogo").toLocaleLowerCase()
 const tipo_pergunta = localStorage.getItem("tipo_pergunta").toLocaleLowerCase()
 const lbl_pontuacao_usuario = document.getElementById('pontuacao')
