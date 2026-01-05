@@ -56,13 +56,6 @@ const GAP_LETRA_PARA_TEXTO    = 180;
 const GAP_ENTRE_ALTERNATIVAS  = 380;
 const VELOCIDADE_LETRA        = 25;
 
-try {
-  // alert(`Perguntas médias: ${perguntas_por_dificuldade["Médio"].length?? 0}`)
-}
-catch {
-  // alert(`Perguntas por dificuldade: ${perguntas_por_dificuldade}`)
-}
-
 function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
   const intervaloMin = 20; // ms entre frames no máximo, para smooth
   let ultimaExecucao = 0;
@@ -316,7 +309,7 @@ async function enviarResposta(pulando = false) {
 
     // Exibe nota, curiosidade ou explicação
     if (pergunta_selecionada.nota?.trim()) {
-      let textoFormatado = pergunta_selecionada.nota.replace(/^(Nota:|Explicação:|Curiosidade:)/i, '<strong>$1</strong>');
+      let textoFormatado = pergunta_selecionada.nota;
       document.getElementById("nota-texto").innerHTML = textoFormatado;
       document.getElementById("nota-box").style.display = "block";
     }

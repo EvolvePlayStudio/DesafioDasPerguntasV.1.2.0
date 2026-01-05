@@ -1009,7 +1009,9 @@ def listar_perguntas(user_id):
 
         where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
 
+        """
         where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
+        """
         
         sql = f"""
             SELECT {select_clause}
