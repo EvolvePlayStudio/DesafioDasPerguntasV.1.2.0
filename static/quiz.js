@@ -92,14 +92,6 @@ function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtuali
 }
 
 function atualizarRankingVisual() {
-  //if (sessionStorage["modoVisitante"] === "true") {
-    //document.getElementById("ranking").textContent = "Estudante";
-    //document.getElementById("ranking-anterior").textContent = "Aprendiz";
-    //document.getElementById("ranking-proximo").textContent = "Sábio";
-    //document.getElementById("barra-progresso").style.width = 50 + "%";
-    //return
-  //}
-
   // Declara as variáveis que serão úteis
   const info_ranking_atual = obterInfoRankingAtual();
   rankings_usuario[tema_atual] = info_ranking_atual.ranking
@@ -347,18 +339,6 @@ async function enviarResposta(pulando = false) {
 
   // Exibe os comentários dos outros usuários
   document.getElementById('comentarios').style.display = 'block';
-
-  // Exibe os pontos ganhos ou perdidos
-  if (pontos_ganhos > 0) {
-    lbl_pontos_ganhos.style.color = 'lime'
-    lbl_pontos_ganhos.style.display = 'flex'
-    lbl_pontos_ganhos.textContent = `+${pontos_ganhos}`
-  }
-  else if (pontos_ganhos < 0) {
-    lbl_pontos_ganhos.style.color = 'red'
-    lbl_pontos_ganhos.style.display = 'flex'
-    lbl_pontos_ganhos.textContent = `${pontos_ganhos}`
-  } 
   }
 
   resultado.style.display = "block";
@@ -428,8 +408,22 @@ async function enviarResposta(pulando = false) {
     acertou = respostaDiscursivaCorreta(resposta_usuario, respostas_corretas);
   }
 
-  // Registra a resposta enviada no SQL
+  // Exibe os pontos ganhos ou perdidos
   pontos_ganhos = calcularPontuacao(acertou);
+  if (modo_jogo === 'desafio' || sessionStorage["modoVisitante"] === "true") {
+    if (pontos_ganhos > 0) {
+      lbl_pontos_ganhos.style.color = 'lime'
+      lbl_pontos_ganhos.style.display = 'flex'
+      lbl_pontos_ganhos.textContent = `+${pontos_ganhos}`
+    }
+    else if (pontos_ganhos < 0) {
+      lbl_pontos_ganhos.style.color = 'red'
+      lbl_pontos_ganhos.style.display = 'flex'
+      lbl_pontos_ganhos.textContent = `${pontos_ganhos}`
+    }
+  }
+
+  // Registra a resposta enviada no SQL
   if (modo_jogo === 'desafio') {
     const id_pergunta = pergunta_selecionada.id_pergunta;
     const versao_pergunta = pergunta_selecionada.versao_pergunta;
@@ -468,6 +462,7 @@ async function enviarResposta(pulando = false) {
     alterarPontuacaoUsuario(pontuacoes_usuario[tema_atual], pontuacoes_usuario[tema_atual] + pontos_ganhos, callbackAtualizarUI)
     pontuacoes_usuario[tema_atual] = pontuacoes_usuario[tema_atual] + pontos_ganhos;
     localStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_usuario));
+    console.log("1.Irei alterar ranking visual")
     atualizarRankingVisual();
   }
 
@@ -639,7 +634,7 @@ function mostrarBotoesAcao() {
   ha_perguntas_disponiveis = dificuldades_permitidas.some(dif => perguntas_por_dificuldade[dif].length > 0)
 
   let encerrar_quiz = null
-  if (sessionStorage["modoVisitante"] === "false") {
+  if (sessionStorage["modoVisitante"] === "false" && modo_jogo === "desafio") {
     encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade)
   }
   else {
@@ -736,30 +731,23 @@ function mostrarPergunta() {
   btn_enviar.disabled = true;
 
   function escolherProximaDificuldade() {
-    let ranking = null;
-    if (sessionStorage["modoVisitante"] === "false") {
-      ranking = obterInfoRankingAtual().ranking;
-    }
-    else {
-      ranking = "Estudante";
-      }
-    
-    let disponiveis = null
-    if (sessionStorage["modoVisitante"] === "false") {
-      disponiveis = obterDificuldadesDisponiveis();
-    }
-    else {
-      disponiveis = ['Fácil', 'Médio', 'Difícil']
-    }
-    const probsBase = PROBABILIDADES_POR_RANKING[ranking];
+    const ranking = obterInfoRankingAtual().ranking;
+    const disponiveis = obterDificuldadesDisponiveis();
 
+    const probsBase = PROBABILIDADES_POR_RANKING[ranking];
     const estoque = {
       "Fácil": perguntas_por_dificuldade["Fácil"]?.length || 0,
       "Médio": perguntas_por_dificuldade["Médio"]?.length || 0,
       "Difícil": perguntas_por_dificuldade["Difícil"]?.length || 0,
     };
-
     console.log("Estoque: ", estoque)
+    
+    // Caso esteja no modo revisão
+    if (modo_jogo === "revisao" || sessionStorage["modoVisitante"] === "true") {
+      //return disponiveis[Math.floor(Math.random() * disponiveis.length)]
+      //return resolverFallback(escolhida, estoque, probsBase, disponiveis);
+      return disponiveis.find(d => estoque[d] > 0) ?? null;
+    }
 
     // 🔥 1. FORÇAGEM POR ESTOQUE
     if (respostasDesdeUltimaForcagem === 5) {
@@ -825,7 +813,7 @@ function mostrarPergunta() {
       }
       // Probabilidades próximas → usa estoque
       else {
-        console.log("2. Retornarei a dificuldade com maior estoque")
+        console.log("2.Retornarei a dificuldade com maior estoque")
         return estoque["Difícil"] >= estoque["Fácil"] ? "Difícil" : "Fácil";
       }
     }
