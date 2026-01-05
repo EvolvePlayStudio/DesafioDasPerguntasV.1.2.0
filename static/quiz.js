@@ -450,17 +450,6 @@ async function enviarResposta(pulando = false) {
       id_pergunta,
       versao_pergunta
     );
-    // Armazena informações que serão úteis depois na tela de resultado
-    if (prosseguir_com_resultado) {
-      let info_resposta;
-      if (tipo_pergunta === 'discursiva') {
-        info_resposta = {"enunciado": pergunta_selecionada.enunciado, "respostas_aceitas": respostas_corretas, "resposta_usuario": resposta_usuario, "usou_dica": dica_gasta, "pontos_ganhos": pontos_ganhos, "dificuldade": pergunta_selecionada.dificuldade}
-      }
-      else {
-        info_resposta = {"enunciado": pergunta_selecionada.enunciado, "alternativa_a": pergunta_selecionada.alternativa_a, "alternativa_b": pergunta_selecionada.alternativa_b, "alternativa_c": pergunta_selecionada.alternativa_c, "alternativa_d": pergunta_selecionada.alternativa_d, "resposta_correta": letra_correta, "resposta_usuario": resposta_usuario, "pontos_ganhos": pontos_ganhos, "dificuldade": pergunta_selecionada.dificuldade}
-      }
-      perguntas_respondidas.push(info_resposta)
-    }
   }
   
   // Registra o envio da resposta no SQL caso esteja no modo visitante
@@ -484,11 +473,25 @@ async function enviarResposta(pulando = false) {
 
     // Altera a pontuação do usuário após o envio da resposta
     alterarPontuacaoUsuario(pontuacoes_usuario[tema_atual], pontuacoes_usuario[tema_atual] + pontos_ganhos, callbackAtualizarUI)
-    pontuacoes_usuario[tema_atual] = pontuacoes_usuario[tema_atual] + pontos_ganhos
+    pontuacoes_usuario[tema_atual] = pontuacoes_usuario[tema_atual] + pontos_ganhos;
+    localStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_usuario));
     atualizarRankingVisual();
   }
 
   if (prosseguir_com_resultado) {
+    // Armazena informações que serão úteis depois na tela de resultado
+    if (modo_jogo === "desafio" || sessionStorage["modoVisitante"] === "true") {
+      let info_resposta;
+      if (tipo_pergunta === 'discursiva') {
+        info_resposta = {"enunciado": pergunta_selecionada.enunciado, "respostas_aceitas": respostas_corretas, "resposta_usuario": resposta_usuario, "usou_dica": dica_gasta, "pontos_ganhos": pontos_ganhos, "dificuldade": pergunta_selecionada.dificuldade}
+      }
+      else {
+        info_resposta = {"enunciado": pergunta_selecionada.enunciado, "alternativa_a": pergunta_selecionada.alternativa_a, "alternativa_b": pergunta_selecionada.alternativa_b, "alternativa_c": pergunta_selecionada.alternativa_c, "alternativa_d": pergunta_selecionada.alternativa_d, "resposta_correta": letra_correta, "resposta_usuario": resposta_usuario, "pontos_ganhos": pontos_ganhos, "dificuldade": pergunta_selecionada.dificuldade}
+      }
+        perguntas_respondidas.push(info_resposta)
+    }
+    
+    // Mostra se acertou a resposta e os botões "próxima" e "finalizar"
     mostrarResultadoResposta(acertou, pontos_ganhos);
     mostrarBotoesAcao();
   } 
@@ -504,10 +507,7 @@ function esconderRespostasAceitas() {
 }
 
 function finalizarQuiz() {
-  if (sessionStorage["modoVisitante"] === "true") {
-    window.location.href = "/home";
-  }
-  else if (modo_jogo === 'desafio') {
+  if (modo_jogo === 'desafio' || sessionStorage["modoVisitante"] === "true") {
     localStorage.setItem("perguntas_respondidas", JSON.stringify(perguntas_respondidas));
     localStorage.setItem("rankings_usuario", JSON.stringify(rankings_usuario));
     window.location.href = "/resultado";

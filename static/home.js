@@ -19,6 +19,9 @@ const modalOnboarding = document.getElementById("modal-onboarding");
 const btnOnboardingOk = document.getElementById("btn-onboarding-ok");
 
 if (sessionStorage.getItem("modoVisitante") === "true") {
+  // Muda o texto do botão de logout para "criar conta"
+  document.getElementById("btn-logout").textContent = "Criar conta";
+  document.getElementById("btn-pesquisa").style.display = "none"
 
   // Evita repetição do aviso para quem entra
   const jaViuAviso = sessionStorage.getItem("avisoVisitanteExibido");
@@ -34,12 +37,15 @@ if (sessionStorage.getItem("modoVisitante") === "true") {
   }
 }
 else {
+  document.getElementById("btn-pesquisa").style.display = ""
   const onboarding_concluido = localStorage.getItem("onboarding_concluido");
   if (onboarding_concluido === "false") {
     // Mandei printar no terminal, sei que está chegando aqui
     modalOnboarding.classList.remove("hidden");
   }
 }
+document.getElementById("btn-doacoes").style.display = ""
+document.getElementById("btn-logout").style.display = ""
 
 async function iniciarQuiz(event) {
   // Atualiza o tema atual e modo de jogo no localStorage
@@ -209,14 +215,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Implementa a função de clique no botão de pesquisa
   document.getElementById("btn-pesquisa").addEventListener("click", async () => {
-    if (sessionStorage.getItem("modoVisitante") === "false") {
-      const response = await fetchAutenticado("/pesquisa");
-      if (response.ok) {
-        window.location.href = "/pesquisa";
-      }
-    }
-    else {
-      exibirMensagem(mensagem, "É preciso criar uma conta para acessar o mecanismo de pesquisa de perguntas", 'red')
+    const response = await fetchAutenticado("/pesquisa");
+    if (response.ok) {
+      window.location.href = "/pesquisa";
     }
   });
 
