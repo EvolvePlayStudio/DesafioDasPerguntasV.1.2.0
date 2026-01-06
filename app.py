@@ -1197,6 +1197,7 @@ def log_visitante():
     acertou = dados.get("acertou")
     tempo_gasto = dados.get("tempo_gasto")
     id_visitante = dados.get("id_visitante")
+    usou_dica = dados.get("usou_dica")
 
     if evento not in (
         "Tema escolhido",
@@ -1217,8 +1218,9 @@ def log_visitante():
             resposta_enviada,
             acertou,
             tempo_gasto,
-            id_visitante
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            id_visitante,
+            usou_dica
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, (
         evento,
         tema,
@@ -1227,7 +1229,8 @@ def log_visitante():
         resposta_enviada,
         acertou,
         tempo_gasto,
-        id_visitante
+        id_visitante,
+        usou_dica
     ))
 
     conn.commit()
