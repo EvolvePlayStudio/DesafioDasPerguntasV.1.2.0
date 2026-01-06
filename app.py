@@ -102,7 +102,7 @@ img.save("static/qrcode.png")
 def api_regras_pontuacao():
     try:
         regras_pontuacao = carregar_regras_pontuacao()
-        return jsonify(success=True, regras_pontuacoes=regras_pontuacao)
+        return jsonify(success=True, regras_pontuacao=regras_pontuacao)
     except Exception:
         return jsonify(
             success=False,

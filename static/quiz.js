@@ -1,5 +1,19 @@
 import { deveEncerrarQuiz, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado } from "./utils.js"
 
+// Envia erros para a base de dados caso ocorram (necessário enviar a linha onde ocorre o erro para melhor depuração)
+window.onerror = function (message) {
+  fetch("/api/debug/frontend", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      mensagem: String(message),
+      pagina: location.pathname,
+      id_visitante: localStorage.getItem("id_visitante"),
+      user_agent: navigator.userAgent
+    })
+  }).catch(() => {});
+};
+
 let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"));
 let perguntas_respondidas = [];
 let aguardando_proxima = false // Variável que indica quando se está aguardando próxima pergunta
@@ -55,19 +69,6 @@ const GAP_ANTES_DA_LETRA      = 120;
 const GAP_LETRA_PARA_TEXTO    = 180;
 const GAP_ENTRE_ALTERNATIVAS  = 380;
 const VELOCIDADE_LETRA        = 25;
-
-window.onerror = function (message) {
-  fetch("/api/debug/frontend", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      mensagem: String(message),
-      pagina: location.pathname,
-      id_visitante: localStorage.getItem("id_visitante"),
-      user_agent: navigator.userAgent
-    })
-  }).catch(() => {});
-};
 
 function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
   const intervaloMin = 20; // ms entre frames no máximo, para smooth

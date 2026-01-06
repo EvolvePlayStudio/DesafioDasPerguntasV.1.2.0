@@ -158,17 +158,14 @@ function carregarPreferenciasQuiz() {
   if (tipoRadio) tipoRadio.checked = true;
 }
 
-// ATENÇÃO: SE AS REGRAS DE PONTUAÇÃO MUDAREM, DEVE-SE VER O QUE FAZER AQUI, POIS NÃO SERÁ ATUALIZADA POR QUESTÃO DE ECONOMIA DE EFICIÊNCIA (NÃO ATUALIZA SEMPRE QUE ENTRA EM HOME, A MENOS QUE O LOCALSTORAGE TENHA SIDO LIMPADO)
 async function carregarRegrasPontuacao() {
-    if (localStorage.getItem("regras_pontuacao")) {
-      return;
-    }
     
     const response = await fetch("/api/regras_pontuacao");
     const data = await response.json();
 
     if (!data.success) {
         console.error("Erro ao carregar regras de pontuação");
+        console.log("Erro ao carregar regras de pontuação")
         return;
     }
 
