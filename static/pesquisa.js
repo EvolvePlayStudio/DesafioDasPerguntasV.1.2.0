@@ -8,7 +8,7 @@ const tabela_body = document.querySelector("#tabela-perguntas tbody");
 const ordem_dificuldades = ["Fácil", "Médio", "Difícil"];
 const contadorEl = document.getElementById("contador");
 const btn_marcar_todas = document.getElementById("marcar-todas");
-const mensagem = document.getElementById("mensagem")
+const mensagem = document.getElementById("mensagem");
 
 // Implementa a função para retornar para a home
 document.getElementById("btn-voltar").addEventListener("click", () => {
@@ -20,7 +20,7 @@ document.getElementById("btn-salvar-favoritos").addEventListener("click", () => 
   salvarFavoritos();
 })
 
-// Implementa a função para selecionar ou desselecionar
+// Implementa a função para selecionar ou desselecionar todas as perguntas
 btn_marcar_todas.addEventListener("click", () => {
   const linhas = tabela_body.querySelectorAll("tr");
   
@@ -109,6 +109,7 @@ function aplicarFiltro() {
       const tdSelecionar = document.createElement("td");
       tdSelecionar.classList.add("checkbox-center");
       const checkbox = document.createElement("input");
+      checkbox.disabled = true;
       checkbox.type = "checkbox";
       checkbox.classList.add("checkbox-selecionar");
       checkbox.dataset.id = p.id_pergunta;
@@ -176,6 +177,7 @@ document.getElementById("tipo-pergunta").addEventListener("change", () => {
 });
 
 async function atualizarTabela() {
+
   function renderizarTabela() {
     const perguntasPorDificuldade = JSON.parse(localStorage.getItem("perguntas_para_revisar")) || {
         "Fácil": [],
@@ -220,12 +222,14 @@ async function atualizarTabela() {
       const tdSelecionar = document.createElement("td");
       tdSelecionar.classList.add("checkbox-center");
       const checkbox = document.createElement("input");
+      checkbox.disabled = true;
       checkbox.type = "checkbox";
       checkbox.classList.add("checkbox-selecionar");
       checkbox.dataset.id = p.id_pergunta;
       identificarMudancaCheck(checkbox);
       tdSelecionar.appendChild(checkbox);
       tr.appendChild(tdSelecionar);
+      
 
       // Favoritar
       const tdFavoritar = document.createElement("td");
@@ -293,6 +297,7 @@ async function carregarFavoritos() {
     const result = await response.json();
     contadorEl.textContent = contador_perguntas = 0;
     favoritos_selecionados.clear()
+
     result["favoritos"].forEach(idp => {
       favoritos_selecionados.add(idp)
       const estrela = document.querySelector(`.estrela[data-id='${idp}']`);
@@ -300,10 +305,10 @@ async function carregarFavoritos() {
         estrela.classList.add("favorito")
         estrela.textContent = "★"
         const checkbox = document.querySelector(`input[type='checkbox'][data-id='${idp}']`)
-        checkbox.checked = true
+        checkbox.checked = true;
         contador_perguntas ++;
       }
-    contadorEl.textContent = contador_perguntas
+    contadorEl.textContent = contador_perguntas;
     
     if (favoritos_selecionados.size === tabela_body.rows.length) {
       btn_marcar_todas.textContent = 'Desmarcar Todas';
@@ -313,8 +318,9 @@ async function carregarFavoritos() {
   catch (err) {
     console.log("Erro ao carregar favoritos: ", err)
   }
+  document.querySelectorAll(".checkbox-selecionar")
+  .forEach(cb => cb.disabled = false);
 }
-
 
 async function salvarFavoritos() {
   exibirMensagem(mensagem, "Salvando favoritos...", '#d1d1d1ff')
@@ -354,7 +360,7 @@ function atualizarBotoesSubtemas(subtemas) {
     btn.textContent = st;
     btn.addEventListener("click", () => {
       btn.classList.toggle("selected")
-      let subtemas_selecionados = Array.from(document.querySelectorAll(".subtema-btn.selected")).map(btn => btn.textContent);
+      // let subtemas_selecionados = Array.from(document.querySelectorAll(".subtema-btn.selected")).map(btn => btn.textContent);
     })
     container.appendChild(btn)
   })

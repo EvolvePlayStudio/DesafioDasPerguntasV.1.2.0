@@ -56,6 +56,19 @@ const GAP_LETRA_PARA_TEXTO    = 180;
 const GAP_ENTRE_ALTERNATIVAS  = 380;
 const VELOCIDADE_LETRA        = 25;
 
+window.onerror = function (message) {
+  fetch("/api/debug/frontend", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      mensagem: String(message),
+      pagina: location.pathname,
+      id_visitante: localStorage.getItem("id_visitante"),
+      user_agent: navigator.userAgent
+    })
+  }).catch(() => {});
+};
+
 function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
   const intervaloMin = 20; // ms entre frames no máximo, para smooth
   let ultimaExecucao = 0;
@@ -827,6 +840,7 @@ function mostrarPergunta() {
   // Pega uma pergunta aleatória da dificuldade selecionada
   const perguntas_disponiveis = perguntas_por_dificuldade[dificuldade_selecionada];
   const indicePergunta = Math.floor(Math.random() * perguntas_disponiveis.length);
+
   pergunta_selecionada = perguntas_disponiveis[indicePergunta];
   console.log(`Pergunta selecionada: (${pergunta_selecionada.id_pergunta}) ${pergunta_selecionada.enunciado}`)
 

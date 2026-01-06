@@ -646,6 +646,31 @@ def confirmar_email():
         if cur: cur.close()
         if conn: conn.close()
 
+@app.route("/api/debug/frontend", methods=["POST"])
+def debug_frontend():
+    data = request.get_json()
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO debug_frontend (
+            mensagem, pagina, id_visitante, user_agent
+        )
+        VALUES (%s,%s,%s,%s)
+    """, (
+        data.get("mensagem"),
+        data.get("pagina"),
+        data.get("id_visitante"),
+        data.get("user_agent")
+    ))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return "", 204
+
 def gerar_token_confirmacao(tamanho=32):
     alfabeto = string.ascii_letters + string.digits
     return ''.join(secrets.choice(alfabeto) for _ in range(tamanho))
