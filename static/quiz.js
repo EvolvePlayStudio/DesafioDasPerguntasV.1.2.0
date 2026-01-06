@@ -465,7 +465,8 @@ async function enviarResposta(pulando = false) {
       resposta_enviada: resposta_usuario,
       acertou: acertou,
       tempo_gasto: tempo_gasto,
-      id_visitante: localStorage.getItem("id_visitante")
+      id_visitante: localStorage.getItem("id_visitante"),
+      usou_dica: dica_gasta
     })
     }).catch(() => {});
 
