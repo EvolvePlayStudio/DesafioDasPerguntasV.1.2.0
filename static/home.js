@@ -35,6 +35,13 @@ if (sessionStorage.getItem("modoVisitante") === "true") {
     idVisitante = crypto.randomUUID();
     localStorage.setItem("id_visitante", idVisitante);
   }
+
+  // Envia uma vez para o backend
+  fetch("/api/registrar_visitante", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id_visitante: idVisitante })
+  });
 }
 else {
   document.getElementById("btn-pesquisa").style.display = ""

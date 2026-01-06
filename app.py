@@ -66,6 +66,17 @@ QUESTION_CONFIG = {
             "p.dificuldade",
             "p.versao"
         ],
+        'select_cols_visitante': [
+            'p.id_pergunta',
+            'p.subtemas',
+            'p.enunciado',
+            'p.respostas_corretas',   
+            'p.dica',
+            'p.nota',
+            "COALESCE(f.estrelas, NULL) AS estrelas",
+            "p.dificuldade",
+            "p.versao"
+        ],
         'tipo_str': 'Discursiva'
     },
     'objetiva': {
@@ -85,6 +96,20 @@ QUESTION_CONFIG = {
             "p.dificuldade",
             "p.versao"
         ],
+        'select_cols_visitante': [
+            'p.id_pergunta',
+            'p.subtemas',
+            'p.enunciado',
+            'p.alternativa_a',
+            'p.alternativa_b',
+            'p.alternativa_c',
+            'p.alternativa_d',
+            'p.resposta_correta',
+            'p.nota',
+            "COALESCE(f.estrelas, NULL) AS estrelas",
+            "p.dificuldade",
+            "p.versao"
+        ],
         'tipo_str': 'Objetiva'
     }
 }
@@ -97,6 +122,48 @@ scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
 codigo_pix = os.getenv("QR_CODE")
 img = qrcode.make(codigo_pix)
 img.save("static/qrcode.png")
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if session.get("visitante"):
+            return f(user_id=None, *args, **kwargs)
+        token = None
+
+        # 1️⃣ Tenta extrair do header Authorization
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+
+        # 2️⃣ Se não tiver no header, tenta pegar do cookie
+        if not token:
+            token = request.cookies.get("token_sessao")
+        if not token:
+            return redirect("/login")
+
+        # 3️⃣ Verifica token no banco
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT id_usuario, ativo
+                FROM sessoes 
+                WHERE token = %s AND ativo=TRUE AND expira_em > NOW()
+            """, (token,))
+            row = cur.fetchone()
+        except Exception:
+            return jsonify({"message": "Erro ao validar sessão"}), 500
+        finally:
+            if cur: cur.close()
+            if conn: conn.close()
+
+        if not row:
+            return jsonify({"message": "Sessão expirada"}), 401
+
+        # Passa o user_id para a rota
+        return f(user_id=row[0], *args, **kwargs)
+
+    return decorated
 
 @app.route("/api/regras_pontuacao")
 def api_regras_pontuacao():
@@ -135,6 +202,50 @@ def entrar_visitante():
     session["visitante"] = True
     pagina_visitada("Home (Visitante)")
     return redirect("/home")
+
+@app.route("/enviar_feedback", methods=["POST"])
+@token_required
+def enviar_feedback(user_id):
+    data = request.get_json()
+    id_pergunta = data.get("id_pergunta")
+    tipo_pergunta = data.get("tipo_pergunta").capitalize()
+    estrelas = data.get("estrelas")
+    versao_pergunta = data.get("versao_pergunta")
+    id_usuario = session.get("id_usuario")
+    visitante = session.get("visitante")
+    id_visitante = session.get("id_visitante")
+
+    if visitante:
+        if not all([id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante]):
+            return jsonify({"erro": "Dados incompletos como visitante"}), 400
+    else:
+        if not all([id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario]):
+            return jsonify({"erro": "Dados incompletos como usuário cadastrado"}), 400
+        
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        if visitante:
+            cur.execute("""
+                INSERT INTO feedbacks (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id_pergunta, tipo_pergunta, id_visitante)
+                DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
+            """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, visitante))
+        else:
+            cur.execute("""
+                INSERT INTO feedbacks (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id_pergunta, tipo_pergunta, id_usuario)
+                DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
+            """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, visitante))
+        conn.commit()
+        cur.close()
+        return jsonify({"sucesso": True})
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return jsonify({"erro": str(e)}), 500
 
 def identificar_dispositivo():
     ua = (request.headers.get("User-Agent") or "").lower()
@@ -194,48 +305,6 @@ def iniciar_agendamento():
     scheduler.start()
 
 iniciar_agendamento()
-
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if session.get("visitante"):
-            return f(user_id=None, *args, **kwargs)
-        token = None
-
-        # 1️⃣ Tenta extrair do header Authorization
-        auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            token = auth_header.split(" ")[1]
-
-        # 2️⃣ Se não tiver no header, tenta pegar do cookie
-        if not token:
-            token = request.cookies.get("token_sessao")
-        if not token:
-            return redirect("/login")
-
-        # 3️⃣ Verifica token no banco
-        try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            cur.execute("""
-                SELECT id_usuario, ativo
-                FROM sessoes 
-                WHERE token = %s AND ativo=TRUE AND expira_em > NOW()
-            """, (token,))
-            row = cur.fetchone()
-        except Exception:
-            return jsonify({"message": "Erro ao validar sessão"}), 500
-        finally:
-            if cur: cur.close()
-            if conn: conn.close()
-
-        if not row:
-            return jsonify({"message": "Sessão expirada"}), 401
-
-        # Passa o user_id para a rota
-        return f(user_id=row[0], *args, **kwargs)
-
-    return decorated
 
 @app.route("/", methods=["GET"])
 def index():
@@ -765,53 +834,6 @@ def get_favoritos_usuario():
 
     return jsonify({"favoritos": favoritos})
 
-@app.route("/api/favoritos", methods=["POST"])
-@token_required
-def salvar_favoritos(user_id):
-    data = request.get_json(force=True)
-
-    tema = data.get("tema_atual")
-    tipo_pergunta = data.get("tipo_pergunta")
-    adicionar = set(map(int, data.get("adicionar", [])))
-    remover   = set(map(int, data.get("remover", [])))
-
-    if not tema or not tipo_pergunta:
-        return jsonify({"success": False, "msg": "Parâmetros inválidos."}), 400
-
-    conn = cur = None
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-
-        # Remover apenas os IDs explicitamente enviados
-        if remover:
-            cur.execute("""
-                DELETE FROM favoritos_usuarios
-                WHERE id_usuario = %s
-                  AND tipo_pergunta = %s
-                  AND tema = %s
-                  AND id_pergunta = ANY(%s)
-            """, (user_id, tipo_pergunta, tema, list(remover)))
-
-        # Inserir os IDs explicitamente enviados
-        for id_pergunta in adicionar:
-            cur.execute("""
-                INSERT INTO favoritos_usuarios (id_usuario, id_pergunta, tipo_pergunta, tema)
-                VALUES (%s, %s, %s, %s)
-                ON CONFLICT (id_usuario, id_pergunta, tipo_pergunta) DO NOTHING
-            """, (user_id, id_pergunta, tipo_pergunta, tema))
-
-        conn.commit()
-        return jsonify({"success": True, "msg": "Favoritos atualizados com sucesso."}), 200
-
-    except Exception as e:
-        if conn: conn.rollback()
-        app.logger.exception("Erro ao salvar favoritos do usuário %s", user_id)
-        return jsonify({"success": False, "msg": "Erro ao salvar favoritos."}), 500
-    finally:
-        if cur: cur.close()
-        if conn: conn.close()
-
 @app.route("/checkout/<metodo>/<int:plano_id>")
 def checkout(metodo, plano_id):
     conn = cur = None
@@ -993,6 +1015,7 @@ def listar_perguntas(user_id):
     modo = (request.args.get('modo') or '').lower()
     tipo_pergunta = (request.args.get('tipo-de-pergunta') or '').lower()
     id_usuario = session.get('id_usuario')
+    id_visitante = session.get('id_visitante')
     visitante = session.get("visitante")
 
     # Configurações locais
@@ -1005,6 +1028,9 @@ def listar_perguntas(user_id):
     if not id_usuario and not visitante:
         print("Usuário não autenticado")
         return jsonify({'erro': 'Usuário não autenticado'}), 401
+    if not id_visitante and visitante:
+        print("Visitante não autenticado")
+        return jsonify({'erro': 'Visitante não autenticado'}), 401
     
     cfg = QUESTION_CONFIG.get(tipo_pergunta)
     if not cfg:
@@ -1029,6 +1055,7 @@ def listar_perguntas(user_id):
             is_privileged = int(id_usuario) in privileged_ids
 
         select_clause = ",\n".join(cfg['select_cols'])
+        select_cols_visitante = ",\n".join(cfg['select_cols_visitante'])
         tipo_str = cfg['tipo_str']   # Usado para filtrar feedbacks/respostas
         table = cfg['table']         # Nome da tabela — vindo do cfg interno (seguro)
 
@@ -1037,19 +1064,29 @@ def listar_perguntas(user_id):
         """
         where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
         """
-        
-        sql = f"""
-            SELECT {select_clause}
-            FROM {table} p
-            LEFT JOIN respostas_usuarios r
-                ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s AND r.tipo_pergunta = %s
-            LEFT JOIN feedbacks f
-                ON p.id_pergunta = f.id_pergunta AND f.id_usuario = %s AND f.tipo_pergunta = %s
-            WHERE p.tema = %s AND {where_status}
-            LIMIT %s
-        """
+        if visitante:
+            sql = f"""
+                SELECT {select_cols_visitante}
+                FROM {table} p
+                LEFT JOIN feedbacks f
+                    ON p.id_pergunta = f.id_pergunta AND f.id_visitante = %s AND f.tipo_pergunta = %s
+                WHERE p.tema = %s AND {where_status}
+                LIMIT %s
+            """
+            params = (id_visitante, tipo_str, tema, limit)
+        else:
+            sql = f"""
+                SELECT {select_clause}
+                FROM {table} p
+                LEFT JOIN respostas_usuarios r
+                    ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s AND r.tipo_pergunta = %s
+                LEFT JOIN feedbacks f
+                    ON p.id_pergunta = f.id_pergunta AND f.id_usuario = %s AND f.tipo_pergunta = %s
+                WHERE p.tema = %s AND {where_status}
+                LIMIT %s
+            """
+            params = (id_usuario, tipo_str, id_usuario, tipo_str, tema, limit)
 
-        params = (id_usuario, tipo_str, id_usuario, tipo_str, tema, limit)
         cur.execute(sql, params)
         linhas = cur.fetchall()
 
@@ -1057,14 +1094,15 @@ def listar_perguntas(user_id):
 
         for row in linhas:
             if visitante:
+                respondida = False
                 if tipo_pergunta == "discursiva":
                     if row["id_pergunta"] not in ids_perguntas_discursivas_visitante[tema]:
                         continue
                 else:
                     if row["id_pergunta"] not in ids_perguntas_objetivas_visitante[tema]:
                         continue
-
-            respondida = bool(row.get('respondida'))
+            else:
+                respondida = bool(row.get('respondida'))
             dificuldade = row.get('dificuldade') or 'Médio'  # Se por algum motivo for nulo, evita KeyError
             
             sb = row.get('subtemas') or []
@@ -1148,7 +1186,7 @@ def listar_perguntas(user_id):
 
 @app.route("/log/visitante", methods=["POST"])
 def log_visitante():
-    """return jsonify({"status": "ok"}), 200"""
+    return jsonify({"status": "ok"}), 200
     dados = request.get_json()
 
     evento = dados.get("evento")
@@ -1271,6 +1309,53 @@ def politica_privacidade():
 def termos_uso():
     session['from_login'] = False
     return render_template("termos_de_uso.html")
+
+@app.route("/api/favoritos", methods=["POST"])
+@token_required
+def salvar_favoritos(user_id):
+    data = request.get_json(force=True)
+
+    tema = data.get("tema_atual")
+    tipo_pergunta = data.get("tipo_pergunta")
+    adicionar = set(map(int, data.get("adicionar", [])))
+    remover   = set(map(int, data.get("remover", [])))
+
+    if not tema or not tipo_pergunta:
+        return jsonify({"success": False, "msg": "Parâmetros inválidos."}), 400
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Remover apenas os IDs explicitamente enviados
+        if remover:
+            cur.execute("""
+                DELETE FROM favoritos_usuarios
+                WHERE id_usuario = %s
+                  AND tipo_pergunta = %s
+                  AND tema = %s
+                  AND id_pergunta = ANY(%s)
+            """, (user_id, tipo_pergunta, tema, list(remover)))
+
+        # Inserir os IDs explicitamente enviados
+        for id_pergunta in adicionar:
+            cur.execute("""
+                INSERT INTO favoritos_usuarios (id_usuario, id_pergunta, tipo_pergunta, tema)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (id_usuario, id_pergunta, tipo_pergunta) DO NOTHING
+            """, (user_id, id_pergunta, tipo_pergunta, tema))
+
+        conn.commit()
+        return jsonify({"success": True, "msg": "Favoritos atualizados com sucesso."}), 200
+
+    except Exception as e:
+        if conn: conn.rollback()
+        app.logger.exception("Erro ao salvar favoritos do usuário %s", user_id)
+        return jsonify({"success": False, "msg": "Erro ao salvar favoritos."}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
 
 @app.route("/sobre-o-app")
 def sobre_app():
@@ -1428,37 +1513,6 @@ def usar_dica(user_id):
 
     return jsonify(success=True, dicas_restantes=novas_dicas)
 
-@app.route("/enviar_feedback", methods=["POST"])
-@token_required
-def enviar_feedback(user_id):
-    data = request.get_json()
-    id_pergunta = data.get("id_pergunta")
-    tipo_pergunta = data.get("tipo_pergunta").capitalize()
-    email_usuario = session.get("email")
-    estrelas = data.get("estrelas")
-    versao_pergunta = data.get("versao_pergunta")
-    id_usuario = session.get("id_usuario")
-
-    if not all([id_pergunta, tipo_pergunta, email_usuario, estrelas, versao_pergunta, id_usuario]):
-        return jsonify({"erro": "Dados incompletos"}), 400
-    
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO feedbacks (id_pergunta, tipo_pergunta, email_usuario, estrelas, versao_pergunta, id_usuario)
-            VALUES (%s, %s, %s, %s, %s, %s)
-            ON CONFLICT (id_pergunta, tipo_pergunta, id_usuario)
-            DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
-        """, (id_pergunta, tipo_pergunta, email_usuario, estrelas, versao_pergunta, id_usuario))
-        conn.commit()
-        cur.close()
-        return jsonify({"sucesso": True})
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        return jsonify({"erro": str(e)}), 500
-
 def buscar_pontuacoes_usuario(id_usuario):
     """Busca pontuações do usuário em cada tema de perguntas"""
     pontuacoes_usuario = {}
@@ -1503,9 +1557,9 @@ def registrar_resposta(user_id):
             cur.execute("""
                 INSERT INTO respostas_usuarios (
                     id_usuario, id_pergunta, tipo_pergunta, versao_pergunta, resposta_usuario,
-                    acertou, usou_dica, pontos_ganhos, tempo_gasto, pontos_usuario
+                    acertou, usou_dica, pontos_ganhos, tempo_gasto, pontos_usuario, tema
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 id_usuario,
                 dados["id_pergunta"],
@@ -1516,7 +1570,8 @@ def registrar_resposta(user_id):
                 dados.get("usou_dica", False),
                 dados["pontos_ganhos"],
                 dados["tempo_gasto"],
-                dados["pontos_usuario"]
+                dados["pontos_usuario"],
+                dados["tema"]
             ))
             # Atualiza a pontuação do usuário
             cur.execute("""
@@ -1574,6 +1629,16 @@ def registrar_resposta(user_id):
     finally:
         if cur: cur.close()
         if conn: conn.close()
+
+@app.route("/api/registrar_visitante", methods=["POST"])
+def registrar_visitante():
+    data = request.get_json()
+    id_visitante = data.get("id_visitante")
+
+    if id_visitante:
+        session["id_visitante"] = id_visitante
+
+    return jsonify({"ok": True})
 
 if not database_url:
     if __name__ == '__main__':

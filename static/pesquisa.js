@@ -71,7 +71,7 @@ function aplicarFiltro() {
   tabela_body.innerHTML = ""; // limpa antes de renderizar de novo
 
   ordem_dificuldades.forEach(dificuldade => {
-    if (!dificuldadesSelecionadas.includes(dificuldade)) return; // só mantém dificuldades ativas
+    if (!dificuldadesSelecionadas.includes(dificuldade)) return; // Só mantém dificuldades ativas
 
     (perguntasPorDificuldade[dificuldade] || []).forEach(p => {
       // Verifica se tem ao menos 1 subtema em comum
@@ -131,6 +131,7 @@ function aplicarFiltro() {
       tr.appendChild(tdFavoritar);
       tabela_body.appendChild(tr);
       });
+      carregarFavoritos();
   });
 }
 
@@ -230,7 +231,6 @@ async function atualizarTabela() {
       tdSelecionar.appendChild(checkbox);
       tr.appendChild(tdSelecionar);
       
-
       // Favoritar
       const tdFavoritar = document.createElement("td");
       const star = document.createElement("span");
@@ -291,6 +291,7 @@ function toggleFavorito(estrelaEl, id_pergunta)  {
 }
 
 async function carregarFavoritos() {
+  console.log("Irei carregar os favoritos")
   btn_marcar_todas.textContent = 'Marcar Todas';
   try {
     const response = await fetch(`/api/carregar-favoritos?tema-atual=${tema_atual}&tipo-pergunta=${tipo_pergunta}`);
@@ -318,6 +319,7 @@ async function carregarFavoritos() {
   catch (err) {
     console.log("Erro ao carregar favoritos: ", err)
   }
+  console.log("Reativando checkboxes")
   document.querySelectorAll(".checkbox-selecionar")
   .forEach(cb => cb.disabled = false);
 }

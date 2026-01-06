@@ -247,7 +247,7 @@ function configurarEstrelas() {
           id_pergunta: id_pergunta,
           tipo_pergunta: tipo_pergunta,
           estrelas: valor,
-          versao_pergunta: versao_pergunta,
+          versao_pergunta: versao_pergunta
         })
       })
       .then(res => res.json())
@@ -300,8 +300,7 @@ async function enviarResposta(pulando = false) {
     }
   }
 
-  function mostrarResultadoResposta(correto, pontos_ganhos) {
-    // ATENÇÃO: TALVEZ SÓ SEJA NECESSÁRIO OS PONTOS_GANHOS AQUI E NÃO A BOOLEANA CORRETO
+  function mostrarResultadoResposta(correto) {
     resultado.style.display = "block";
     if (tipo_pergunta === 'discursiva') {
 
@@ -343,14 +342,12 @@ async function enviarResposta(pulando = false) {
   botoes_enviar_div.style.display = "none";
 
   // Chama as estrelas de feedback e carrega as anteriores enviadas pelo usuário caso esteja no modo Revisão
-  if (sessionStorage.getItem("modoVisitante") === "false") {
-    if (modo_jogo === "revisao") {
-      const avaliacao_anterior = pergunta_selecionada.estrelas || 0;
-      renderizarEstrelas(avaliacao_anterior);
-    }
-    document.getElementById("avaliacao").style.display = "block";
+  if (modo_jogo === "revisao") {
+    const avaliacao_anterior = pergunta_selecionada.estrelas || 0;
+    renderizarEstrelas(avaliacao_anterior);
   }
-
+  document.getElementById("avaliacao").style.display = "block";
+  
   // Exibe os comentários dos outros usuários
   document.getElementById('comentarios').style.display = 'block';
   }
@@ -476,7 +473,6 @@ async function enviarResposta(pulando = false) {
     alterarPontuacaoUsuario(pontuacoes_usuario[tema_atual], pontuacoes_usuario[tema_atual] + pontos_ganhos, callbackAtualizarUI)
     pontuacoes_usuario[tema_atual] = pontuacoes_usuario[tema_atual] + pontos_ganhos;
     localStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_usuario));
-    console.log("1.Irei alterar ranking visual")
     atualizarRankingVisual();
   }
 
