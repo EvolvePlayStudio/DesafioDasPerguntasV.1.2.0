@@ -58,7 +58,7 @@ async function buscarPerguntas(tema, palavras) {
   const tabela = document.querySelector("#tabela-perguntas tbody");
   tabela.innerHTML = `
     <tr>
-      <td colspan="7" style="text-align:center; font-weight:bold;">
+      <td colspan="8" style="text-align:center; font-weight:bold;">
         Buscando...
       </td>
     </tr>
@@ -80,7 +80,7 @@ async function buscarPerguntas(tema, palavras) {
     if (dados.length === 0) {
       tabela.innerHTML = `
         <tr>
-          <td colspan="7" style="text-align:center; font-weight:bold;">
+          <td colspan="8" style="text-align:center; font-weight:bold;">
             Nenhuma pergunta encontrada.
           </td>
         </tr>
@@ -90,6 +90,7 @@ async function buscarPerguntas(tema, palavras) {
 
     dados.forEach(item => {
       let resposta = item.resposta;
+      console.log("Item é: ", item)
       if (item.tipo === "Discursiva" && Array.isArray(resposta)) {
         resposta = resposta.join(", ");
       }
@@ -98,6 +99,7 @@ async function buscarPerguntas(tema, palavras) {
         <tr>
           <td>${item.id_pergunta}</td>
           <td>${item.tipo}</td>
+          <td>${item.tema}</td>
           <td>${item.subtemas}</td>
           <td>${item.enunciado}</td>
           <td>${resposta}</td>
@@ -111,7 +113,7 @@ async function buscarPerguntas(tema, palavras) {
     console.error(err);
     tabela.innerHTML = `
       <tr>
-        <td colspan="7" style="text-align:center; font-weight:bold; color:red;">
+        <td colspan="8" style="text-align:center; font-weight:bold; color:red;">
           Erro ao buscar perguntas.
         </td>
       </tr>

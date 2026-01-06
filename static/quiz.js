@@ -1,4 +1,4 @@
-import { deveEncerrarQuiz, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado } from "./utils.js"
+import { detectarModoTela, deveEncerrarQuiz, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado } from "./utils.js"
 
 // Envia erros para a base de dados caso ocorram (necessário enviar a linha onde ocorre o erro para melhor depuração)
 window.onerror = function (message) {
@@ -466,7 +466,8 @@ async function enviarResposta(pulando = false) {
       acertou: acertou,
       tempo_gasto: tempo_gasto,
       id_visitante: localStorage.getItem("id_visitante"),
-      usou_dica: dica_gasta
+      usou_dica: dica_gasta,
+      modo_tela_usuario: detectarModoTela()
     })
     }).catch(() => {});
 
@@ -714,7 +715,8 @@ function mostrarEnunciado(texto, elemento, callback) {
           tema: tema_atual,
           tipo_pergunta: tipo_pergunta,
           id_pergunta: pergunta_selecionada.id_pergunta,
-          id_visitante: localStorage.getItem("id_visitante")
+          id_visitante: localStorage.getItem("id_visitante"),
+          modo_tela_usuario: detectarModoTela()
         })
       }).catch(() => {});
       }
@@ -905,7 +907,6 @@ function mostrarPergunta() {
     document.getElementById("dica-icon").style.display = "none";
       }
     
-
     // No modo revisão não exibe contador de dicas
     if (modo_jogo === 'revisao') {
       document.getElementById("contador-dicas").textContent = ''

@@ -1,4 +1,4 @@
-import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual } from "./utils.js";
+import { detectarModoTela, deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual } from "./utils.js";
 
 const MODO_VISITANTE =
   document.body.dataset.modoVisitante === "true";
@@ -121,7 +121,8 @@ async function iniciarQuiz(event) {
         body: JSON.stringify({
           evento: "Tema escolhido",
           tema: tema_atual,
-          id_visitante: localStorage.getItem("id_visitante")
+          id_visitante: localStorage.getItem("id_visitante"),
+          modo_tela_usuario: detectarModoTela()
         })
       }).catch(() => {});
       

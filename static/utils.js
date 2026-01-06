@@ -1,3 +1,13 @@
+export function detectarModoTela() {
+  // Identifica se o usuário us modo site para computador
+  const largura = window.innerWidth;
+  const touch = navigator.maxTouchPoints > 0;
+
+  if (touch && largura >= 980) return "mobile_desktop_mode";
+  if (touch && largura < 980) return "mobile_normal";
+  if (!touch) return "desktop";
+}
+
 export function deveEncerrarQuiz(perguntas_por_dificuldade) {
   const ranking = obterInfoRankingAtual().ranking;
 

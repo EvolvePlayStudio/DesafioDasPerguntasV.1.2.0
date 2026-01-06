@@ -1198,6 +1198,7 @@ def log_visitante():
     tempo_gasto = dados.get("tempo_gasto")
     id_visitante = dados.get("id_visitante")
     usou_dica = dados.get("usou_dica")
+    modo_tela = dados.get("modo_tela_usuario")
 
     if evento not in (
         "Tema escolhido",
@@ -1219,8 +1220,9 @@ def log_visitante():
             acertou,
             tempo_gasto,
             id_visitante,
-            usou_dica
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            usou_dica,
+            modo_tela
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, (
         evento,
         tema,
@@ -1230,7 +1232,8 @@ def log_visitante():
         acertou,
         tempo_gasto,
         id_visitante,
-        usou_dica
+        usou_dica,
+        modo_tela
     ))
 
     conn.commit()
@@ -1382,7 +1385,7 @@ def pesquisar_perguntas():
 
     # -------- OBJETIVAS --------
     query_obj = """
-    SELECT id_pergunta, subtemas, enunciado,
+    SELECT id_pergunta, tema, subtemas, enunciado,
         alternativa_a, alternativa_b, alternativa_c, alternativa_d,
         resposta_correta, dificuldade, status
     FROM perguntas_objetivas
@@ -1409,28 +1412,29 @@ def pesquisar_perguntas():
 
         # Mapeia letra -> texto
         alternativas = {
-            "A": row[3],
-            "B": row[4],
-            "C": row[5],
-            "D": row[6]
+            "A": row[4],
+            "B": row[5],
+            "C": row[6],
+            "D": row[7]
         }
-        texto_correto = alternativas.get(row[7], "")
+        texto_correto = alternativas.get(row[8], "")
 
         resultados.append({
             "id_pergunta": row[0],
             "tipo": "Objetiva",
-            "subtemas": row[1],
-            "enunciado": row[2],
+            "tema": row[1],
+            "subtemas": row[2],
+            "enunciado": row[3],
             "resposta": texto_correto,   # <<< AGORA ENVIA O TEXTO
-            "dificuldade": row[8],
-            "status": row[9]
+            "dificuldade": row[9],
+            "status": row[10]
         })
 
     # ================================
     #   2. PERGUNTAS DISCURSIVAS
     # ================================
     query_disc = """
-    SELECT id_pergunta, subtemas, enunciado, respostas_corretas, dificuldade, status
+    SELECT id_pergunta, tema, subtemas, enunciado, respostas_corretas, dificuldade, status
     FROM perguntas_discursivas
     WHERE (tema = %s OR tema = 'Variedades')
     AND EXISTS (
@@ -1445,11 +1449,12 @@ def pesquisar_perguntas():
     cur.execute(query_disc, (tema, palavras))
     
     for row in cur.fetchall():
-        id_p, subtemas, enunciado, respostas, dif, status = row
+        id_p, tema, subtemas, enunciado, respostas, dif, status = row
 
         resultados.append({
             "id_pergunta": id_p,
             "tipo": "Discursiva",
+            "tema": tema,
             "subtemas": subtemas,
             "enunciado": enunciado,
             "resposta": respostas,  # array do banco
