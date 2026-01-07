@@ -200,7 +200,7 @@ def carregar_regras_pontuacao():
 def entrar_visitante():
     session.clear()
     session["visitante"] = True
-    pagina_visitada("Home (Visitante)")
+    registrar_pagina_visitada("Home (Visitante)")
     return redirect("/home")
 
 @app.route("/enviar_feedback", methods=["POST"])
@@ -267,17 +267,32 @@ def identificar_dispositivo():
 
     return "Indefinido"
 
-def pagina_visitada(pagina, id_usuario=None):
+@app.route("/log/pagina", methods=["POST"])
+def pagina_visitada():
+    data = request.get_json()
+    pagina = data.get("pagina")
+
+    registrar_pagina_visitada(pagina=pagina)
+
+    if not pagina:
+        return {"error": "Página não informada"}, 400
+
+    return {"sucess": True}, 200
+
+
+def registrar_pagina_visitada(pagina):
     conn = cur = None
+    id_usuario = session.get('id_usuario')
+    id_visitante = session.get('id_visitante')
     try:
         dispositivo = identificar_dispositivo()
 
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO acessos_paginas (pagina, id_usuario, dispositivo) 
-            VALUES (%s, %s, %s)
-        """, (pagina, id_usuario, dispositivo))
+            INSERT INTO acessos_paginas (pagina, id_usuario, dispositivo, id_visitante) 
+            VALUES (%s, %s, %s, %s)
+        """, (pagina, id_usuario, dispositivo, id_visitante))
         conn.commit()
 
     except Exception as e:
@@ -308,7 +323,7 @@ iniciar_agendamento()
 
 @app.route("/", methods=["GET"])
 def index():
-    pagina_visitada("Login")
+    registrar_pagina_visitada("Login")
     return render_template("login.html")  # ou sua página inicial real
 
 @app.route('/favicon.ico')
@@ -633,7 +648,7 @@ def formatar_hora_servidor(timestamp):
 
 @app.route('/verificar_bloqueio')
 def verificar_bloqueio():
-    pagina_visitada("Registro")
+    registrar_pagina_visitada("Registro")
     info = session.get('bloqueio_captcha', {'tentativas_registro': 0, 'bloqueado_ate': 0})
     agora = time.time()
 
@@ -833,40 +848,6 @@ def get_favoritos_usuario():
         if conn: conn.close()
 
     return jsonify({"favoritos": favoritos})
-
-@app.route("/checkout/<metodo>/<int:plano_id>")
-def checkout(metodo, plano_id):
-    conn = cur = None
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT plano, preco FROM regras_plano WHERE id = %s", (plano_id,))
-        plano = cur.fetchone()
-        if not plano:
-            return "Plano não encontrado", 404
-        
-        plano_nome, preco = plano
-
-        if metodo == "cartao":
-            checkout_url = f"https://provedor.com/checkout?plano={plano_id}&metodo=cartao"
-            checkout_url = f"https://www.mercadopago.com.br/developers/pt/guides/checkout"
-        elif metodo == "pix":
-            checkout_url = f"https://provedor.com/checkout?plano={plano_id}&metodo=pix"
-            checkout_url = f"https://dev.pagseguro.uol.com.br/docs/checkout"
-        elif metodo == "boleto":
-            checkout_url = f"https://provedor.com/checkout?plano={plano_id}&metodo=boleto"
-            checkout_url = f"https://docs.pagar.me/"
-        else:
-            return "Método de pagamento inválido", 400
-
-        return redirect(checkout_url)
-
-    except Exception:
-        app.logger.exception("Erro ao iniciar checkout:")
-        return "Erro interno", 500
-    finally:
-        if cur: cur.close()
-        if conn: conn.close()
 
 @app.route("/recuperação-de-senha", methods=["POST"])
 def esqueci_senha():

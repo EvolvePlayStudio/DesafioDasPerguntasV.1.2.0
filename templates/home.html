@@ -241,6 +241,79 @@
       border-radius: 12px;
       text-align: center;
     }
+
+
+
+    .tutorial-lista {
+      padding-left: 20px;
+    }
+
+    .tutorial-lista li {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .tutorial-lista li span {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .tutorial-lista img {
+      max-width: 100%;
+      width: 280px;           /* ajuste fino */
+      display: block;
+      margin-top: 6px;
+      border-radius: 6px;
+    }
+    .modal {
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+    #conteudo-modal {
+      overflow-y: auto;
+      max-height: 65vh;
+      padding-right: 8px;
+    }
+    .tutorial-lista img {
+      max-width: 100%;
+      height: auto;
+      margin-top: 6px;
+      border-radius: 6px;
+    }
+    .tutorial-lista li {
+      margin-bottom: 14px;
+    }
+    .exemplo-navegador {
+      font-size: 0.85em;
+    }
+    .hidden {
+      display: none;
+    }
+    .modal {
+      background-color: var(--cor-fundo-claro);
+      color: black;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .modal-actions button {
+      min-width: 120px;
+    }
+    modal.tutorial-aberto .modal-actions {
+      justify-content: center
+    }
+    @media (max-width: 600px) {
+      .modal-actions {
+        justify-content: center;
+      }
+    }
+
+
+
+
     @media (max-width: 900px) {
       .cards-container {
         grid-template-columns: repeat(2, 1fr);
@@ -300,6 +373,7 @@
         <button id="btn-opcoes" style="display: none;" disabled>Opções</button>
         <button id="btn-pesquisa" style="display: none;">Pesquisa</button>
         <button id="btn-doacoes" style="display: none;">Doações</button>
+        <button id="btn-tutorial" style="display: none;">Tutorial</button>
         <button id="btn-logout" style="display: none;">Sair</button>
       </nav>
     </div>
@@ -392,30 +466,18 @@
 
   <!-- Mensagem para modo visitante -->
   <div id="overlay-visitante" class="overlay hidden">
-  <div class="modal">
-    <h2>Atenção</h2>
+    <div class="modal">
 
-    <p>
-      Caso esteja navegando por smartphone, recomenda-se utilizar o modo
-      <strong>“Site para computador”</strong> para melhor experiência.
-    </p>
+      <h2 id="titulo-modal">Atenção</h2>
 
-    <p>
-      Além disso, tenha em mente que no modo visitante:
-      <ul>
-        <li>Sua pontuação não será registrada</li>
-        <li>As perguntas são poucas, pois são apenas para amostra</li>
-        <li>O modo de pesquisa e revisão de perguntas não está disponível</li>
-        <li>Você não poderá enviar feedback para as perguntas respondidas e nem fazer comentários</li>
-      </ul>
-    </p>
+      <div id="conteudo-modal"></div>
 
-    <p>
-      Para liberar todas as funcionalidades do site, será necessário criar uma conta.
-    </p>
+      <div class="modal-actions">
+        <button id="btn-voltar-tutorial" class="hidden">Voltar</button>
+        <button id="btn-entendi">Entendi</button>
+      </div>
 
-    <button id="btn-entendi">Entendi</button>
-  </div>
+    </div>
   </div>
 
   <!-- Mensagem para quem loga pela primeira vez -->
