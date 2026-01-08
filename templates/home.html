@@ -182,7 +182,6 @@
       flex: 1;
       overflow-y: auto;
       max-height: 58.5vh;
-      max-height: 40.5vh;
       padding: 0.2rem;
       margin-top: 0.4rem;
     }
@@ -207,107 +206,14 @@
     .overlay.hidden {
       display: none;
     }
-    .modal {
-      background: #1f1f1f;
-      color: #ffffff;
-      max-width: 420px;
-      padding: 1.8rem;
-      border-radius: 14px;
-      text-align: center;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-    }
-    .modal h2 {
-      margin-bottom: 1rem;
-    }
-    .modal ul {
-      text-align: left;
-      margin: 0.8rem 0;
-    }
-    .modal button, .modal-content button {
-      margin-top: 1.2rem;
-      padding: 0.6rem 1.4rem;
-      font-weight: 700;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .modal-content {
-      background: var(--cor-fundo-claro);
-      color: #000;
-      max-width: 420px;
-      padding: 1.5rem;
-      border-radius: 12px;
-      text-align: center;
-    }
-    .tutorial-lista {
-      padding-left: 20px;
-    }
-    .tutorial-lista li {
-      margin-bottom: 20px;
-      text-align: left;
-    }
-    .tutorial-lista li span {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 500;
-    }
-    .tutorial-lista img {
-      max-width: 100%;
-      width: 280px;           /* ajuste fino */
-      display: block;
-      margin-top: 6px;
-      border-radius: 6px;
-    }
-    .modal {
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-    }
-    #conteudo-modal {
-      overflow-y: auto;
-      max-height: 65vh;
-      padding-right: 8px;
-    }
-    .tutorial-lista img {
-      max-width: 100%;
-      height: auto;
-      margin-top: 6px;
-      border-radius: 6px;
-    }
-    .tutorial-lista li {
-      margin-bottom: 14px;
-    }
-    .exemplo-navegador {
-      font-size: 0.85em;
-    }
     .hidden {
       display: none;
-    }
-    .modal {
-      background-color: var(--cor-fundo-claro);
-      color: black;
-    }
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      margin-top: 20px;
-    }
-    .modal-actions button {
-      min-width: 120px;
-    }
-    modal.tutorial-aberto .modal-actions {
-      justify-content: center
     }
     @media (max-width: 600px) {
       .modal-actions {
         justify-content: center;
       }
     }
-
-
-
-
     @media (max-width: 900px) {
       .cards-container {
         grid-template-columns: repeat(2, 1fr);
@@ -338,32 +244,6 @@
       padding: 0.3rem 0;
       background-color: var(--cor-fundo-claro);
       font-size: 16px;
-    }
-    #mensagens-informativas {
-      margin-top: 1.2rem;
-      margin-bottom: 0;
-      padding: 8px 12px;
-      text-align: left;
-      align-self: stretch;
-    }
-    .mensagem.informativa {
-      opacity: 1 !important;
-      max-width: 900px;
-      margin: 1rem auto 4rem auto; /* espaço para o footer */
-      padding: 0.9rem 1.2rem;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 10px;
-      color: white;
-      font-size: 0.9rem;
-      line-height: 1.4;
-    }
-    .mensagem.informativa p {
-      margin: 0.4rem 0;
-    }
-    .mensagem.informativa a {
-      color: #6cb6ff;
-      font-weight: 600;
-      text-decoration: underline;
     }
     .footer {
       position: fixed;

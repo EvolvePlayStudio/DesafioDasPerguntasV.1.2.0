@@ -279,7 +279,6 @@ def pagina_visitada():
 
     return {"sucess": True}, 200
 
-
 def registrar_pagina_visitada(pagina):
     conn = cur = None
     id_usuario = session.get('id_usuario')
@@ -1169,7 +1168,6 @@ def listar_perguntas(user_id):
 def log_visitante():
     """return jsonify({"status": "ok"}), 200"""
     dados = request.get_json()
-
     evento = dados.get("evento")
     tema = dados.get("tema")
     tipo_pergunta = dados.get("tipo_pergunta")
@@ -1177,11 +1175,12 @@ def log_visitante():
     resposta_enviada = dados.get("resposta_enviada")
     acertou = dados.get("acertou")
     tempo_gasto = dados.get("tempo_gasto")
-    id_visitante = dados.get("id_visitante")
+    id_visitante = session["id_visitante"]
     usou_dica = dados.get("usou_dica")
     modo_tela = dados.get("modo_tela_usuario")
 
     if evento not in (
+        "Perguntas esgotadas",
         "Tema escolhido",
         "Pergunta carregada",
         "Pergunta respondida"

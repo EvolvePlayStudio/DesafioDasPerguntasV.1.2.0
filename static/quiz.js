@@ -465,11 +465,20 @@ async function enviarResposta(pulando = false) {
       resposta_enviada: resposta_usuario,
       acertou: acertou,
       tempo_gasto: tempo_gasto,
-      id_visitante: localStorage.getItem("id_visitante"),
       usou_dica: dica_gasta,
       modo_tela_usuario: detectarModoTela()
     })
     }).catch(() => {});
+
+    // Registra localmente a pergunta respondida pelo usuário para evitar repetição
+    let respondidas = JSON.parse(localStorage.getItem("visitante_respondidas")) || {
+      objetiva: [],
+      discursiva: []
+    };
+    if (!respondidas[tipo_pergunta].includes(pergunta_selecionada.id_pergunta)) {
+      respondidas[tipo_pergunta].push(pergunta_selecionada.id_pergunta);
+      localStorage.setItem("visitante_respondidas", JSON.stringify(respondidas));
+    };
 
     // Altera a pontuação do usuário após o envio da resposta
     alterarPontuacaoUsuario(pontuacoes_usuario[tema_atual], pontuacoes_usuario[tema_atual] + pontos_ganhos, callbackAtualizarUI)
@@ -715,7 +724,6 @@ function mostrarEnunciado(texto, elemento, callback) {
           tema: tema_atual,
           tipo_pergunta: tipo_pergunta,
           id_pergunta: pergunta_selecionada.id_pergunta,
-          id_visitante: localStorage.getItem("id_visitante"),
           modo_tela_usuario: detectarModoTela()
         })
       }).catch(() => {});

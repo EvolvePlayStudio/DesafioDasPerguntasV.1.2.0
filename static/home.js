@@ -1,12 +1,7 @@
 import { detectarModoTela, deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual } from "./utils.js";
 
-const MODO_VISITANTE =
-  document.body.dataset.modoVisitante === "true";
-
-sessionStorage.setItem(
-  "modoVisitante",
-  MODO_VISITANTE ? "true" : "false"
-);
+const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
+sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 
 let tipo_pergunta = null;
 const mensagem = document.getElementById("mensagem");
@@ -15,52 +10,19 @@ const mensagem = document.getElementById("mensagem");
 const modalOnboarding = document.getElementById("modal-onboarding");
 const btnOnboardingOk = document.getElementById("btn-onboarding-ok");
 
-// Widgets da mensagem inicial para quem entra no modo visitante
-const overlayVisitante = document.getElementById("overlay-visitante");
-const btnEntendi = document.getElementById("btn-entendi");
-const CONTEUDO_MODO_VISITANTE = `
-  <ul>
-    <li>Pontuação e ranking pessoal não salvos</li>
-    <li>Quantidade de perguntas limitadas</li>
-    <li>Acesso à pesquisa e revisão de perguntas bloqueado</li>
-  </ul>
-
-  <p>
-    Para liberar mais de 1000 perguntas exclusivas e outras funcionalidades do jogo, será necessário criar uma conta.
-  </p>
-`
-
-const CONTEUDO_SITE_PARA_COMPUTADOR = `
-  <p>
-    Se estiver navegando por smartphone ou tablet, elementos como pontuação e ranking podem ficar ocultos durante o quiz, enquanto outros podem apresentar má interface. Para evitar estes problemas, siga os passos abaixo e ative o modo <strong>“Site para computador”</strong> <span class="exemplo-navegador">(exemplo no navegador Chrome):</span>
-  </p>
-
-  <ol class="tutorial-lista">
-    <li>
-      <span>Toque nos três pontos no canto superior direito</span>
-      <img src="static/img/ModoSiteParaComputadorComSeta01.jpg" alt="Abrir menu do navegador">
-    </li>
-
-    <li>
-      <span>Ative a opção “Site para computador”</span>
-      <img src="static/img/ModoSiteParaComputadorComSeta02.jpg" alt="Ativar site para computador">
-    </li>
-
-    <li>
-      <span>Recarregue a página, se necessário</span>
-    </li>
-  </ol>
-`
-
 if (sessionStorage.getItem("modoVisitante") === "true") {
   document.getElementById("btn-logout").textContent = "Criar conta";
-  document.getElementById("mensagem-conteudo-limitado").style.display = "";
 
   // Gera ID de visitante para o usuário caso não tenha
   let idVisitante = localStorage.getItem("id_visitante");
   if (!idVisitante) {
     idVisitante = crypto.randomUUID();
     localStorage.setItem("id_visitante", idVisitante);
+  }
+
+  // Cria armazenamento de ids de perguntas já respondidas no localStorage
+  if (!localStorage.getItem("visitante_respondidas")) {
+    localStorage.setItem("visitante_respondidas", JSON.stringify({ objetiva: [], discursiva: []}));
   }
 
   // Envia uma vez para o backend
@@ -75,59 +37,21 @@ else {
   document.getElementById("btn-doacoes").style.display = "";
   const onboarding_concluido = localStorage.getItem("onboarding_concluido");
   if (onboarding_concluido === "false") {
-    // Mandei printar no terminal, sei que está chegando aqui
     modalOnboarding.classList.remove("hidden");
   }
 }
 
 document.getElementById("btn-logout").style.display = ""
-document.getElementById("mensagem-site-para-computador").style.display = "";
-
-document.getElementById("mensagens-informativas").addEventListener("click", (e) => {
-  if (e.target.tagName !== "A") return;
-
-  e.preventDefault();
-  const tipo = e.target.dataset.info;
-  console.log()
-
-  if (tipo === "modo_visitante") {
-    abrirModalInfo(
-      "Modo visitante",
-      CONTEUDO_MODO_VISITANTE,
-      "info_modo_visitante"
-    );
-  }
-  else if (tipo === "site_para_computador") {
-    abrirModalInfo(
-      "Site para computador",
-      CONTEUDO_SITE_PARA_COMPUTADOR,
-      "info_site_para_computador"
-    );
-  }
-});
-
-function abrirModalInfo(titulo, conteudo, eventoLog) {
-  const overlay = document.getElementById("overlay-visitante");
-  const tituloModal = document.getElementById("titulo-modal");
-  const conteudoModal = document.getElementById("conteudo-modal");
-
-  tituloModal.innerText = titulo;
-  conteudoModal.innerHTML = conteudo;
-
-  overlay.classList.remove("hidden");
-
-  registrarAcessoPagina(eventoLog);
-}
 
 async function iniciarQuiz(event) {
   // Atualiza o tema atual e modo de jogo no localStorage
   const tema_atual = decodeURIComponent(event.currentTarget.dataset.tema);
-  localStorage.setItem("tema_atual", tema_atual)
-  localStorage.setItem("modo_jogo", 'desafio')
+  localStorage.setItem("tema_atual", tema_atual);
+  localStorage.setItem("modo_jogo", 'desafio');
 
   // Atualiza o tipo de pergunta no localStorage (objetiva ou discursiva)
   tipo_pergunta = document.querySelector('input[name="tipo-de-pergunta"]:checked').value;
-  localStorage.setItem("tipo_pergunta", tipo_pergunta)
+  localStorage.setItem("tipo_pergunta", tipo_pergunta);
 
   if (!tema_atual || !tipo_pergunta) {
     console.error("Tema ou tipo de pergunta não definidos na URL.");
@@ -177,25 +101,38 @@ async function iniciarQuiz(event) {
       }
     }
     else { // Modo visitante
-      // Registra a escolha do tema no SQL
-      fetch("/log/visitante", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          evento: "Tema escolhido",
-          tema: tema_atual,
-          id_visitante: localStorage.getItem("id_visitante"),
-          modo_tela_usuario: detectarModoTela()
-        })
-      }).catch(() => {});
-      
       localStorage.setItem("modo_jogo", 'revisao')
       const response = await fetch(`/api/perguntas?tema=${tema_atual}&modo=revisao&tipo-de-pergunta=${tipo_pergunta}`)
 
       if (response.ok) {
         const data = await response.json();
+
+
+
+        // Elimina perguntas já respondidas pelo visitante
+        const respondidas = JSON.parse(localStorage.getItem("visitante_respondidas"));
+        const idsRespondidas = respondidas[tipo_pergunta] || [];
+
+        Object.keys(data.perguntas).forEach(dificuldade => {
+          if (!Array.isArray(data.perguntas[dificuldade])) return;
+
+          data.perguntas[dificuldade] = data.perguntas[dificuldade].filter(
+            p => !idsRespondidas.includes(p.id_pergunta)
+          );
+        });
+
+        // Analisa se há perguntas disponíveis para prosseguir com o quiz
+        const haPerguntas = Object.values(data.perguntas).some(arr => arr.length > 0)
+        if (!haPerguntas) {
+          exibirMensagem(
+            mensagem,
+            `Você atingiu seu limite de perguntas ${tipo_pergunta}s no tema ${tema_atual}. Crie uma conta para ter acesso ao conteúdo completo`,
+            'red'
+          )
+          registrarEvento("Perguntas esgotadas", tema_atual);
+          return
+        }
+        registrarEvento("Tema escolhido", tema_atual)
 
         localStorage.setItem("pontuacoes_usuario", JSON.stringify(data["pontuacoes_usuario"]));
         localStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
@@ -245,14 +182,17 @@ async function carregarRegrasPontuacao() {
     localStorage.setItem("regras_pontuacao", JSON.stringify(data.regras_pontuacao));
 }
 
-function registrarAcessoPagina(pagina) {
-  fetch("/log/pagina", {
+function registrarEvento(evento, tema_atual) {
+  // Registra a escolha do tema no SQL
+  fetch("/log/visitante", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      pagina,
+      evento: evento,
+      tema: tema_atual,
+      modo_tela_usuario: detectarModoTela()
     })
   }).catch(() => {});
 }
@@ -272,15 +212,6 @@ document.addEventListener("DOMContentLoaded", () => {
     else {
       window.location.href = "/doações";
     }
-  });
-  
-  // Implementa função de clique no botão para confirmar mensagem ao entrar em Home como visitante
-  btnEntendi.addEventListener("click", () => {
-
-    overlayVisitante.classList.add("hidden");
-    sessionStorage.setItem("avisoVisitanteExibido", "true");
-
-    registrarAcessoPagina("modal_info_fechado");
   });
 
   // Implementa função de clique no botão para confirmar mensagem ao logar pela primeira vez
