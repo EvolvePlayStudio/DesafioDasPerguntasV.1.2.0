@@ -18,43 +18,21 @@ const btnOnboardingOk = document.getElementById("btn-onboarding-ok");
 // Widgets da mensagem inicial para quem entra no modo visitante
 const overlayVisitante = document.getElementById("overlay-visitante");
 const btnEntendi = document.getElementById("btn-entendi");
-const tituloModal = document.getElementById('titulo-modal');
-const conteudoModal = document.getElementById('conteudo-modal');
-const tituloInicialVisitante = tituloModal.innerText;
-const CONTEUDO_AVISO_VISITANTE = `
-  <p>
-    Se estiver navegando por smartphone ou tablet e o modo <strong>“Site para computador”</strong> estiver desativado:
-  </p>
+const CONTEUDO_MODO_VISITANTE = `
   <ul>
-    <li>Elementos como pontuação e ranking podem ficar ocultos durante o quiz</li>
-    <li>Elementos da interface ficam desajustados, com quebras de linhas indevidas e outros problemas</li>
-  </ul>
-  <p>
-    <a href="#" id="link-tutorial">
-      Ver como ativar o modo “Site para computador”
-    </a>
-  </p>
-
-  <p>
-    Além disso, tenha em mente que no modo visitante:
-  </p>
-
-  <ul>
-    <li>Sua pontuação não é salva</li>
-    <li>A quantidade de perguntas é limitada</li>
-    <li>Não há pesquisa nem revisão de perguntas</li>
+    <li>Pontuação e ranking pessoal não salvos</li>
+    <li>Quantidade de perguntas limitadas</li>
+    <li>Acesso à pesquisa e revisão de perguntas bloqueado</li>
   </ul>
 
   <p>
     Para liberar mais de 1000 perguntas exclusivas e outras funcionalidades do jogo, será necessário criar uma conta.
   </p>
 `
-const conteudoInicialVisitante = CONTEUDO_AVISO_VISITANTE;
-const CONTEUDO_TUTORIAL_MODO_DESKTOP = `
+
+const CONTEUDO_SITE_PARA_COMPUTADOR = `
   <p>
-    Siga os passos abaixo para ativar o modo
-    <strong>“Site para computador”</strong>
-    <span class="exemplo-navegador">(exemplo no navegador Chrome):</span>
+    Se estiver navegando por smartphone ou tablet, elementos como pontuação e ranking podem ficar ocultos durante o quiz, enquanto outros podem apresentar má interface. Para evitar estes problemas, siga os passos abaixo e ative o modo <strong>“Site para computador”</strong> <span class="exemplo-navegador">(exemplo no navegador Chrome):</span>
   </p>
 
   <ol class="tutorial-lista">
@@ -72,23 +50,11 @@ const CONTEUDO_TUTORIAL_MODO_DESKTOP = `
       <span>Recarregue a página, se necessário</span>
     </li>
   </ol>
-
-  <p>
-    Após ativar, a pontuação e o ranking aparecerão corretamente durante o quiz.
-  </p>
-`;
+`
 
 if (sessionStorage.getItem("modoVisitante") === "true") {
-  // Muda o texto do botão de logout para "criar conta"
   document.getElementById("btn-logout").textContent = "Criar conta";
-  document.getElementById("btn-tutorial").style.display = "";
-
-  // Evita repetição do aviso para quem entra
-  const jaViuAviso = sessionStorage.getItem("avisoVisitanteExibido");
-  
-  if (!jaViuAviso) {
-    abrirTutorial();
-  }
+  document.getElementById("mensagem-conteudo-limitado").style.display = "";
 
   // Gera ID de visitante para o usuário caso não tenha
   let idVisitante = localStorage.getItem("id_visitante");
@@ -105,27 +71,52 @@ if (sessionStorage.getItem("modoVisitante") === "true") {
   });
 }
 else {
-  document.getElementById("btn-pesquisa").style.display = ""
-  document.getElementById("btn-doacoes").style.display = ""
+  document.getElementById("btn-pesquisa").style.display = "";
+  document.getElementById("btn-doacoes").style.display = "";
   const onboarding_concluido = localStorage.getItem("onboarding_concluido");
   if (onboarding_concluido === "false") {
     // Mandei printar no terminal, sei que está chegando aqui
     modalOnboarding.classList.remove("hidden");
   }
 }
+
 document.getElementById("btn-logout").style.display = ""
+document.getElementById("mensagem-site-para-computador").style.display = "";
 
-function abrirTutorial() {
-  tituloModal.innerText = tituloInicialVisitante;
-  conteudoModal.innerHTML = conteudoInicialVisitante;
+document.getElementById("mensagens-informativas").addEventListener("click", (e) => {
+  if (e.target.tagName !== "A") return;
 
-  document.getElementById('btn-voltar-tutorial').classList.add('hidden')
-  overlayVisitante.classList.remove('hidden');
-  overlayVisitante.querySelector('.modal').classList.remove('tutorial-aberto');
+  e.preventDefault();
+  const tipo = e.target.dataset.info;
+  console.log()
 
-  overlayVisitante.classList.remove('hidden');
+  if (tipo === "modo_visitante") {
+    abrirModalInfo(
+      "Modo visitante",
+      CONTEUDO_MODO_VISITANTE,
+      "info_modo_visitante"
+    );
+  }
+  else if (tipo === "site_para_computador") {
+    abrirModalInfo(
+      "Site para computador",
+      CONTEUDO_SITE_PARA_COMPUTADOR,
+      "info_site_para_computador"
+    );
+  }
+});
 
-  registrarAcessoPagina("tutorial_modo_tela_aberto");
+function abrirModalInfo(titulo, conteudo, eventoLog) {
+  const overlay = document.getElementById("overlay-visitante");
+  const tituloModal = document.getElementById("titulo-modal");
+  const conteudoModal = document.getElementById("conteudo-modal");
+
+  tituloModal.innerText = titulo;
+  conteudoModal.innerHTML = conteudo;
+
+  overlay.classList.remove("hidden");
+
+  registrarAcessoPagina(eventoLog);
 }
 
 async function iniciarQuiz(event) {
@@ -281,36 +272,15 @@ document.addEventListener("DOMContentLoaded", () => {
     else {
       window.location.href = "/doações";
     }
-    });
-
-  // Implementa clique no botão para abrir o tutorial
-  document.getElementById('btn-tutorial').addEventListener('click', () => {
-    abrirTutorial();
-  });
-
-  // Implementa função de clique no link do tutorial para ver como ativar "Site para computador"
-  conteudoModal.addEventListener('click', (e) => {
-  if (e.target && e.target.id === 'link-tutorial') {
-    e.preventDefault();
-
-    tituloModal.innerText = 'Como ativar o modo Site para computador';
-    conteudoModal.innerHTML = CONTEUDO_TUTORIAL_MODO_DESKTOP;
-
-    const modal = overlayVisitante.querySelector('.modal');
-    modal.classList.add('tutorial-aberto');
-
-    document.getElementById('btn-voltar-tutorial').classList.remove('hidden');
-
-    registrarAcessoPagina("tutorial_modo_tela_passos");
-  }
   });
   
   // Implementa função de clique no botão para confirmar mensagem ao entrar em Home como visitante
   btnEntendi.addEventListener("click", () => {
+
     overlayVisitante.classList.add("hidden");
     sessionStorage.setItem("avisoVisitanteExibido", "true");
 
-    registrarAcessoPagina("tutorial_modo_tela_fechou");
+    registrarAcessoPagina("modal_info_fechado");
   });
 
   // Implementa função de clique no botão para confirmar mensagem ao logar pela primeira vez
@@ -326,19 +296,6 @@ document.addEventListener("DOMContentLoaded", () => {
     catch (e) {
       console.error("Erro ao concluir onboarding");
     }
-  });
-
-  // Implementa função de clique no botão para voltar à primeira parte do tutorial
-  document.getElementById('btn-voltar-tutorial').addEventListener('click', () => {
-    tituloModal.innerText = tituloInicialVisitante;
-    conteudoModal.innerHTML = conteudoInicialVisitante;
-
-    const modal = overlayVisitante.querySelector('.modal');
-    modal.classList.remove('tutorial-aberto');
-
-    document.getElementById('btn-voltar-tutorial').classList.add('hidden');
-
-    registrarAcessoPagina("tutorial_modo_tela_voltar");
   });
 
   // Implementa a função de clique no botão de pesquisa
