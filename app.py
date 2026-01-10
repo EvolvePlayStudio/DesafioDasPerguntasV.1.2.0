@@ -133,7 +133,7 @@ QUESTION_CONFIG = {
     }
 }
 EMAILS_PROIBIDOS = ['admin@gmail.com']
-SITE_EM_MANUTENCAO = True
+SITE_EM_MANUTENCAO = False
 privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
 
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
