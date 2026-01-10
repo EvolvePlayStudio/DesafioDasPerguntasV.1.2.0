@@ -105,7 +105,7 @@ async function iniciarQuiz(event) {
     }
     else { // Modo visitante
       localStorage.setItem("modo_jogo", 'revisao')
-      const response = await fetch(`/api/perguntas?tema=${tema_atual}&modo=revisao&tipo-de-pergunta=${tipo_pergunta}`)
+      const response = await fetchAutenticado(`/api/perguntas?tema=${tema_atual}&modo=revisao&tipo-de-pergunta=${tipo_pergunta}`)
 
       if (response.ok) {
         const data = await response.json();

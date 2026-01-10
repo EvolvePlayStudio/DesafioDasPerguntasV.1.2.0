@@ -38,7 +38,25 @@ temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia",
 # IDs de perguntas para os usuários no modo visitante
 ids_perguntas_objetivas_visitante = {"Artes": [163, 172, 333, 336, 353], "Astronomia": [6, 12, 479, 492, 500], "Biologia": [18, 22, 371, 580, 585], "Esportes": [55, 66, 63, 467, 471], "Filosofia": [142, 149, 150, 302, 305], "Geografia": [80, 84, 86, 93, 316], "História": [35, 41, 42, 118, 127], "Mídia": [99, 106, 381, 385, 391], "Música": [219, 222, 226, 229, 231], "Química": [184, 188, 189, 202, 538], "Tecnologia": [243, 246, 251, 273, 415], "Variedades": [136, 192, 270, 451, 627]}
 
-ids_perguntas_discursivas_visitante = {"Artes": [257, 267, 272], "Astronomia": [97, 111, 539], "Biologia": [8, 48, 50], "Esportes": [12, 71, 79], "Filosofia": [230, 231, 237], "Geografia": [163, 169, 179], "História": [2, 5, 35], "Mídia": [188, 209, 652], "Música": [313, 327, 496], "Química": [301, 303, 594], "Tecnologia": [152, 358, 472], "Variedades": [27, 659, 662]}
+ids_perguntas_discursivas_visitante_antigo = {"Artes": [257, 267, 272], "Astronomia": [97, 111, 539], "Biologia": [8, 48, 50], "Esportes": [12, 71, 79], "Filosofia": [230, 231, 237], "Geografia": [163, 169, 179], "História": [2, 5, 35], "Mídia": [188, 209, 652], "Música": [313, 327, 496], "Química": [301, 303, 594], "Tecnologia": [152, 358, 472], "Variedades": [27, 659, 662]}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ids_perguntas_discursivas_visitante = {"Artes": [253, 258, 270, 425, 612], "Astronomia": [96, 97, 103, 111, 539], "Biologia": [8, 48, 50, 52, 438], "Esportes": [12, 79, 83, 84, 523], "Filosofia": [227, 230, 231, 235, 237], "Geografia": [157, 158, 163, 174, 169], "História": [30, 35, 38, 129, 275], "Mídia": [188, 209, 637, 641, 650], "Música": [313, 327, 496], "Química": [301, 303, 594], "Tecnologia": [152, 358, 472], "Variedades": [27, 659, 662]}
 
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
@@ -115,6 +133,7 @@ QUESTION_CONFIG = {
     }
 }
 EMAILS_PROIBIDOS = ['admin@gmail.com']
+SITE_EM_MANUTENCAO = True
 privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
 
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
@@ -127,8 +146,15 @@ img.save("static/qrcode.png")
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+
+        # 🚧 BLOQUEIO GLOBAL DE MANUTENÇÃO
+        if SITE_EM_MANUTENCAO:
+            return jsonify({"message": "Site em manutenção"}), 503
+
+        # 👤 Modo visitante
         if session.get("visitante"):
             return f(user_id=None, *args, **kwargs)
+
         token = None
 
         # 1️⃣ Tenta extrair do header Authorization
@@ -447,104 +473,6 @@ def index():
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static', 'img'),
                                'Favicon.png', mimetype='image/png')
-
-@app.route("/login", methods=["GET","POST"])
-def login():
-    conn = cur = None
-    try:
-        if request.method == "POST":
-            if not request.is_json:
-                return jsonify(success=False, message="Content-Type deve ser application/json"), 415
-
-            data = request.get_json()
-            email = data.get("email")
-            senha = data.get("senha")
-
-            if not email or not senha:
-                return jsonify(success=False, message="Email e senha são obrigatórios.")
-            
-            if not re.match(email_regex, email):
-                return jsonify(success=False, message="Formato de e-mail inválido"), 400
-
-            conn = get_db_connection()
-            cur = conn.cursor()
-
-            # Verifica usuário
-            cur.execute("""
-                SELECT id_usuario, senha_hash, email_confirmado, nome, dicas_restantes, perguntas_restantes, onboarding_concluido
-                FROM usuarios_registrados WHERE email = %s
-            """, (email,))
-            usuario = cur.fetchone()
-
-            if not usuario:
-                return jsonify(success=False, message="E-mail não registrado")
-
-            id_usuario, senha_hash, email_confirmado, nome_usuario, dicas_restantes, perguntas_restantes, onboarding_concluido = usuario
-            session["id_usuario"] = id_usuario
-            session["email"] = email
-            session["visitante"] = False
-
-            if not check_password_hash(senha_hash, senha):
-                return jsonify(success=False, message="Senha incorreta")
-
-            if not email_confirmado:
-                return jsonify(success=False, message="Você precisa confirmar seu e-mail antes de fazer login (dica: verifique também na caixa de spam)")
-
-            # 🔒 Invalida sessões antigas
-            cur.execute("UPDATE sessoes SET ativo = FALSE WHERE id_usuario = %s", (id_usuario,))
-
-            # 🔑 Cria nova sessão/token
-            token = secrets.token_urlsafe(64)
-            expira_em = datetime.utcnow() + timedelta(hours=6)
-
-            cur.execute("""
-                INSERT INTO sessoes (id_usuario, token, expira_em, ativo)
-                VALUES (%s, %s, %s, TRUE)
-            """, (id_usuario, token, expira_em))
-
-            # Continua sua lógica de ranking/pontuação
-            cur.execute("SELECT tema FROM pontuacoes_usuarios WHERE id_usuario = %s", (id_usuario,))
-            temas_ja_registrados = {row[0].strip().lower() for row in cur.fetchall()}
-            temas_normalizados = {tema.strip().lower(): tema for tema in temas_disponiveis}
-            temas_faltantes = [nome_original for chave, nome_original in temas_normalizados.items() if chave not in temas_ja_registrados]
-
-            for tema in temas_faltantes:
-                cur.execute("INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao) VALUES (%s, %s, %s)", (id_usuario, tema, 0))
-            conn.commit()
-
-        else:
-            return render_template("login.html")
-
-    except Exception:
-        if conn: conn.rollback()
-        app.logger.error("Erro no login:\n" + traceback.format_exc())
-        return jsonify(success=False, message="Erro interno no servidor"), 500
-    finally:
-        if cur: cur.close()
-        if conn: conn.close()
-
-    # 🔑 Retorna JSON e define cookie HttpOnly
-    resp = make_response(jsonify(
-        success=True,
-        message="Login realizado com sucesso",
-        token=token,
-        dicas_restantes=dicas_restantes,
-        perguntas_restantes=perguntas_restantes,
-        nome_usuario=nome_usuario,
-        onboarding_concluido=onboarding_concluido
-    ), 200)
-
-    # Cookie HttpOnly, expirando junto com o token
-    resp.set_cookie(
-        "token_sessao",
-        token,
-        httponly=True,
-        secure=False,       # mudar para True se usar HTTPS
-        samesite="Lax",
-        max_age=6*3600      # 6 horas em segundos
-    )
-
-    return resp
 
 @app.route("/api/onboarding/concluir", methods=["POST"])
 @token_required
@@ -1283,6 +1211,104 @@ def listar_perguntas(user_id):
         'perguntas': perguntas_por_dificuldade,
         'pontuacoes_usuario': pontuacoes_usuario
     })
+
+@app.route("/login", methods=["GET","POST"])
+def login():
+    conn = cur = None
+    try:
+        if request.method == "POST":
+            if not request.is_json:
+                return jsonify(success=False, message="Content-Type deve ser application/json"), 415
+
+            data = request.get_json()
+            email = data.get("email")
+            senha = data.get("senha")
+
+            if not email or not senha:
+                return jsonify(success=False, message="Email e senha são obrigatórios.")
+            
+            if not re.match(email_regex, email):
+                return jsonify(success=False, message="Formato de e-mail inválido"), 400
+
+            conn = get_db_connection()
+            cur = conn.cursor()
+
+            # Verifica usuário
+            cur.execute("""
+                SELECT id_usuario, senha_hash, email_confirmado, nome, dicas_restantes, perguntas_restantes, onboarding_concluido
+                FROM usuarios_registrados WHERE email = %s
+            """, (email,))
+            usuario = cur.fetchone()
+
+            if not usuario:
+                return jsonify(success=False, message="E-mail não registrado")
+
+            id_usuario, senha_hash, email_confirmado, nome_usuario, dicas_restantes, perguntas_restantes, onboarding_concluido = usuario
+            session["id_usuario"] = id_usuario
+            session["email"] = email
+            session["visitante"] = False
+
+            if not check_password_hash(senha_hash, senha):
+                return jsonify(success=False, message="Senha incorreta")
+
+            if not email_confirmado:
+                return jsonify(success=False, message="Você precisa confirmar seu e-mail antes de fazer login (dica: verifique também na caixa de spam)")
+
+            # 🔒 Invalida sessões antigas
+            cur.execute("UPDATE sessoes SET ativo = FALSE WHERE id_usuario = %s", (id_usuario,))
+
+            # 🔑 Cria nova sessão/token
+            token = secrets.token_urlsafe(64)
+            expira_em = datetime.utcnow() + timedelta(hours=6)
+
+            cur.execute("""
+                INSERT INTO sessoes (id_usuario, token, expira_em, ativo)
+                VALUES (%s, %s, %s, TRUE)
+            """, (id_usuario, token, expira_em))
+
+            # Continua sua lógica de ranking/pontuação
+            cur.execute("SELECT tema FROM pontuacoes_usuarios WHERE id_usuario = %s", (id_usuario,))
+            temas_ja_registrados = {row[0].strip().lower() for row in cur.fetchall()}
+            temas_normalizados = {tema.strip().lower(): tema for tema in temas_disponiveis}
+            temas_faltantes = [nome_original for chave, nome_original in temas_normalizados.items() if chave not in temas_ja_registrados]
+
+            for tema in temas_faltantes:
+                cur.execute("INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao) VALUES (%s, %s, %s)", (id_usuario, tema, 0))
+            conn.commit()
+
+        else:
+            return render_template("login.html")
+
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.error("Erro no login:\n" + traceback.format_exc())
+        return jsonify(success=False, message="Erro interno no servidor"), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+    # 🔑 Retorna JSON e define cookie HttpOnly
+    resp = make_response(jsonify(
+        success=True,
+        message="Login realizado com sucesso",
+        token=token,
+        dicas_restantes=dicas_restantes,
+        perguntas_restantes=perguntas_restantes,
+        nome_usuario=nome_usuario,
+        onboarding_concluido=onboarding_concluido
+    ), 200)
+
+    # Cookie HttpOnly, expirando junto com o token
+    resp.set_cookie(
+        "token_sessao",
+        token,
+        httponly=True,
+        secure=False,       # mudar para True se usar HTTPS
+        samesite="Lax",
+        max_age=6*3600      # 6 horas em segundos
+    )
+
+    return resp
 
 @app.route("/log/visitante", methods=["POST"])
 def log_visitante():
