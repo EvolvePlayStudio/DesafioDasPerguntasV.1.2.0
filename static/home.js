@@ -2,6 +2,7 @@ import { detectarModoTela, deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAut
 
 const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
 sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
+localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 
 let tipo_pergunta = null;
 const mensagem = document.getElementById("mensagem");
@@ -11,7 +12,6 @@ const modalOnboarding = document.getElementById("modal-onboarding");
 const btnOnboardingOk = document.getElementById("btn-onboarding-ok");
 
 if (sessionStorage.getItem("modoVisitante") === "true") {
-  document.getElementById("btn-logout").textContent = "Criar conta";
 
   // Gera ID de visitante para o usuário caso não tenha
   let idVisitante = localStorage.getItem("id_visitante");
@@ -25,6 +25,9 @@ if (sessionStorage.getItem("modoVisitante") === "true") {
     localStorage.setItem("visitante_respondidas", JSON.stringify({ objetiva: [], discursiva: []}));
   }
 
+  // APENAS PARA DESENVOLVEDOR, SEMPRE COMENTAR QUANDO LANÇAR NOVAS VERSÕES
+  // localStorage.setItem("visitante_respondidas", JSON.stringify({ objetiva: [], discursiva: []}));
+
   // Envia uma vez para o backend
   fetch("/api/registrar_visitante", {
     method: "POST",
@@ -37,7 +40,7 @@ else {
   document.getElementById("btn-doacoes").style.display = "";
   const onboarding_concluido = localStorage.getItem("onboarding_concluido");
   if (onboarding_concluido === "false") {
-    modalOnboarding.classList.remove("hidden");
+    // modalOnboarding.classList.remove("hidden");
   }
 }
 
@@ -106,9 +109,7 @@ async function iniciarQuiz(event) {
 
       if (response.ok) {
         const data = await response.json();
-
-
-
+        
         // Elimina perguntas já respondidas pelo visitante
         const respondidas = JSON.parse(localStorage.getItem("visitante_respondidas"));
         const idsRespondidas = respondidas[tipo_pergunta] || [];
@@ -175,7 +176,6 @@ async function carregarRegrasPontuacao() {
 
     if (!data.success) {
         console.error("Erro ao carregar regras de pontuação");
-        console.log("Erro ao carregar regras de pontuação")
         return;
     }
 

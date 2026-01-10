@@ -1,4 +1,3 @@
-// Exemplo de como popular via JS (dados podem vir de localStorage ou da rota Flask)
 const perguntas_respondidas = JSON.parse(localStorage.getItem("perguntas_respondidas"))
 const tema_atual = localStorage.getItem("tema_atual");
 const tipo_pergunta = localStorage.getItem("tipo_pergunta").toLowerCase();
@@ -7,9 +6,27 @@ const rankings_usuario = JSON.parse(localStorage.getItem("rankings_usuario"));
 const pontuacao_anterior = localStorage.getItem("pontuacao_anterior");
 const nova_pontuacao = pontuacoes_usuario[tema_atual];
 const valor_saldo = Number(nova_pontuacao) - Number(pontuacao_anterior);
+const modo_visitante = localStorage.getItem("modoVisitante") === "true";
+
 let str_saldo;
 let cor_saldo;
 let peso_fonte_saldo;
+
+// Variáveis para envio de feedback
+const FEEDBACK_DRAFT_KEY = "feedback_comentario_rascunho";
+localStorage.removeItem(FEEDBACK_DRAFT_KEY);
+const textarea = document.getElementById("feedback-texto")
+const btnFeedback = document.getElementById("btn-feedback");
+const modal = document.getElementById("modal-feedback");
+const btnCancelar = document.getElementById("cancelar-feedback");
+const btnEnviar = document.getElementById("enviar-feedback");
+const msgBox = document.getElementById("feedback-mensagem");
+const actionsForm = document.getElementById("feedback-actions-form");
+const actionsVoltar = document.getElementById("feedback-actions-pos-envio");
+const btnVoltar = document.getElementById("voltar-feedback");
+let feedbackIdAtual = null;
+let feedbackEmEnvio = false;
+
 if (valor_saldo > 0) {
     cor_saldo = 'lime';
     str_saldo = `+${valor_saldo}`;
@@ -38,7 +55,7 @@ const resultado = {
 document.getElementById("tema-perguntas").textContent = resultado.tema;
 document.getElementById("pontuacao-anterior").textContent = resultado.pontuacaoAnterior;
 document.getElementById("pontuacao-final").textContent = resultado.pontuacaoFinal;
-label_saldo = document.getElementById("pontuacao-saldo")
+const label_saldo = document.getElementById("pontuacao-saldo")
 label_saldo.textContent = resultado.saldo;
 label_saldo.style.color = cor_saldo;
 label_saldo.style.fontWeight = peso_fonte_saldo;
@@ -87,7 +104,10 @@ resultado.perguntas_respondidas.forEach((p, i) => {
       `;
     }
     else {
-        cor_alternativa_a = cor_alternativa_b = cor_alternativa_c = cor_alternativa_d = 'black';
+        let cor_alternativa_a = 'black';
+        let cor_alternativa_b = 'black';
+        let cor_alternativa_c = 'black';
+        let cor_alternativa_d = 'black';
         if (p.resposta_correta === 'A') {
             cor_alternativa_a = 'lime'
         }
@@ -126,4 +146,123 @@ resultado.perguntas_respondidas.forEach((p, i) => {
         `
     }
     lista.appendChild(div);
+});
+
+function exibirMensagem(label, texto, cor) {
+  label.style.display = '';
+  label.style.color = cor;
+  label.textContent = texto;
+  label.style.opacity = 1;
+  setTimeout(() => {
+    msgBox.classList.add("hidden");
+  }, 10000)
+}
+
+function fecharModalFeedback(modal, textarea) {
+    modal.classList.add("hidden");
+    document.body.style.overflow = "";
+    localStorage.setItem(FEEDBACK_DRAFT_KEY, textarea.value);
+}
+
+function feedbackErro() {
+  exibirMensagem(msgBox, "Erro no envio do feedback.")
+  msgBox.className = "feedback-mensagem erro";
+  msgBox.classList.remove("hidden");
+}
+
+function feedbackSucesso(idFeedback) {
+  feedbackIdAtual = idFeedback;
+  textarea.disabled = true;
+
+  msgBox.textContent = "Feedback enviado com sucesso.";
+  msgBox.className = "feedback-mensagem sucesso";
+  msgBox.classList.remove("hidden");
+
+  actionsForm.classList.add("hidden");
+  actionsVoltar.classList.remove("hidden");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  
+  // Função para envio do feedback
+  btnEnviar.addEventListener("click", async () => {
+    if (feedbackEmEnvio) return;
+
+    const comentario = textarea.value.trim();
+    if (!comentario) return;
+
+    msgBox.textContent = "Enviando feedback...";
+    msgBox.className = "feedback-mensagem enviando";
+
+    feedbackEmEnvio = true;
+    btnEnviar.disabled = true;
+
+    const payload = {
+        modo_visitante,
+        id_visitante: localStorage.getItem("id_visitante"),
+        tema: document.getElementById("tema-perguntas").textContent,
+        pontuacao_saldo: valor_saldo,
+        comentario,
+        feedback_id: feedbackIdAtual
+    };
+
+    try {
+        const response = await fetch("/api/feedbacks/comentarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+        feedbackErro();
+        throw new Error(data.detalhe || "Erro ao enviar feedback");
+        }
+
+        feedbackSucesso(data.id_feedback);
+
+    } catch (err) {
+        console.error(err);
+        feedbackErro();
+    } finally {
+        // Só libera se for permitido editar novamente
+        feedbackEmEnvio = false;
+        btnEnviar.disabled = false;
+    }
+    });
+
+  // Função para editar o feedback
+  document.getElementById("editar-feedback").addEventListener("click", () => {
+    textarea.disabled = false;
+    actionsVoltar.classList.add("hidden");
+    actionsForm.classList.remove("hidden");
+    msgBox.classList.add("hidden");
+  });
+
+  // Abrir modal
+  btnFeedback.addEventListener("click", () => {
+    const draft = localStorage.getItem(FEEDBACK_DRAFT_KEY);
+    if (draft && feedbackIdAtual === null) textarea.value = draft;
+
+    modal.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  });
+
+  // Fechar pelo botão cancelar
+  btnCancelar.addEventListener("click", () => {
+    fecharModalFeedback(modal, textarea)
+  });
+
+  // Fechar clicando fora do conteúdo
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      fecharModalFeedback(modal, textarea)
+    }
+  });
+
+  // Fechar pelo botão voltar
+  btnVoltar.addEventListener("click", () => {
+    fecharModalFeedback(modal, textarea)
+  })
 });

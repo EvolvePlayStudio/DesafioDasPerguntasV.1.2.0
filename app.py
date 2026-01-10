@@ -36,7 +36,8 @@ app.logger.addHandler(handler)
 temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia", "Variedades"]
 
 # IDs de perguntas para os usuários no modo visitante
-ids_perguntas_objetivas_visitante = {"Artes": [163, 172, 353], "Astronomia": [8, 12, 17], "Biologia": [18, 22, 371], "Esportes": [59, 63, 471], "Filosofia": [142, 149, 150], "Geografia": [84, 323, 331], "História": [42, 118, 127], "Mídia": [99, 106, 381], "Música": [229, 231, 236], "Química": [184, 188, 189], "Tecnologia": [243, 251, 415], "Variedades": [192, 270, 627]}
+ids_perguntas_objetivas_visitante = {"Artes": [163, 172, 333, 336, 353], "Astronomia": [6, 12, 479, 492, 500], "Biologia": [18, 22, 371, 580, 585], "Esportes": [55, 66, 63, 467, 471], "Filosofia": [142, 149, 150, 302, 305], "Geografia": [80, 84, 86, 93, 316], "História": [35, 41, 42, 118, 127], "Mídia": [99, 106, 381, 385, 391], "Música": [219, 222, 226, 229, 231], "Química": [184, 188, 189, 202, 538], "Tecnologia": [243, 246, 251, 273, 415], "Variedades": [136, 192, 270, 451, 627]}
+
 ids_perguntas_discursivas_visitante = {"Artes": [257, 267, 272], "Astronomia": [111, 117], "Biologia": [8, 48, 50], "Esportes": [12, 71, 79], "Filosofia": [230, 231, 237], "Geografia": [163, 169, 179], "História": [2, 5, 35], "Mídia": [188, 209, 652], "Música": [313, 327, 496], "Química": [301, 303, 594], "Tecnologia": [152, 358, 472], "Variedades": [27, 659, 662]}
 
 app.secret_key = os.getenv("SECRET_KEY")
@@ -246,6 +247,123 @@ def enviar_feedback(user_id):
         if conn:
             conn.rollback()
         return jsonify({"erro": str(e)}), 500
+
+@app.route("/api/feedbacks/comentarios", methods=["POST"])
+@token_required
+def enviar_feedback_comentario(user_id):
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"erro": "Payload inválido"}), 400
+
+    modo_visitante = data.get("modo_visitante")
+    comentario = (data.get("comentario") or "").strip()
+    tema = data.get("tema")
+    feedback_id = data.get("feedback_id")
+    pontuacao_saldo = data.get("pontuacao_saldo")
+
+    if modo_visitante is None:
+        return jsonify({"erro": "modo_visitante é obrigatório"}), 400
+
+    if not comentario:
+        return jsonify({"erro": "Comentário vazio"}), 400
+
+    if not tema:
+        return jsonify({"erro": "Tema é obrigatório"}), 400
+
+    id_usuario = session.get("id_usuario") if not modo_visitante else None
+    id_visitante = session.get("id_visitante") if modo_visitante else None
+
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+
+                # =====================================
+                # UPDATE (feedback já existe)
+                # =====================================
+                if feedback_id:
+                    cur.execute(
+                        """
+                        SELECT id_feedback
+                        FROM feedbacks_comentarios
+                        WHERE id_feedback = %s
+                          AND (
+                            (%s = false AND id_usuario = %s)
+                            OR
+                            (%s = true AND id_visitante = %s)
+                          )
+                        """,
+                        (
+                            feedback_id,
+                            modo_visitante, id_usuario,
+                            modo_visitante, id_visitante
+                        )
+                    )
+
+                    feedback = cur.fetchone()
+                    if not feedback:
+                        return jsonify({"erro": "Feedback não encontrado ou acesso negado"}), 403
+
+                    cur.execute(
+                        """
+                        UPDATE feedbacks_comentarios
+                        SET comentario = %s,
+                            pontuacao_saldo = %s
+                        WHERE id_feedback = %s
+                        RETURNING id_feedback;
+                        """,
+                        (comentario, pontuacao_saldo, feedback_id)
+                    )
+
+                    conn.commit()
+
+                    return jsonify({
+                        "sucesso": True,
+                        "id_feedback": feedback_id,
+                        "editado": True
+                    }), 200
+
+                # =====================================
+                # INSERT (novo feedback)
+                # =====================================
+                cur.execute(
+                    """
+                    INSERT INTO feedbacks_comentarios (
+                        modo_visitante,
+                        id_usuario,
+                        id_visitante,
+                        tema,
+                        pontuacao_saldo,
+                        comentario
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING id_feedback;
+                    """,
+                    (
+                        modo_visitante,
+                        id_usuario,
+                        id_visitante,
+                        tema,
+                        pontuacao_saldo,
+                        comentario
+                    )
+                )
+
+                novo_id = cur.fetchone()["id_feedback"]
+                conn.commit()
+
+                return jsonify({
+                    "sucesso": True,
+                    "id_feedback": novo_id,
+                    "editado": False
+                }), 201
+
+    except Exception as e:
+        print("Erro ao salvar feedback:", e)
+        return jsonify({
+            "erro": "Erro interno",
+            "detalhe": str(e)
+        }), 500
 
 def identificar_dispositivo():
     ua = (request.headers.get("User-Agent") or "").lower()
@@ -805,7 +923,11 @@ def home():
 
 @app.route("/resultado")
 def resultado():
-    return render_template("resultado.html")
+    usuario_logado = "id_usuario" in session
+    return render_template(
+        "resultado.html",
+        usuario_logado=usuario_logado
+    )
 
 @app.route("/doações")
 @token_required
@@ -1023,8 +1145,7 @@ def listar_perguntas(user_id):
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
     except Exception:
-        print("Erro ao tentar conectar para buscar perguntas")
-        app.logger.exception("Erro ao tentar conectar para buscar perguntas para o usuário com id %s", id_usuario)
+        app.logger.exception("1.Erro ao tentar conectar para buscar perguntas para o usuário com id %s", id_usuario)
         return jsonify({'erro': 'Erro ao tentar conectar para buscar novas perguntas'}), 500
 
     # Busca das perguntas
@@ -1145,8 +1266,7 @@ def listar_perguntas(user_id):
             elif modo == 'revisao' and respondida:
                 perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
     except Exception:
-        print(f"Erro ao buscar perguntas para o usuário")
-        app.logger.exception("Erro ao buscar perguntas para o usuário com id %s", id_usuario)
+        app.logger.exception("2.Erro ao tentar conectar para buscar perguntas para o usuário com id %s", id_usuario)
         return jsonify({'erro': 'Erro interno ao consultar perguntas'}), 500
     finally:
         if cur: cur.close()

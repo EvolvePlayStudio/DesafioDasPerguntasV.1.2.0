@@ -12,7 +12,7 @@
   
   <style>
     :root {
-      --footer-h: 60px;
+      --footer-h: 69px;
     }
     body {
       font-family: "Noto Serif", Roboto, serif, sans-serif;
@@ -75,18 +75,14 @@
       background: var(--cor-fundo-escuro);
       height: var(--footer-h);
       padding: 0 1rem;
-      z-index: 10;
-      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+      gap: 3.5rem;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
     }
     .btn {
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      width: calc(100% - 40px);
-      max-width: 820px;
+      flex: 1;
+      max-width: 220px;
       text-align: center;
       padding: 0.8rem;
       background: var(--bg-botao-login);
@@ -97,11 +93,108 @@
       text-decoration: none;
       font-size: 18px;
       transition: background 0.3s;
-      z-index: 1000; /* garante que não fique escondido */
     }
     .btn:hover {
       background: var(--bg-hover-botao-login);
       font-weight: var(--peso-fonte-botao);
+    }
+    #btn-feedback {
+      cursor: pointer;
+    }
+    /* Fundo escuro do modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 2000;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Conteúdo do modal */
+    .modal-content {
+      background: #fff;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+      animation: modalFadeIn 0.25s ease-out;
+    }
+    .modal-content h2 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+    /* Texto auxiliar */
+    .feedback-hint {
+      font-size: 14px;
+      color: #383838;
+      margin-bottom: 12px;
+    }
+    /* Textarea */
+    #feedback-texto {
+      width: 100%;
+      min-height: 120px;
+      resize: vertical;
+      padding: 10px;
+      font-size: 15px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-bottom: 15px;
+      font-family: inherit;
+      resize: none;
+    }
+    /* Ações */
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    /* Estado escondido */
+    .hidden {
+      display: none;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    /* Animação suave */
+    @keyframes modalFadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    button.btn {
+      border: none;
+      outline: none;
+      box-shadow: none;
+      appearance: none;
+      -webkit-appearance: none;
+      background-clip: padding-box;
+    }
+    .feedback-mensagem {
+      margin-bottom: 1rem;
+      padding: 0.8rem;
+      border-radius: 6px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .feedback-mensagem.sucesso {
+      background: #e6f9ee;
+      color: #1e7f4d;
+    }
+    .feedback-mensagem.enviando {
+      background: #ebffa3;
+      color: #383838;
+    }
+    .feedback-mensagem.erro {
+      background: #fdecea;
+      color: #a12622;
     }
   </style>
 </head>
@@ -124,12 +217,55 @@
       </div>
     </div>
 
-    <!-- Layout inferior com o botão para retornar -->
+    <!-- Rodapé da página com os botões -->
     <div class="footer">
-      <a href="{{ url_for('home') }}" class="btn">Prosseguir</a>
+      <!-- Feedback (todos) -->
+      <a id="btn-feedback" class="btn">
+        Enviar feedback
+      </a>
+      <!-- Botão Criar Conta (apenas visitante) -->
+      {% if not usuario_logado %}
+      <a href="{{ url_for('login') }}" class="btn">
+        Criar conta
+      </a>
+      {% endif %}
+
+      <!-- Prosseguir (todos) -->
+      <a href="{{ url_for('home') }}" class="btn">
+        Prosseguir
+      </a>
     </div>
+    
+    <!-- Modal para envio de feedback -->
+    <div id="modal-feedback" class="modal hidden">
+      <div class="modal-content">
+        <h2>Envie seu feedback</h2>
+
+        <p class="feedback-hint">
+          Use este espaço para sugestões, críticas ou problemas gerais do site.
+          Não é necessário falar apenas sobre as perguntas respondidas recentemente.
+        </p>
+        
+        <textarea id="feedback-texto"
+          placeholder="Exemplo: tive dificuldade em entender o ranking, não concordo com a dificuldade das perguntas..."
+          maxlength="800"></textarea>
+
+        <div id="feedback-mensagem" class="feedback-mensagem hidden"></div>
+
+        <div class="modal-actions" id="feedback-actions-form">
+          <button id="cancelar-feedback" class="btn btn-neutro">Cancelar</button>
+          <button id="enviar-feedback" class="btn btn-primario">Enviar</button>
+        </div>
+
+        <div class="modal-actions hidden" id="feedback-actions-pos-envio">
+          <button id="voltar-feedback" class="btn btn-neutro">Voltar</button>
+          <button id="editar-feedback" class="btn btn-primario">Editar feedback</button>
+        </div>
+      </div>
     </div>
 
-  <script src="{{ url_for('static', filename='resultado.js')}}?v=1.1.0"></script>
+    </div>
+
+  <script type="module" src="{{ url_for('static', filename='resultado.js')}}?v=1.1.0"></script>
 </body>
 </html>
