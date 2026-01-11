@@ -37,26 +37,7 @@ temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia",
 
 # IDs de perguntas para os usuários no modo visitante
 ids_perguntas_objetivas_visitante = {"Artes": [163, 172, 333, 336, 353], "Astronomia": [6, 12, 479, 492, 500], "Biologia": [18, 22, 371, 580, 585], "Esportes": [55, 66, 63, 467, 471], "Filosofia": [142, 149, 150, 302, 305], "Geografia": [80, 84, 86, 93, 316], "História": [35, 41, 42, 118, 127], "Mídia": [99, 106, 381, 385, 391], "Música": [219, 222, 226, 229, 231], "Química": [184, 188, 189, 202, 538], "Tecnologia": [243, 246, 251, 273, 415], "Variedades": [136, 192, 270, 451, 627]}
-
-ids_perguntas_discursivas_visitante_antigo = {"Artes": [257, 267, 272], "Astronomia": [97, 111, 539], "Biologia": [8, 48, 50], "Esportes": [12, 71, 79], "Filosofia": [230, 231, 237], "Geografia": [163, 169, 179], "História": [2, 5, 35], "Mídia": [188, 209, 652], "Música": [313, 327, 496], "Química": [301, 303, 594], "Tecnologia": [152, 358, 472], "Variedades": [27, 659, 662]}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ids_perguntas_discursivas_visitante = {"Artes": [253, 258, 270, 425, 612], "Astronomia": [96, 97, 103, 111, 539], "Biologia": [8, 48, 50, 52, 438], "Esportes": [12, 79, 83, 84, 523], "Filosofia": [227, 230, 231, 235, 237], "Geografia": [157, 158, 163, 174, 169], "História": [30, 35, 38, 129, 275], "Mídia": [188, 209, 637, 641, 650], "Música": [313, 327, 496], "Química": [301, 303, 594], "Tecnologia": [152, 358, 472], "Variedades": [27, 659, 662]}
+ids_perguntas_discursivas_visitante = {"Artes": [253, 258, 270, 425, 612], "Astronomia": [96, 97, 103, 111, 539], "Biologia": [8, 48, 50, 52, 438], "Esportes": [12, 79, 83, 84, 523], "Filosofia": [227, 230, 231, 235, 237], "Geografia": [157, 158, 163, 174, 169], "História": [30, 35, 38, 129, 275], "Mídia": [188, 209, 637, 641, 650], "Música": [313, 327, 479, 488, 491], "Química": [301, 303, 577, 582, 594], "Tecnologia": [152, 342, 351, 358, 470], "Variedades": [90, 144, 376, 659, 662]}
 
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
