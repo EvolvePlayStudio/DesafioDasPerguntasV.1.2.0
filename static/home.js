@@ -17,7 +17,12 @@ if (sessionStorage.getItem("modoVisitante") === "true") {
   let idVisitante = localStorage.getItem("id_visitante");
   if (!idVisitante) {
     idVisitante = crypto.randomUUID();
-    localStorage.setItem("id_visitante", idVisitante);
+    localStorage.setItem("id_visitante", idVisitante)
+  }
+
+  // Cria contador de perguntas respondidas no modo visitante
+  if (!localStorage.getItem("perguntas_respondidas_visitante")) {
+    localStorage.setItem("perguntas_respondidas_visitante", 0)
   }
 
   // Cria armazenamento de ids de perguntas já respondidas no localStorage

@@ -352,6 +352,24 @@ async function enviarResposta(pulando = false) {
   document.getElementById('comentarios').style.display = 'block';
   }
 
+  function incrementarPerguntasRespondidasVisitante() {
+    // --- Lógica de Conversão Google Ads ---
+  
+    // 1. Pega o valor atual ou inicia em 0
+    let contagem = parseInt(localStorage.getItem("perguntas_respondidas_visitante") || 0);
+    
+    // 2. Incrementa
+    contagem++;
+    localStorage.setItem("perguntas_respondidas_visitante", contagem);
+
+    // 3. Dispara a TAG apenas quando atingir EXATAMENTE 5
+    if (contagem === 5) {
+      gtag('event', 'conversion', {
+        'send_to': 'AW-17529321916/JTBvCKKkoeEbELzz0KZB'
+      });
+    }
+  }
+
   resultado.style.display = "block";
   if (!animacao_concluida || btn_enviar.disabled) return;
   resultado.style.color = "#FFD700";
@@ -479,6 +497,9 @@ async function enviarResposta(pulando = false) {
       respondidas[tipo_pergunta].push(pergunta_selecionada.id_pergunta);
       localStorage.setItem("visitante_respondidas", JSON.stringify(respondidas));
     };
+    
+    // Incrementa perguntas respondidas como visitante para tag de cnversãoo
+    incrementarPerguntasRespondidasVisitante();
 
     // Altera a pontuação do usuário após o envio da resposta
     alterarPontuacaoUsuario(pontuacoes_usuario[tema_atual], pontuacoes_usuario[tema_atual] + pontos_ganhos, callbackAtualizarUI)
