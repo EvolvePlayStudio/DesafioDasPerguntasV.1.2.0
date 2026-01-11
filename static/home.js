@@ -160,7 +160,7 @@ function carregarPreferenciasQuiz() {
 
   // Se não existirem, define valores padrão
   if (!tipo_pergunta) {
-    tipo_pergunta = "objetiva";
+    tipo_pergunta = "discursiva";
     localStorage.setItem("tipo_pergunta", tipo_pergunta);
   }
 
