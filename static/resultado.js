@@ -6,7 +6,6 @@ const rankings_usuario = JSON.parse(localStorage.getItem("rankings_usuario"));
 const pontuacao_anterior = localStorage.getItem("pontuacao_anterior");
 const nova_pontuacao = pontuacoes_usuario[tema_atual];
 const valor_saldo = Number(nova_pontuacao) - Number(pontuacao_anterior);
-const modo_visitante = localStorage.getItem("modoVisitante") === "true";
 
 let str_saldo;
 let cor_saldo;

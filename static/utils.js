@@ -8,29 +8,37 @@ export function detectarModoTela() {
   if (!touch) return "desktop";
 }
 
-export function deveEncerrarQuiz(perguntas_por_dificuldade) {
-  const ranking = obterInfoRankingAtual().ranking;
+export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIGO=null) {
+  // ATENÇÃO, APAGAR PARÂMETRO ACIMA QUE NÃO É UTILIZADO DEPOIS QUE REMOVER DE TODAS AS FUNÇÕES EM QUIZ.JS E HOME.JS
+  const tema = localStorage.getItem("tema_atual");
+  const MODO_VISITANTE = localStorage.getItem("modoVisitante");
+  const ranking = obterInfoRankingAtual(tema, MODO_VISITANTE).ranking;
 
   const qtdFacil = perguntas_por_dificuldade["Fácil"]?.length ?? 0;
   const qtdMedio = perguntas_por_dificuldade["Médio"]?.length ?? 0;
   const qtdDificil = perguntas_por_dificuldade["Difícil"]?.length ?? 0;
 
-  // 🧠 SÁBIO ou LENDA
-  // Encerra se NÃO houver nenhuma média nem difícil
-  if (ranking === "Sábio" || ranking === "Lenda") {
-    if (qtdMedio === 0 && qtdDificil === 0) {
-      return true;
+  if (!MODO_VISITANTE) {
+    // 🧠 SÁBIO ou LENDA
+    // Encerra se NÃO houver nenhuma média nem difícil
+    if (ranking === "Sábio" || ranking === "Lenda") {
+      if (qtdMedio === 0 && qtdDificil === 0) {
+        return true;
+      }
+    }
+
+    // 🧑‍🎓 APRENDIZ
+    // Encerra se SÓ houver difíceis
+    if (ranking === "Aprendiz") {
+      if (qtdFacil === 0 && qtdMedio === 0) {
+        return true;
+      }
     }
   }
-
-  // 🧑‍🎓 APRENDIZ
-  // Encerra se SÓ houver difíceis
-  if (ranking === "Aprendiz") {
-    if (qtdFacil === 0 && qtdMedio === 0) {
-      return true;
-    }
+  else if (ranking === "Iniciante" && qtdFacil === 0 && qtdMedio === 0) {
+    return true
   }
-
+  
   return false;
 }
 
@@ -54,9 +62,10 @@ export async function fetchAutenticado(url, options= {}) {
   return response;
 }
 
-export function obterInfoRankingAtual(tema=null) {
-  const pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario")) || {}
-  const tema_atual = tema || localStorage.getItem("tema_atual");
+// ATENÇÃO: PARAMÊTRO NÃO UTILIZADO AQUI
+export function obterInfoRankingAtual(tema=null, MODO_VISITANTE=null) {
+  const pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario")) || {};
+  const tema_atual = localStorage.getItem("tema_atual");
   const pontuacao_no_tema = pontuacoes_usuario[tema_atual] || 0;
   const regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao")) || [];
 
@@ -82,7 +91,7 @@ export function obterPerguntasDisponiveis(perguntas_por_dificuldade) {
   return perguntas_filtradas
 }
 
-export function obterDificuldadesDisponiveis() {
+export function obterDificuldadesDisponiveis(tema=null, MODO_VISITANTE=null) {
   // Obtém a informação de ranking atual do usuário
   const info_ranking_atual = obterInfoRankingAtual();
 

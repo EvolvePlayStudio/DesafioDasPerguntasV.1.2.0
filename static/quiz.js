@@ -14,28 +14,37 @@ window.onerror = function (message) {
   }).catch(() => {});
 };
 
+const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"));
 let perguntas_respondidas = [];
 let aguardando_proxima = false // Variável que indica quando se está aguardando próxima pergunta
 let dica_gasta = false
-let inicio_pergunta = null  // horário inicial da pergunta
-let pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario"))
-let animacao_concluida = false
-let pergunta_selecionada = null
-let ha_perguntas_disponiveis = false
-let regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"))
-let info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1]
-let regras_usuario = null
-let ranking_usuario = null
-const rankings_usuario = JSON.parse(localStorage.getItem("rankings_usuario"))
+let inicio_pergunta;  // horário inicial da pergunta
+let pontuacoes_usuario;
 const tema_atual = decodeURIComponent(localStorage.getItem("tema_atual"))
-localStorage.setItem("pontuacao_anterior", pontuacoes_usuario[tema_atual])
-const modo_jogo = localStorage.getItem("modo_jogo").toLocaleLowerCase()
-const tipo_pergunta = localStorage.getItem("tipo_pergunta").toLocaleLowerCase()
-const lbl_pontuacao_usuario = document.getElementById('pontuacao')
-const lbl_pontos_ganhos = document.getElementById('incremento-pontuacao')
-const btn_enviar = document.getElementById("btn-enviar")
-const btn_pular = document.getElementById("btn-pular")
+if (MODO_VISITANTE) {
+  pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_visitante"))
+  localStorage.setItem("pontuacao_anterior", pontuacoes_usuario[tema_atual])
+}
+else {
+  pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario"));
+}
+localStorage.setItem("pontuacao_anterior", pontuacoes_usuario[tema_atual]);
+let animacao_concluida = false;
+let pergunta_selecionada = null;
+let ha_perguntas_disponiveis = false;
+let regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"));
+let info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1];
+let regras_usuario = null;
+let ranking_usuario = null;
+const contador_dicas_restantes = document.getElementById("contador-dicas");
+const rankings_usuario = JSON.parse(localStorage.getItem("rankings_usuario"));
+const modo_jogo = localStorage.getItem("modo_jogo").toLocaleLowerCase();
+const tipo_pergunta = localStorage.getItem("tipo_pergunta").toLocaleLowerCase();
+const lbl_pontuacao_usuario = document.getElementById('pontuacao');
+const lbl_pontos_ganhos = document.getElementById('incremento-pontuacao');
+const btn_enviar = document.getElementById("btn-enviar");
+const btn_pular = document.getElementById("btn-pular");
 const botoes_finalizar_div = document.getElementById("botoes-acao");
 const botoes_enviar_div = document.getElementById("botoes-envio");
 const alternativasContainer = document.getElementById("alternativas-container")
@@ -107,7 +116,7 @@ function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtuali
 
 function atualizarRankingVisual() {
   // Declara as variáveis que serão úteis
-  const info_ranking_atual = obterInfoRankingAtual();
+  const info_ranking_atual = obterInfoRankingAtual(tema_atual, MODO_VISITANTE);
   rankings_usuario[tema_atual] = info_ranking_atual.ranking
   const pontuacao = pontuacoes_usuario[tema_atual] || 0;
   let ranking_anterior = "";
@@ -352,21 +361,79 @@ async function enviarResposta(pulando = false) {
   document.getElementById('comentarios').style.display = 'block';
   }
 
-  function incrementarPerguntasRespondidasVisitante() {
-    // --- Lógica de Conversão Google Ads ---
-  
-    // 1. Pega o valor atual ou inicia em 0
-    let contagem = parseInt(localStorage.getItem("perguntas_respondidas_visitante") || 0);
-    
-    // 2. Incrementa
-    contagem++;
-    localStorage.setItem("perguntas_respondidas_visitante", contagem);
+  function registrarRespostaVisitante(resposta_usuario, acertou, dica_gasta, pontos_ganhos, tempo_gasto) {
+    let respondidas = JSON.parse(localStorage.getItem("visitante_respondidas")) || {
+    objetiva: [], discursiva: []};
 
-    // 3. Dispara a TAG apenas quando atingir EXATAMENTE 5
-    if (contagem === 5) {
-      gtag('event', 'conversion', {
-        'send_to': 'AW-17529321916/JTBvCKKkoeEbELzz0KZB'
-      });
+    // --- Lógica de Conversão Google Ads ---
+    function analisarMetaConversao() {
+      const totalRespondidas = respondidas.objetiva.length + respondidas.discursiva.length; 
+      console.log("Total respondidas discursivas: ", respondidas.discursiva.length)
+      if (totalRespondidas === 5) {
+        gtag('event', 'conversion', {
+          'send_to': 'AW-17529321916/JTBvCKKkoeEbELzz0KZB'
+        });
+      }
+    }
+
+    // Registra o envio da resposta no SQL
+    fetch("/log/visitante", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        evento: "Pergunta respondida",
+        tema: tema_atual,
+        tipo_pergunta: tipo_pergunta,
+        id_pergunta: pergunta_selecionada.id_pergunta,
+        resposta_enviada: resposta_usuario,
+        acertou: acertou,
+        tempo_gasto: tempo_gasto,
+        usou_dica: dica_gasta,
+        modo_tela_usuario: detectarModoTela()
+      })
+      }).catch(() => {});
+
+    // Registra localmente a pergunta respondida pelo usuário para evitar repetição
+    if (!respondidas[tipo_pergunta].includes(pergunta_selecionada.id_pergunta)) {
+      respondidas[tipo_pergunta].push(pergunta_selecionada.id_pergunta);
+      localStorage.setItem("visitante_respondidas", JSON.stringify(respondidas));
+    };
+    
+    // Incrementa perguntas respondidas como visitante para tag de conversão
+    analisarMetaConversao();
+
+    // Altera a pontuação do usuário após o envio da resposta
+    alterarPontuacaoUsuario(pontuacoes_usuario[tema_atual], pontuacoes_usuario[tema_atual] + pontos_ganhos, callbackAtualizarUI)
+    pontuacoes_usuario[tema_atual] = pontuacoes_usuario[tema_atual] + pontos_ganhos;
+
+    // Pontuações de usuário são usadas temporariamente, enquanto a dde visitante é para registro permanente. Para usuários logados, registra-se apenas a de usuaários porque a gravação permanente é feita na base de dados
+    localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes_usuario));
+    localStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_usuario));
+    atualizarRankingVisual();
+
+    // Atualiza as perguntas restantes do usuário no localStorage
+    const perguntas_restantes_anterior = localStorage.getItem("perguntas_restantes_visitante") || 100;
+    const novas_perguntas_restantes = perguntas_restantes_anterior - 1;
+    localStorage.setItem("perguntas_restantes_visitante", novas_perguntas_restantes)
+    document.getElementById("perguntas-count").textContent = novas_perguntas_restantes
+
+    // Atualiza o número de dicas restantes do usuário no localStorage e no contador de dicas
+    if (tipo_pergunta === 'discursiva') {
+      let dicas_restantes = localStorage.getItem("dicas_restantes_visitante") || 20
+
+      const dadosRespondidas = JSON.parse(
+        localStorage.getItem("visitante_respondidas")
+      ) || { objetiva: [], discursiva: [] };
+      const totalDiscursivas = dadosRespondidas.discursiva.length;
+      if (totalDiscursivas % 10 === 0 && dicas_restantes < 20) {
+        dicas_restantes ++;
+        contador_dicas_restantes.textContent = dicas_restantes;
+      }
+
+      contador_dicas_restantes.textContent = dicas_restantes;
+      localStorage.setItem("dicas_restantes_visitante", dicas_restantes);
     }
   }
 
@@ -392,6 +459,7 @@ async function enviarResposta(pulando = false) {
     if (modo_jogo === 'revisao') {
       letra_correta = pergunta_selecionada.resposta_correta;
       acertou = respostaObjetivaCorreta();
+      console.log("Acertou? ", acertou)
     }
     else {
       const response = await fetchAutenticado(`/pergunta/${pergunta_selecionada.id_pergunta}/${tipo_pergunta}/gabarito`);
@@ -439,7 +507,7 @@ async function enviarResposta(pulando = false) {
 
   // Exibe os pontos ganhos ou perdidos
   pontos_ganhos = calcularPontuacao(acertou);
-  if (modo_jogo === 'desafio' || sessionStorage["modoVisitante"] === "true") {
+  if (modo_jogo === 'desafio') {
     if (pontos_ganhos > 0) {
       lbl_pontos_ganhos.style.color = 'lime'
       lbl_pontos_ganhos.style.display = 'flex'
@@ -453,7 +521,7 @@ async function enviarResposta(pulando = false) {
   }
 
   // Registra a resposta enviada no SQL
-  if (modo_jogo === 'desafio') {
+  if (modo_jogo === 'desafio' && !MODO_VISITANTE) {
     const id_pergunta = pergunta_selecionada.id_pergunta;
     const versao_pergunta = pergunta_selecionada.versao_pergunta;
     
@@ -469,48 +537,13 @@ async function enviarResposta(pulando = false) {
   }
   
   // Registra o envio da resposta no SQL caso esteja no modo visitante
-  if (sessionStorage["modoVisitante"] === "true") {
-    fetch("/log/visitante", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      evento: "Pergunta respondida",
-      tema: tema_atual,
-      tipo_pergunta: tipo_pergunta,
-      id_pergunta: pergunta_selecionada.id_pergunta,
-      resposta_enviada: resposta_usuario,
-      acertou: acertou,
-      tempo_gasto: tempo_gasto,
-      usou_dica: dica_gasta,
-      modo_tela_usuario: detectarModoTela()
-    })
-    }).catch(() => {});
-
-    // Registra localmente a pergunta respondida pelo usuário para evitar repetição
-    let respondidas = JSON.parse(localStorage.getItem("visitante_respondidas")) || {
-      objetiva: [],
-      discursiva: []
-    };
-    if (!respondidas[tipo_pergunta].includes(pergunta_selecionada.id_pergunta)) {
-      respondidas[tipo_pergunta].push(pergunta_selecionada.id_pergunta);
-      localStorage.setItem("visitante_respondidas", JSON.stringify(respondidas));
-    };
-    
-    // Incrementa perguntas respondidas como visitante para tag de cnversãoo
-    incrementarPerguntasRespondidasVisitante();
-
-    // Altera a pontuação do usuário após o envio da resposta
-    alterarPontuacaoUsuario(pontuacoes_usuario[tema_atual], pontuacoes_usuario[tema_atual] + pontos_ganhos, callbackAtualizarUI)
-    pontuacoes_usuario[tema_atual] = pontuacoes_usuario[tema_atual] + pontos_ganhos;
-    localStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_usuario));
-    atualizarRankingVisual();
+  if (MODO_VISITANTE && modo_jogo === 'desafio') {
+    registrarRespostaVisitante(resposta_usuario, acertou, dica_gasta, pontos_ganhos, tempo_gasto)
   }
-
+  
+  // Armazena informações que serão úteis depois na tela de resultado
   if (prosseguir_com_resultado) {
-    // Armazena informações que serão úteis depois na tela de resultado
-    if (modo_jogo === "desafio" || sessionStorage["modoVisitante"] === "true") {
+    if (modo_jogo === "desafio") {
       let info_resposta;
       if (tipo_pergunta === 'discursiva') {
         info_resposta = {"enunciado": pergunta_selecionada.enunciado, "respostas_aceitas": respostas_corretas, "resposta_usuario": resposta_usuario, "usou_dica": dica_gasta, "pontos_ganhos": pontos_ganhos, "dificuldade": pergunta_selecionada.dificuldade}
@@ -537,7 +570,7 @@ function esconderRespostasAceitas() {
 }
 
 function finalizarQuiz() {
-  if (modo_jogo === 'desafio' || sessionStorage["modoVisitante"] === "true") {
+  if (modo_jogo === 'desafio') {
     localStorage.setItem("perguntas_respondidas", JSON.stringify(perguntas_respondidas));
     localStorage.setItem("rankings_usuario", JSON.stringify(rankings_usuario));
     window.location.href = "/resultado";
@@ -667,20 +700,17 @@ function mostrarBotoesAcao() {
   botoes_finalizar_div.style.display = "flex";
   
   let dificuldades_permitidas = null
-  if (sessionStorage["modoVisitante"] === "false") {
-    dificuldades_permitidas = obterDificuldadesDisponiveis()
+  if (!MODO_VISITANTE) {
+    dificuldades_permitidas = obterDificuldadesDisponiveis(tema_atual, MODO_VISITANTE)
   }
   else {
     dificuldades_permitidas = ['Fácil', 'Médio', 'Difícil']
   }
   ha_perguntas_disponiveis = dificuldades_permitidas.some(dif => perguntas_por_dificuldade[dif].length > 0)
 
-  let encerrar_quiz = null
-  if (sessionStorage["modoVisitante"] === "false" && modo_jogo === "desafio") {
-    encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade)
-  }
-  else {
-    encerrar_quiz = false
+  let encerrar_quiz = false
+  if (modo_jogo === "desafio") {
+    encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE)
   }
 
   // Mostrar apenas o botão Finalizar
@@ -773,8 +803,8 @@ function mostrarPergunta() {
   btn_enviar.disabled = true;
 
   function escolherProximaDificuldade() {
-    const ranking = obterInfoRankingAtual().ranking;
-    const disponiveis = obterDificuldadesDisponiveis();
+    const ranking = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking;
+    const disponiveis = obterDificuldadesDisponiveis(tema_atual, MODO_VISITANTE);
 
     const probsBase = PROBABILIDADES_POR_RANKING[ranking];
     const estoque = {
@@ -903,7 +933,7 @@ function mostrarPergunta() {
       titulo.style.color = "black";
   }
 
-  let ranking_usuario = obterInfoRankingAtual().ranking
+  let ranking_usuario = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking
   regras_usuario = regras_pontuacao.find(r => r.ranking === ranking_usuario);
 
   if (tipo_pergunta.toLowerCase() === 'discursiva') {
@@ -913,19 +943,12 @@ function mostrarPergunta() {
   
     // Decide se deve mostrar o ícone de dica
     let dica_permitida = true
-    if (sessionStorage["modoVisitante"] === "false") { // Modo com conta
-      if (!regras_usuario) {
-        console.error("Ranking do usuário não encontrado nas regras de pontuação.");
-        return 0;
-      }
-      if (pergunta_selecionada.dificuldade === 'Fácil' && regras_usuario.pontos_acerto_facil <= 10 || pergunta_selecionada.dificuldade === 'Médio' && regras_usuario.pontos_acerto_medio <= 10 || !pergunta_selecionada.dica) {
-        dica_permitida = false
-      }
+    if (!regras_usuario) {
+      console.error("Ranking do usuário não encontrado nas regras de pontuação.");
+      return 0;
     }
-    else { // Modo visitante
-      if (!pergunta_selecionada.dica) {
-        dica_permitida = false
-      }
+    if (pergunta_selecionada.dificuldade === 'Fácil' && regras_usuario.pontos_acerto_facil <= 10 || pergunta_selecionada.dificuldade === 'Médio' && regras_usuario.pontos_acerto_medio <= 10 || !pergunta_selecionada.dica) {
+      dica_permitida = false
     }
 
     // Exibe o ícone de dica
@@ -938,7 +961,7 @@ function mostrarPergunta() {
     
     // No modo revisão não exibe contador de dicas
     if (modo_jogo === 'revisao') {
-      document.getElementById("contador-dicas").textContent = ''
+      contador_dicas_restantes.textContent = ''
     }
     dica_box.style.display = "none"
   } 
@@ -1024,7 +1047,7 @@ async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ga
 
       // Atualiza o número de dicas restantes do usuário no localStorage e no contador de dicas
       if (tipo_pergunta === 'discursiva') {
-        document.getElementById("contador-dicas").textContent = data.dicas_restantes;
+        contador_dicas_restantes.textContent = data.dicas_restantes;
         localStorage.setItem("dicas_restantes", data.dicas_restantes);
       }
 
@@ -1162,15 +1185,28 @@ function selecionarAlternativa(btn) {
 async function usarDica() {
   if (aguardando_proxima || dica_gasta) return;
   if (modo_jogo == 'desafio') {
-    let dicas_restantes = parseInt(localStorage.getItem("dicas_restantes") || "0");
-    if (dicas_restantes <= 0) {
-      return;
+    let dicas_restantes;
+    if (!MODO_VISITANTE) {
+      dicas_restantes = parseInt(localStorage.getItem("dicas_restantes") || "0");
+      if (dicas_restantes <= 0) {
+        return;
+      }
+      const response = await fetchAutenticado("/usar_dica")
+      if (response.ok) {
+        dicas_restantes -= 1;
+        localStorage.setItem("dicas_restantes", dicas_restantes);
+        contador_dicas_restantes.textContent = dicas_restantes;
+        mostrarDica();
+      }
     }
-    const response = await fetchAutenticado("/usar_dica")
-    if (response.ok) {
-      dicas_restantes -= 1;
-      localStorage.setItem("dicas_restantes", dicas_restantes);
-      document.getElementById("contador-dicas").textContent = dicas_restantes;
+    else {
+      dicas_restantes = parseInt(localStorage.getItem("dicas_restantes_visitante") || "0")
+      if (dicas_restantes <= 0) {
+        return;
+      }
+      dicas_restantes -= 1
+      localStorage.setItem("dicas_restantes_visitante", dicas_restantes)
+      contador_dicas_restantes.textContent = dicas_restantes;
       mostrarDica();
     }
   }
@@ -1181,8 +1217,14 @@ async function usarDica() {
 
 document.addEventListener("DOMContentLoaded", () => {
   // Declara as variáveis que serão úteis
-  const dicas = JSON.parse(localStorage.getItem("dicas_restantes"));
-  const contador_dicas = document.getElementById("contador-dicas");
+  let dicas;
+  if (MODO_VISITANTE) {
+    dicas = JSON.parse(localStorage.getItem("dicas_restantes_visitante"));
+  }
+  else {
+    dicas = JSON.parse(localStorage.getItem("dicas_restantes"));
+  }
+  const contador_dicas = contador_dicas_restantes;
   const icone_perguntas_restantes = document.getElementById("perguntas-restantes-icon");
   const dica_icon = document.getElementById("dica-icon");
   const btn_proxima = document.getElementById("btn-proxima");
@@ -1197,7 +1239,12 @@ document.addEventListener("DOMContentLoaded", () => {
   icone_perguntas_restantes.style.display = "flex"
   if (modo_jogo === 'desafio') {
     const num_perguntas_restantes = document.getElementById("perguntas-count")
-    num_perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}`
+    if (!MODO_VISITANTE) {
+      num_perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}`
+    }
+    else {
+      num_perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}`
+    }
     icone_perguntas_restantes.style.visibility = 'visible';
   }
   else {
@@ -1279,7 +1326,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Chama as funções que são necessárias na inicialização
-  callbackAtualizarUI (pontuacoes_usuario[tema_atual])
+  if (MODO_VISITANTE) {
+    callbackAtualizarUI (pontuacoes_usuario[tema_atual])
+  }
+  else {
+    callbackAtualizarUI (pontuacoes_usuario[tema_atual])
+  }
   atualizarRankingVisual();
   mostrarPergunta();
   configurarEstrelas();

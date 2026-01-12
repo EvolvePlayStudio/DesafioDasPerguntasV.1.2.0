@@ -22,6 +22,7 @@
       min-height: 100vh;
       overflow-y: hidden;
     }
+    /*
     header {
       display:flex;
       align-items: center;
@@ -31,12 +32,30 @@
       display: flex;
       align-items: center;
       position: relative;
-    }
-    .header-left, .header-right {
-      flex: 0 0 250px; /* mesma largura fixa para os dois lados */
+    }*/
+
+    header {
       display: flex;
       align-items: center;
+      background-color: var(--cor-fundo-escuro);
+      color: white;
+      padding: 0.6rem 1rem;
     }
+    /*
+    .header-left, .header-right {
+      flex: 0 0 250px;  mesma largura fixa para os dois lados 
+      display: flex;
+      align-items: center;
+    }*/
+
+    .header-left,
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      flex: 0 0 auto;
+    }
+
     .header-left {
       justify-content: flex-start;
       gap: 1rem;
@@ -45,6 +64,23 @@
       justify-content: flex-end;
       gap: 1rem;
     }
+
+    .header-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      white-space: nowrap;
+      user-select: none;
+    }
+
     .avatar {
         width: 44px;
         height: 44px;
@@ -63,35 +99,22 @@
         font-size: 1rem;
         color: #ffffff;
     }
-    .header-center-wrapper {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 2rem; /* Espaçamento entre ícones e título */
-      flex: 1 1 auto; /* Expande no espaço disponível */
-      position: relative; /* Importante apra empurrar os outros itens do header */
-    }
-    .header-center {
-      font-size: 1.5rem;
-      flex: 1 1 auto;
-      text-align: center;
-      user-select: none;
-      position: static;
-      pointer-events: none; /* Evita que o header-center capture cliques */
-      white-space: nowrap;
-      font-weight: 700;
-    }
+
     .header-right nav button {
       font-size: 0.85rem;
       padding: 0.3rem 0.6rem;
     }
+
+
+
+    /*
     .icon-left, .icon-right {
       position: absolute;
-      top: 50%;                 /* centraliza verticalmente */
+      top: 50%;
       transform: translateY(-50%);
       padding: 0.3rem 0.6rem;
       border-radius: 8px;
-      font-weight: 700;         /* peso fixo */
+      font-weight: 700;
       color: white;
       display: flex;
       align-items: center;
@@ -100,15 +123,15 @@
       min-width: 60px;
       cursor: default;
       user-select: none;
-      font-size: 1.15rem;        /* fonte maior para ícones e texto */
+      font-size: 1.15rem;
       flex-shrink: 0;
       white-space: nowrap;
     }
     .icon-left {
-      left: 25vw;  /* cerca de 25% da largura da viewport */
+      left: 25vw;
     }
     .icon-right {
-      right: 25vw; /* cerca de 75% da largura da viewport */
+      right: 25vw;
     }
     .icon-left .icon, 
     .icon-right .icon {
@@ -116,11 +139,15 @@
       min-height: 24px;
       font-size: 1.05em;
       padding: 0.15rem 0.1rem;
-    }
+    }*/
+
+
+
     nav {
       display: flex;
       gap: 0.7rem;
     }
+    /*
     nav button {
         display: flex;
         align-items: center;
@@ -133,12 +160,34 @@
         cursor: pointer;
         font-size: 1rem;
         font-weight: 700;
-        box-sizing: border-box; /* Garante padding incluído no tamanho total */
+        box-sizing: border-box;
         min-height: 40px;
-        white-space: nowrap; /* Evita que o texto quebre */
+        white-space: nowrap;
         transition: background-color 0.3s ease;
-        flex-shrink: 0; /* Impede encolhimento se dentro de flexbox */
+        flex-shrink: 0;
+    }*/
+
+
+    nav button {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: transparent;
+      color: white;
+      border: none;
+      padding: 0.4rem 0.7rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 700;
+      transition: background-color 0.2s ease;
     }
+
+    nav button:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+
     .titulo {
       font-size: 1.5rem;
       font-weight: bold;
@@ -257,24 +306,27 @@
   
   <header>
     <div class="header-left">
-      <div class="avatar"><img src="{{ url_for('static', filename='img/Avatar.png') }}" alt="Avatar"></div>
+      <div class="avatar">
+        <img src="{{ url_for('static', filename='img/Avatar.png') }}" alt="Avatar">
+      </div>
       <div id="user-name" class="user-name"></div>
-      <div id="icon-left" class="icon-left" title="Perguntas restantes">⚡ <span id="perguntas-count">0/0</span></div>
     </div>
 
     <div class="header-center">
-      Desafio das Perguntas
+      <nav>
+        <button id="btn-pesquisa" style="display: none;">🔍 Pesquisa</button>
+        <button id="btn-doacoes" style="display: none;">💖 Doações</button>
+        <button id="btn-logout" style="display: none;">🚪 Sair</button>
+      </nav>
     </div>
 
     <div class="header-right">
-      <div id="icon-right" class="icon-right" title="Dicas restantes">💡 <span id="dicas-count">0/0</span></div>
-      <nav>
-        <button id="btn-perfil" style="display: none;" disabled>Perfil</button>
-        <button id="btn-opcoes" style="display: none;" disabled>Opções</button>
-        <button id="btn-pesquisa" style="display: none;">Pesquisa</button>
-        <button id="btn-doacoes" style="display: none;">Doações</button>
-        <button id="btn-logout" style="display: none;">Sair</button>
-      </nav>
+      <div class="status-item" title="Perguntas restantes">
+        ⚡ <span id="perguntas-count">0/0</span>
+      </div>
+      <div class="status-item" title="Dicas restantes">
+        💡 <span id="dicas-count">0/0</span>
+      </div>
     </div>
   </header>
 

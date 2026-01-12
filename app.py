@@ -1185,8 +1185,9 @@ def listar_perguntas(user_id):
         pontuacoes_usuario = buscar_pontuacoes_usuario(id_usuario)
     else:
         pontuacoes_usuario = {}
+        """
         for tema in temas_disponiveis:
-            pontuacoes_usuario[tema] = 2500
+            pontuacoes_usuario[tema] = 2500"""
 
     return jsonify({
         'perguntas': perguntas_por_dificuldade,

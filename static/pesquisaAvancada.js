@@ -90,7 +90,6 @@ async function buscarPerguntas(tema, palavras) {
 
     dados.forEach(item => {
       let resposta = item.resposta;
-      console.log("Item é: ", item)
       if (item.tipo === "Discursiva" && Array.isArray(resposta)) {
         resposta = resposta.join(", ");
       }

@@ -4,14 +4,18 @@ const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
 sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 
+let tema_atual = null;
 let tipo_pergunta = null;
 const mensagem = document.getElementById("mensagem");
+const temas = [
+"Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia", "Variedades"
+];
 
 // Widgets da mensagem inicial para quem se cadastrou
 const modalOnboarding = document.getElementById("modal-onboarding");
 const btnOnboardingOk = document.getElementById("btn-onboarding-ok");
 
-if (sessionStorage.getItem("modoVisitante") === "true") {
+if (MODO_VISITANTE) {
 
   // Gera ID de visitante para o usuário caso não tenha
   let idVisitante = localStorage.getItem("id_visitante");
@@ -20,10 +24,34 @@ if (sessionStorage.getItem("modoVisitante") === "true") {
     localStorage.setItem("id_visitante", idVisitante)
   }
 
-  // Cria contador de perguntas respondidas no modo visitante
-  if (!localStorage.getItem("perguntas_respondidas_visitante")) {
-    localStorage.setItem("perguntas_respondidas_visitante", 0)
+  // Cria pontuações de usuário como visitante (obs: esta função está repetida na tela de pesquisa)
+  if (!localStorage.getItem("pontuacoes_visitante")) {
+      const pontuacoes = {};
+
+      const temas = [
+        "Artes", "Astronomia", "Biologia", "Esportes", "Filosofia",
+        "Geografia", "História", "Mídia", "Música",
+        "Química", "Tecnologia", "Variedades"
+      ];
+
+      temas.forEach(tema => {
+        pontuacoes[tema] = 1500;
+      });
+      localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes));
   }
+
+  // Cria as informações de perguntas e dicas restantes do usuário
+  if (!localStorage.getItem("perguntas_restantes_visitante")) {
+    localStorage.setItem("perguntas_restantes_visitante", 100);
+  }
+  if (!localStorage.getItem("dicas_restantes_visitante")) {
+    localStorage.setItem("dicas_restantes_visitante", 20);
+  }
+
+  // Cria contador de perguntas respondidas no modo visitante
+  /*if (!localStorage.getItem("perguntas_respondidas_visitante")) {
+    localStorage.setItem("perguntas_respondidas_visitante", 0)
+  }*/
 
   // Cria armazenamento de ids de perguntas já respondidas no localStorage
   if (!localStorage.getItem("visitante_respondidas")) {
@@ -41,24 +69,22 @@ if (sessionStorage.getItem("modoVisitante") === "true") {
   });
 }
 else {
-  document.getElementById("btn-pesquisa").style.display = "";
-  document.getElementById("btn-doacoes").style.display = "";
   const onboarding_concluido = localStorage.getItem("onboarding_concluido");
   if (onboarding_concluido === "false") {
     // modalOnboarding.classList.remove("hidden");
   }
 }
 
+document.getElementById("btn-pesquisa").style.display = "";
+document.getElementById("btn-doacoes").style.display = "";
 document.getElementById("btn-logout").style.display = ""
 
 async function iniciarQuiz(event) {
-  // Atualiza o tema atual e modo de jogo no localStorage
-  const tema_atual = decodeURIComponent(event.currentTarget.dataset.tema);
+  // Atualiza o tema atual, modo de jogo e tipo de pergunta no localStorage
+  tema_atual = decodeURIComponent(event.currentTarget.dataset.tema);
+  tipo_pergunta = document.querySelector('input[name="tipo-de-pergunta"]:checked').value;
   localStorage.setItem("tema_atual", tema_atual);
   localStorage.setItem("modo_jogo", 'desafio');
-
-  // Atualiza o tipo de pergunta no localStorage (objetiva ou discursiva)
-  tipo_pergunta = document.querySelector('input[name="tipo-de-pergunta"]:checked').value;
   localStorage.setItem("tipo_pergunta", tipo_pergunta);
 
   if (!tema_atual || !tipo_pergunta) {
@@ -74,7 +100,7 @@ async function iniciarQuiz(event) {
 
   // Carrega as perguntas para o quiz
   try {
-    if (sessionStorage["modoVisitante"] === "false") {
+    if (!MODO_VISITANTE) {
       const response = await fetchAutenticado(`/api/perguntas?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`)
       if (response.ok) {
         const data = await response.json();
@@ -85,7 +111,7 @@ async function iniciarQuiz(event) {
 
         // Analisar se pode prosseguir com o quiz de acordo com o estoque de perguntas
         const perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"));
-        const encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade)
+        const encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE)
         
         // Analisa o ranking atual do usuário (ATENÇÃO, já procura ranking na função deveEncerrarQuiz, o que pode ser uma perda de eficiência aqui)
         const rankings_usuario = {};
@@ -109,8 +135,7 @@ async function iniciarQuiz(event) {
       }
     }
     else { // Modo visitante
-      localStorage.setItem("modo_jogo", 'revisao')
-      const response = await fetchAutenticado(`/api/perguntas?tema=${tema_atual}&modo=revisao&tipo-de-pergunta=${tipo_pergunta}`)
+      const response = await fetchAutenticado(`/api/perguntas?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`)
 
       if (response.ok) {
         const data = await response.json();
@@ -118,7 +143,6 @@ async function iniciarQuiz(event) {
         // Elimina perguntas já respondidas pelo visitante
         const respondidas = JSON.parse(localStorage.getItem("visitante_respondidas"));
         const idsRespondidas = respondidas[tipo_pergunta] || [];
-
         Object.keys(data.perguntas).forEach(dificuldade => {
           if (!Array.isArray(data.perguntas[dificuldade])) return;
 
@@ -128,29 +152,33 @@ async function iniciarQuiz(event) {
         });
 
         // Analisa se há perguntas disponíveis para prosseguir com o quiz
-        const haPerguntas = Object.values(data.perguntas).some(arr => arr.length > 0)
-        if (!haPerguntas) {
+        const encerrar_quiz = deveEncerrarQuiz(data["perguntas"], MODO_VISITANTE);
+        const haPerguntas = Object.values(data.perguntas).some(arr => arr.length > 0);
+        if (!haPerguntas || encerrar_quiz) {
           exibirMensagem(
             mensagem,
-            `Você atingiu seu limite de perguntas ${tipo_pergunta}s no tema ${tema_atual}. Crie uma conta para ter acesso ao conteúdo completo`,
-            'red'
+            `É necessário criar uma conta para ter aceso a mais perguntas ${tipo_pergunta}s no tema ${tema_atual}`,
+            'orange'
           )
           registrarEvento("Perguntas esgotadas", tema_atual);
           return
         }
         registrarEvento("Tema escolhido", tema_atual)
-
-        localStorage.setItem("pontuacoes_usuario", JSON.stringify(data["pontuacoes_usuario"]));
+        
+        // Grava pontuações do usuário e perguntas no localStorage
+        localStorage.setItem("pontuacoes_usuario", localStorage.getItem("pontuacoes_visitante"));
         localStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
 
+        // Analisa os rankings atuais do usuário
         const rankings_usuario = {};
-        Object.keys(data["pontuacoes_usuario"]).forEach(tema => {
-          rankings_usuario[tema] = "Estudante"
+        temas.forEach( tema => {
+          const ranking_no_tema = obterInfoRankingAtual(tema, MODO_VISITANTE).ranking;
+          rankings_usuario[tema] = ranking_no_tema;
         })
-
         localStorage.setItem("rankings_usuario", JSON.stringify(rankings_usuario))
         mensagem.style.opacity = 0
-        window.location.href = `/quiz?tema=${tema_atual}&modo=revisao&tipo-de-pergunta=${tipo_pergunta}`;
+        
+        window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;
       }
     }
   }
@@ -187,7 +215,7 @@ async function carregarRegrasPontuacao() {
     localStorage.setItem("regras_pontuacao", JSON.stringify(data.regras_pontuacao));
 }
 
-function registrarEvento(evento, tema_atual) {
+function registrarEvento(evento) {
   // Registra a escolha do tema no SQL
   fetch("/log/visitante", {
     method: "POST",
@@ -206,19 +234,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Carrega as regras de pontuações
   carregarRegrasPontuacao()
 
-  // Implementa a função de clique no botão de doações
-  document.getElementById("btn-doacoes").addEventListener("click", async () => {
-    if (sessionStorage.getItem("modoVisitante") === "false") {
-      const response = await fetchAutenticado("/doações");
-      if (response.ok) {
-        window.location.href = "/doações";
-      }
-    }
-    else {
-      window.location.href = "/doações";
-    }
-  });
-
   // Implementa função de clique no botão para confirmar mensagem ao logar pela primeira vez
   btnOnboardingOk.addEventListener("click", async () => {
     modalOnboarding.classList.add("hidden");
@@ -231,6 +246,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     catch (e) {
       console.error("Erro ao concluir onboarding");
+    }
+  });
+
+  // Implementa a função de clique no botão de doações
+  document.getElementById("btn-doacoes").addEventListener("click", async () => {
+    if (!MODO_VISITANTE) {
+      const response = await fetchAutenticado("/doações");
+      if (response.ok) {
+        window.location.href = "/doações";
+      }
+    }
+    else {
+      window.location.href = "/doações";
     }
   });
 
@@ -266,8 +294,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Define o nome de usuário, as perguntas e dicas disponíveis e máximas para o usuário
   if (sessionStorage.getItem("modoVisitante") === "true") {
     nome_usuario.textContent = "Visitante"
-    perguntas_restantes.textContent = "100/100"
-    dicas_restantes.textContent = "20/20"
+    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/100`
+    dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes_visitante")}/20`
   }
   else {
     nome_usuario.textContent = localStorage.getItem("nome_usuario")
