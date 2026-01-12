@@ -29,7 +29,6 @@
       padding: 30px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      text-align: center;
       margin-top: 2rem;
       margin-bottom: 2rem;
     }
@@ -37,6 +36,7 @@
     h2 {
       color: black;
       margin-bottom: 15px;
+      text-align: center;
     }
 
     p {
@@ -55,9 +55,9 @@
       margin-bottom: 15px;
       word-break: break-all;
     }
-
     button {
-      background: #2adf30;
+      margin-top: 0.5rem;
+      background: rgb(16, 133, 20);
       color: #fff;
       border: none;
       padding: 12px 18px;
@@ -65,25 +65,31 @@
       border-radius: 8px;
       cursor: pointer;
       transition: background 0.3s;
+      font-size: 0.95em;
     }
-    
     button:hover {
-      background: #14af1c;
+      background: #09610c;
     }
-
     .success {
       color: green;
-      margin-top: 10px;
-      font-size: 0.9em;
+      margin-top: 1.5rem;
+      font-size: 1.05em;
       display: none;
-    }
-    .qrcode {
-      margin-top: 20px;
+      text-align: center;
     }
     #qrcode {
       margin-top: 20px;
       display: flex;
       justify-content: center;
+    }
+    .qrcode {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .pix-box {
+      text-align: center;
     }
     .qrcode img {
       border: 2px solid #ddd;
@@ -92,28 +98,66 @@
       background: white;
       width: 15rem;
     }
+    .btn-voltar {
+      display: inline-block;
+      background: var(--bg-botao-login);
+    }
+    .btn-voltar:hover {
+      background: var(--bg-hover-botao-login);
+    }
+    .acoes {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 15px;
+    }
+    .pix-box {
+      max-width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Apoie nosso projeto</h2>
     <p>
-      <strong>Desafio das Perguntas</strong> é gratuito e mantido com muito esforço. Sua doação apoia o desenvolvimento e melhoria contínua do projeto, além de ajudar a cobrir custos de manuntenção.
+      <strong>Desafio das Perguntas</strong> é gratuito e mantido com muito esforço. Sua doação apoia o desenvolvimento e melhoria contínua do projeto, além de nos ajudar a cobrir custos de manuntenção.
     </p>
 
-    <p>
-      Qualquer contribuição faz diferença para manter o projeto vivo e acessível a todos.
-    </p>
+    <p><strong>Valores sugeridos:</strong></p>
+      <ul>
+        <li>❤️ R$ 3/mês – ajuda simbólica </li>
+        <li>☕ R$ 5/mês – apoio recorrente </li>
+        <li>🚀 R$ 10/mês – incentivo ao projeto </li>
+      </ul>
+    
+    <p>Caso não possa contribuir financeiramente, considere outras formas de apoio como:</p>
+      <ul>
+        <li>Envio de feedbacks e sugestões</li>
+        <li>Indicação do site a outras pessoas</li>
+      </ul>
 
-    <div class="pix-box" id="pixKey">{{ chave_pix }}</div>
-    <button onclick="copyPix()">Copiar chave PIX</button>
-    <div class="success" id="successMsg">Chave PIX copiada com sucesso!</div>
+    <p>Toda forma de apoio contribui para a evolução do projeto, seja por doações, feedbacks ou uso contínuo da plataforma.</p>
+
+    
 
     <!-- QR Code -->
     <div class="qrcode">
-      <p>Escaneie o QR Code abaixo ou copie a chave PIX:</p>
       <img src="/static/qrcode.png" alt="QR Code PIX">
+      <p>Escaneie o QR Code acima ou copie a chave PIX:</p>
     </div>
+
+    <div class="pix-box" id="pixKey">
+      {{ chave_pix }}
+    </div>
+
+    <div class="acoes">
+      <button onclick="voltarParaHome()" class="btn-voltar">Voltar</button>
+      <button onclick="copyPix()" class="btn-copiar">Copiar chave PIX</button>
+    </div>
+
+    <div class="success" id="successMsg">Chave PIX copiada com sucesso!</div>
     
   </div>
 
@@ -124,8 +168,11 @@
       navigator.clipboard.writeText(pixKey).then(() => {
         const msg = document.getElementById("successMsg");
         msg.style.display = "block";
-        setTimeout(() => msg.style.display = "none", 2000);
+        setTimeout(() => msg.style.display = "none", 4000);
       });
+    }
+    function voltarParaHome() {
+      window.location.href = '/home'
     }
   </script>
 </body>
