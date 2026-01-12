@@ -1294,7 +1294,7 @@ def login():
 
 @app.route("/log/visitante", methods=["POST"])
 def log_visitante():
-    return jsonify({"status": "ok"}), 200
+    """return jsonify({"status": "ok"}), 200"""
     dados = request.get_json()
     evento = dados.get("evento")
     tema = dados.get("tema")
