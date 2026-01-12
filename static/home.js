@@ -294,12 +294,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Define o nome de usuário, as perguntas e dicas disponíveis e máximas para o usuário
   if (sessionStorage.getItem("modoVisitante") === "true") {
     nome_usuario.textContent = "Visitante"
-    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/100`
+    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/60`
     dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes_visitante")}/20`
   }
   else {
     nome_usuario.textContent = localStorage.getItem("nome_usuario")
-    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}/100`
+    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}/60`
     dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes")}/20`
   }
   // Carrega as preferências de modo de jogo e tipo de pergunta
