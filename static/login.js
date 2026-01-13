@@ -1,3 +1,9 @@
+function gtag_report_conversion() { 
+  gtag('event', 'conversion', {
+    'send_to': 'AW-17529321916/TyLzCMyw5sobELzz0KZB'
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   const btnEntrarSemLogin = document.getElementById("entrar-visitante")
 
