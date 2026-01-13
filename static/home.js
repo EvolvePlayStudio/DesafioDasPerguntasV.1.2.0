@@ -11,9 +11,9 @@ const temas = [
 "Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia", "Variedades"
 ];
 
-// Widgets da mensagem inicial para quem se cadastrou
-const modalOnboarding = document.getElementById("modal-onboarding");
-const btnOnboardingOk = document.getElementById("btn-onboarding-ok");
+// Widgets do modal alertando confirmação de e-mail necessária
+const modal = document.getElementById("modal-email-confirmacao");
+const msgModal = document.getElementById("modal-msg");
 
 if (MODO_VISITANTE) {
 
@@ -48,11 +48,6 @@ if (MODO_VISITANTE) {
     localStorage.setItem("dicas_restantes_visitante", 20);
   }
 
-  // Cria contador de perguntas respondidas no modo visitante
-  /*if (!localStorage.getItem("perguntas_respondidas_visitante")) {
-    localStorage.setItem("perguntas_respondidas_visitante", 0)
-  }*/
-
   // Cria armazenamento de ids de perguntas já respondidas no localStorage
   if (!localStorage.getItem("visitante_respondidas")) {
     localStorage.setItem("visitante_respondidas", JSON.stringify({ objetiva: [], discursiva: []}));
@@ -61,7 +56,7 @@ if (MODO_VISITANTE) {
   // APENAS PARA DESENVOLVEDOR, SEMPRE COMENTAR QUANDO LANÇAR NOVAS VERSÕES
   // localStorage.setItem("visitante_respondidas", JSON.stringify({ objetiva: [], discursiva: []}));
 
-  // Envia uma vez para o backend
+  // Envia uma vez para o backend (PROVÁVEL REMOÇÃO EM BREVE DO TRECHO ABAIXO)
   fetch("/api/registrar_visitante", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -69,10 +64,19 @@ if (MODO_VISITANTE) {
   });
 }
 else {
-  const onboarding_concluido = localStorage.getItem("onboarding_concluido");
-  if (onboarding_concluido === "false") {
-    // modalOnboarding.classList.remove("hidden");
-  }
+  // exibirModalEmailConfirmacao();
+
+  // Implementa função para botão de fechar modal
+  const btnFecharModal = document.getElementById("btn-fechar-modal");
+  btnFecharModal.addEventListener("click", async () => {
+    fecharModalEmail()
+  });
+
+  // Implementa função para botão de reenviar e-mail de confirmação
+  const btnReenviarEmail = document.getElementById("btn-reenviar-email");
+  btnReenviarEmail.addEventListener("click", async () => {
+    reenviarEmailConfirmacao()
+  });
 }
 
 document.getElementById("btn-pesquisa").style.display = "";
@@ -215,6 +219,46 @@ async function carregarRegrasPontuacao() {
     localStorage.setItem("regras_pontuacao", JSON.stringify(data.regras_pontuacao));
 }
 
+function exibirModalEmailConfirmacao() {
+  if (modal) modal.classList.remove("hidden");
+}
+
+function fecharModalEmail() {
+  if (modal) modal.classList.add("hidden");
+}
+
+function reenviarEmailConfirmacao() {
+  if (sessionStorage.getItem("email_reenviado_neste_login")) {
+    msgModal.innerText = "O e-mail de confirmação já foi reenviado neste login.";
+    msgModal.style.display = "block";
+    msgModal.style.color = "#b26a00";
+    return;
+  }
+
+  fetch("/reenviar-email-confirmacao", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" }
+  })
+  .then(res => res.json())
+  .then(data => {
+    msgModal.style.display = "block";
+
+    if (data.success) {
+      sessionStorage.setItem("email_reenviado_neste_login", "true");
+      msgModal.innerText = "E-mail de confirmação reenviado com sucesso.";
+      msgModal.style.color = "green";
+    } else {
+      msgModal.innerText = data.message || "Não foi possível reenviar o e-mail.";
+      msgModal.style.color = "red";
+    }
+  })
+  .catch(() => {
+    msgModal.style.display = "block";
+    msgModal.innerText = "Erro de comunicação com o servidor.";
+    msgModal.style.color = "red";
+  });
+}
+
 function registrarEvento(evento) {
   // Registra a escolha do tema no SQL
   fetch("/log/visitante", {
@@ -234,18 +278,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // Carrega as regras de pontuações
   carregarRegrasPontuacao()
 
-  // Implementa função de clique no botão para confirmar mensagem ao logar pela primeira vez
-  btnOnboardingOk.addEventListener("click", async () => {
-    modalOnboarding.classList.add("hidden");
-    try {
-      await fetchAutenticado("/api/onboarding/concluir", {
-        method: "POST",
-        credentials: "include"
-      });
-      localStorage.setItem("onboarding_concluido", "true");
-    }
-    catch (e) {
-      console.error("Erro ao concluir onboarding");
+  // Implementa a função de clique no botão de pesquisa
+  document.getElementById("btn-pesquisa").addEventListener("click", async () => {
+    const response = await fetchAutenticado("/pesquisa");
+    if (response.ok) {
+      window.location.href = "/pesquisa";
     }
   });
 
@@ -259,14 +296,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     else {
       window.location.href = "/doações";
-    }
-  });
-
-  // Implementa a função de clique no botão de pesquisa
-  document.getElementById("btn-pesquisa").addEventListener("click", async () => {
-    const response = await fetchAutenticado("/pesquisa");
-    if (response.ok) {
-      window.location.href = "/pesquisa";
     }
   });
 

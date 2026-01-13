@@ -455,35 +455,6 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static', 'img'),
                                'Favicon.png', mimetype='image/png')
 
-@app.route("/api/onboarding/concluir", methods=["POST"])
-@token_required
-def concluir_onboarding(user_id):
-    conn = cur = None
-    try:
-        id_usuario = session.get("id_usuario")
-
-        conn = get_db_connection()
-        cur = conn.cursor()
-
-        cur.execute("""
-            UPDATE usuarios_registrados
-            SET onboarding_concluido = TRUE
-            WHERE id_usuario = %s
-        """, (id_usuario,))
-
-        conn.commit()
-        return jsonify(success=True)
-
-    except Exception:
-        if conn:
-            conn.rollback()
-        app.logger.error("Erro ao concluir onboarding:\n" + traceback.format_exc())
-        return jsonify(success=False), 500
-
-    finally:
-        if cur: cur.close()
-        if conn: conn.close()
-
 def checar_dados_registro(nome, email, senha):
     if not nome or not email or not senha:
         return False, "Preencha todos os campos"
@@ -785,38 +756,6 @@ def gerar_token_confirmacao(tamanho=32):
     alfabeto = string.ascii_letters + string.digits
     return ''.join(secrets.choice(alfabeto) for _ in range(tamanho))
 
-def enviar_email_confirmacao(email_destinatario, nome_destinatario, link_confirmacao):
-    remetente = email_remetente
-    senha = senha_app
-    porta = int(porta_email)
-
-    assunto = "Confirmação de cadastro - Desafio das Perguntas"
-    corpo = f"""
-    Olá, {nome_destinatario}!
-
-    Clique no link abaixo para confirmar seu cadastro:
-
-    {link_confirmacao}
-
-    O link expira em 24 horas.
-
-    """
-
-    msg = MIMEMultipart()
-    msg['From'] = remetente
-    msg['To'] = email_destinatario
-    msg['Subject'] = assunto
-    msg.attach(MIMEText(corpo, 'plain'))
-
-    try:
-        with smtplib.SMTP("smtp.gmail.com", porta) as servidor:
-            servidor.starttls()
-            servidor.login(remetente, senha)
-            servidor.send_message(msg)
-        return True
-    except Exception:
-        return False
-
 @app.route("/home")
 def home():
     id_usuario = session.get("id_usuario")
@@ -941,6 +880,39 @@ def esqueci_senha():
 
     # Retorna mensagem padrão sempre, mesmo que o e-mail não exista
     return jsonify(success=True, message=mensagem_padrao)
+
+def enviar_email_confirmacao(email_destinatario, nome_destinatario, link_confirmacao):
+    remetente = email_remetente
+    senha = senha_app
+    porta = int(porta_email)
+
+    assunto = "Confirmação de cadastro - Desafio das Perguntas"
+    corpo = f"""
+    Olá, {nome_destinatario}!
+
+    Clique no link abaixo para confirmar seu cadastro:
+
+    {link_confirmacao}
+
+    O link expira em 24 horas.
+
+    """
+
+    msg = MIMEMultipart()
+    msg['From'] = remetente
+    msg['To'] = email_destinatario
+    msg['Subject'] = assunto
+    msg.attach(MIMEText(corpo, 'plain'))
+
+    try:
+        with smtplib.SMTP("smtp.gmail.com", porta) as servidor:
+            servidor.starttls()
+            servidor.login(remetente, senha)
+            servidor.send_message(msg)
+        return True
+    except Exception:
+        app.logger.exception("Erro ao enviar email de confirmação de conta")
+        return False
 
 def enviar_email_recuperacao(destinatario, assunto, conteudo):
 
@@ -1217,7 +1189,7 @@ def login():
 
             # Verifica usuário
             cur.execute("""
-                SELECT id_usuario, senha_hash, email_confirmado, nome, dicas_restantes, perguntas_restantes, onboarding_concluido
+                SELECT id_usuario, senha_hash, nome, dicas_restantes, perguntas_restantes
                 FROM usuarios_registrados WHERE email = %s
             """, (email,))
             usuario = cur.fetchone()
@@ -1225,7 +1197,7 @@ def login():
             if not usuario:
                 return jsonify(success=False, message="E-mail não registrado")
 
-            id_usuario, senha_hash, email_confirmado, nome_usuario, dicas_restantes, perguntas_restantes, onboarding_concluido = usuario
+            id_usuario, senha_hash, nome_usuario, dicas_restantes, perguntas_restantes = usuario
             session["id_usuario"] = id_usuario
             session["email"] = email
             session["visitante"] = False
@@ -1233,8 +1205,10 @@ def login():
             if not check_password_hash(senha_hash, senha):
                 return jsonify(success=False, message="Senha incorreta")
 
-            if not email_confirmado:
-                return jsonify(success=False, message="Você precisa confirmar seu e-mail antes de fazer login (dica: verifique também na caixa de spam)")
+            # Atualiza o horário da última sessão do usuário
+            cur.execute("""
+              UPDATE usuarios_registrados
+              SET ultima_sessao = date_trunc('second', NOW() AT TIME ZONE 'America/Sao_Paulo') WHERE id_usuario = %s""", (id_usuario,))
 
             # 🔒 Invalida sessões antigas
             cur.execute("UPDATE sessoes SET ativo = FALSE WHERE id_usuario = %s", (id_usuario,))
@@ -1277,7 +1251,6 @@ def login():
         dicas_restantes=dicas_restantes,
         perguntas_restantes=perguntas_restantes,
         nome_usuario=nome_usuario,
-        onboarding_concluido=onboarding_concluido
     ), 200)
 
     # Cookie HttpOnly, expirando junto com o token
@@ -1294,7 +1267,7 @@ def login():
 
 @app.route("/log/visitante", methods=["POST"])
 def log_visitante():
-    """return jsonify({"status": "ok"}), 200"""
+    return jsonify({"status": "ok"}), 200
     dados = request.get_json()
     evento = dados.get("evento")
     tema = dados.get("tema")
@@ -1349,6 +1322,58 @@ def log_visitante():
     conn.close()
 
     return jsonify({"status": "ok"}), 200
+
+@app.route("/reenviar-email-confirmacao", methods=["POST"])
+def reenviar_email_confirmacao_route():
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Identifica o usuário
+        id_usuario = session.get("id_usuario")
+        cur.execute("""
+            SELECT nome, email
+            FROM usuarios_registrados
+            WHERE id_usuario = %s
+        """, (id_usuario,))
+        usuario = cur.fetchone()
+
+        if not usuario:
+            return jsonify(success=False, message="Usuário não encontrado"), 404
+
+        nome_usuario, email = usuario
+
+        # 🔑 Gera novo token
+        token = secrets.token_urlsafe(32)
+        expiracao = datetime.now(pytz.timezone("America/Sao_Paulo")) + timedelta(hours=24)
+
+        # 🔄 Atualiza token e expiração
+        cur.execute("""
+            UPDATE usuarios_registrados
+            SET token_confirmacao = %s,
+                expiracao_token_confirmacao = date_trunc('second', %s)
+            WHERE id_usuario = %s
+        """, (token, expiracao, id_usuario))
+
+        conn.commit()
+
+        link_confirmacao = f"{base_url}/confirmar_email?token={token}"
+        enviado = enviar_email_confirmacao(email, nome_usuario, link_confirmacao)
+
+        if not enviado:
+            return jsonify(success=False, message="Falha ao enviar o e-mail")
+
+        return jsonify(success=True)
+
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.error("Erro ao reenviar confirmação:\n" + traceback.format_exc())
+        return jsonify(success=False, message="Erro interno no servidor"), 500
+
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
 
 @app.route("/reset_senha", methods=["GET", "POST"])
 def reset_senha():

@@ -22,18 +22,6 @@
       min-height: 100vh;
       overflow-y: hidden;
     }
-    /*
-    header {
-      display:flex;
-      align-items: center;
-      background-color: var(--cor-fundo-escuro);
-      color: white;
-      padding: 0.6rem 1rem;
-      display: flex;
-      align-items: center;
-      position: relative;
-    }*/
-
     header {
       display: flex;
       align-items: center;
@@ -41,13 +29,6 @@
       color: white;
       padding: 0.6rem 1rem;
     }
-    /*
-    .header-left, .header-right {
-      flex: 0 0 250px;  mesma largura fixa para os dois lados 
-      display: flex;
-      align-items: center;
-    }*/
-
     .header-left,
     .header-right {
       display: flex;
@@ -55,7 +36,6 @@
       gap: 0.8rem;
       flex: 0 0 auto;
     }
-
     .header-left {
       justify-content: flex-start;
       gap: 1rem;
@@ -64,13 +44,11 @@
       justify-content: flex-end;
       gap: 1rem;
     }
-
     .header-center {
       flex: 1;
       display: flex;
       justify-content: center;
     }
-
     .status-item {
       display: flex;
       align-items: center;
@@ -80,7 +58,6 @@
       white-space: nowrap;
       user-select: none;
     }
-
     .avatar {
         width: 44px;
         height: 44px;
@@ -99,75 +76,14 @@
         font-size: 1rem;
         color: #ffffff;
     }
-
     .header-right nav button {
       font-size: 0.85rem;
       padding: 0.3rem 0.6rem;
     }
-
-
-
-    /*
-    .icon-left, .icon-right {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      padding: 0.3rem 0.6rem;
-      border-radius: 8px;
-      font-weight: 700;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.3rem;
-      min-width: 60px;
-      cursor: default;
-      user-select: none;
-      font-size: 1.15rem;
-      flex-shrink: 0;
-      white-space: nowrap;
-    }
-    .icon-left {
-      left: 25vw;
-    }
-    .icon-right {
-      right: 25vw;
-    }
-    .icon-left .icon, 
-    .icon-right .icon {
-      min-width: 28px;
-      min-height: 24px;
-      font-size: 1.05em;
-      padding: 0.15rem 0.1rem;
-    }*/
-
-
-
     nav {
       display: flex;
       gap: 0.7rem;
     }
-    /*
-    nav button {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.07);
-        color: white;
-        border: none;
-        padding: 0.3rem 0.6rem;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 1rem;
-        font-weight: 700;
-        box-sizing: border-box;
-        min-height: 40px;
-        white-space: nowrap;
-        transition: background-color 0.3s ease;
-        flex-shrink: 0;
-    }*/
-
-
     nav button {
       display: flex;
       align-items: center;
@@ -182,12 +98,9 @@
       font-weight: 700;
       transition: background-color 0.2s ease;
     }
-
     nav button:hover {
       background: rgba(255, 255, 255, 0.12);
     }
-
-
     .titulo {
       font-size: 1.5rem;
       font-weight: bold;
@@ -243,18 +156,6 @@
       justify-items: center;
       padding: 1rem;
     }
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.75);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
-    .overlay.hidden {
-      display: none;
-    }
     .hidden {
       display: none;
     }
@@ -300,6 +201,73 @@
       left: 0;
       width: 100%;
     }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .modal-overlay.hidden {
+      display: none;
+    }
+    .modal {
+      background: var(--cor-fundo-claro);
+      max-width: 420px;
+      width: 90%;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .modal h3 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 1.2rem;
+    }
+    .modal p {
+      font-size: 0.95rem;
+      color: #000000;
+      line-height: 1.5;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .modal-actions button {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-fechar {
+      background: var(--bg-botao-login);
+      color: #fff;
+    }
+    .btn-fechar:hover {
+      background: var(--bg-hover-botao-login);
+    }
+    .btn-reenviar {
+      background: #1e8f3f;
+      color: #fff;
+    }
+    .btn-reenviar:hover {
+      background: #157232;
+    }
+    .modal-feedback {
+      margin-top: 12px;
+      font-size: 0.95rem;
+      color: green;
+      display: none;
+      text-align: center
+    }
+
+
   </style>
 </head>
 <body>
@@ -421,34 +389,24 @@
     {% endif %}
   </footer>
 
-  <!-- Mensagem para modo visitante -->
-  <div id="overlay-visitante" class="overlay hidden">
+  <div id="modal-email-confirmacao" class="modal-overlay hidden">
     <div class="modal">
+      <h3>Confirmação de e-mail pendente</h3>
 
-      <h2 id="titulo-modal">Atenção</h2>
+      <p>
+        Identificamos que seu e-mail ainda não foi confirmado.  
+        A confirmação garante acesso contínuo aos recursos do jogo e evita bloqueios futuros.
+      </p>
 
-      <div id="conteudo-modal"></div>
+      <div class="modal-actions">
+        <button id="btn-fechar-modal" class="btn-fechar">Fechar</button>
+        <button id="btn-reenviar-email" class="btn-reenviar">Reenviar e-mail de confirmação</button>
+      </div>
 
-      <button id="btn-entendi">Entendi</button>
-
+      <p class="modal-feedback" id="modal-msg"></p>
     </div>
   </div>
 
-  <!-- Mensagem para quem loga pela primeira vez -->
-  <div id="modal-onboarding" class="overlay hidden">
-  <div class="modal">
-    <h2>Atenção</h2>
-
-    <p>
-      Caso esteja navegando por smartphone, recomenda-se utilizar o modo
-      <strong>“Site para computador”</strong> para melhor experiência.
-    </p>
-
-    <p>
-      Você pode acessar um guia explicando o funcionamento do jogo em "Sobre o app" no rodapé desta página, além da política de privacidade e termos de uso. Prosseguir com o uso do site implica em concondância com a política de privacidade.
-    </p>
-
-    <button id="btn-onboarding-ok">Entendi</button>
   </div>
 </div>
 
