@@ -56,7 +56,7 @@ if (MODO_VISITANTE) {
   // APENAS PARA DESENVOLVEDOR, SEMPRE COMENTAR QUANDO LANÇAR NOVAS VERSÕES
   // localStorage.setItem("visitante_respondidas", JSON.stringify({ objetiva: [], discursiva: []}));
 
-  // Envia uma vez para o backend (PROVÁVEL REMOÇÃO EM BREVE DO TRECHO ABAIXO)
+  // Registra o id de visitante em session no backend
   fetch("/api/registrar_visitante", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -208,7 +208,6 @@ def carregar_regras_pontuacao():
 def entrar_visitante():
     session.clear()
     session["visitante"] = True
-    registrar_pagina_visitada("Home (Visitante)")
     return redirect("/home")
 
 @app.route("/enviar_feedback", methods=["POST"])
@@ -781,11 +780,13 @@ def resultado():
 @token_required
 def doacoes(user_id):
     chave_pix = os.getenv("CHAVE_PIX")
+    registrar_pagina_visitada("Doações")
     return render_template("doacoes.html", chave_pix=chave_pix)
 
 @app.route("/pesquisa")
 @token_required
 def pesquisa(user_id):
+    registrar_pagina_visitada("Pesquisa")
     return render_template("pesquisa.html")
 
 @app.route("/api/carregar-favoritos", methods=["GET"])
@@ -1442,11 +1443,13 @@ def reset_senha():
 @app.route("/politica-de-privacidade")
 def politica_privacidade():
     session['from_login'] = False
+    registrar_pagina_visitada("Política de Privacidade")
     return render_template("privacy_policy.html")
 
 @app.route("/termos-de-uso")
 def termos_uso():
     session['from_login'] = False
+    registrar_pagina_visitada("Termos de Uso")
     return render_template("termos_de_uso.html")
 
 @app.route("/api/favoritos", methods=["POST"])
@@ -1499,6 +1502,7 @@ def salvar_favoritos(user_id):
 @app.route("/sobre-o-app")
 def sobre_app():
     session['from_login'] = False
+    registrar_pagina_visitada("Sobre o App")
     return render_template("sobre_o_app.html")
 
 @app.route("/pesquisa-avançada")
@@ -1603,16 +1607,19 @@ def pesquisar_perguntas():
 @app.route('/politica-de-privacidade-from-login')
 def politica_privacidade_from_login():
     session['from_login'] = True
+    registrar_pagina_visitada("Política de Privacidade (login)")
     return render_template('privacy_policy.html')
 
 @app.route('/termos-de-uso-from-login')
 def termos_uso_from_login():
     session['from_login'] = True
+    registrar_pagina_visitada("Termos de Uso (login)")
     return render_template('termos_de_uso.html')
 
 @app.route('/sobre-o-app-from-login')
 def sobre_app_from_login():
     session['from_login'] = True
+    registrar_pagina_visitada("Sobre o App (login)")
     return render_template('sobre_o_app.html')
 
 @app.route("/quiz")
