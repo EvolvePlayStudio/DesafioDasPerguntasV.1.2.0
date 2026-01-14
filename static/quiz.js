@@ -1093,13 +1093,42 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
   // Trata os casos dos dígrafos (ex: x no lugar de ch)
   function normalizarDigrafos(texto) {
     const regras = [
-      [/sch/g, "ß"],
-      [/ch/g, "¢"],
-      [/lh/g, "£"],
-      [/nh/g, "¤"],
-      [/ss/g, "§"],
+      // Trigramas / padrões fortes
+      [/sch/g, "x"],
+      [/zh/g, "j"],
+      [/tz/g, "ts"],
+      [/ph/g, "f"],
+      [/th/g, "t"],
+
+      // Dígrafos
+      [/ch/g, "x"],
+      [/sh/g, "x"],
+      [/lh/g, "l"],
+      [/nh/g, "n"],
       [/qu/g, "k"],
-      [/ck/g, "k"]
+      [/ck/g, "k"],
+
+      // Vogais alemãs
+      [/ae/g, "a"],
+      [/oe/g, "o"],
+      [/ue/g, "u"],
+
+      // Letras mudas / simplificações
+      [/h/g, ""],
+      [/w/g, "v"],
+      [/y/g, "i"],
+
+      // Duplicações
+      [/ll/g, "l"],
+      [/rr/g, "r"],
+      [/ss/g, "s"],
+      [/mm/g, "m"],
+      [/nn/g, "n"],
+
+      // Trocas fonéticas soltas
+      [/c/g, "s"],
+      [/z/g, "s"],
+      [/g/g, "j"]
     ];
 
     let resultado = texto;
@@ -1160,21 +1189,26 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
   const textoUsuario = normalizarDigrafos(limparTexto(resposta_usuario));
 
   return respostas_aceitas.some(resposta => {
-    const lenOriginal = limparTexto(resposta).length;
-    const textoCorreto = normalizarDigrafos(limparTexto(resposta));
+
+    const textoBase = limparTexto(resposta);
+    const lenOriginal = textoBase.length;
+    const textoCorreto = normalizarDigrafos(textoBase);
+
     if (textoUsuario === textoCorreto) return true;
 
     const dist = distanciaLevenshtein(textoUsuario, textoCorreto);
 
     if (temPadraoEstrangeiro(textoCorreto)) {
       if (lenOriginal <= 3) return false;
-      if (lenOriginal <= 9) return dist === 2;
-      return dist <= 3;
+      if (lenOriginal <= 8) return dist === 2;
+      if (lenOriginal <= 13) return dist === 3;
+      return dist <= 4;
     }
     else {
       if (lenOriginal <= 3) return false;
-      if (lenOriginal <= 9) return dist === 1;
-      return dist <= 2;
+      if (lenOriginal <= 8) return dist === 1;
+      if (lenOriginal <= 13) return dist === 2;
+      return dist <= 3;
       }
   });
 }
