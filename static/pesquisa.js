@@ -88,9 +88,6 @@ btn_revisar.addEventListener("click", () => {
     localStorage.setItem("tema_atual", tema_atual)
     window.location.href = `/quiz?tema=${tema_atual}&modo=revisao&tipo-de-pergunta=${tipo_pergunta}`;
   }
-  else {
-    console.log("Nenhuma pergunta selecionada")
-  }
 })
 
 function atualizarBotoesSubtemas(subtemas, subtemasSelecionados = new Set()) {
@@ -263,9 +260,10 @@ async function pesquisar() {
       }
       perguntasPorDificuldade = filtrarPerguntasVisitante(data.perguntas)
     }
-    else { // Usuário logado
+    else { 
       localStorage.setItem("pontuacoes_usuario", JSON.stringify(data.pontuacoes_usuario));
       perguntasPorDificuldade = data.perguntas;
+      console.log("Perguntas: ", perguntasPorDificuldade)
     }
     localStorage.setItem("perguntas_para_revisar", JSON.stringify(perguntasPorDificuldade));
 

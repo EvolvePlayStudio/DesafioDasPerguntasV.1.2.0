@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const btnEntrarSemLogin = document.getElementById("entrar-visitante")
 
   async function entrarVisitante() {
+    localStorage.setItem("modoVisitante", "true");
     sessionStorage.setItem("modoVisitante", "true");
     window.location.href = "/entrar_visitante";
   }
@@ -38,7 +39,18 @@ document.addEventListener('DOMContentLoaded', function () {
   // Outras variáveis
   const info_section = document.querySelector('.info-section');
   const btnRegister = register_form?.querySelector('button[type="submit"]');
-  
+
+  // Variáveis da caixa para marcar transferência de dados do modo visitante
+  const VISITOR_CHOICE_KEY = 'usar_dados_visitante_registro';
+  const container_migrar_dados_visitante = document.getElementById("container-migrar-dados-visitante")
+  const hasVisitorData = localStorage.getItem('visitante_respondidas') || localStorage.getItem('visitante_avaliacoes');
+
+  // Função para marcar no sessionStorage estado de marcação bo box de migrar dados
+  const checkbox_migrar_dados = document.getElementById("usar-dados-visitante")
+  checkbox_migrar_dados.addEventListener('change', () => {
+    sessionStorage.setItem(VISITOR_CHOICE_KEY, checkbox_migrar_dados.checked.toString());
+  });
+
   // CAPTCHA elementos (pode ser undefined se o HTML não tiver)
   const captchaContainer = document.getElementById('captcha-container');
   const captchaInstrucao = document.getElementById('captcha-instrucao');
@@ -209,6 +221,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Se passou na validação, exibe o CAPTCHA
         if (captchaContainer) {
+          container_migrar_dados_visitante.style.display = "none";
           captchaContainer.hidden = false;
 
           register_form.querySelectorAll('input, label, .form-group').forEach(el => {
@@ -243,13 +256,16 @@ document.addEventListener('DOMContentLoaded', function () {
       lbl_mensagem_registro.style.visibility = 'visible';
       lbl_mensagem_registro.style.color = '#d1d1d1ff';
       lbl_mensagem_registro.textContent = 'Fazendo registro...';
+
       const response = await fetch('/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nome, email, senha,
           captcha_token: captchaToken,
-          captcha_selecoes: selecoes
+          captcha_selecoes: selecoes,
+          id_visitante: localStorage.getItem("id_visitante"),
+          usar_dados_visitante: checkbox_migrar_dados.checked
         })
       });
 
@@ -261,11 +277,12 @@ document.addEventListener('DOMContentLoaded', function () {
       const data = await response.json();
 
       if (data.success) {
-
+        // Registra meta de conversão de registro no GoogleAds
         if (typeof gtag_report_conversion === 'function') {
             gtag_report_conversion(); 
         }
-
+        
+        // Chama novamente a tela de login
         if (btnRegister) btnRegister.disabled = true;
         if (lbl_mensagem_login) {
           lbl_mensagem_login.style.visibility = 'visible'
@@ -275,7 +292,8 @@ document.addEventListener('DOMContentLoaded', function () {
         this.reset();
         if (captchaContainer) captchaContainer.hidden = true;
         showForm('login', true);
-      } else {
+      }
+      else {
           // Registra a falha no CAPTCHA
           const resposta_captcha = await fetch('/registrar_falha_captcha', {
             method: 'POST',
@@ -283,7 +301,6 @@ document.addEventListener('DOMContentLoaded', function () {
           });
 
           const info_bloqueio = await resposta_captcha.json();
-          console.log("Informações de bloqueio: ", info_bloqueio)
           // Se já está bloqueado, manda para o login e mostra mensagem
           if (info_bloqueio.tentativas_registro > 0 && info_bloqueio.bloqueado_ate > 0) {
             bloquearRegistro(info_bloqueio)
@@ -461,6 +478,15 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       if (register_form) {
+
+        // Se o usuário tem dados no modo visitante
+        if (hasVisitorData) {
+          container_migrar_dados_visitante.style.display = "";
+        }
+        else {
+          container_migrar_dados_visitante.style.display = "none";
+        }
+
         register_form.classList.add('active');
         login_form.classList.remove('active');
         register_tab.classList.add('active');
@@ -479,6 +505,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (btnRegister) btnRegister.disabled = false;
 
         register_form.reset();
+        sincronizarCheckboxMigracao();
 
         if (lbl_mensagem_registro) {
           lbl_mensagem_registro.textContent = '';
@@ -523,6 +550,19 @@ document.addEventListener('DOMContentLoaded', function () {
         forgot_message.textContent = '';
       }
     }
+  }
+
+  function sincronizarCheckboxMigracao() {
+    if (!checkbox_migrar_dados) return;
+
+    const savedChoice = sessionStorage.getItem(VISITOR_CHOICE_KEY);
+    const normalized = savedChoice === null ? null : savedChoice.trim().toLowerCase();
+
+    // reset defensivo
+    checkbox_migrar_dados.checked = false;
+
+    // regra de negócio
+    checkbox_migrar_dados.checked = normalized === null ? true : normalized === 'true';
   }
 
   function bloquearRegistro(info_bloqueio) {

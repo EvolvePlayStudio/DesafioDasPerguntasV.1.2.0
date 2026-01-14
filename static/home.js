@@ -1,4 +1,4 @@
-import { detectarModoTela, deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual } from "./utils.js";
+import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual } from "./utils.js";
 
 const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
 sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
@@ -42,12 +42,12 @@ if (MODO_VISITANTE) {
 
   // Cria as informações de perguntas e dicas restantes do usuário
   if (!localStorage.getItem("perguntas_restantes_visitante")) {
-    localStorage.setItem("perguntas_restantes_visitante", 100);
+    localStorage.setItem("perguntas_restantes_visitante", 60);
   }
   if (!localStorage.getItem("dicas_restantes_visitante")) {
     localStorage.setItem("dicas_restantes_visitante", 20);
   }
-
+  
   // Cria armazenamento de ids de perguntas já respondidas no localStorage
   if (!localStorage.getItem("visitante_respondidas")) {
     localStorage.setItem("visitante_respondidas", JSON.stringify({ objetiva: [], discursiva: []}));
@@ -138,9 +138,8 @@ async function iniciarQuiz(event) {
         }
       }
     }
-    else { // Modo visitante
-      const response = await fetchAutenticado(`/api/perguntas?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`)
-
+    else {
+      const response = await fetch(`/api/perguntas?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`)
       if (response.ok) {
         const data = await response.json();
         
@@ -149,7 +148,6 @@ async function iniciarQuiz(event) {
         const idsRespondidas = respondidas[tipo_pergunta] || [];
         Object.keys(data.perguntas).forEach(dificuldade => {
           if (!Array.isArray(data.perguntas[dificuldade])) return;
-
           data.perguntas[dificuldade] = data.perguntas[dificuldade].filter(
             p => !idsRespondidas.includes(p.id_pergunta)
           );
@@ -164,10 +162,8 @@ async function iniciarQuiz(event) {
             `É necessário criar uma conta para ter aceso a mais perguntas ${tipo_pergunta}s no tema ${tema_atual}`,
             'orange'
           )
-          registrarEvento("Perguntas esgotadas", tema_atual);
           return
         }
-        registrarEvento("Tema escolhido", tema_atual)
         
         // Grava pontuações do usuário e perguntas no localStorage
         localStorage.setItem("pontuacoes_usuario", localStorage.getItem("pontuacoes_visitante"));
@@ -176,7 +172,7 @@ async function iniciarQuiz(event) {
         // Analisa os rankings atuais do usuário
         const rankings_usuario = {};
         temas.forEach( tema => {
-          const ranking_no_tema = obterInfoRankingAtual(tema, MODO_VISITANTE).ranking;
+          const ranking_no_tema = obterInfoRankingAtual().ranking;
           rankings_usuario[tema] = ranking_no_tema;
         })
         localStorage.setItem("rankings_usuario", JSON.stringify(rankings_usuario))
@@ -257,21 +253,6 @@ function reenviarEmailConfirmacao() {
     msgModal.innerText = "Erro de comunicação com o servidor.";
     msgModal.style.color = "red";
   });
-}
-
-function registrarEvento(evento) {
-  // Registra a escolha do tema no SQL
-  fetch("/log/visitante", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      evento: evento,
-      tema: tema_atual,
-      modo_tela_usuario: detectarModoTela()
-    })
-  }).catch(() => {});
 }
 
 document.addEventListener("DOMContentLoaded", () => {

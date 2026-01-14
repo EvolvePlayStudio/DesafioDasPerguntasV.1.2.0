@@ -123,7 +123,7 @@
             border-radius: 6px;
             border: 1px solid #ccc;
         }
-        button[type="submit"], button[type="botao-retorno"], button[type="entrar-visitante"] {
+        button[type="submit"], button[type="botao-retorno"], button[type="button"] {
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             padding: 12px;
             background-color: var(--bg-botao-login);
@@ -134,8 +134,31 @@
             cursor: pointer;
             transition: background-color 0.3s;
         }
-        button[type="submit"]:hover, button[type="botao-retorno"]:hover, button[type="entrar-visitante"]:hover {
+        button[type="submit"]:hover, button[type="botao-retorno"]:hover, button[type="button"]:hover {
             background-color: var(--bg-hover-botao-login);
+        }
+        .visitor-migration {
+            margin-top: 0.1rem;
+            margin-bottom: 0.5rem;
+        }
+        .visitor-migration-label {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 14px;
+            font-weight: bold;
+            color: #000;
+            cursor: pointer;
+        }
+        .visitor-migration-label input[type="checkbox"] {
+            transform: scale(1.1);
+            cursor: pointer;
+        }
+        .visitor-migration-info {
+            font-size: 12px;
+            margin-left: 1.9rem;
+            margin-top: 0.2rem;
+            line-height: 1.3;
         }
         .info-section {
             margin-top: 25px;
@@ -201,19 +224,30 @@
                 Esqueci minha senha
                 </a>
             </div>
-            
-            <!-- Botão para entrar -->
-            <button type="submit">Acessar conta</button>
-        </form>
 
-        <!-- Botão para entrar sem login -->
-        <button type="entrar-visitante" id="entrar-visitante" style="margin-top: 0.8rem;">
-            Entrar sem login
-        </button>
-        <!-- Mensagem na tela de login -->
-        <div id="login-message" style="color: red; font-weight: bold; margin-top: 0.6rem; margin-bottom: 0.6rem; min-height: 0.1em; visibility: hidden; transition: 0.3s ease; text-align: center;">
-            Digite seu email e senha
-        </div>
+            <!-- Botão para entrar -->
+            <button type="submit" >Acessar conta</button>
+
+            <!-- Botão para entrar sem login -->
+            <button type="button" id="entrar-visitante" style="margin-top: 0.8rem;">
+                Entrar como visitante
+            </button>
+
+            <!-- Mensagem na tela de login -->
+            <div id="login-message" style="color: red; font-weight: bold; margin-top: 0.7rem; margin-bottom: 0.7rem;  min-height: 0.1em; visibility: hidden; transition: 0.3s ease; text-align: center;">
+                Digite seu email e senha
+            </div>
+            
+            <!-- Informações sobre o aplicativo -->
+            <div class="info-section" style="margin-top: -0.4rem;">
+            <ul>
+              <li style="padding-right: 1.1rem;">🎁 Aplicativo 100% gratuito</li>
+              <li style="padding-right: 0.7rem;">🧠 Três níveis de dificuldade</li>
+              <li style="padding-right: 0.2rem;">✨ Vários temas de perguntas</li>
+              <li style="padding-left: 0.1rem;">🏆 Ranking pessoal e histórico</li>
+            </ul>
+            </div>
+        </form>
 
         <!-- Formulário de recuperação de senha -->
         <form id="forgot-form" method="POST" action="{{ url_for('esqueci_senha') }}">
@@ -247,20 +281,29 @@
             <input type="email" name="email" placeholder="Email" maxlength="50" required>
             <input type="password" name="senha" placeholder="Senha" maxlength="50" required>
             <input type="password" name="confirmar_senha" placeholder="Confirmar senha" maxlength="50" required>
-            <button type="submit">Registrar</button>
+
+            <!-- Opção de migração de dados do modo visitante -->
+            <div id="container-migrar-dados-visitante" class="visitor-migration">
+                <label class="visitor-migration-label">
+                    <input 
+                        type="checkbox" 
+                        name="usar_dados_visitante" 
+                        id="usar-dados-visitante"
+                    >
+                    Usar dados do modo visitante
+                </label>
+
+                <div class="visitor-migration-info">
+                    Transfere perguntas respondidas e avaliações feitas para a nova conta
+                </div>
+            </div>
+
+            <!-- Botão para envio do formulário de registro -->
+            <button type="submit" style="margin-top: 1rem">Registrar</button>
 
             <!-- Mensagem na tela de registro -->
             <div id="registro-message" style="color: red; font-weight: bold; margin-top: 0.8rem; min-height: 0.1em; visibility: hidden; transition: 0.3s ease; text-align: center;">Preencha os campos acima</div>
         </form>
-
-        <div class="info-section" style="margin-top: -0.4rem;">
-            <ul>
-              <li style="padding-right: 1.1rem;">🎁 Aplicativo 100% gratuito</li>
-              <li style="padding-right: 0.7rem;">🧠 Três níveis de dificuldade</li>
-              <li style="padding-right: 0.2rem;">✨ Vários temas de perguntas</li>
-              <li style="padding-left: 0.1rem;">🏆 Ranking pessoal e histórico</li>
-            </ul>
-        </div>
     </div>
   </main>
 

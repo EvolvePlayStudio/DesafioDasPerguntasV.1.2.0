@@ -219,10 +219,10 @@ def enviar_feedback(user_id):
     estrelas = data.get("estrelas")
     versao_pergunta = data.get("versao_pergunta")
     id_usuario = session.get("id_usuario")
-    visitante = session.get("visitante")
+    modo_visitante = session.get("visitante")
     id_visitante = session.get("id_visitante")
 
-    if visitante:
+    if modo_visitante:
         if not all([id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante]):
             return jsonify({"erro": "Dados incompletos como visitante"}), 400
     else:
@@ -232,20 +232,20 @@ def enviar_feedback(user_id):
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        if visitante:
+        if modo_visitante:
             cur.execute("""
                 INSERT INTO feedbacks (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante)
                 VALUES (%s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id_pergunta, tipo_pergunta, id_visitante)
-                DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
-            """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, visitante))
+                DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
+            """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante))
         else:
             cur.execute("""
                 INSERT INTO feedbacks (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante)
                 VALUES (%s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id_pergunta, tipo_pergunta, id_usuario)
-                DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
-            """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, visitante))
+                DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante,  ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
+            """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante))
         conn.commit()
         cur.close()
         return jsonify({"sucesso": True})
@@ -489,61 +489,7 @@ def validar_registro():
         return jsonify(success=False, message=msg)
 
     return jsonify(success=True, message="Validação OK")
-
-@app.route("/register", methods=["POST"])
-def registrar():
-    data = request.get_json()
-    nome = data.get("nome")
-    email = data.get("email")
-    senha = data.get("senha")
-    captcha_token = data.get("captcha_token")
-    captcha_selecoes = list(map(int, data.get("captcha_selecoes", [])))
-
-    if email in EMAILS_PROIBIDOS:
-        return jsonify(success=False, message="E-mail inválido")
-
-    # Validação do CAPTCHA
-    if not captcha_token:
-        return jsonify(success=False, message="CAPTCHA token ausente"), 400
-
-    dados_captcha = session.get(f"captcha_{captcha_token}")
-    if not dados_captcha or time.time() > dados_captcha.get("expira", 0):
-        return jsonify(success=False, message="CAPTCHA expirado ou inválido")
-
-    if sorted(captcha_selecoes) != sorted(dados_captcha.get("corretos", [])):
-        return jsonify(success=False, message="Seleções do CAPTCHA incorretas")
-
-    # Invalida o CAPTCHA para evitar reutilização
-    session.pop(f"captcha_{captcha_token}", None)
-
-    # Gerar hash da senha e token de confirmação
-    senha_hash = generate_password_hash(senha)
-    token = gerar_token_confirmacao()
-
-    # Agora atual (truncado para segundos)
-    agora_sp = datetime.now(tz_sp).replace(microsecond=0)
-
-    # Exemplo: expiração em 24 horas (21 horas porque fuso de São Paulo é -3)
-    expiracao = agora_sp + timedelta(hours=21)
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO usuarios_registrados (
-            nome, email, senha_hash, email_confirmado,
-            token_confirmacao, expiracao_token_confirmacao
-        )
-        VALUES (%s, %s, %s, FALSE, %s, %s)
-    """, (nome, email, senha_hash, token, expiracao))
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    link_confirmacao = f"{base_url}/confirmar_email?token={token}"
-    enviar_email_confirmacao(email, nome, link_confirmacao)
-
-    return jsonify(success=True, message="Registro realizado! Verifique seu e-mail para confirmar (dica: olhe na caixa de spam também)")
-
+        
 def carregar_e_transformar(caminho_img):
     """Carrega a imagem do CAPTCHA com alguns ajustes para evitar identificação automática"""
     img = Image.open(caminho_img).convert("RGB")
@@ -1000,7 +946,7 @@ def listar_perguntas(user_id):
     tipo_pergunta = (request.args.get('tipo-de-pergunta') or '').lower()
     id_usuario = session.get('id_usuario')
     id_visitante = session.get('id_visitante')
-    visitante = session.get("visitante")
+    modo_visitante = session.get("visitante")
 
     # Configurações locais
     limit = 150 if modo == 'desafio' else 1000
@@ -1009,10 +955,10 @@ def listar_perguntas(user_id):
     if not tema or modo not in ('desafio', 'revisao') or tipo_pergunta not in ('objetiva', 'discursiva'):
         print("Parâmetros inválidos ou ausentes")
         return jsonify({'erro': 'Parâmetros inválidos ou ausentes'}), 400
-    if not id_usuario and not visitante:
+    if not id_usuario and not modo_visitante:
         print("Usuário não autenticado")
         return jsonify({'erro': 'Usuário não autenticado'}), 401
-    if not id_visitante and visitante:
+    if not id_visitante and modo_visitante:
         print("Visitante não autenticado")
         return jsonify({'erro': 'Visitante não autenticado'}), 401
     
@@ -1032,7 +978,7 @@ def listar_perguntas(user_id):
 
     # Busca das perguntas
     try:
-        if visitante:
+        if modo_visitante:
             is_privileged = False
         else:
             is_privileged = int(id_usuario) in privileged_ids
@@ -1047,7 +993,7 @@ def listar_perguntas(user_id):
         """
         where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
         """
-        if visitante:
+        if modo_visitante:
             sql = f"""
                 SELECT {select_cols_visitante}
                 FROM {table} p
@@ -1076,7 +1022,7 @@ def listar_perguntas(user_id):
         perguntas_por_dificuldade = {'Fácil': [], 'Médio': [], 'Difícil': []}
 
         for row in linhas:
-            if visitante:
+            if modo_visitante:
                 respondida = False
                 if tipo_pergunta == "discursiva":
                     if row["id_pergunta"] not in ids_perguntas_discursivas_visitante[tema]:
@@ -1141,7 +1087,7 @@ def listar_perguntas(user_id):
                         'subtemas': subtemas,
                     })
             # Filtra por modo
-            if visitante:
+            if modo_visitante:
                 perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
             elif modo == 'desafio' and not respondida:
                 perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
@@ -1154,13 +1100,10 @@ def listar_perguntas(user_id):
         if cur: cur.close()
         if conn: conn.close()
 
-    if not visitante:
+    if not modo_visitante:
         pontuacoes_usuario = buscar_pontuacoes_usuario(id_usuario)
     else:
         pontuacoes_usuario = {}
-        """
-        for tema in temas_disponiveis:
-            pontuacoes_usuario[tema] = 2500"""
 
     return jsonify({
         'perguntas': perguntas_por_dificuldade,
@@ -1280,11 +1223,10 @@ def log_visitante():
     id_visitante = session["id_visitante"]
     usou_dica = dados.get("usou_dica")
     modo_tela = dados.get("modo_tela_usuario")
+    pontos_ganhos = dados.get("pontos_ganhos")
+    pontos_usuario = dados.get("pontos_usuario")
 
     if evento not in (
-        "Perguntas esgotadas",
-        "Tema escolhido",
-        "Pergunta carregada",
         "Pergunta respondida"
     ):
         return jsonify({"erro": "tipo_registro inválido"}), 400
@@ -1303,8 +1245,10 @@ def log_visitante():
             tempo_gasto,
             id_visitante,
             usou_dica,
+            pontos_ganhos,
+            pontos_usuario,
             modo_tela
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, (
         evento,
         tema,
@@ -1315,6 +1259,8 @@ def log_visitante():
         tempo_gasto,
         id_visitante,
         usou_dica,
+        pontos_ganhos,
+        pontos_usuario,
         modo_tela
     ))
 
@@ -1689,6 +1635,110 @@ def buscar_pontuacoes_usuario(id_usuario):
 
     return pontuacoes_usuario
 
+@app.route("/register", methods=["POST"])
+def registrar():
+    data = request.get_json()
+    nome = data.get("nome")
+    email = data.get("email")
+    senha = data.get("senha")
+    captcha_token = data.get("captcha_token")
+    captcha_selecoes = list(map(int, data.get("captcha_selecoes", [])))
+
+    if email in EMAILS_PROIBIDOS:
+        return jsonify(success=False, message="E-mail inválido")
+
+    # Validação do CAPTCHA
+    if not captcha_token:
+        return jsonify(success=False, message="CAPTCHA token ausente"), 400
+
+    dados_captcha = session.get(f"captcha_{captcha_token}")
+    if not dados_captcha or time.time() > dados_captcha.get("expira", 0):
+        return jsonify(success=False, message="CAPTCHA expirado ou inválido")
+
+    if sorted(captcha_selecoes) != sorted(dados_captcha.get("corretos", [])):
+        return jsonify(success=False, message="Seleções do CAPTCHA incorretas")
+
+    # Invalida o CAPTCHA para evitar reutilização
+    session.pop(f"captcha_{captcha_token}", None)
+
+    # Gerar hash da senha e token de confirmação
+    senha_hash = generate_password_hash(senha)
+    token = gerar_token_confirmacao()
+
+    # Agora atual (truncado para segundos)
+    agora_sp = datetime.now(tz_sp).replace(microsecond=0)
+
+    # Exemplo: expiração em 24 horas (21 horas porque fuso de São Paulo é -3)
+    expiracao = agora_sp + timedelta(hours=21)
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Insere o novo usuário na tabela de usuários registrados
+        cur.execute("""
+            INSERT INTO usuarios_registrados (
+                nome, email, senha_hash, email_confirmado,
+                token_confirmacao, expiracao_token_confirmacao
+            )
+            VALUES (%s, %s, %s, FALSE, %s, %s)
+            RETURNING id_usuario
+        """, (nome, email, senha_hash, token, expiracao))
+
+        id_usuario = cur.fetchone()[0]
+
+        # Migra dados do modo visitante para a nova conta caso o usuário tenha marcado esta opção
+        id_visitante = data.get("id_visitante")
+        usar_dados_visitante = data.get("usar_dados_visitante", False)
+        if id_visitante and usar_dados_visitante:
+            cur.execute("""
+                SELECT DISTINCT ON (id_pergunta)
+                    id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, criado_em
+                FROM acesso_modo_visitante
+                WHERE id_visitante = %s
+                ORDER BY id_pergunta, criado_em ASC
+            """, (id_visitante,))
+            
+            respostas = cur.fetchall()
+
+            for id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, criado_em in respostas:
+                tipo_pergunta = tipo_pergunta.capitalize()
+                cur.execute("""
+                    INSERT INTO respostas_usuarios (
+                        id_usuario, id_pergunta, tipo_pergunta, tema, resposta_usuario, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, data_resposta, dados_migrados
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (id_usuario, id_pergunta, tipo_pergunta) DO NOTHING
+                """, (id_usuario, id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, criado_em, True))
+
+            # Limpeza das respostas do usuario no modo visitante
+            cur.execute("""
+                DELETE FROM acesso_modo_visitante WHERE id_visitante = %s
+            """, (id_visitante,))
+
+            # Transferência de avaliações do usuário
+            cur.execute("""
+                UPDATE feedbacks
+                SET id_usuario = %s,
+                id_visitante = NULL
+                WHERE id_visitante = %s
+            """, (id_usuario, id_visitante))
+
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        app.logger.error("Erro ao tentar registrar nova conta\n" + traceback.format_exc())
+        return jsonify(success=False, message="Erro interno no registro"), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+    
+    link_confirmacao = f"{base_url}/confirmar_email?token={token}"
+    """enviar_email_confirmacao(email, nome, link_confirmacao)"""
+    """
+    return jsonify(success=True, message="Registro realizado! Verifique seu e-mail para confirmar")
+    """
+    return jsonify(success=True, message="Registro realizado!")
+
 @app.route("/registrar_resposta", methods=["POST"])
 @token_required
 def registrar_resposta(user_id):
@@ -1705,9 +1755,9 @@ def registrar_resposta(user_id):
             cur.execute("""
                 INSERT INTO respostas_usuarios (
                     id_usuario, id_pergunta, tipo_pergunta, versao_pergunta, resposta_usuario,
-                    acertou, usou_dica, pontos_ganhos, tempo_gasto, pontos_usuario, tema
+                    acertou, usou_dica, pontos_ganhos, tempo_gasto, pontos_usuario, tema, dados_migrados
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 id_usuario,
                 dados["id_pergunta"],
@@ -1719,7 +1769,8 @@ def registrar_resposta(user_id):
                 dados["pontos_ganhos"],
                 dados["tempo_gasto"],
                 dados["pontos_usuario"],
-                dados["tema"]
+                dados["tema"],
+                False
             ))
             # Atualiza a pontuação do usuário
             cur.execute("""
@@ -1787,6 +1838,7 @@ def registrar_visitante():
         session["id_visitante"] = id_visitante
 
     return jsonify({"ok": True})
+
 
 if not database_url:
     if __name__ == '__main__':

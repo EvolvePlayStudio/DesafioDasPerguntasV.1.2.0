@@ -276,6 +276,7 @@ async function enviarResposta(pulando = false) {
   }
   // Desativa caixa de texto da resposta
   caixa_para_resposta.disabled = true;
+  const pontuacao_atual = pontuacoes_usuario[tema_atual]
 
   function armazenarDicaENota(nota) {
     
@@ -361,6 +362,56 @@ async function enviarResposta(pulando = false) {
   document.getElementById('comentarios').style.display = 'block';
   }
 
+  async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ganhos, tempo_gasto, id_pergunta, versao_pergunta) {
+    try {
+      const response = await fetch('/registrar_resposta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo_pergunta: tipo_pergunta,
+          resposta_usuario: resposta_usuario,
+          acertou: acertou,
+          usou_dica: usou_dica,
+          pontos_ganhos: pontos_ganhos,
+          tempo_gasto: tempo_gasto,
+          id_pergunta: id_pergunta,
+          versao_pergunta: versao_pergunta,
+          tema: tema_atual,
+          pontos_usuario: pontuacao_atual
+        })
+      });
+
+      const data = await response.json();
+      if (data.sucesso) {
+        // Atualiza a pontuação do usuário para o tema no localStorage
+        pontuacoes_usuario[tema_atual] = data.nova_pontuacao;
+        alterarPontuacaoUsuario(pontuacao_atual, pontuacoes_usuario[tema_atual], callbackAtualizarUI)
+        localStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_usuario));
+
+        // Atualiza as perguntas restantes do usuário no localStorage
+        localStorage.setItem("perguntas_restantes", data.perguntas_restantes)
+        document.getElementById("perguntas-count").textContent = data.perguntas_restantes
+
+        // Atualiza o número de dicas restantes do usuário no localStorage e no contador de dicas
+        if (tipo_pergunta === 'discursiva') {
+          contador_dicas_restantes.textContent = data.dicas_restantes;
+          localStorage.setItem("dicas_restantes", data.dicas_restantes);
+        }
+
+        atualizarRankingVisual();
+        return true;
+      } else {
+        console.error('Erro ao registrar resposta:', data.mensagem);
+        return false;
+      }
+
+    } 
+    catch (err) {
+      console.error('Erro na comunicação:', err);
+      return false;
+    }
+  }
+
   function registrarRespostaVisitante(resposta_usuario, acertou, dica_gasta, pontos_ganhos, tempo_gasto) {
     let respondidas = JSON.parse(localStorage.getItem("visitante_respondidas")) || {
     objetiva: [], discursiva: []};
@@ -391,7 +442,9 @@ async function enviarResposta(pulando = false) {
         acertou: acertou,
         tempo_gasto: tempo_gasto,
         usou_dica: dica_gasta,
-        modo_tela_usuario: detectarModoTela()
+        modo_tela_usuario: detectarModoTela(),
+        pontos_ganhos: pontos_ganhos,
+        pontos_usuario: pontuacao_atual
       })
       }).catch(() => {});
 
@@ -459,7 +512,6 @@ async function enviarResposta(pulando = false) {
     if (modo_jogo === 'revisao') {
       letra_correta = pergunta_selecionada.resposta_correta;
       acertou = respostaObjetivaCorreta();
-      console.log("Acertou? ", acertou)
     }
     else {
       const response = await fetchAutenticado(`/pergunta/${pergunta_selecionada.id_pergunta}/${tipo_pergunta}/gabarito`);
@@ -756,30 +808,14 @@ function mostrarEnunciado(texto, elemento, callback) {
   elemento.textContent = "";
   let i = 0;
   const intervalo = setInterval(() => {
-    if (i < texto.length) { // Se ainda há letras para serem carregadas no enunciado
+    // Se ainda há letras para serem carregadas no enunciado
+    if (i < texto.length) { 
       elemento.textContent += texto[i];
       i++;
-    } 
-    else {  // Quando acaba a animação do enunciado da pergunta
+    }
+    // Quando acaba a animação do enunciado da pergunta
+    else {  
       clearInterval(intervalo);
-
-      // Registra o carregamento da pergunta no SQL caso esteja no modo visitante
-      if (sessionStorage["modoVisitante"] === "true") {
-        fetch("/log/visitante", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          evento: "Pergunta carregada",
-          tema: tema_atual,
-          tipo_pergunta: tipo_pergunta,
-          id_pergunta: pergunta_selecionada.id_pergunta,
-          modo_tela_usuario: detectarModoTela()
-        })
-      }).catch(() => {});
-      }
-
       if (tipo_pergunta === 'discursiva') {
         animacao_concluida = true
         inicio_pergunta = Date.now()
@@ -794,7 +830,7 @@ function mostrarEnunciado(texto, elemento, callback) {
         mostrarAlternativas()
       }
     }
-  }, VELOCIDADE_LETRA); // velocidade da animação
+  }, VELOCIDADE_LETRA);
 }
 
 function mostrarPergunta() {
@@ -815,7 +851,7 @@ function mostrarPergunta() {
     console.log("Estoque: ", estoque)
     
     // Caso esteja no modo revisão
-    if (modo_jogo === "revisao" || sessionStorage["modoVisitante"] === "true") {
+    if (modo_jogo === "revisao" || MODO_VISITANTE) {
       //return disponiveis[Math.floor(Math.random() * disponiveis.length)]
       //return resolverFallback(escolhida, estoque, probsBase, disponiveis);
       return disponiveis.find(d => estoque[d] > 0) ?? null;
@@ -1011,57 +1047,6 @@ function proximaPergunta() {
     document.getElementById('comentarios').style.display = 'none';
     //document.getElementById("btn-enviar").style.display= "inline-block";
     aguardando_proxima = false;
-  }
-}
-
-async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ganhos, tempo_gasto, id_pergunta, versao_pergunta) {
-  const pontuacao_atual = pontuacoes_usuario[tema_atual]
-  try {
-    const response = await fetch('/registrar_resposta', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        tipo_pergunta: tipo_pergunta,
-        resposta_usuario: resposta_usuario,
-        acertou: acertou,
-        usou_dica: usou_dica,
-        pontos_ganhos: pontos_ganhos,
-        tempo_gasto: tempo_gasto,
-        id_pergunta: id_pergunta,
-        versao_pergunta: versao_pergunta,
-        tema: tema_atual,
-        pontos_usuario: pontuacao_atual
-      })
-    });
-
-    const data = await response.json();
-    if (data.sucesso) {
-      // Atualiza a pontuação do usuário para o tema no localStorage
-      pontuacoes_usuario[tema_atual] = data.nova_pontuacao;
-      alterarPontuacaoUsuario(pontuacao_atual, pontuacoes_usuario[tema_atual], callbackAtualizarUI)
-      localStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_usuario));
-
-      // Atualiza as perguntas restantes do usuário no localStorage
-      localStorage.setItem("perguntas_restantes", data.perguntas_restantes)
-      document.getElementById("perguntas-count").textContent = data.perguntas_restantes
-
-      // Atualiza o número de dicas restantes do usuário no localStorage e no contador de dicas
-      if (tipo_pergunta === 'discursiva') {
-        contador_dicas_restantes.textContent = data.dicas_restantes;
-        localStorage.setItem("dicas_restantes", data.dicas_restantes);
-      }
-
-      atualizarRankingVisual();
-      return true;
-    } else {
-      console.error('Erro ao registrar resposta:', data.mensagem);
-      return false;
-    }
-
-  } 
-  catch (err) {
-    console.error('Erro na comunicação:', err);
-    return false;
   }
 }
 
