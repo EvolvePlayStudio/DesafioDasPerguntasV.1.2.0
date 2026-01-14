@@ -1090,6 +1090,98 @@ function resetarAlternativas() {
 function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
   const stopwords = ["a", "o", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "no", "na", "nos", "nas", "por", "pelo", "pela", "com", "para", "um", "uma", "uns", "umas", "ao", "aos", "à", "às"];
 
+  // Trata os casos dos dígrafos (ex: x no lugar de ch)
+  function normalizarDigrafos(texto) {
+    const regras = [
+      [/sch/g, "ß"],
+      [/ch/g, "¢"],
+      [/lh/g, "£"],
+      [/nh/g, "¤"],
+      [/ss/g, "§"],
+      [/qu/g, "k"],
+      [/ck/g, "k"]
+    ];
+
+    let resultado = texto;
+    for (const [regex, token] of regras) {
+      resultado = resultado.replace(regex, token);
+    }
+    return resultado;
+  }
+
+  // Ignora diferenças de acentuação
+  function removerAcentos(texto) {
+    return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  }
+
+  // Identifica se a palavra tem padrões estrangeiros (alemão, inglês, etc)
+  function temPadraoEstrangeiro(texto) {
+    return /(sch|ck|tz|ph|th)/.test(texto);
+  }
+
+  // Converte subscritos e sobrescritos para dígitos normais e sinais normais
+  function normalizarNotacaoQuimica(texto) {
+    const mapa = {
+      "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9",
+      "₀": "0", "₁": "1", "₂": "2", "₃": "3", "₄": "4", "₅": "5", "₆": "6", "₇": "7", "₈": "8", "₉": "9",
+      "⁺": "+", "₊": "+", "⁻": "-", "₋": "-"
+    };
+    return texto.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉⁺₊⁻₋]/g, c => mapa[c] || c);
+  }
+
+  function limparTexto(texto) {
+    return normalizarNotacaoQuimica(texto)
+      .trim()
+      .toLowerCase()
+      .replace(/[.\-:!;?]/g, " ")
+      .split(/\s+/)
+      .map(removerAcentos)
+      .filter(palavra => !stopwords.includes(palavra))
+      .join(" ");
+  }
+
+  function distanciaLevenshtein(a, b) {
+    const matrix = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(null));
+    for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+    for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+    for (let i = 1; i <= a.length; i++) {
+      for (let j = 1; j <= b.length; j++) {
+        const custo = a[i - 1] === b[j - 1] ? 0 : 1;
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j - 1] + custo
+        );
+      }
+    }
+    return matrix[a.length][b.length];
+  }
+
+  const textoUsuario = normalizarDigrafos(limparTexto(resposta_usuario));
+
+  return respostas_aceitas.some(resposta => {
+    const lenOriginal = limparTexto(resposta).length;
+    const textoCorreto = normalizarDigrafos(limparTexto(resposta));
+    if (textoUsuario === textoCorreto) return true;
+
+    const dist = distanciaLevenshtein(textoUsuario, textoCorreto);
+
+    if (temPadraoEstrangeiro(textoCorreto)) {
+      if (lenOriginal <= 3) return false;
+      if (lenOriginal <= 9) return dist === 2;
+      return dist <= 3;
+    }
+    else {
+      if (lenOriginal <= 3) return false;
+      if (lenOriginal <= 9) return dist === 1;
+      return dist <= 2;
+      }
+  });
+}
+
+function respostaDiscursivaCorretaAntiga(resposta_usuario, respostas_aceitas) {
+  const stopwords = ["a", "o", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "no", "na", "nos", "nas", "por", "pelo", "pela", "com", "para", "um", "uma", "uns", "umas", "ao", "aos", "à", "às"];
+
   function removerAcentos(texto) {
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   }

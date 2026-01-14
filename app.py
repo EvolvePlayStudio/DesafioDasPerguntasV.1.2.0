@@ -116,6 +116,7 @@ QUESTION_CONFIG = {
 EMAILS_PROIBIDOS = ['admin@gmail.com']
 SITE_EM_MANUTENCAO = False
 privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
+id_visitante_admin = "c1dde4c2-a859-4622-ae80-1209cac65d75"
 
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
 
@@ -407,6 +408,11 @@ def registrar_pagina_visitada(pagina):
     conn = cur = None
     id_usuario = session.get('id_usuario')
     id_visitante = session.get('id_visitante')
+
+    if id_usuario in privileged_ids or id_visitante == id_visitante_admin:
+        print("Retornarei")
+        return
+
     try:
         dispositivo = identificar_dispositivo()
 
@@ -704,9 +710,13 @@ def gerar_token_confirmacao(tamanho=32):
 @app.route("/home")
 def home():
     id_usuario = session.get("id_usuario")
+    id_visitante = session.get("id_visitante")
     visitante = session.get("visitante", False)
 
-    usuario_autorizado = id_usuario in privileged_ids if id_usuario else False
+    if id_usuario in privileged_ids or id_visitante == id_visitante_admin:
+        usuario_autorizado = True
+    else:
+        usuario_autorizado = False
 
     return render_template(
         "home.html",
