@@ -419,8 +419,7 @@ async function enviarResposta(pulando = false) {
     // --- Lógica de Conversão Google Ads ---
     function analisarMetaConversao() {
       const totalRespondidas = respondidas.objetiva.length + respondidas.discursiva.length; 
-      console.log("Total respondidas discursivas: ", respondidas.discursiva.length)
-      if (totalRespondidas === 5) {
+      if (totalRespondidas >= 5) {
         gtag('event', 'conversion', {
           'send_to': 'AW-17529321916/JTBvCKKkoeEbELzz0KZB'
         });
@@ -536,7 +535,6 @@ async function enviarResposta(pulando = false) {
         widgetAlternativaSelecionada.classList.add('wrong');
     }
   }
-  // Caso das perguntas discursivas
   else {
     resposta_usuario = caixa_para_resposta.value.trim();
     
