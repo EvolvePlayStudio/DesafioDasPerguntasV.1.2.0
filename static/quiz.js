@@ -1169,20 +1169,39 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
       .join(" ");
   }
 
-  function distanciaLevenshtein(a, b) {
-    const matrix = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(null));
+  function distanciaDamerauLevenshtein(a, b) {
+    const matrix = Array.from({ length: a.length + 1 }, () =>
+      Array(b.length + 1).fill(0)
+    );
+
     for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
     for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+
     for (let i = 1; i <= a.length; i++) {
       for (let j = 1; j <= b.length; j++) {
         const custo = a[i - 1] === b[j - 1] ? 0 : 1;
+
         matrix[i][j] = Math.min(
-          matrix[i - 1][j] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j - 1] + custo
+          matrix[i - 1][j] + 1,        // Remoção de letra
+          matrix[i][j - 1] + 1,        // Inserção de letra
+          matrix[i - 1][j - 1] + custo // Substituição de letra
         );
+
+        // 🔥 Transposição adjacente (quando troca as posições da letra)
+        if (
+          i > 1 &&
+          j > 1 &&
+          a[i - 1] === b[j - 2] &&
+          a[i - 2] === b[j - 1]
+        ) {
+          matrix[i][j] = Math.min(
+            matrix[i][j],
+            matrix[i - 2][j - 2] + 1
+          );
+        }
       }
     }
+
     return matrix[a.length][b.length];
   }
 
@@ -1196,18 +1215,20 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
 
     if (textoUsuario === textoCorreto) return true;
 
-    const dist = distanciaLevenshtein(textoUsuario, textoCorreto);
+    const dist = distanciaDamerauLevenshtein(textoUsuario, textoCorreto);  // 1 dist sigfica 1 erro cometido
+    console.log("Len original: ", lenOriginal);
+    console.log("Distância foi: ", dist);
 
     if (temPadraoEstrangeiro(textoCorreto)) {
       if (lenOriginal <= 3) return false;
-      if (lenOriginal <= 8) return dist === 2;
-      if (lenOriginal <= 13) return dist === 3;
+      if (lenOriginal <= 8) return dist <= 2;
+      if (lenOriginal <= 13) return dist <= 3;
       return dist <= 4;
     }
     else {
       if (lenOriginal <= 3) return false;
-      if (lenOriginal <= 8) return dist === 1;
-      if (lenOriginal <= 13) return dist === 2;
+      if (lenOriginal <= 8) return dist <= 1;
+      if (lenOriginal <= 13) return dist <= 2;
       return dist <= 3;
       }
   });
