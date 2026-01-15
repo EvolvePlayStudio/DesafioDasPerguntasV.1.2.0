@@ -583,10 +583,11 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   window.showForm = showForm;
-  showForm('login');
+  if (localStorage.getItem("ir_para_aba_registro")) {
+    showForm('register');
+  }
+  else {
+    showForm('login');
+  }
+  localStorage.removeItem("ir_para_aba_registro");
 });
-
-
-
-
- 

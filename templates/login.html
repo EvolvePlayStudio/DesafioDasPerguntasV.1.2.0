@@ -315,6 +315,16 @@
       <a href="{{ url_for('sobre_app_from_login') }}">Sobre o App</a>
     </footer>
 
+    <script>
+    const destino = "{{ destino }}";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (destino === "registro") {
+            showForm('registro')
+        }
+    });
+    </script>
+
     <script type="module" src="{{ url_for('static', filename='login.js') }}"></script>
 </body>
 </html>

@@ -223,12 +223,6 @@
       <a id="btn-feedback" class="btn">
         Enviar feedback
       </a>
-      <!-- Botão Criar Conta (apenas visitante) -->
-      {% if not usuario_logado %}
-      <a href="{{ url_for('login') }}" class="btn">
-        Criar conta
-      </a>
-      {% endif %}
 
       <!-- Prosseguir (todos) -->
       <a href="{{ url_for('home') }}" class="btn">

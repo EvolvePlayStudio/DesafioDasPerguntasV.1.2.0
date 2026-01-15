@@ -11,11 +11,25 @@ const temas = [
 "Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia", "Variedades"
 ];
 
+const btn_criar_conta = document.getElementById("btn-criar-conta");
+
 // Widgets do modal alertando confirmação de e-mail necessária
 const modal = document.getElementById("modal-email-confirmacao");
 const msgModal = document.getElementById("modal-msg");
 
+
 if (MODO_VISITANTE) {
+  btn_criar_conta.style.display = "";
+  btn_criar_conta.addEventListener("click", async () => {
+    localStorage.setItem("ir_para_aba_registro", true);
+    await fetch("/intencao-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ destino: "registro" })
+    });
+
+    window.location.href = "/";
+  });
 
   // Gera ID de visitante para o usuário caso não tenha
   let idVisitante = localStorage.getItem("id_visitante");
