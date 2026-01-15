@@ -197,7 +197,6 @@ document.addEventListener("DOMContentLoaded", () => {
     btnEnviar.disabled = true;
 
     const payload = {
-        modo_visitante,
         id_visitante: localStorage.getItem("id_visitante"),
         tema: document.getElementById("tema-perguntas").textContent,
         pontuacao_saldo: valor_saldo,
