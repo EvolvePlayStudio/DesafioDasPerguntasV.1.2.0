@@ -854,16 +854,24 @@ def esqueci_senha():
     # Retorna mensagem padrão sempre, mesmo que o e-mail não exista
     return jsonify(success=True, message=mensagem_padrao)
 
+@app.route("/pegar_email_confirmado", methods=["GET"])
+def pegar_email_confirmado():
+    print("Email do usuário: ", session["email"])
+    return jsonify({
+        'email_usuario': session["email"],
+        'email_confirmado': session["email_confirmado"]
+    })
+
 def enviar_email_confirmacao(email_destinatario, nome_destinatario, link_confirmacao):
     remetente = email_remetente
     senha = senha_app
     porta = int(porta_email)
 
-    assunto = "Confirmação de cadastro - Desafio das Perguntas"
+    assunto = "Confirmação de Cadastro - Desafio das Perguntas"
     corpo = f"""
     Olá, {nome_destinatario}!
 
-    Clique no link abaixo para confirmar seu cadastro em desafiodasperguntas.com.br
+    Clique no link abaixo para confirmar seu cadastro em desafiodasperguntas.com.br:
 
     {link_confirmacao}
 
@@ -1159,7 +1167,7 @@ def login():
 
             # Verifica usuário
             cur.execute("""
-                SELECT id_usuario, senha_hash, nome, dicas_restantes, perguntas_restantes
+                SELECT id_usuario, senha_hash, nome, email_confirmado, dicas_restantes, perguntas_restantes
                 FROM usuarios_registrados WHERE email = %s
             """, (email,))
             usuario = cur.fetchone()
@@ -1167,9 +1175,10 @@ def login():
             if not usuario:
                 return jsonify(success=False, message="E-mail não registrado")
 
-            id_usuario, senha_hash, nome_usuario, dicas_restantes, perguntas_restantes = usuario
+            id_usuario, senha_hash, nome_usuario, email_confirmado, dicas_restantes, perguntas_restantes = usuario
             session["id_usuario"] = id_usuario
             session["email"] = email
+            session["email_confirmado"] = email_confirmado
             session["visitante"] = False
 
             if not check_password_hash(senha_hash, senha):

@@ -15,6 +15,7 @@ const btn_criar_conta = document.getElementById("btn-criar-conta");
 
 // Widgets do modal alertando confirmação de e-mail necessária
 const modal = document.getElementById("modal-email-confirmacao");
+const texto_email_usuario = document.getElementById("email-usuario");
 const msgModal = document.getElementById("modal-msg");
 
 if (MODO_VISITANTE) {
@@ -77,7 +78,8 @@ if (MODO_VISITANTE) {
   });
 }
 else {
-  // exibirModalEmailConfirmacao();
+  document.getElementById("btn-doacoes").style.display = "";
+  exibirModalEmailConfirmacao();
 
   // Implementa função para botão de fechar modal
   const btnFecharModal = document.getElementById("btn-fechar-modal");
@@ -93,7 +95,6 @@ else {
 }
 
 document.getElementById("btn-pesquisa").style.display = "";
-document.getElementById("btn-doacoes").style.display = "";
 document.getElementById("btn-logout").style.display = ""
 
 async function iniciarQuiz(event) {
@@ -228,8 +229,28 @@ async function carregarRegrasPontuacao() {
     localStorage.setItem("regras_pontuacao", JSON.stringify(data.regras_pontuacao));
 }
 
-function exibirModalEmailConfirmacao() {
-  if (modal) modal.classList.remove("hidden");
+async function exibirModalEmailConfirmacao() {
+  try {
+      const response = await fetch('/pegar_email_confirmado', {
+          method: 'GET',
+          credentials: 'include' 
+      });
+
+      if (!response.ok) throw new Error("Erro na requisição");
+
+      const dados = await response.json();
+      const email_confirmado = dados.email_confirmado;
+      const email_usuario = dados.email_usuario;
+
+      if (modal && !email_confirmado) {
+        texto_email_usuario.textContent = `${email_usuario}`
+
+        
+        modal.classList.remove("hidden");
+      }
+  } catch (error) {
+      console.error("Erro ao buscar e-mail do usuário:", error);
+  }
 }
 
 function fecharModalEmail() {
@@ -238,12 +259,12 @@ function fecharModalEmail() {
 
 function reenviarEmailConfirmacao() {
 
-  /*if (sessionStorage.getItem("email_reenviado_neste_login")) {
+  if (sessionStorage.getItem("email_reenviado_neste_login")) {
     msgModal.innerText = "Um e-mail de confirmação já foi enviado recentemente";
     msgModal.style.display = "block";
     msgModal.style.color = "orange";
     return;
-  }*/
+  }
 
   fetch("/reenviar-email-confirmacao", {
     method: "POST",
