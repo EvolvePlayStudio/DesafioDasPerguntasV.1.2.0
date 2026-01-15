@@ -40,10 +40,7 @@ ids_perguntas_objetivas_visitante = {"Artes": [163, 172, 333, 336, 353], "Astron
 """
 ids_perguntas_discursivas_visitante = {"Artes": [253, 258, 270, 425, 612], "Astronomia": [96, 97, 103, 111, 539], "Biologia": [8, 48, 50, 52, 438], "Esportes": [12, 79, 83, 84, 523], "Filosofia": [227, 230, 231, 235, 237], "Geografia": [157, 158, 163, 174, 169], "História": [30, 35, 38, 129, 275], "Mídia": [188, 209, 637, 641, 650], "Música": [313, 327, 479, 488, 491], "Química": [301, 303, 577, 582, 594], "Tecnologia": [152, 342, 351, 358, 470], "Variedades": [90, 144, 376, 659, 662]}"""
 
-
-
-
-ids_perguntas_discursivas_visitante = {"Artes": [253, 258, 270, 425, 612], "Astronomia": [96, 97, 103, 111, 539], "Biologia": [8, 48, 50, 52, 438], "Esportes": [12, 79, 83, 84, 523], "Filosofia": [227, 230, 231, 235, 237], "Geografia": [157, 158, 163, 174, 169], "História": [30, 35, 38, 129, 275], "Mídia": [635, 209, 637, 641, 650], "Música": [313, 327, 479, 488, 491], "Química": [301, 303, 577, 582, 594], "Tecnologia": [152, 342, 351, 358, 470], "Variedades": [90, 144, 376, 659, 662]}
+ids_perguntas_discursivas_visitante = {"Artes": [253, 258, 270, 425, 612], "Astronomia": [96, 97, 103, 111, 539], "Biologia": [8, 48, 50, 52, 438], "Esportes": [12, 79, 83, 84, 523], "Filosofia": [227, 230, 231, 235, 237], "Geografia": [157, 158, 163, 174, 169], "História": [30, 35, 38, 129, 275], "Mídia": [209, 635, 637, 641, 650], "Música": [313, 327, 479, 488, 491], "Química": [301, 303, 577, 582, 594], "Tecnologia": [152, 342, 351, 358, 470], "Variedades": [90, 144, 376, 659, 662]}
 
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
@@ -686,7 +683,7 @@ def confirmar_email():
         """, (id_usuario,))
         conn.commit()
 
-        return render_template('mensagem.html', titulo="Sucesso", mensagem="E-mail confirmado com sucesso! Agora você pode fazer login.")
+        return render_template('mensagem.html', titulo="Sucesso", mensagem="E-mail confirmado com sucesso!")
     
     except Exception:
         if conn:
@@ -866,7 +863,7 @@ def enviar_email_confirmacao(email_destinatario, nome_destinatario, link_confirm
     corpo = f"""
     Olá, {nome_destinatario}!
 
-    Clique no link abaixo para confirmar seu cadastro:
+    Clique no link abaixo para confirmar seu cadastro em desafiodasperguntas.com.br
 
     {link_confirmacao}
 

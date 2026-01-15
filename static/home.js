@@ -17,7 +17,6 @@ const btn_criar_conta = document.getElementById("btn-criar-conta");
 const modal = document.getElementById("modal-email-confirmacao");
 const msgModal = document.getElementById("modal-msg");
 
-
 if (MODO_VISITANTE) {
   btn_criar_conta.style.display = "";
   btn_criar_conta.addEventListener("click", async () => {
@@ -238,12 +237,13 @@ function fecharModalEmail() {
 }
 
 function reenviarEmailConfirmacao() {
-  if (sessionStorage.getItem("email_reenviado_neste_login")) {
-    msgModal.innerText = "O e-mail de confirmação já foi reenviado neste login.";
+
+  /*if (sessionStorage.getItem("email_reenviado_neste_login")) {
+    msgModal.innerText = "Um e-mail de confirmação já foi enviado recentemente";
     msgModal.style.display = "block";
-    msgModal.style.color = "#b26a00";
+    msgModal.style.color = "orange";
     return;
-  }
+  }*/
 
   fetch("/reenviar-email-confirmacao", {
     method: "POST",
@@ -255,7 +255,7 @@ function reenviarEmailConfirmacao() {
 
     if (data.success) {
       sessionStorage.setItem("email_reenviado_neste_login", "true");
-      msgModal.innerText = "E-mail de confirmação reenviado com sucesso.";
+      msgModal.innerText = "E-mail de confirmação reenviado com sucesso";
       msgModal.style.color = "green";
     } else {
       msgModal.innerText = data.message || "Não foi possível reenviar o e-mail.";
