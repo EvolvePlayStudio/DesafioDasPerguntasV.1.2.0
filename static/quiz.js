@@ -450,6 +450,7 @@ async function enviarResposta(pulando = false) {
         resposta_enviada: resposta_usuario,
         acertou: acertou,
         tempo_gasto: tempo_gasto,
+        versao_pergunta: pergunta_selecionada.versao_pergunta,
         usou_dica: dica_gasta,
         modo_tela_usuario: detectarModoTela(),
         pontos_ganhos: pontos_ganhos,

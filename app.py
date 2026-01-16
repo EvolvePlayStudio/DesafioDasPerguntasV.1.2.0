@@ -38,7 +38,7 @@ temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia",
 # IDs de perguntas para os usuários no modo visitante
 ids_perguntas_objetivas_visitante = {"Artes": [163, 172, 333, 336, 353], "Astronomia": [6, 12, 479, 492, 500], "Biologia": [18, 22, 371, 580, 585], "Esportes": [55, 66, 63, 467, 471], "Filosofia": [142, 149, 150, 302, 305], "Geografia": [80, 84, 86, 93, 316], "História": [35, 41, 42, 118, 127], "Mídia": [99, 106, 381, 385, 391], "Música": [219, 222, 226, 229, 231], "Química": [184, 188, 189, 202, 538], "Tecnologia": [243, 246, 251, 273, 415], "Variedades": [136, 192, 270, 451, 627]}
 
-ids_perguntas_discursivas_visitante = {"Artes": [253, 258, 270, 425, 612], "Astronomia": [97, 102, 103, 111, 539], "Biologia": [8, 48, 50, 52, 438], "Esportes": [11, 12, 79, 83, 523], "Filosofia": [227, 230, 231, 235, 246], "Geografia": [157, 158, 163, 174, 169], "História": [30, 35, 38, 129, 275], "Mídia": [451, 635, 637, 641, 650], "Música": [313, 327, 479, 399, 500], "Química": [301, 303, 577, 582, 594], "Tecnologia": [152, 342, 351, 358, 470], "Variedades": [25, 27, 144, 376, 662]}
+ids_perguntas_discursivas_visitante = {"Artes": [253, 258, 270, 425, 612], "Astronomia": [97, 102, 103, 111, 539], "Biologia": [8, 48, 50, 52, 438], "Esportes": [11, 12, 79, 83, 523], "Filosofia": [227, 230, 231, 235, 246], "Geografia": [157, 158, 163, 174, 169], "História": [30, 35, 38, 129, 275], "Mídia": [451, 635, 637, 641, 650], "Música": [313, 327, 479, 399, 500], "Química": [301, 303, 577, 582, 594], "Tecnologia": [152, 342, 351, 358, 470], "Variedades": [24, 25, 27, 376, 662]}
 
 
 
@@ -1261,6 +1261,7 @@ def log_visitante():
     modo_tela = dados.get("modo_tela_usuario")
     pontos_ganhos = dados.get("pontos_ganhos")
     pontos_usuario = dados.get("pontos_usuario")
+    versao_pergunta = dados.get("versao_pergunta")
 
     if evento not in (
         "Pergunta respondida"
@@ -1280,11 +1281,12 @@ def log_visitante():
             acertou,
             tempo_gasto,
             id_visitante,
+            versao_pergunta,
             usou_dica,
             pontos_ganhos,
             pontos_usuario,
             modo_tela
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, (
         evento,
         tema,
@@ -1294,6 +1296,7 @@ def log_visitante():
         acertou,
         tempo_gasto,
         id_visitante,
+        versao_pergunta,
         usou_dica,
         pontos_ganhos,
         pontos_usuario,
