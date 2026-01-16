@@ -1,4 +1,4 @@
-import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual } from "./utils.js";
+import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual, temas_disponiveis } from "./utils.js";
 
 const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
 sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
@@ -41,14 +41,7 @@ if (MODO_VISITANTE) {
   // Cria pontuações de usuário como visitante (obs: esta função está repetida na tela de pesquisa)
   if (!localStorage.getItem("pontuacoes_visitante")) {
       const pontuacoes = {};
-
-      const temas = [
-        "Artes", "Astronomia", "Biologia", "Esportes", "Filosofia",
-        "Geografia", "História", "Mídia", "Música",
-        "Química", "Tecnologia", "Variedades"
-      ];
-
-      temas.forEach(tema => {
+      temas_disponiveis.forEach(tema => {
         pontuacoes[tema] = 1500;
       });
       localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes));

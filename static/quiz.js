@@ -79,6 +79,10 @@ const GAP_LETRA_PARA_TEXTO    = 180;
 const GAP_ENTRE_ALTERNATIVAS  = 380;
 const VELOCIDADE_LETRA        = 25;
 
+// Variáveis para animação da barra de progresso
+let ranking_visual_anterior = null;
+const barra = document.getElementById("barra-progresso");
+
 const hint_dica = document.getElementById("hint-dica");
 const hint_pular = document.getElementById("hint-pular");;
 const hint_avaliacao = document.getElementById("hint-avaliacao");
@@ -122,13 +126,68 @@ function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtuali
 }
 
 function atualizarRankingVisual() {
-  // Declara as variáveis que serão úteis
+  // Declara as variáveis que serão úteis (ranking e pontos já estão atualizados aqui após cáculo dos pontos ganhos ou perdidos)
   const info_ranking_atual = obterInfoRankingAtual(tema_atual, MODO_VISITANTE);
   rankings_usuario[tema_atual] = info_ranking_atual.ranking
   const pontuacao = pontuacoes_usuario[tema_atual] || 0;
   let ranking_anterior = "";
-  let ranking_proximo = null;
-  let progresso = 100;
+  let ranking_proximo;
+  let progressoFinal = 100;
+  let intervalo;
+
+  function animarBarraAte(valorFinal) {
+    return new Promise(resolve => {
+      const onEnd = (e) => {
+        if (e.propertyName === "width") {
+          barra.removeEventListener("transitionend", onEnd);
+          resolve();
+        }
+      };
+
+      barra.addEventListener("transitionend", onEnd);
+
+      requestAnimationFrame(() => {
+        barra.style.transition = "width 1.1s linear"
+        barra.style.width = valorFinal + "%";
+      });
+    });
+  }
+
+  // POSSÍVEL SIMPLIFICAÇÃO NO TRECHO ABAIXO
+  async function animarBarra(tipoAnimacao, progressoFinal) {
+    // Animação da barra na subida de ranking
+    if (tipoAnimacao === "Subida de ranking") {
+      await animarBarraAte(100);
+      atualizarTextosRanking();
+      barra.style.transition = "width linear 0s";
+      barra.style.width = "0%";
+      forcarReflow(barra);
+    }
+    // Animação da barra na descida de ranking
+    else if (tipoAnimacao === 'Descida de ranking') {
+      await animarBarraAte(0);
+      atualizarTextosRanking();
+      barra.style.transition = "width linear 0s";
+      barra.style.width = "100%";
+      forcarReflow(barra);
+    }
+    else {
+      atualizarTextosRanking();
+    }
+
+    // Requisita a segunda parte da animação, após alteração do ranking
+    await animarBarraAte(progressoFinal);
+  }
+
+  function atualizarTextosRanking() {
+    document.getElementById("ranking").textContent = info_ranking_atual.ranking;
+    document.getElementById("ranking-anterior").textContent = ranking_anterior;
+    document.getElementById("ranking-proximo").textContent = ranking_proximo ? ranking_proximo.ranking : "";
+  }
+
+  function forcarReflow(elemento) {
+    elemento.offsetWidth; // Força o browser a aplicar o estado atual
+  }
 
   // Identifica o ranking anterior alcançado pelo usuário
   for (let i = 0; i < regras_pontuacao.length; i++) {
@@ -150,22 +209,34 @@ function atualizarRankingVisual() {
     }
   }
 
+  // Detecta mudança de ranking
+  const mudouRanking = ranking_visual_anterior && ranking_visual_anterior !== info_ranking_atual.ranking;
+
   // Calcula progresso percentual
-  let intervalo;
   if (ranking_proximo) {
     intervalo = ranking_proximo.pontos_minimos - info_ranking_atual.pontos_minimos;
   }
   else {
     intervalo = info_ranking_atual.pontos_maximos - info_ranking_atual.pontos_minimos;
   }
-  progresso = ((pontuacao - info_ranking_atual.pontos_minimos) / intervalo) * 100;
-  progresso = Math.min(100, Math.max(0, progresso));
+  progressoFinal = ((pontuacao - info_ranking_atual.pontos_minimos) / intervalo) * 100;
+  progressoFinal = Math.min(100, Math.max(0, progressoFinal));
 
-  // Atualiza a interface
-  document.getElementById("ranking").textContent = info_ranking_atual.ranking;
-  document.getElementById("ranking-anterior").textContent = ranking_anterior;
-  document.getElementById("ranking-proximo").textContent = ranking_proximo ? ranking_proximo.ranking : "";
-  document.getElementById("barra-progresso").style.width = progresso + "%";
+  if (mudouRanking) {
+    const distanciaMin = Math.abs(pontuacao - info_ranking_atual.pontos_minimos);
+    const distanciaMax = Math.abs(info_ranking_atual.pontos_maximos - pontuacao);
+    const subiuRanking = distanciaMin < distanciaMax;
+    const desceuRanking = distanciaMax < distanciaMin;
+    if (subiuRanking) {
+      animarBarra("Subida de ranking", progressoFinal);
+    }
+    else if (desceuRanking) {
+      animarBarra("Descida de ranking", progressoFinal);
+    }
+  } 
+  else {
+    animarBarra("Ranking mantido", progressoFinal);
+  }
 }
 
 function calcularPontuacao(acertou) {
@@ -846,6 +917,8 @@ function mostrarEnunciado(texto, elemento, callback) {
 }
 
 function mostrarPergunta() {
+  ranking_visual_anterior = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking; // Útil para identificar mudança de ranking depois quando vai fazer animação na barra de progresso
+
   animacao_concluida = false;
   botoes_enviar_div.style.display = "none";
   btn_enviar.disabled = true;
@@ -1249,67 +1322,6 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
   });
 }
 
-function respostaDiscursivaCorretaAntiga(resposta_usuario, respostas_aceitas) {
-  const stopwords = ["a", "o", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "no", "na", "nos", "nas", "por", "pelo", "pela", "com", "para", "um", "uma", "uns", "umas", "ao", "aos", "à", "às"];
-
-  function removerAcentos(texto) {
-    return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  }
-
-  // Converte subscritos e sobrescritos para dígitos normais e sinais normais
-  function normalizarNotacaoQuimica(texto) {
-    const mapa = {
-      "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9",
-      "₀": "0", "₁": "1", "₂": "2", "₃": "3", "₄": "4", "₅": "5", "₆": "6", "₇": "7", "₈": "8", "₉": "9",
-      "⁺": "+", "₊": "+", "⁻": "-", "₋": "-"
-    };
-    return texto.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉⁺₊⁻₋]/g, c => mapa[c] || c);
-  }
-
-  function limparTexto(texto) {
-    return normalizarNotacaoQuimica(texto)
-      .trim()
-      .toLowerCase()
-      .replace(/[.\-:!;?]/g, " ")
-      .split(/\s+/)
-      .map(removerAcentos)
-      .filter(palavra => !stopwords.includes(palavra))
-      .join(" ");
-  }
-
-  function distanciaLevenshtein(a, b) {
-    const matrix = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(null));
-    for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
-    for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
-    for (let i = 1; i <= a.length; i++) {
-      for (let j = 1; j <= b.length; j++) {
-        const custo = a[i - 1] === b[j - 1] ? 0 : 1;
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j - 1] + custo
-        );
-      }
-    }
-    return matrix[a.length][b.length];
-  }
-
-  const textoUsuario = limparTexto(resposta_usuario);
-
-  return respostas_aceitas.some(resposta => {
-    const textoCorreto = limparTexto(resposta);
-
-    if (textoUsuario === textoCorreto) return true;
-
-    const len = textoCorreto.length;
-    const dist = distanciaLevenshtein(textoUsuario, textoCorreto);
-
-    if (len <= 3) return false;
-    if (len <= 9) return dist === 1;
-    return dist <= 2;
-  });
-}
-
 function respostaObjetivaCorreta() {
   if (!alternativaSelecionada) return false;
   if (pergunta_selecionada.resposta_correta) {
@@ -1358,6 +1370,10 @@ async function usarDica() {
   else {
     mostrarDica();
   }
+}
+
+async function definirRankingAnterior() {
+  ranking_visual_anterior = await obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -1477,6 +1493,7 @@ document.addEventListener("DOMContentLoaded", () => {
   else {
     callbackAtualizarUI (pontuacoes_usuario[tema_atual])
   }
+  definirRankingAnterior(); // Útil para quando for animar barra de progresso
   atualizarRankingVisual();
   mostrarPergunta();
   configurarEstrelas();

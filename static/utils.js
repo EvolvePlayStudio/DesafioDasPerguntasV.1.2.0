@@ -1,3 +1,5 @@
+export const temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia", "Variedades"];
+
 export function detectarModoTela() {
   // Identifica se o usuário us modo site para computador
   const largura = window.innerWidth;
