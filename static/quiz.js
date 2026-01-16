@@ -79,6 +79,13 @@ const GAP_LETRA_PARA_TEXTO    = 180;
 const GAP_ENTRE_ALTERNATIVAS  = 380;
 const VELOCIDADE_LETRA        = 25;
 
+const hint_dica = document.getElementById("hint-dica");
+const hint_pular = document.getElementById("hint-pular");;
+const hint_avaliacao = document.getElementById("hint-avaliacao");
+if (tipo_pergunta === "objetiva") {
+  hint_avaliacao.style.marginTop = "0.8rem";
+}
+
 function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
   const intervaloMin = 20; // ms entre frames no máximo, para smooth
   let ultimaExecucao = 0;
@@ -271,6 +278,9 @@ function configurarEstrelas() {
 }
 
 async function enviarResposta(pulando = false) {
+  hint_dica.style.display = "none";
+  hint_pular.style.display = "none";
+  hint_avaliacao.style.display = "none";
   if (pulando) {
     caixa_para_resposta.value = "";
   }
@@ -733,8 +743,8 @@ async function mostrarAlternativas() {
     const btnA = alternativas.find(b => b.dataset.letter === 'A');
     if (btnA) selecionarAlternativa(btnA);
   }
-  
-  // Exibe o botão enviar após tudo    
+  // Exibe hint de avaliação e botão enviar após tudo
+  hint_avaliacao.style.display = "";
   if (btn_enviar) {
     botoes_enviar_div.style.display = "flex";
     btn_enviar.style.display = "inline-flex";
@@ -819,13 +829,16 @@ function mostrarEnunciado(texto, elemento, callback) {
         inicio_pergunta = Date.now()
         caixa_para_resposta.focus()
         botoes_enviar_div.style.display = "flex";
+        hint_dica.style.display = "";
+        hint_pular.style.display = "";
+        hint_avaliacao.style.display = "";
         btn_enviar.style.display = "inline-flex";
-        btn_pular.style.display = "inline-flex"
+        btn_pular.style.display = "inline-flex";
         btn_enviar.disabled = false;
         if (callback) callback();
       } 
       else {
-        mostrarAlternativas()
+        mostrarAlternativas();
       }
     }
   }, VELOCIDADE_LETRA);
@@ -1028,6 +1041,8 @@ function mostrarRespostasAceitas(lista) {
 }
 
 function proximaPergunta() {
+  hint_dica.style.display = "none";
+  hint_pular.style.display = "none";
   lbl_pontos_ganhos.style.display = 'none'
   if (ha_perguntas_disponiveis) {
     if (tipo_pergunta === 'objetiva') {
@@ -1043,7 +1058,6 @@ function proximaPergunta() {
     resultado.style.display = "none";
     document.getElementById("nota-box").style.display = "none";
     document.getElementById('comentarios').style.display = 'none';
-    //document.getElementById("btn-enviar").style.display= "inline-block";
     aguardando_proxima = false;
   }
 }

@@ -445,7 +445,7 @@
           <h2 id="tema-nivel-pergunta"></h2>
 
           <!-- Ícone de dica à direita -->
-          <div id="dica-icon" class="dica-icon" title="Dica">
+          <div id="dica-icon" class="dica-icon" title="Usar dica">
             <span>💡</span>
             <span id="contador-dicas">0</span>
           </div>
@@ -458,17 +458,27 @@
         <input type="text" id="resposta-input" style="display: none;" maxlength="50" placeholder="Digite sua resposta" autocomplete="off"/>
 
         <!-- Container das alternativas (para objetivas) -->
-        <div id="alternativas-container" style="display:none; margin-top: 12px;">
+        <div id="alternativas-container" style="display: none; margin-top: 12px;">
           <button class="alternativa-btn" data-letter="A" tabindex="-1"><strong>A)</strong></button>
           <button class="alternativa-btn" data-letter="B" tabindex="-1"><strong>B)</strong></button>
           <button class="alternativa-btn" data-letter="C" tabindex="-1"><strong>C)</strong></button>
           <button class="alternativa-btn" data-letter="D" tabindex="-1"><strong>D)</strong></button>
         </div>
-        
         <!-- Botões para enviar a resposta e pular perguntas (apenas nas discursivas) -->
         <div id="botoes-envio">
           <button id="btn-enviar" class="btn-enviar" disabled>Enviar</button>
           <button id="btn-pular" class="btn-pular">Pular</button>
+        </div>
+        
+        <!-- Botões de hints para instruir o usuário -->
+        <div id="hint-dica" style="display: none; margin-top: 0.8rem;">
+          💡 Algumas perguntas oferecem dicas (penaliza 30% dos pontos ganhos)
+        </div>
+        <div id="hint-pular" style="display: none; margin-top: 0.3rem;">
+          ⏭ Não sabe a resposta? <strong>Pular</strong> reduz pontos perdidos para a metade
+        </div>
+        <div id="hint-avaliacao" style="display: none; margin-top: 0.3rem;">
+          ⭐ Ajude a melhorar o conteúdo avaliando esta pergunta após respondê-la
         </div>
 
         <!-- Botões de finalizar o quiz e chamar próxima pergunta -->
