@@ -1214,7 +1214,7 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
       [/nn/g, "n"],
 
       // Trocas fonéticas soltas
-      [/c/g, "s"],
+      [/c(?=[ei])/g, "s"],
       [/z/g, "s"],
       [/g/g, "j"]
     ];
@@ -1246,8 +1246,34 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
     return texto.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉⁺₊⁻₋]/g, c => mapa[c] || c);
   }
 
+  function normalizarResposta(texto) {
+    let t = texto.toLowerCase().trim();
+
+    // Normaliza notações químicas
+    t = normalizarNotacaoQuimica(t);
+
+    // Remove stopwords e normaliza pontuações e acentos
+    t = limparTexto(t);
+
+    // Aplica regras fonéticas gerais
+    t = normalizarDigrafos(t);
+
+    // Aplica apenas equivalências finais controladas
+    t = normalizarSufixosFinais(t);
+
+    return t;
+  }
+
+  function normalizarSufixosFinais(texto) {
+  return texto
+    .replace(/ur$/, "o")   // fêmur → femo
+    .replace(/us$/, "os")  // humerus → humeros
+    .replace(/is$/, "es")  // metatarsis → metatarses
+    .replace(/um$/, "o");  // datum → dato
+  }
+
   function limparTexto(texto) {
-    return normalizarNotacaoQuimica(texto)
+    return texto
       .trim()
       .toLowerCase()
       .replace(/[.\-:!;?]/g, " ")
@@ -1293,19 +1319,16 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
     return matrix[a.length][b.length];
   }
 
-  const textoUsuario = normalizarDigrafos(limparTexto(resposta_usuario));
+  const textoUsuario = normalizarResposta(resposta_usuario);
 
   return respostas_aceitas.some(resposta => {
 
-    const textoBase = limparTexto(resposta);
-    const lenOriginal = textoBase.length;
-    const textoCorreto = normalizarDigrafos(textoBase);
+    const lenOriginal = resposta.length;
+    const textoCorreto = normalizarResposta(resposta);
 
     if (textoUsuario === textoCorreto) return true;
 
     const dist = distanciaDamerauLevenshtein(textoUsuario, textoCorreto);  // 1 dist sigfica 1 erro cometido
-    console.log("Len original: ", lenOriginal);
-    console.log("Distância foi: ", dist);
 
     if (temPadraoEstrangeiro(textoCorreto)) {
       if (lenOriginal <= 3) return false;
