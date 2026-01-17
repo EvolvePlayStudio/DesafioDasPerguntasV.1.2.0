@@ -116,7 +116,7 @@ QUESTION_CONFIG = {
 EMAILS_PROIBIDOS = ['admin@gmail.com']
 SITE_EM_MANUTENCAO = False
 privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
-id_visitante_admin = "aa01f790-74db-44c1-95fa-7b4d2cde075b"
+id_visitante_admin = "e7e483b4-7315-4e7d-8e75-1bc980097006"
 
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
 
@@ -410,7 +410,6 @@ def registrar_pagina_visitada(pagina):
     id_visitante = session.get('id_visitante')
 
     if id_usuario in privileged_ids or id_visitante == id_visitante_admin:
-        print("Retornarei")
         return
 
     try:
@@ -453,7 +452,7 @@ iniciar_agendamento()
 @app.route("/", methods=["GET"])
 def index():
     destino = session.pop("destino_login", None)
-
+    
     if destino == "registro":
         registrar_pagina_visitada("Home -> Registro")
     else:
@@ -695,25 +694,28 @@ def confirmar_email():
 def debug_frontend():
     data = request.get_json()
 
-    conn = get_db_connection()
-    cur = conn.cursor()
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
 
-    cur.execute("""
-        INSERT INTO debug_frontend (
-            mensagem, pagina, id_visitante, user_agent
-        )
-        VALUES (%s,%s,%s,%s)
-    """, (
-        data.get("mensagem"),
-        data.get("pagina"),
-        data.get("id_visitante"),
-        data.get("user_agent")
-    ))
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
+        cur.execute("""
+            INSERT INTO debug_frontend (
+                mensagem, pagina, id_visitante, user_agent
+            )
+            VALUES (%s,%s,%s,%s)
+        """, (
+            data.get("mensagem"),
+            data.get("pagina"),
+            data.get("id_visitante"),
+            data.get("user_agent")
+        ))
+        conn.commit()
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.exception("Não foi possível registrar o erro")
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
     return "", 204
 
 def gerar_token_confirmacao(tamanho=32):

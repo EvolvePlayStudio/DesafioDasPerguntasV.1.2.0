@@ -7,9 +7,6 @@ localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 let tema_atual = null;
 let tipo_pergunta = null;
 const mensagem = document.getElementById("mensagem");
-const temas = [
-"Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia", "Variedades"
-];
 
 const btn_criar_conta = document.getElementById("btn-criar-conta");
 
@@ -17,6 +14,8 @@ const btn_criar_conta = document.getElementById("btn-criar-conta");
 const modal = document.getElementById("modal-email-confirmacao");
 const texto_email_usuario = document.getElementById("email-usuario");
 const msgModal = document.getElementById("modal-msg");
+
+const perguntas_restantes = document.getElementById("perguntas-count")
 
 if (MODO_VISITANTE) {
   btn_criar_conta.style.display = "";
@@ -48,6 +47,7 @@ if (MODO_VISITANTE) {
   }
 
   // Cria as informações de perguntas e dicas restantes do usuário
+  // localStorage.setItem("perguntas_restantes_visitante", 2);
   if (!localStorage.getItem("perguntas_restantes_visitante")) {
     localStorage.setItem("perguntas_restantes_visitante", 60);
   }
@@ -178,14 +178,23 @@ async function iniciarQuiz(event) {
 
         // Analisa os rankings atuais do usuário
         const rankings_usuario = {};
-        temas.forEach( tema => {
+        temas_disponiveis.forEach( tema => {
           const ranking_no_tema = obterInfoRankingAtual().ranking;
           rankings_usuario[tema] = ranking_no_tema;
         })
         localStorage.setItem("rankings_usuario", JSON.stringify(rankings_usuario))
-        mensagem.style.opacity = 0
-        
-        window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;
+
+        if (parseInt(perguntas_restantes.textContent) > 0) {
+          mensagem.style.opacity = 0
+          window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;
+        }
+        else {
+          exibirMensagem(
+            mensagem,
+            `É necessário criar uma conta para ter aceso ao conteúdo completo do jogo`,
+            'orange'
+          )
+        }
       }
     }
   }
@@ -326,7 +335,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Define as variáveis do cabeçalho
   const nome_usuario = document.getElementById("user-name")
-  const perguntas_restantes = document.getElementById("perguntas-count")
   const dicas_restantes = document.getElementById("dicas-count")
 
   // Define o nome de usuário, as perguntas e dicas disponíveis e máximas para o usuário

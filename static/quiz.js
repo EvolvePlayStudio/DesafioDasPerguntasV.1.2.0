@@ -16,6 +16,7 @@ window.onerror = function (message) {
 
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"));
+console.log("Perguntas são: ", perguntas_por_dificuldade);
 let perguntas_respondidas = [];
 let aguardando_proxima = false // Variável que indica quando se está aguardando próxima pergunta
 let dica_gasta = false
@@ -89,6 +90,8 @@ const hint_avaliacao = document.getElementById("hint-avaliacao");
 if (tipo_pergunta === "objetiva") {
   hint_avaliacao.style.marginTop = "0.8rem";
 }
+
+const contador_perguntas_restantes = document.getElementById("perguntas-count")
 
 function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
   const intervaloMin = 20; // ms entre frames no máximo, para smooth
@@ -388,6 +391,7 @@ async function enviarResposta(pulando = false) {
 
       // Salva de volta
       localStorage.setItem("perguntas", JSON.stringify(perguntas));
+      console.log("2.Perguntas agora são: ", perguntas)
     }
   }
 
@@ -471,7 +475,7 @@ async function enviarResposta(pulando = false) {
 
         // Atualiza as perguntas restantes do usuário no localStorage
         localStorage.setItem("perguntas_restantes", data.perguntas_restantes)
-        document.getElementById("perguntas-count").textContent = data.perguntas_restantes
+        contador_perguntas_restantes.textContent = data.perguntas_restantes
 
         // Atualiza o número de dicas restantes do usuário no localStorage e no contador de dicas
         if (tipo_pergunta === 'discursiva') {
@@ -551,7 +555,7 @@ async function enviarResposta(pulando = false) {
     const perguntas_restantes_anterior = localStorage.getItem("perguntas_restantes_visitante") || 100;
     const novas_perguntas_restantes = perguntas_restantes_anterior - 1;
     localStorage.setItem("perguntas_restantes_visitante", novas_perguntas_restantes)
-    document.getElementById("perguntas-count").textContent = novas_perguntas_restantes
+    contador_perguntas_restantes.textContent = novas_perguntas_restantes
 
     // Atualiza o número de dicas restantes do usuário no localStorage e no contador de dicas
     if (tipo_pergunta === 'discursiva') {
@@ -832,6 +836,7 @@ function mostrarBotoesAcao() {
   botoes_finalizar_div.style.display = "flex";
   
   let dificuldades_permitidas = null
+  // POSSÍVEL ALTERAÇÃO AQUI, SERÁ QUE NÃO DEVE FAZER PARA MODO VISITANTE?
   if (!MODO_VISITANTE) {
     dificuldades_permitidas = obterDificuldadesDisponiveis(tema_atual, MODO_VISITANTE)
   }
@@ -843,6 +848,9 @@ function mostrarBotoesAcao() {
   let encerrar_quiz = false
   if (modo_jogo === "desafio") {
     encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE)
+  }
+  if (parseInt(contador_perguntas_restantes.textContent) <= 0) {
+    encerrar_quiz = true
   }
 
   // Mostrar apenas o botão Finalizar
@@ -1026,6 +1034,7 @@ function mostrarPergunta() {
 
   // Remove a pergunta do array para não repetir
   perguntas_disponiveis.splice(indicePergunta, 1);
+  localStorage.setItem("perguntas", JSON.stringify(perguntas_por_dificuldade));
   
   dica_gasta = false;
   window.avaliacaoAtual = 0;
@@ -1422,7 +1431,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Exibe o ícone de perguntas restantes caso esteja no modo desafio
   icone_perguntas_restantes.style.display = "flex"
   if (modo_jogo === 'desafio') {
-    const num_perguntas_restantes = document.getElementById("perguntas-count")
+    const num_perguntas_restantes = contador_perguntas_restantes
     if (!MODO_VISITANTE) {
       num_perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}`
     }
