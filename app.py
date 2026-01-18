@@ -404,33 +404,6 @@ def pagina_visitada():
 
     return {"sucess": True}, 200
 
-def registrar_pagina_visitada(pagina):
-    conn = cur = None
-    id_usuario = session.get('id_usuario')
-    id_visitante = session.get('id_visitante')
-
-    if id_usuario in privileged_ids or id_visitante == id_visitante_admin:
-        return
-
-    try:
-        dispositivo = identificar_dispositivo()
-
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO acessos_paginas (pagina, id_usuario, dispositivo, id_visitante) 
-            VALUES (%s, %s, %s, %s)
-        """, (pagina, id_usuario, dispositivo, id_visitante))
-        conn.commit()
-
-    except Exception as e:
-        if conn: conn.rollback()
-        app.logger.error(f"Erro ao registrar página: {e}")
-
-    finally:
-        if cur: cur.close()
-        if conn: conn.close()
-        
 def iniciar_agendamento():
     # Analisa 4 vezes por dia se o incremento no número de dicas e perguntas dos usuários foi feita
     scheduler.add_job(
@@ -455,6 +428,8 @@ def index():
     
     if destino == "registro":
         registrar_pagina_visitada("Home -> Registro")
+    elif destino == "login_de_home":
+        registrar_pagina_visitada("Home -> Login")
     else:
         registrar_pagina_visitada("Login")
 
@@ -465,6 +440,8 @@ def intencao_login():
     data = request.get_json(silent=True) or {}
     if data.get("destino") == "registro":
         session["destino_login"] = "registro"
+    elif data.get("destino") == "login_de_home":
+        session["destino_login"] = "login_de_home"
     return jsonify(ok=True)
 
 @app.route('/favicon.ico')
@@ -1774,6 +1751,33 @@ def registrar():
     return jsonify(success=True, message="Registro realizado! Verifique seu e-mail para confirmar")
     """
     return jsonify(success=True, message="Registro realizado!")
+
+def registrar_pagina_visitada(pagina):
+    conn = cur = None
+    id_usuario = session.get('id_usuario')
+    id_visitante = session.get('id_visitante')
+
+    if id_usuario in privileged_ids or id_visitante == id_visitante_admin:
+        return
+
+    try:
+        dispositivo = identificar_dispositivo()
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO acessos_paginas (pagina, id_usuario, dispositivo, id_visitante) 
+            VALUES (%s, %s, %s, %s)
+        """, (pagina, id_usuario, dispositivo, id_visitante))
+        conn.commit()
+
+    except Exception as e:
+        if conn: conn.rollback()
+        app.logger.error(f"Erro ao registrar página: {e}")
+
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()  
 
 @app.route("/registrar_resposta", methods=["POST"])
 @token_required

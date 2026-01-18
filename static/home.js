@@ -318,6 +318,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Implementa a função de clique no botão de logout
   document.getElementById("btn-logout").addEventListener("click", async () => {
+    await fetch("/intencao-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ destino: "login_de_home" })
+    });
+
     window.location.href = "/"
   })
 
