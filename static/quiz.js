@@ -257,7 +257,7 @@ function calcularPontuacao(acertou) {
         pontos_ganhos = regras_usuario.pontos_pular_pergunta;
       } 
       else {
-        pontos_ganhos = regras_usuario.pontos_erro;
+        pontos_ganhos = regras_usuario.pontos_erro + 20;
       }
       // Trata casos em que a pontuação do usuário ficaria negativa
       if (pontuacoes_usuario[tema_atual] + pontos_ganhos < 0) {
