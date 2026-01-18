@@ -1191,6 +1191,7 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
   function normalizarDigrafos(texto) {
     const regras = [
       // Trigramas / padrões fortes
+      [/chr/g, "cr"],
       [/sch/g, "x"],
       [/zh/g, "j"],
       [/tz/g, "ts"],
@@ -1267,14 +1268,25 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
     // Aplica regras fonéticas gerais
     t = normalizarDigrafos(t);
 
+    // Normaliza nasalizações
+    t = normalizarNasalizacao(t);
+
     // Aplica apenas equivalências finais controladas
     t = normalizarSufixosFinais(t);
 
     return t;
   }
 
+  function normalizarNasalizacao(texto) {
+    return texto
+    // Variações comuns de /in/
+    .replace(/em$/, "in")
+    .replace(/en$/, "in")
+    .replace(/im$/, "in");
+  }
+
   function normalizarSufixosFinais(texto) {
-  return texto
+    return texto
     .replace(/ur$/, "o")   // fêmur → femo
     .replace(/us$/, "os")  // humerus → humeros
     .replace(/is$/, "es")  // metatarsis → metatarses
