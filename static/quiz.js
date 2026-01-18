@@ -391,7 +391,6 @@ async function enviarResposta(pulando = false) {
 
       // Salva de volta
       localStorage.setItem("perguntas", JSON.stringify(perguntas));
-      console.log("2.Perguntas agora são: ", perguntas)
     }
   }
 
@@ -848,11 +847,11 @@ function mostrarBotoesAcao() {
   let encerrar_quiz = false
   if (modo_jogo === "desafio") {
     encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE)
+    if (parseInt(contador_perguntas_restantes.textContent) <= 0) {
+      encerrar_quiz = true
+      }
   }
-  if (parseInt(contador_perguntas_restantes.textContent) <= 0) {
-    encerrar_quiz = true
-  }
-
+  
   // Mostrar apenas o botão Finalizar
   if (encerrar_quiz || !ha_perguntas_disponiveis) {
     btn_proxima.style.display = "none";

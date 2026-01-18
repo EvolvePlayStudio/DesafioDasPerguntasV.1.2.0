@@ -716,14 +716,6 @@ def home():
         visitante=visitante
     )
 
-@app.route("/resultado")
-def resultado():
-    usuario_logado = "id_usuario" in session
-    return render_template(
-        "resultado.html",
-        usuario_logado=usuario_logado
-    )
-
 @app.route("/doações")
 @token_required
 def doacoes(user_id):
@@ -1118,6 +1110,31 @@ def listar_perguntas(user_id):
         'perguntas': perguntas_por_dificuldade,
         'pontuacoes_usuario': pontuacoes_usuario
     })
+
+@app.route("/api/subtemas")
+def listar_subtemas():
+    tema = request.args.get("tema")
+    if not tema:
+        return {"subtemas": []}
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT nome FROM subtemas WHERE tema = %s ORDER BY nome ASC
+        """, (tema,))
+
+        rows = cur.fetchall()
+
+        return {"subtemas": [r[0] for r in rows]}
+
+    except Exception:
+        app.logger.exception("Erro ao buscar subtemas")
+        return {"subtemas": []}, 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
 
 @app.route("/login", methods=["GET","POST"])
 def login():
@@ -1568,6 +1585,15 @@ def politica_privacidade_from_login():
     session['from_login'] = True
     registrar_pagina_visitada("Política de Privacidade (login)")
     return render_template('privacy_policy.html')
+
+@app.route("/resultado")
+def resultado():
+    usuario_logado = "id_usuario" in session
+    return render_template(
+        "resultado.html",
+        usuario_logado=usuario_logado
+    )
+
 
 @app.route('/termos-de-uso-from-login')
 def termos_uso_from_login():
