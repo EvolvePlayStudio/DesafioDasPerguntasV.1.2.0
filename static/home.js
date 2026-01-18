@@ -47,7 +47,6 @@ if (MODO_VISITANTE) {
   }
 
   // Cria as informações de perguntas e dicas restantes do usuário
-  // localStorage.setItem("perguntas_restantes_visitante", 2);
   if (!localStorage.getItem("perguntas_restantes_visitante")) {
     localStorage.setItem("perguntas_restantes_visitante", 60);
   }
@@ -103,10 +102,19 @@ async function iniciarQuiz(event) {
     return;
   }
 
-  if (sessionStorage["modoVisitante"] === "false" && localStorage.getItem("perguntas_restantes") <= 0) {
-    exibirMensagem(mensagem, 'Você precisa aguardar para obter mais perguntas no modo desafio', 'red')
+  // Mensagem avisando que as perguntas acabaram
+  if (parseInt(perguntas_restantes.textContent) <= 0) {
+    if (!MODO_VISITANTE) {
+      exibirMensagem(mensagem, `Você precisa aguardar para poder responder novas perguntas`, 'orange')
+    }
+    else {
+      exibirMensagem(
+        mensagem, `É necessário criar uma conta para ter aceso ao conteúdo completo do jogo`, 'orange'
+      ) 
+    }
     return;
   }
+  
   exibirMensagem(mensagem, "Preparando quiz...", '#d1d1d1ff', false)
 
   // Carrega as perguntas para o quiz
@@ -141,7 +149,7 @@ async function iniciarQuiz(event) {
           window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;
         }
         else {
-          exibirMensagem(mensagem, `Você não possui novas perguntas ${tipo_pergunta}s disponíveis neste tema no momento`, 'red')
+          exibirMensagem(mensagem, `Você não possui novas perguntas ${tipo_pergunta}s disponíveis para o tema ${tema_atual} no momento`, 'orange')
         }
       }
     }
@@ -184,17 +192,8 @@ async function iniciarQuiz(event) {
         })
         localStorage.setItem("rankings_usuario", JSON.stringify(rankings_usuario))
 
-        if (parseInt(perguntas_restantes.textContent) > 0) {
-          mensagem.style.opacity = 0
-          window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;
-        }
-        else {
-          exibirMensagem(
-            mensagem,
-            `É necessário criar uma conta para ter aceso ao conteúdo completo do jogo`,
-            'orange'
-          )
-        }
+        mensagem.style.opacity = 0
+        window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;
       }
     }
   }
