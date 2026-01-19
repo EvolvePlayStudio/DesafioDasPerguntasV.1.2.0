@@ -1226,6 +1226,7 @@ def login():
         success=True,
         message="Login realizado com sucesso",
         token=token,
+        id_usuario=id_usuario,
         dicas_restantes=dicas_restantes,
         perguntas_restantes=perguntas_restantes,
         nome_usuario=nome_usuario,

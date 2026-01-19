@@ -1,4 +1,4 @@
-import { fetchAutenticado, exibirMensagem } from "./utils.js";
+import { fetchAutenticado, exibirMensagem, temas_disponiveis } from "./utils.js";
 
 let tema_atual;
 let tipo_pergunta;
@@ -16,10 +16,7 @@ const box_tema = document.getElementById("tema");
 const box_tipo_pergunta = document.getElementById("tipo-pergunta");
 const mensagem = document.getElementById("mensagem");
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
-
-btn_marcar_todas.disabled = true;
-box_tema.disabled = true;
-box_tipo_pergunta.disabled = true;
+const TTL_ESTADO_PESQUISA = 7 * 24 * 60 * 60 * 1000; // 7 dias
 
 // Implementas a função para exibir subtemas ao mudar o tema
 box_tema.addEventListener("change", async () => {
@@ -113,7 +110,69 @@ btn_revisar.addEventListener("click", () => {
   }
 })
 
-async function mostrarSubtemasDisponiveis() {
+function carregarEstadoPesquisa() {
+  const raw = localStorage.getItem("estado_pesquisa");
+  if (!raw) return null;
+
+  const estados = JSON.parse(raw);
+  const ownerKey = getOwnerKey();
+  const estado = estados[ownerKey];
+
+  if (!estado) return null;
+
+  if (Date.now() - estado.timestamp > TTL_ESTADO_PESQUISA) {
+    delete estados[ownerKey];
+    localStorage.setItem("estado_pesquisa", JSON.stringify(estados));
+    return null;
+  }
+
+  return estado;
+}
+
+async function carregarFavoritos() {
+  btn_marcar_todas.textContent = 'Marcar Todas';
+  try {
+    const response = await fetch(`/api/carregar-favoritos?tema-atual=${tema_atual}&tipo-pergunta=${tipo_pergunta}`);
+    const result = await response.json();
+    contadorEl.textContent = contador_perguntas = 0;
+    favoritos_selecionados.clear()
+
+    result["favoritos"].forEach(idp => {
+      favoritos_selecionados.add(idp)
+      const estrela = document.querySelector(`.estrela[data-id='${idp}']`);
+      if (estrela) {
+        estrela.classList.add("favorito")
+        estrela.textContent = "★"
+        const checkbox = document.querySelector(`input[type='checkbox'][data-id='${idp}']`)
+        checkbox.checked = true;
+        contador_perguntas ++;
+      }
+    contadorEl.textContent = contador_perguntas;
+
+    // Altera o texto do botão de marcar todas as perguntas caso todas tenha sido marcadas
+    const totalCheckboxes = document.querySelectorAll(".checkbox-selecionar").length;
+    if (favoritos_selecionados.size === totalCheckboxes) {
+      btn_marcar_todas.textContent = 'Desmarcar Todas';
+    }
+    });
+  }
+  catch (err) {
+    console.log("Erro ao carregar favoritos: ", err)
+  }
+}
+
+function getOwnerKey() {
+  let owner_key;
+  if (!MODO_VISITANTE) {
+    owner_key = localStorage.getItem("id_usuario")
+  }
+  else {
+    owner_key = "visitante"
+  }
+  return owner_key
+}
+
+async function mostrarSubtemasDisponiveis(subtemasRestaurar = []) {
 
   function atualizarBotoesSubtemas(subtemas, subtemasSelecionados = new Set()) {
     const container = document.getElementById("container-subtemas");
@@ -156,23 +215,25 @@ async function mostrarSubtemasDisponiveis() {
   }
 
   const tema = box_tema.value;
-  const tipo = box_tipo_pergunta.value;
-
-  if (!tema || !tipo) return;
+  if (!tema) return;
 
   try {
-    const res = await fetchAutenticado(
-      `/api/subtemas?tema=${tema}`
-    );
+    const res = await fetchAutenticado(`/api/subtemas?tema=${tema}`);
     const data = await res.json();
 
-    atualizarBotoesSubtemas(data.subtemas);
+    const subtemasDisponiveis = data.subtemas;
+
+    // Apenas os subtemas ainda existentes
+    const subtemasValidos = subtemasRestaurar.filter(st =>
+      subtemasDisponiveis.includes(st)
+    );
+
+    atualizarBotoesSubtemas(subtemasDisponiveis, new Set(subtemasValidos));
   } catch (e) {
     console.error("Erro ao carregar subtemas", e);
   }
 
   limparTabelaPerguntas();
-
   box_tema.disabled = false;
   box_tipo_pergunta.disabled = false;
 }
@@ -182,6 +243,8 @@ async function pesquisar() {
   btn_salvar_favoritos.disabled = true;
   btn_revisar.disabled = true;
   btn_pesquisar.disabled = true;
+  const dificuldadesSelecionadas = Array.from(document.querySelectorAll(".filtro-centro input[type='checkbox']:checked")).map(cb => cb.value);
+  const subtemasSelecionados = Array.from(document.querySelectorAll(".subtema-btn.selected")).map(btn => btn.textContent);
 
   function filtrarPerguntasVisitante(perguntasPorDificuldade) {
     // Coloca em lowerCase o tipo pergunta para ficar de acordo com como está no localStorage
@@ -205,22 +268,12 @@ async function pesquisar() {
     let totalRenderizadas = 0;
     tabela.innerHTML = "";
 
-    const dificuldadesSelecionadas = Array.from(
-      document.querySelectorAll(".filtro-centro input[type='checkbox']:checked")
-    ).map(cb => cb.value);
-
-    const subtemasSelecionados = Array.from(
-      document.querySelectorAll(".subtema-btn.selected")
-    ).map(btn => btn.textContent);
-
     ordem_dificuldades.forEach(dificuldade => {
       if (!dificuldadesSelecionadas.includes(dificuldade)) return;
 
       (perguntasPorDificuldade[dificuldade] || []).forEach(p => {
 
-        const temSubtemaValido =
-          subtemasSelecionados.length === 0 ||
-          (p.subtemas && p.subtemas.some(st => subtemasSelecionados.includes(st)));
+        const temSubtemaValido = subtemasSelecionados.length === 0 || (p.subtemas && p.subtemas.some(st => subtemasSelecionados.includes(st)));
 
         if (!temSubtemaValido) return;
 
@@ -297,28 +350,20 @@ async function pesquisar() {
 
     let perguntasPorDificuldade = null;
     if (MODO_VISITANTE) {
-
+      // Define as pontuações do usuário caso não haja
       if (!localStorage.getItem("pontuacoes_visitante")) {
         const pontuacoes = {};
-
-        const temas = [
-          "Artes", "Astronomia", "Biologia", "Esportes", "Filosofia",
-          "Geografia", "História", "Mídia", "Música",
-          "Química", "Tecnologia", "Variedades"
-        ];
-
-        temas.forEach(tema => {
-          pontuacoes[tema] = 2500;
-        });
+        temas_disponiveis.forEach(tema => {pontuacoes[tema] = 2500});
       localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes));
-      }
-      perguntasPorDificuldade = filtrarPerguntasVisitante(data.perguntas)
+      };
+      perguntasPorDificuldade = filtrarPerguntasVisitante(data.perguntas);
     }
-    else { 
+    else {
       localStorage.setItem("pontuacoes_usuario", JSON.stringify(data.pontuacoes_usuario));
       perguntasPorDificuldade = data.perguntas;
-      console.log("Perguntas: ", perguntasPorDificuldade)
     }
+    
+    salvarEstadoPesquisa(tema_atual, tipo_pergunta, dificuldadesSelecionadas, subtemasSelecionados);
     localStorage.setItem("perguntas_para_revisar", JSON.stringify(perguntasPorDificuldade));
 
     // Renderiza tabela respeitando filtros
@@ -350,6 +395,27 @@ async function pesquisar() {
   btn_pesquisar.disabled = false;
 }
 
+// Salva o tema, tipo de pergunta e filtros da pesquisa para retomar depois
+function salvarEstadoPesquisa(tema, tipo_pergunta, dificuldades, subtemas) {
+  const owner_key = getOwnerKey();
+  const raw = localStorage.getItem("estado_pesquisa") || "{}";
+  const estados = JSON.parse(raw);
+  estados[owner_key] = {
+    tema: tema,
+    tipo_pergunta: tipo_pergunta,
+    dificuldades: dificuldades,
+    subtemas: subtemas,
+    expiracao: Date.now()
+  };
+
+  localStorage.setItem("estado_pesquisa", JSON.stringify(estados));
+}
+
+function temaValido(tema) {
+  return Array.from(box_tema.options)
+    .some(opt => opt.value === tema);
+}
+
 function toggleFavorito(estrelaEl, id_pergunta)  {
 
   if (MODO_VISITANTE) {
@@ -377,38 +443,6 @@ function toggleFavorito(estrelaEl, id_pergunta)  {
   }
   else {
     favoritos_selecionados.delete(id_pergunta);
-  }
-}
-
-async function carregarFavoritos() {
-  btn_marcar_todas.textContent = 'Marcar Todas';
-  try {
-    const response = await fetch(`/api/carregar-favoritos?tema-atual=${tema_atual}&tipo-pergunta=${tipo_pergunta}`);
-    const result = await response.json();
-    contadorEl.textContent = contador_perguntas = 0;
-    favoritos_selecionados.clear()
-
-    result["favoritos"].forEach(idp => {
-      favoritos_selecionados.add(idp)
-      const estrela = document.querySelector(`.estrela[data-id='${idp}']`);
-      if (estrela) {
-        estrela.classList.add("favorito")
-        estrela.textContent = "★"
-        const checkbox = document.querySelector(`input[type='checkbox'][data-id='${idp}']`)
-        checkbox.checked = true;
-        contador_perguntas ++;
-      }
-    contadorEl.textContent = contador_perguntas;
-
-    // Altera o texto do botão de marcar todas as perguntas caso todas tenha sido marcadas
-    const totalCheckboxes = document.querySelectorAll(".checkbox-selecionar").length;
-    if (favoritos_selecionados.size === totalCheckboxes) {
-      btn_marcar_todas.textContent = 'Desmarcar Todas';
-    }
-    });
-  }
-  catch (err) {
-    console.log("Erro ao carregar favoritos: ", err)
   }
 }
 
@@ -458,5 +492,20 @@ function identificarMudancaCheck (checkbox) {
   })
 }
 
-// Já mostra os subtemas disponíveis do tema padrão (Artes ou o que o usuário definiu no localStorage)
-mostrarSubtemasDisponiveis();
+const estado = carregarEstadoPesquisa();
+if (estado && temaValido(estado.tema)) {
+  console.log("Subtemas: ", estado.subtemas);
+  // Define tema e tipo de pergunta
+  box_tema.value = estado.tema;
+  box_tipo_pergunta.value = estado.tipo_pergunta;
+
+  // Define dificuldades
+  document.querySelectorAll("#checks-dificuldades input[type='checkbox']").forEach(cb => {cb.checked = estado.dificuldades.includes(cb.value)});
+  
+  // Define subtemas
+  await mostrarSubtemasDisponiveis();
+  document.querySelectorAll(".subtema-btn").forEach(btn => {btn.classList.toggle("selected", estado.subtemas.includes(btn.textContent))});
+}
+else {
+  mostrarSubtemasDisponiveis();
+}

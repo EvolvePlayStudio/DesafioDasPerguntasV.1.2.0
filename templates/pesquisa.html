@@ -257,7 +257,7 @@
     <!-- Coluna Esquerda: Tema -->
     <div class="filtro-esquerda">
       <label for="tema">Tema:</label>
-      <select id="tema">
+      <select id="tema" disabled>
       <option>Artes</option>
       <option>Astronomia</option>
       <option>Biologia</option>
@@ -274,7 +274,7 @@
     </div>
 
     <!-- Coluna Centro: Dificuldade -->
-    <div class="filtro-centro" style="margin-top: 0.15rem;">
+    <div id="checks-dificuldades" class="filtro-centro" style="margin-top: 0.15rem;">
       <span>Dificuldade:</span>
       <label><input type="checkbox" value="Fácil" checked> Fácil</label>
       <label><input type="checkbox" value="Médio" checked> Médio</label>
@@ -284,7 +284,7 @@
     <!-- Coluna Direita: Tipo -->
     <div class="filtro-direita">
       <label for="tipo-pergunta">Tipo:</label>
-      <select id="tipo-pergunta">
+      <select id="tipo-pergunta" disabled>
       <option>Objetiva</option>
       <option>Discursiva</option>
     </select>
@@ -324,7 +324,7 @@
     </div>
     <div class="footer-right">
       <button id="btn-voltar">Voltar</button>
-      <button id="marcar-todas">Marcar Todas</button>
+      <button id="marcar-todas" disabled>Marcar Todas</button>
       <button id="btn-pesquisar">Pesquisar</button>
       <button id="btn-salvar-favoritos">Salvar Favoritos</button>
       <button id="btn-revisar" style="margin-right: 2rem;">Revisar</button>

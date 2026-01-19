@@ -344,6 +344,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       if (data.success) {
         // Grava localStorage só se login OK
+        localStorage.setItem("id_usuario", data.id_usuario);
         localStorage.setItem("dicas_restantes", JSON.stringify(data.dicas_restantes || 0));
         localStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes || 0));
         localStorage.setItem("nome_usuario", data.nome_usuario || '');
