@@ -1250,9 +1250,8 @@ def login():
 def log_visitante():
     """return jsonify({"status": "ok"}), 200"""
     dados = request.get_json()
-    evento = dados.get("evento")
     tema = dados.get("tema")
-    tipo_pergunta = dados.get("tipo_pergunta")
+    tipo_pergunta = dados.get("tipo_pergunta").capitalize()
     id_pergunta = dados.get("id_pergunta")
     resposta_enviada = dados.get("resposta_enviada")
     acertou = dados.get("acertou")
@@ -1264,17 +1263,11 @@ def log_visitante():
     pontos_usuario = dados.get("pontos_usuario")
     versao_pergunta = dados.get("versao_pergunta")
 
-    if evento not in (
-        "Pergunta respondida"
-    ):
-        return jsonify({"erro": "tipo_registro inválido"}), 400
-
     conn = get_db_connection()
     cur = conn.cursor()
 
     cur.execute("""
         INSERT INTO acesso_modo_visitante (
-            evento,
             tema,
             tipo_pergunta,
             id_pergunta,
@@ -1287,9 +1280,8 @@ def log_visitante():
             pontos_ganhos,
             pontos_usuario,
             modo_tela
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, (
-        evento,
         tema,
         tipo_pergunta,
         id_pergunta,
