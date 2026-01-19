@@ -8,8 +8,6 @@ let tema_atual = null;
 let tipo_pergunta = null;
 const mensagem = document.getElementById("mensagem");
 
-const btn_criar_conta = document.getElementById("btn-criar-conta");
-
 // Widgets do modal alertando confirmação de e-mail necessária
 const modal = document.getElementById("modal-email-confirmacao");
 const texto_email_usuario = document.getElementById("email-usuario");
@@ -17,11 +15,18 @@ const msgModal = document.getElementById("modal-msg");
 
 const perguntas_restantes = document.getElementById("perguntas-count")
 
+// Botões no cabeçalho da página
+const btn_criar_conta = document.getElementById("btn-criar-conta");
+const btn_perfil = document.getElementById("btn-perfil");
+const btn_pesquisa = document.getElementById("btn-pesquisa");
+const btn_doacoes = document.getElementById("btn-doacoes");
+const btn_logout = document.getElementById("btn-logout");
+
 if (MODO_VISITANTE) {
   btn_criar_conta.style.display = "";
   btn_criar_conta.addEventListener("click", async () => {
     localStorage.setItem("ir_para_aba_registro", true);
-    await fetch("/intencao-login", {
+    await fetch("/pagina_destino", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ destino: "registro" })
@@ -70,7 +75,7 @@ if (MODO_VISITANTE) {
   });
 }
 else {
-  document.getElementById("btn-doacoes").style.display = "";
+  btn_doacoes.style.display = "";
   exibirModalEmailConfirmacao();
 
   // Implementa função para botão de fechar modal
@@ -86,8 +91,9 @@ else {
   });
 }
 
-document.getElementById("btn-pesquisa").style.display = "";
-document.getElementById("btn-logout").style.display = ""
+btn_perfil.style.display = "";
+btn_pesquisa.style.display = "";
+btn_logout.style.display = "";
 
 async function iniciarQuiz(event) {
   // Atualiza o tema atual, modo de jogo e tipo de pergunta no localStorage
@@ -295,8 +301,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // Carrega as regras de pontuações
   carregarRegrasPontuacao()
 
+  // Implementa a função de clique no botão de perfil
+  btn_perfil.addEventListener("click", async () => {
+    window.location.href = "/perfil";
+  });
+
   // Implementa a função de clique no botão de pesquisa
-  document.getElementById("btn-pesquisa").addEventListener("click", async () => {
+  btn_pesquisa.addEventListener("click", async () => {
     const response = await fetchAutenticado("/pesquisa");
     if (response.ok) {
       window.location.href = "/pesquisa";
@@ -304,7 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Implementa a função de clique no botão de doações
-  document.getElementById("btn-doacoes").addEventListener("click", async () => {
+  btn_doacoes.addEventListener("click", async () => {
     if (!MODO_VISITANTE) {
       const response = await fetchAutenticado("/doações");
       if (response.ok) {
@@ -317,8 +328,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Implementa a função de clique no botão de logout
-  document.getElementById("btn-logout").addEventListener("click", async () => {
-    await fetch("/intencao-login", {
+  btn_logout.addEventListener("click", async () => {
+    await fetch("/pagina_destino", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ destino: "login_de_home" })

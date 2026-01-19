@@ -1,0 +1,558 @@
+<!DOCTYPE html><html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Perfil - Desafio das Perguntas</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/Favicon.png') }}">
+  <meta name="description" content="Experimente perguntas discursivas e objetivas nos mais variados temas neste aplicativo gratuito">
+
+  <!-- Google tag (gtag.js) --> 
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17529321916"></script> <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'AW-17529321916'); </script>
+
+  <style>
+    /* Footer inferior */
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--footer-h);
+      background: var(--cor-fundo-escuro);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      box-shadow: 0 -2px 6px rgba(0,0,0,0.35);
+    }
+    /* Botão voltar */
+    .btn-voltar-menu {
+      width: 40%;
+      min-width: 220px;
+      max-width: 420px;
+      padding: 0.7rem 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: var(--bg-botao-login);
+      color: #fff;
+      transition: background 0.2s ease, transform 0.15s ease;
+    }
+    .btn-voltar-menu:hover {
+      background: var(--bg-hover-botao-login);
+      transform: translateY(-1px);
+    }
+    :root {
+      --footer-h: 64px;
+    }
+    /* ===== BASE ===== */
+    body {
+      width: 100%;
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--cor-fundo-padrao);
+      color: #ffffff;
+      min-height: 100vh;
+    }
+    main#perfil {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.6rem;
+      flex: 1;
+      padding-bottom: calc(var(--footer-h) + 12px);
+    }
+    /* ===== HEADER PERFIL ===== */
+    .perfil-header {
+        width: 100%;
+        background: var(--cor-fundo-escuro);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .perfil-header-conteudo {
+        max-width: none;        /* REMOVE a centralização */
+        margin: 0;
+        padding: 0.9rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .perfil-icon {
+        width: 26px;
+        height: 26px;
+    }
+    .header-titulo {
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+    main#perfil {
+        margin-top: 0.5rem;
+    }
+
+    /* ===== CONTROLES ===== */
+    #controles {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    #controles label {
+      font-size: 1rem;;
+      font-weight: 600;
+    }
+    #controles select {
+      border: none;
+      border-radius: 4px;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .linha-topo {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+    .secao-titulo {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin: 0;
+        opacity: 0.9;
+    }
+    /* ===== LISTA DE TEMAS ===== */
+    #lista-temas {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    /* ===== ITEM DO TEMA ===== */
+    .tema-item {
+      background: var(--cor-fundo-escuro);
+      padding: 0.9rem 1rem 1rem;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    /* Linha superior */
+    .tema-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tema-nome {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .tema-pontos {
+      font-size: 0.9rem;
+      font-weight: 600;
+      opacity: 0.85;
+    }
+    .tema-ranking-atual {
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        opacity: 0.85;
+        margin-top: -0.2rem;
+    }
+    .barra-container {
+        position: relative;
+    }
+    .barra-marco {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: rgba(0, 0, 0, 1);
+    }
+    /* ===== BARRA DE PROGRESSO ===== */
+    .barra-container {
+      width: 100%;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .barra-progresso {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(to right, #f9a825, #fdd835);
+      border-radius: 999px;
+      transition: width 0.9s cubic-bezier(0.4, 0.0, 0.2, 1);
+    }
+    /* ===== ESCALA DE RANKING ===== */
+    .escala-ranking {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      margin-top: 0.4rem;
+      padding-top: 0.3rem;
+      margin-bottom: 0.8rem;
+    }
+    .escala-labels {
+        position: relative;
+        height: 14px;
+        margin-bottom: 0.4rem;
+    }
+    .escala-labels span {
+        position: absolute;
+        transform: translateX(-50%);
+        font-size: 0.7rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .barra-referencia {
+      height: 10px;
+      background: rgba(255,255,255,0.08);
+    }
+    /* ===== RESPONSIVO ===== */
+    @media (max-width: 600px) {
+    main#perfil {
+        padding: 1.2rem 0.8rem 2rem;
+    }
+    #controles {
+        justify-content: center;
+    }
+    .tema-nome {
+        font-size: 0.95rem;
+    }
+    .tema-pontos {
+        font-size: 0.85rem;
+    }
+    }
+  </style>
+
+    <!-- Cabeçalho da página -->
+    <header class="perfil-header">
+      <div class="perfil-header-conteudo">
+        <img src="{{ url_for('static', filename='img/Perfil.png') }}" 
+            alt="Perfil" 
+            class="perfil-icon">
+        <span class="header-titulo">Perfil</span>
+      </div>
+    </header>
+
+    <!-- Parte do meio da página (corpo principal)-->
+    <main id="perfil">
+        <!-- Título e Combobox da ordem em que os temas devem aparecer -->
+        <section class="linha-topo">
+            <h2 class="secao-titulo">Rankings atuais</h2>
+            
+            <div id="controles">
+                <label for="ordenacao">Ordenar por:</label>
+                <select id="ordenacao" disabled>
+                <option value="nome-tema">Nome do tema</option>
+                <option value="pontuacao-desc" selected>Maior pontuação</option>
+                <option value="pontuacao-asc">Menor pontuação</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Temas -->
+        <section id="lista-temas">
+
+            <!-- Tema Artes --> 
+            <div class="tema-item" data-tema="Artes">
+                <div class="tema-info">
+                <span class="tema-nome">Artes</span>
+                <span class="tema-pontos">0 pts</span>
+                </div>
+                <section class="escala-ranking">
+                  <div class="escala-labels">
+                    <span style="left: 10%">Iniciante</span>
+                    <span style="left: 30%">Aprendiz</span>
+                    <span style="left: 50%">Estudante</span>
+                    <span style="left: 70%">Sábio</span>
+                    <span style="left: 90%">Lenda</span>
+                  </div>
+
+                  <div class="barra-container barra-referencia">
+                    <div class="barra-progresso"></div>
+                    <span class="barra-marco" style="left: 20%"></span>
+                    <span class="barra-marco" style="left: 40%"></span>
+                    <span class="barra-marco" style="left: 60%"></span>
+                    <span class="barra-marco" style="left: 80%"></span>
+                  </div>
+            </div>
+
+            <!-- Tema Astronomia --> 
+            <div class="tema-item" data-tema="Astronomia">
+                <div class="tema-info">
+                <span class="tema-nome">Astronomia</span>
+                <span class="tema-pontos">0 pts</span>
+                </div>
+                <section class="escala-ranking">
+                  <div class="escala-labels">
+                    <span style="left: 10%">Iniciante</span>
+                    <span style="left: 30%">Aprendiz</span>
+                    <span style="left: 50%">Estudante</span>
+                    <span style="left: 70%">Sábio</span>
+                    <span style="left: 90%">Lenda</span>
+                  </div>
+
+                  <div class="barra-container barra-referencia">
+                    <div class="barra-progresso"></div>
+                    <span class="barra-marco" style="left: 20%"></span>
+                    <span class="barra-marco" style="left: 40%"></span>
+                    <span class="barra-marco" style="left: 60%"></span>
+                    <span class="barra-marco" style="left: 80%"></span>
+                  </div>
+            </div>
+
+            <!-- Tema Biologia --> 
+            <div class="tema-item" data-tema="Biologia">
+                <div class="tema-info">
+                <span class="tema-nome">Biologia</span>
+                <span class="tema-pontos">0 pts</span>
+                </div>
+                <section class="escala-ranking">
+                  <div class="escala-labels">
+                    <span style="left: 10%">Iniciante</span>
+                    <span style="left: 30%">Aprendiz</span>
+                    <span style="left: 50%">Estudante</span>
+                    <span style="left: 70%">Sábio</span>
+                    <span style="left: 90%">Lenda</span>
+                  </div>
+
+                  <div class="barra-container barra-referencia">
+                    <div class="barra-progresso"></div>
+                    <span class="barra-marco" style="left: 20%"></span>
+                    <span class="barra-marco" style="left: 40%"></span>
+                    <span class="barra-marco" style="left: 60%"></span>
+                    <span class="barra-marco" style="left: 80%"></span>
+                  </div>
+            </div>
+
+            <!-- Tema Esportes --> 
+            <div class="tema-item" data-tema="Esportes">
+                <div class="tema-info">
+                <span class="tema-nome">Esportes</span>
+                <span class="tema-pontos">0 pts</span>
+                </div>
+                <section class="escala-ranking">
+                  <div class="escala-labels">
+                    <span style="left: 10%">Iniciante</span>
+                    <span style="left: 30%">Aprendiz</span>
+                    <span style="left: 50%">Estudante</span>
+                    <span style="left: 70%">Sábio</span>
+                    <span style="left: 90%">Lenda</span>
+                  </div>
+
+                  <div class="barra-container barra-referencia">
+                    <div class="barra-progresso"></div>
+                    <span class="barra-marco" style="left: 20%"></span>
+                    <span class="barra-marco" style="left: 40%"></span>
+                    <span class="barra-marco" style="left: 60%"></span>
+                    <span class="barra-marco" style="left: 80%"></span>
+                  </div>
+            </div>
+
+            <!-- Tema Filosofia --> 
+            <div class="tema-item" data-tema="Filosofia">
+                <div class="tema-info">
+                <span class="tema-nome">Filosofia</span>
+                <span class="tema-pontos">0 pts</span>
+                </div>
+                <section class="escala-ranking">
+                  <div class="escala-labels">
+                    <span style="left: 10%">Iniciante</span>
+                    <span style="left: 30%">Aprendiz</span>
+                    <span style="left: 50%">Estudante</span>
+                    <span style="left: 70%">Sábio</span>
+                    <span style="left: 90%">Lenda</span>
+                  </div>
+
+                  <div class="barra-container barra-referencia">
+                    <div class="barra-progresso"></div>
+                    <span class="barra-marco" style="left: 20%"></span>
+                    <span class="barra-marco" style="left: 40%"></span>
+                    <span class="barra-marco" style="left: 60%"></span>
+                    <span class="barra-marco" style="left: 80%"></span>
+                  </div>
+            </div>
+
+            <!-- Tema Geografia --> 
+            <div class="tema-item" data-tema="Geografia">
+                <div class="tema-info">
+                <span class="tema-nome">Geografia</span>
+                <span class="tema-pontos">0 pts</span>
+                </div>
+                <section class="escala-ranking">
+                  <div class="escala-labels">
+                    <span style="left: 10%">Iniciante</span>
+                    <span style="left: 30%">Aprendiz</span>
+                    <span style="left: 50%">Estudante</span>
+                    <span style="left: 70%">Sábio</span>
+                    <span style="left: 90%">Lenda</span>
+                  </div>
+
+                  <div class="barra-container barra-referencia">
+                    <div class="barra-progresso"></div>
+                    <span class="barra-marco" style="left: 20%"></span>
+                    <span class="barra-marco" style="left: 40%"></span>
+                    <span class="barra-marco" style="left: 60%"></span>
+                    <span class="barra-marco" style="left: 80%"></span>
+                  </div>
+            </div>
+
+            <!-- Tema História--> 
+            <div class="tema-item" data-tema="História">
+              <div class="tema-info">
+                <span class="tema-nome">História</span>
+                <span class="tema-pontos">0 pts</span>
+              </div>
+              <section class="escala-ranking">
+                  <div class="escala-labels">
+                    <span style="left: 10%">Iniciante</span>
+                    <span style="left: 30%">Aprendiz</span>
+                    <span style="left: 50%">Estudante</span>
+                    <span style="left: 70%">Sábio</span>
+                    <span style="left: 90%">Lenda</span>
+                  </div>
+
+                  <div class="barra-container barra-referencia">
+                    <div class="barra-progresso"></div>
+                    <span class="barra-marco" style="left: 20%"></span>
+                    <span class="barra-marco" style="left: 40%"></span>
+                    <span class="barra-marco" style="left: 60%"></span>
+                    <span class="barra-marco" style="left: 80%"></span>
+                  </div>
+            </div>
+
+            <!-- Tema Mídia --> 
+            <div class="tema-item" data-tema="Mídia">
+              <div class="tema-info">
+                <span class="tema-nome">Mídia</span>
+                <span class="tema-pontos">0 pts</span>
+              </div>
+              <section class="escala-ranking">
+                  <div class="escala-labels">
+                    <span style="left: 10%">Iniciante</span>
+                    <span style="left: 30%">Aprendiz</span>
+                    <span style="left: 50%">Estudante</span>
+                    <span style="left: 70%">Sábio</span>
+                    <span style="left: 90%">Lenda</span>
+                  </div>
+
+                  <div class="barra-container barra-referencia">
+                    <div class="barra-progresso"></div>
+                    <span class="barra-marco" style="left: 20%"></span>
+                    <span class="barra-marco" style="left: 40%"></span>
+                    <span class="barra-marco" style="left: 60%"></span>
+                    <span class="barra-marco" style="left: 80%"></span>
+                  </div>
+            </div>
+
+            <!-- Tema Música --> 
+            <div class="tema-item" data-tema="Música">
+              <div class="tema-info">
+                <span class="tema-nome">Música</span>
+                <span class="tema-pontos">0 pts</span>
+              </div>
+              <section class="escala-ranking">
+                  <div class="escala-labels">
+                    <span style="left: 10%">Iniciante</span>
+                    <span style="left: 30%">Aprendiz</span>
+                    <span style="left: 50%">Estudante</span>
+                    <span style="left: 70%">Sábio</span>
+                    <span style="left: 90%">Lenda</span>
+                  </div>
+
+                  <div class="barra-container barra-referencia">
+                    <div class="barra-progresso"></div>
+                    <span class="barra-marco" style="left: 20%"></span>
+                    <span class="barra-marco" style="left: 40%"></span>
+                    <span class="barra-marco" style="left: 60%"></span>
+                    <span class="barra-marco" style="left: 80%"></span>
+                  </div>
+            </div>
+
+            <!-- Tema Química --> 
+            <div class="tema-item" data-tema="Química">
+              <div class="tema-info">
+                <span class="tema-nome">Química</span>
+                <span class="tema-pontos">0 pts</span>
+              </div>
+              <section class="escala-ranking">
+                  <div class="escala-labels">
+                    <span style="left: 10%">Iniciante</span>
+                    <span style="left: 30%">Aprendiz</span>
+                    <span style="left: 50%">Estudante</span>
+                    <span style="left: 70%">Sábio</span>
+                    <span style="left: 90%">Lenda</span>
+                  </div>
+
+                  <div class="barra-container barra-referencia">
+                    <div class="barra-progresso"></div>
+                    <span class="barra-marco" style="left: 20%"></span>
+                    <span class="barra-marco" style="left: 40%"></span>
+                    <span class="barra-marco" style="left: 60%"></span>
+                    <span class="barra-marco" style="left: 80%"></span>
+                  </div>
+            </div>
+            
+            <!-- Tema Tecnologia --> 
+            <div class="tema-item" data-tema="Tecnologia">
+                <div class="tema-info">
+                <span class="tema-nome">Tecnologia</span>
+                <span class="tema-pontos">0 pts</span>
+                </div>
+                <section class="escala-ranking">
+                  <div class="escala-labels">
+                    <span style="left: 10%">Iniciante</span>
+                    <span style="left: 30%">Aprendiz</span>
+                    <span style="left: 50%">Estudante</span>
+                    <span style="left: 70%">Sábio</span>
+                    <span style="left: 90%">Lenda</span>
+                  </div>
+
+                  <div class="barra-container barra-referencia">
+                    <div class="barra-progresso"></div>
+                    <span class="barra-marco" style="left: 20%"></span>
+                    <span class="barra-marco" style="left: 40%"></span>
+                    <span class="barra-marco" style="left: 60%"></span>
+                    <span class="barra-marco" style="left: 80%"></span>
+                  </div>
+            </div>
+
+            <!-- Tema Variedades --> 
+            <div class="tema-item" data-tema="Variedades">
+                <div class="tema-info">
+                <span class="tema-nome">Variedades</span>
+                <span class="tema-pontos">0 pts</span>
+                </div>
+                <section class="escala-ranking">
+                  <div class="escala-labels">
+                    <span style="left: 10%">Iniciante</span>
+                    <span style="left: 30%">Aprendiz</span>
+                    <span style="left: 50%">Estudante</span>
+                    <span style="left: 70%">Sábio</span>
+                    <span style="left: 90%">Lenda</span>
+                  </div>
+
+                  <div class="barra-container barra-referencia">
+                    <div class="barra-progresso"></div>
+                    <span class="barra-marco" style="left: 20%"></span>
+                    <span class="barra-marco" style="left: 40%"></span>
+                    <span class="barra-marco" style="left: 60%"></span>
+                    <span class="barra-marco" style="left: 80%"></span>
+                  </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Rodapé com botões -->
+    <div class="footer">
+      <button id="btn-voltar-menu" class="btn-voltar-menu">
+        Voltar ao menu
+      </button>
+    </div>
+  </body>
+
+  <script type="module" src="{{ url_for('static', filename='perfil.js') }}?v=1.2.1"></script>
+</html>

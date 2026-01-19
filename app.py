@@ -174,6 +174,13 @@ def token_required(f):
 
     return decorated
 
+@app.route("/api/pontuacoes")
+@token_required
+def api_pontuacoes():
+    id_usuario = session["id_usuario"]
+    pontuacoes = buscar_pontuacoes_usuario(id_usuario)
+    return jsonify(pontuacoes)
+
 @app.route("/api/regras_pontuacao")
 def api_regras_pontuacao():
     try:
@@ -424,7 +431,7 @@ iniciar_agendamento()
 
 @app.route("/", methods=["GET"])
 def index():
-    destino = session.pop("destino_login", None)
+    destino = session.pop("pagina_destino", None)
     
     if destino == "registro":
         registrar_pagina_visitada("Home -> Registro")
@@ -435,13 +442,13 @@ def index():
 
     return render_template("login.html", abrir_registro=(destino == "registro"))
 
-@app.route("/intencao-login", methods=["POST"])
-def intencao_login():
+@app.route("/pagina_destino", methods=["POST"])
+def pagina_destino():
     data = request.get_json(silent=True) or {}
     if data.get("destino") == "registro":
-        session["destino_login"] = "registro"
+        session["pagina_destino"] = "registro"
     elif data.get("destino") == "login_de_home":
-        session["destino_login"] = "login_de_home"
+        session["pagina_destino"] = "login_de_home"
     return jsonify(ok=True)
 
 @app.route('/favicon.ico')
@@ -1416,6 +1423,11 @@ def reset_senha():
         if cur: cur.close()
         if conn: conn.close()
 
+@app.route("/perfil")
+def perfil_usuario():
+    registrar_pagina_visitada("Perfil")
+    return render_template("perfil.html")
+
 @app.route("/politica-de-privacidade")
 def politica_privacidade():
     session['from_login'] = False
@@ -1593,7 +1605,6 @@ def resultado():
         "resultado.html",
         usuario_logado=usuario_logado
     )
-
 
 @app.route('/termos-de-uso-from-login')
 def termos_uso_from_login():
