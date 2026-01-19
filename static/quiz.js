@@ -1352,14 +1352,14 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
 
     if (temPadraoEstrangeiro(textoCorreto)) {
       if (lenOriginal <= 3) return false;
-      if (lenOriginal <= 8) return dist <= 2;
-      if (lenOriginal <= 13) return dist <= 3;
+      if (lenOriginal <= 6) return dist <= 2;
+      if (lenOriginal <= 10) return dist <= 3;
       return dist <= 4;
     }
     else {
       if (lenOriginal <= 3) return false;
-      if (lenOriginal <= 8) return dist <= 1;
-      if (lenOriginal <= 13) return dist <= 2;
+      if (lenOriginal <= 6) return dist <= 1;
+      if (lenOriginal <= 10) return dist <= 2;
       return dist <= 3;
       }
   });
