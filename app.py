@@ -39,7 +39,7 @@ temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia",
 """
 ids_perguntas_objetivas_visitante = {"Artes": [163, 172, 333, 336, 353], "Astronomia": [6, 12, 479, 492, 500], "Biologia": [18, 22, 371, 580, 585], "Esportes": [55, 66, 63, 467, 471], "Filosofia": [142, 149, 150, 302, 305], "Geografia": [80, 84, 86, 93, 316], "História": [35, 41, 42, 118, 127], "Mídia": [99, 106, 381, 385, 391], "Música": [219, 222, 226, 229, 231], "Química": [184, 188, 189, 202, 538], "Tecnologia": [243, 246, 251, 273, 415], "Variedades": [136, 192, 270, 451, 627]}"""
 
-ids_perguntas_objetivas_visitante = {"Artes": [163, 172, 333, 336, 353], "Astronomia": [6, 11, 12, 479, 492], "Biologia": [18, 22, 371, 581, 585], "Esportes": [55, 66, 63, 75, 462], "Filosofia": [142, 146, 150, 302, 305], "Geografia": [80, 86, 93, 316, 318], "História": [35, 118, 127, 209, 262], "Mídia": [99, 106, 381, 385, 391], "Música": [222, 226, 238, 231, 439], "Química": [153, 184, 188, 189, 202], "Tecnologia": [243, 246, 251, 273, 415], "Variedades": [136, 192, 451, 621, 627]}
+ids_perguntas_objetivas_visitante = {"Artes": [163, 172, 333, 338, 353], "Astronomia": [6, 11, 12, 479, 492], "Biologia": [18, 22, 371, 581, 585], "Esportes": [55, 66, 63, 75, 462], "Filosofia": [142, 146, 150, 302, 305], "Geografia": [80, 86, 93, 316, 318], "História": [35, 118, 127, 209, 262], "Mídia": [99, 106, 381, 385, 391], "Música": [222, 226, 238, 231, 439], "Química": [153, 184, 188, 189, 202], "Tecnologia": [243, 246, 251, 273, 415], "Variedades": [136, 192, 453, 621, 627]}
 
 """idsafs = [18, 22, 371, 581, 585, 153, 184, 188, 189, 202]"""
 
