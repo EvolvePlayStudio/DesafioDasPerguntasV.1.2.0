@@ -1189,6 +1189,22 @@ function resetarAlternativas() {
 function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
   const stopwords = ["a", "o", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "no", "na", "nos", "nas", "por", "pelo", "pela", "com", "para", "um", "uma", "uns", "umas", "ao", "aos", "à", "às"];
 
+  function aceitaPorDistancia(dist, lenOriginal, textoCorreto, pesado) {
+    if (lenOriginal <= 3) return false;
+
+    const estrangeiro = temPadraoEstrangeiro(textoCorreto);
+
+    if (estrangeiro || pesado) {
+      if (lenOriginal <= 6) return dist <= 2;
+      if (lenOriginal <= 10) return dist <= 3;
+      return dist <= 4;
+    } else {
+      if (lenOriginal <= 6) return dist <= 1;
+      if (lenOriginal <= 10) return dist <= 2;
+      return dist <= 3;
+    }
+  }
+
   // Trata os casos dos dígrafos (ex: x no lugar de ch)
   function normalizarDigrafos(texto) {
     const regras = [
@@ -1246,6 +1262,18 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
   // Identifica se a palavra tem padrões estrangeiros (alemão, inglês, etc)
   function temPadraoEstrangeiro(texto) {
     return /(sch|ck|tz|ph|th)/.test(texto);
+  }
+
+  // Normalização que não distorce tanto a resposta correta
+  function normalizarLeve(texto) {
+    return texto
+      .toLowerCase()
+      .trim()
+      .replace(/[.\-:!;?]/g, " ")
+      .split(/\s+/)
+      .map(removerAcentos)
+      .filter(p => !stopwords.includes(p))
+      .join(" ");
   }
 
   // Converte subscritos e sobrescritos para dígitos normais e sinais normais
@@ -1342,29 +1370,35 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
     return matrix[a.length][b.length];
   }
 
+  const textoUsuarioLeve = normalizarLeve(resposta_usuario);
   const textoUsuario = normalizarResposta(resposta_usuario);
 
   return respostas_aceitas.some(resposta => {
-
     const lenOriginal = resposta.length;
+
+    const textoCorretoLeve = normalizarLeve(resposta);
     const textoCorreto = normalizarResposta(resposta);
 
+    // 1. igualdade forte
     if (textoUsuario === textoCorreto) return true;
 
-    const dist = distanciaDamerauLevenshtein(textoUsuario, textoCorreto);  // 1 dist sigfica 1 erro cometido
+    // 2. comparação leve (prioritária)
+    const distLeve = distanciaDamerauLevenshtein(
+      textoUsuarioLeve,
+      textoCorretoLeve
+    );
 
-    if (temPadraoEstrangeiro(textoCorreto)) {
-      if (lenOriginal <= 3) return false;
-      if (lenOriginal <= 6) return dist <= 2;
-      if (lenOriginal <= 10) return dist <= 3;
-      return dist <= 4;
+    if (aceitaPorDistancia(distLeve, lenOriginal, textoCorreto, false)) {
+      return true;
     }
-    else {
-      if (lenOriginal <= 3) return false;
-      if (lenOriginal <= 6) return dist <= 1;
-      if (lenOriginal <= 10) return dist <= 2;
-      return dist <= 3;
-      }
+
+    // 3. fallback pesado
+    const distPesado = distanciaDamerauLevenshtein(
+      textoUsuario,
+      textoCorreto
+    );
+
+    return aceitaPorDistancia(distPesado, lenOriginal, textoCorreto, true);
   });
 }
 
