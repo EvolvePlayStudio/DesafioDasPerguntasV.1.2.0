@@ -7,6 +7,7 @@ localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 let tema_atual = null;
 let tipo_pergunta = null;
 const mensagem = document.getElementById("mensagem");
+let permitir_escolher_tema = true;
 
 // Widgets do modal alertando confirmação de e-mail necessária
 const modal = document.getElementById("modal-email-confirmacao");
@@ -21,6 +22,8 @@ const btn_perfil = document.getElementById("btn-perfil");
 const btn_pesquisa = document.getElementById("btn-pesquisa");
 const btn_doacoes = document.getElementById("btn-doacoes");
 const btn_logout = document.getElementById("btn-logout");
+
+const radios_tipo_pergunta = document.querySelectorAll('.opcoes input[type="radio"]')
 
 if (MODO_VISITANTE) {
   btn_criar_conta.style.display = "";
@@ -96,6 +99,21 @@ btn_pesquisa.style.display = "";
 btn_logout.style.display = "";
 
 async function iniciarQuiz(event) {
+  function desbloquearBotoes() {
+    permitir_escolher_tema = true;
+    radios_tipo_pergunta.forEach(radio => {
+      radio.onclick = null;
+  })};
+
+  if (!permitir_escolher_tema) return;
+
+  // Bloqueia alteração no tipo de pergunta ou on tema quando se está iniciando quiz
+  radios_tipo_pergunta.forEach(radio => {
+    radio.onclick = (e) =>
+      e.preventDefault();
+  });
+  permitir_escolher_tema = false;
+
   // Atualiza o tema atual, modo de jogo e tipo de pergunta no localStorage
   tema_atual = decodeURIComponent(event.currentTarget.dataset.tema);
   tipo_pergunta = document.querySelector('input[name="tipo-de-pergunta"]:checked').value;
@@ -105,6 +123,7 @@ async function iniciarQuiz(event) {
 
   if (!tema_atual || !tipo_pergunta) {
     console.error("Tema ou tipo de pergunta não definidos na URL.");
+    desbloquearBotoes();
     return;
   }
 
@@ -118,6 +137,7 @@ async function iniciarQuiz(event) {
         mensagem, `É necessário criar uma conta para ter aceso ao conteúdo completo do jogo`, 'orange'
       ) 
     }
+    desbloquearBotoes();
     return;
   }
   
@@ -156,6 +176,8 @@ async function iniciarQuiz(event) {
         }
         else {
           exibirMensagem(mensagem, `Você não possui novas perguntas ${tipo_pergunta}s disponíveis para o tema ${tema_atual} no momento`, 'orange')
+          desbloquearBotoes();
+          return
         }
       }
     }
@@ -183,6 +205,7 @@ async function iniciarQuiz(event) {
             `É necessário criar uma conta para ter aceso a mais perguntas ${tipo_pergunta}s no tema ${tema_atual}`,
             'orange'
           )
+          desbloquearBotoes();
           return
         }
         
@@ -205,13 +228,15 @@ async function iniciarQuiz(event) {
   }
   catch (error) {
     console.error("Erro ao carregar perguntas", error)
+    // Permite alterar novamente o tipo de pergunta e tema
+    desbloquearBotoes();
   }
 }
 
 function carregarPreferenciasQuiz() {
   // Pega valores salvos
   tipo_pergunta = localStorage.getItem("tipo_pergunta");
-
+  
   // Se não existirem, define valores padrão
   if (!tipo_pergunta) {
     tipo_pergunta = "discursiva";
@@ -298,6 +323,7 @@ function reenviarEmailConfirmacao() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+
   // Carrega as regras de pontuações
   carregarRegrasPontuacao()
 
@@ -366,4 +392,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   // Carrega as preferências de modo de jogo e tipo de pergunta
   carregarPreferenciasQuiz();
+  
+  radios_tipo_pergunta.forEach(radio => {
+    radio.disabled = false;
+  })
+
 })
