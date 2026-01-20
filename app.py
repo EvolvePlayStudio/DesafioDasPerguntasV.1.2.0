@@ -44,7 +44,7 @@ ids_perguntas_discursivas_visitante = {"Artes": [253, 258, 270, 425, 612], "Astr
 
 
 
-ids_perguntas_discursivas_visitante = {"Artes": [253, 258, 270, 425, 612], "Astronomia": [97, 103, 108, 111, 539], "Biologia": [8, 48, 50, 52, 438], "Esportes": [11, 12, 79, 83, 523], "Filosofia": [227, 230, 231, 235, 246], "Geografia": [157, 158, 163, 174, 169], "História": [30, 35, 38, 129, 275], "Mídia": [451, 635, 637, 641, 650], "Música": [313, 327, 479, 399, 500], "Química": [301, 303, 577, 582, 594], "Tecnologia": [152, 342, 351, 462, 470], "Variedades": [24, 25, 27, 376, 662]}
+ids_perguntas_discursivas_visitante = {"Artes": [253, 258, 270, 425, 612], "Astronomia": [97, 103, 108, 111, 539], "Biologia": [8, 48, 50, 52, 438], "Esportes": [11, 12, 79, 83, 523], "Filosofia": [227, 230, 231, 235, 554], "Geografia": [157, 158, 163, 174, 169], "História": [30, 35, 38, 129, 275], "Mídia": [451, 635, 637, 641, 650], "Música": [313, 327, 479, 399, 500], "Química": [301, 303, 577, 582, 594], "Tecnologia": [152, 342, 351, 462, 470], "Variedades": [24, 25, 27, 376, 662]}
 
 
 
