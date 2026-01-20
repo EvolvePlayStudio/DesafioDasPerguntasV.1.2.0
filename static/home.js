@@ -231,7 +231,6 @@ async function iniciarQuiz(event) {
 }
 
 function carregarPreferenciasQuiz() {
-  console.log("Carregarei as perferências")
   // Pega valores salvos
   tipo_pergunta = localStorage.getItem("tipo_pergunta");
   

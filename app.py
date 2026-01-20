@@ -1048,7 +1048,6 @@ def listar_perguntas(user_id):
             try:
                 subtemas = [s.strip() if isinstance(s, str) else s for s in sb]
             except Exception:
-                print(f"Erro ao tentar listar subtemas")
                 app.logger.exception("Erro ao tentar listar subtemas do usuário com id %s para a pergunta com id %s", id_usuario, row['id_pergunta'])
                 subtemas = list(sb)
 
@@ -1063,17 +1062,16 @@ def listar_perguntas(user_id):
                     'id_pergunta': row['id_pergunta'],
                     'enunciado': row['enunciado'],
                     'dica': row.get('dica'),
+                    'nota': row.get('nota'),
                     'dificuldade': dificuldade,
                     'versao_pergunta': row.get('versao'),
                     'estrelas': row.get('estrelas'),
                 }
 
-                # Campos extras só no modo revisão
+                # No modo revisão pode mandar resposta correta
                 if modo == 'revisao':
                     item.update({
-                        'subtemas': subtemas,
                         'respostas_corretas': respostas_corretas,
-                        'nota': row.get('nota'),
                     })
 
             else:  # Objetiva
@@ -1084,17 +1082,15 @@ def listar_perguntas(user_id):
                     'alternativa_b': row.get('alternativa_b'),
                     'alternativa_c': row.get('alternativa_c'),
                     'alternativa_d': row.get('alternativa_d'),
+                    'nota': row.get('nota'),
                     'dificuldade': dificuldade,
                     'versao_pergunta': row.get('versao'),
                     'estrelas': row.get('estrelas'),
                 }
 
-                # No modo revisão pode mandar resposta correta e nota
                 if modo == 'revisao':
                     item.update({
                         'resposta_correta': row.get('resposta_correta'),
-                        'nota': row.get('nota'),
-                        'subtemas': subtemas,
                     })
             # Filtra por modo
             if modo_visitante:
