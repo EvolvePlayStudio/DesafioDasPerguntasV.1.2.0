@@ -369,12 +369,14 @@ async function enviarResposta(pulando = false) {
     // Procura a pergunta pelo id
     let pergunta = null;
     try {
+      console.log("Pergunta selecionada: ", pergunta_selecionada);
+      console.log("Total de perguntas: ", perguntas);
       pergunta = perguntas[pergunta_selecionada.dificuldade].find(p => p.id_pergunta === pergunta_selecionada.id_pergunta);
     }
     finally{
       if (!pergunta) {
         resultado.style.color = "red"
-        resultado.textContent = 'Não foi possível fazer o envio da resposta'
+        resultado.textContent = 'Erro no envio da resposta'
         return
       }
       
@@ -484,7 +486,8 @@ async function enviarResposta(pulando = false) {
 
         atualizarRankingVisual();
         return true;
-      } else {
+      } 
+      else {
         console.error('Erro ao registrar resposta:', data.mensagem);
         return false;
       }
@@ -602,7 +605,7 @@ async function enviarResposta(pulando = false) {
         const info_pergunta = await response.json();
         letra_correta = pergunta_selecionada.resposta_correta = info_pergunta["resposta_correta"];
         acertou = respostaObjetivaCorreta();
-        armazenarDicaENota(info_pergunta["nota"]);
+        // armazenarDicaENota(info_pergunta["nota"]);
       }
       else {
         return;
@@ -630,8 +633,9 @@ async function enviarResposta(pulando = false) {
       if (response.ok) {
         const info_pergunta = await response.json();
         respostas_corretas = pergunta_selecionada.respostas_corretas = info_pergunta["respostas_corretas"];
-        armazenarDicaENota(info_pergunta["nota"]);
+        // armazenarDicaENota(info_pergunta["nota"]);
       }
+      // TALVEZ DEVA-SE TRATAR ERRO AQUI
       else {
         return;
       }

@@ -39,7 +39,7 @@ temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia",
 
 ids_perguntas_objetivas_visitante = {"Artes": [163, 172, 333, 338, 353], "Astronomia": [6, 11, 12, 479, 492], "Biologia": [18, 22, 371, 581, 585], "Esportes": [55, 66, 63, 75, 462], "Filosofia": [142, 146, 150, 302, 305], "Geografia": [80, 86, 93, 316, 318], "História": [35, 118, 127, 209, 262], "Mídia": [99, 106, 381, 385, 391], "Música": [222, 226, 238, 231, 439], "Química": [153, 184, 188, 189, 202], "Tecnologia": [243, 246, 251, 273, 415], "Variedades": [136, 192, 453, 621, 627]}
 
-ids_perguntas_discursivas_visitante = {"Artes": [253, 258, 270, 425, 612], "Astronomia": [97, 102, 103, 111, 539], "Biologia": [8, 48, 50, 52, 438], "Esportes": [11, 12, 79, 83, 523], "Filosofia": [227, 230, 231, 235, 246], "Geografia": [157, 158, 163, 174, 169], "História": [30, 35, 38, 129, 275], "Mídia": [451, 635, 637, 641, 650], "Música": [313, 327, 479, 399, 500], "Química": [301, 303, 577, 582, 594], "Tecnologia": [152, 342, 351, 358, 470], "Variedades": [24, 25, 27, 376, 662]}
+ids_perguntas_discursivas_visitante = {"Artes": [253, 258, 270, 425, 612], "Astronomia": [97, 103, 108, 111, 539], "Biologia": [8, 48, 50, 52, 438], "Esportes": [11, 12, 79, 83, 523], "Filosofia": [227, 230, 231, 235, 246], "Geografia": [157, 158, 163, 174, 169], "História": [30, 35, 38, 129, 275], "Mídia": [451, 635, 637, 641, 650], "Música": [313, 327, 479, 399, 500], "Química": [301, 303, 577, 582, 594], "Tecnologia": [152, 342, 351, 358, 470], "Variedades": [24, 25, 27, 376, 662]}
 
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
@@ -1000,9 +1000,9 @@ def listar_perguntas(user_id):
 
         where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
 
-        """
+        
         where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
-        """
+        
         if modo_visitante:
             sql = f"""
                 SELECT {select_cols_visitante}
@@ -1503,13 +1503,15 @@ def pesquisar_perguntas():
 
     resultados = []
 
+    condicao = """WHERE (%s = 'Variedades' OR tema = %s OR tema = 'Variedades')"""
+
     # -------- OBJETIVAS --------
-    query_obj = """
+    query_obj = f"""
     SELECT id_pergunta, tema, subtemas, enunciado,
         alternativa_a, alternativa_b, alternativa_c, alternativa_d,
         resposta_correta, dificuldade, status
     FROM perguntas_objetivas
-    WHERE (tema = %s OR tema = 'Variedades')
+    {condicao}
     AND EXISTS (
         SELECT 1
         FROM unnest(%s::text[]) p
@@ -1526,7 +1528,7 @@ def pesquisar_perguntas():
     )
     """
 
-    cur.execute(query_obj, (tema, palavras))
+    cur.execute(query_obj, (tema, tema, palavras))
 
     for row in cur.fetchall():
 
@@ -1553,10 +1555,10 @@ def pesquisar_perguntas():
     # ================================
     #   2. PERGUNTAS DISCURSIVAS
     # ================================
-    query_disc = """
+    query_disc = f"""
     SELECT id_pergunta, tema, subtemas, enunciado, respostas_corretas, dificuldade, status
     FROM perguntas_discursivas
-    WHERE (tema = %s OR tema = 'Variedades')
+    {condicao}
     AND EXISTS (
         SELECT 1
         FROM unnest(%s::text[]) p
@@ -1566,7 +1568,7 @@ def pesquisar_perguntas():
     )
     """
 
-    cur.execute(query_disc, (tema, palavras))
+    cur.execute(query_disc, (tema, tema, palavras))
     
     for row in cur.fetchall():
         id_p, tema, subtemas, enunciado, respostas, dif, status = row
