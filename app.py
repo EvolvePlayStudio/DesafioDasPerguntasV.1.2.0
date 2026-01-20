@@ -999,9 +999,9 @@ def listar_perguntas(user_id):
         table = cfg['table']         # Nome da tabela — vindo do cfg interno (seguro)
 
         where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
-
-        
+        """
         where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
+        """
         
         if modo_visitante:
             sql = f"""

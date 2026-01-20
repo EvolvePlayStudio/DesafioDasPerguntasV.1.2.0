@@ -362,40 +362,6 @@ async function enviarResposta(pulando = false) {
   caixa_para_resposta.disabled = true;
   const pontuacao_atual = pontuacoes_usuario[tema_atual]
 
-  function armazenarDicaENota(nota) {
-    
-    let perguntas = JSON.parse(localStorage.getItem("perguntas")) || [];
-
-    // Procura a pergunta pelo id
-    let pergunta = null;
-    try {
-      console.log("Pergunta selecionada: ", pergunta_selecionada);
-      console.log("Total de perguntas: ", perguntas);
-      pergunta = perguntas[pergunta_selecionada.dificuldade].find(p => p.id_pergunta === pergunta_selecionada.id_pergunta);
-    }
-    finally{
-      if (!pergunta) {
-        resultado.style.color = "red"
-        resultado.textContent = 'Erro no envio da resposta'
-        return
-      }
-      
-      // Atualiza nota e resposta correta da pergunta
-      if (pergunta) {
-        pergunta.nota = pergunta_selecionada.nota = nota;
-        if (tipo_pergunta === 'objetiva') {
-          pergunta.resposta_correta = pergunta_selecionada.resposta_correta;
-        }
-        else {
-          pergunta.respostas_corretas = pergunta_selecionada.respostas_corretas
-        }
-      }
-
-      // Salva de volta
-      localStorage.setItem("perguntas", JSON.stringify(perguntas));
-    }
-  }
-
   function mostrarResultadoResposta(correto) {
     resultado.style.display = "block";
     if (tipo_pergunta === 'discursiva') {
@@ -445,7 +411,7 @@ async function enviarResposta(pulando = false) {
   document.getElementById("avaliacao").style.display = "block";
   
   // Exibe os comentários dos outros usuários
-  document.getElementById('comentarios').style.display = 'block';
+  // document.getElementById('comentarios').style.display = 'block';
   }
 
   async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ganhos, tempo_gasto, id_pergunta, versao_pergunta) {
@@ -605,7 +571,6 @@ async function enviarResposta(pulando = false) {
         const info_pergunta = await response.json();
         letra_correta = pergunta_selecionada.resposta_correta = info_pergunta["resposta_correta"];
         acertou = respostaObjetivaCorreta();
-        // armazenarDicaENota(info_pergunta["nota"]);
       }
       else {
         return;
@@ -633,7 +598,6 @@ async function enviarResposta(pulando = false) {
       if (response.ok) {
         const info_pergunta = await response.json();
         respostas_corretas = pergunta_selecionada.respostas_corretas = info_pergunta["respostas_corretas"];
-        // armazenarDicaENota(info_pergunta["nota"]);
       }
       // TALVEZ DEVA-SE TRATAR ERRO AQUI
       else {
@@ -1142,7 +1106,7 @@ function proximaPergunta() {
     document.getElementById("avaliacao").style.display = "none";
     resultado.style.display = "none";
     document.getElementById("nota-box").style.display = "none";
-    document.getElementById('comentarios').style.display = 'none';
+    // document.getElementById('comentarios').style.display = 'none';
     aguardando_proxima = false;
   }
 }
