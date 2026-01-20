@@ -231,6 +231,7 @@ async function iniciarQuiz(event) {
 }
 
 function carregarPreferenciasQuiz() {
+  console.log("Carregarei as perferências")
   // Pega valores salvos
   tipo_pergunta = localStorage.getItem("tipo_pergunta");
   
@@ -393,5 +394,5 @@ document.addEventListener("DOMContentLoaded", () => {
   radios_tipo_pergunta.forEach(radio => {
     radio.disabled = false;
   })
-
+  document.getElementById("radio-discursiva").checked = true;
 })
