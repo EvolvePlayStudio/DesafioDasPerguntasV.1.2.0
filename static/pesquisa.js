@@ -272,7 +272,6 @@ async function pesquisar() {
       if (!dificuldadesSelecionadas.includes(dificuldade)) return;
 
       (perguntasPorDificuldade[dificuldade] || []).forEach(p => {
-
         const temSubtemaValido = subtemasSelecionados.length === 0 || (p.subtemas && p.subtemas.some(st => subtemasSelecionados.includes(st)));
 
         if (!temSubtemaValido) return;
@@ -347,6 +346,7 @@ async function pesquisar() {
     if (!response.ok) throw new Error("Erro na busca");
 
     const data = await response.json();
+    console.log("Perguntas retornadas: ", data.perguntas)
 
     let perguntasPorDificuldade = null;
     if (MODO_VISITANTE) {
@@ -357,6 +357,7 @@ async function pesquisar() {
       localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes));
       };
       perguntasPorDificuldade = filtrarPerguntasVisitante(data.perguntas);
+      console.log("Perguntas filtradas: ", perguntasPorDificuldade);
     }
     else {
       localStorage.setItem("pontuacoes_usuario", JSON.stringify(data.pontuacoes_usuario));
@@ -494,7 +495,6 @@ function identificarMudancaCheck (checkbox) {
 
 const estado = carregarEstadoPesquisa();
 if (estado && temaValido(estado.tema)) {
-  console.log("Subtemas: ", estado.subtemas);
   // Define tema e tipo de pergunta
   box_tema.value = estado.tema;
   box_tipo_pergunta.value = estado.tipo_pergunta;

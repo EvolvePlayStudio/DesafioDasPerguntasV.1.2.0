@@ -1060,6 +1060,7 @@ def listar_perguntas(user_id):
 
                 item = {
                     'id_pergunta': row['id_pergunta'],
+                    'subtemas': row['subtemas'],
                     'enunciado': row['enunciado'],
                     'dica': row.get('dica'),
                     'nota': row.get('nota'),
@@ -1077,6 +1078,7 @@ def listar_perguntas(user_id):
             else:  # Objetiva
                 item = {
                     'id_pergunta': row['id_pergunta'],
+                    'subtemas': row['subtemas'],
                     'enunciado': row['enunciado'],
                     'alternativa_a': row.get('alternativa_a'),
                     'alternativa_b': row.get('alternativa_b'),
