@@ -1916,4 +1916,4 @@ def registrar_visitante():
 
 if not database_url:
     if __name__ == '__main__':
-        app.run(debug=T
+        app.run(debug=True)
