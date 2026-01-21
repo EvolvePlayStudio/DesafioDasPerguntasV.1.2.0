@@ -1159,16 +1159,17 @@ function resetarAlternativas() {
 function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
   const stopwords = ["a", "o", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "no", "na", "nos", "nas", "por", "pelo", "pela", "com", "para", "um", "uma", "uns", "umas", "ao", "aos", "à", "às"];
 
-  function aceitaPorDistancia(dist, lenOriginal, textoCorreto, pesado) {
+  function aceitaPorDistancia(dist, lenOriginal, textoCorreto) {
     if (lenOriginal <= 3) return false;
 
     const estrangeiro = temPadraoEstrangeiro(textoCorreto);
 
-    if (estrangeiro || pesado) {
+    if (estrangeiro) {
       if (lenOriginal <= 6) return dist <= 2;
       if (lenOriginal <= 10) return dist <= 3;
       return dist <= 4;
-    } else {
+    } 
+    else {
       if (lenOriginal <= 6) return dist <= 1;
       if (lenOriginal <= 10) return dist <= 2;
       return dist <= 3;
@@ -1349,16 +1350,21 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
     const textoCorretoLeve = normalizarLeve(resposta);
     const textoCorreto = normalizarResposta(resposta);
 
-    // 1. igualdade forte
+    // 1. Igualdade forte
     if (textoUsuario === textoCorreto) return true;
 
-    // 2. comparação leve (prioritária)
+    // 2. Comparação leve (prioritária)
     const distLeve = distanciaDamerauLevenshtein(
       textoUsuarioLeve,
       textoCorretoLeve
     );
 
-    if (aceitaPorDistancia(distLeve, lenOriginal, textoCorreto, false)) {
+    /*
+    console.log("Texto leve do usuário: ", textoUsuarioLeve);
+    console.log("Texto leve da resposta: ", textoCorretoLeve);
+    console.log("Distância leve: ", distLeve);*/
+
+    if (aceitaPorDistancia(distLeve, lenOriginal, textoCorreto)) {
       return true;
     }
 
@@ -1368,7 +1374,12 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
       textoCorreto
     );
 
-    return aceitaPorDistancia(distPesado, lenOriginal, textoCorreto, true);
+    /*
+    console.log("Texto pesado do usuário: ", textoUsuario);
+    console.log("Texto pesado da resposta: ", textoCorreto);
+    console.log("Distância pesada: ", distPesado);*/
+
+    return aceitaPorDistancia(distPesado, lenOriginal, textoCorreto);
   });
 }
 
