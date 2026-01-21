@@ -79,7 +79,8 @@ const PAUSA_ANTES_DA_A        = 500;
 const GAP_ANTES_DA_LETRA      = 120;
 const GAP_LETRA_PARA_TEXTO    = 180;
 const GAP_ENTRE_ALTERNATIVAS  = 380;
-const VELOCIDADE_LETRA        = 25;
+const VELOCIDADE_LETRA_ENUNCIADO        = 21;
+const VELOCIDADE_LETRA_ALTERNATIVAS = 15;
 
 // Variáveis para animação da barra de progresso
 let ranking_visual_anterior = null;
@@ -769,7 +770,7 @@ async function mostrarAlternativas() {
     fullText.textContent = '';
     for (let k = 0; k < texto.length; k++) {
       fullText.textContent += texto[k];
-      await sleep(VELOCIDADE_LETRA); // velocidade da letra
+      await sleep(VELOCIDADE_LETRA_ALTERNATIVAS); // velocidade da letra
     }
 
     // pausa antes da próxima alternativa (mais longa para dar ritmo)
@@ -786,6 +787,7 @@ async function mostrarAlternativas() {
     const btnA = alternativas.find(b => b.dataset.letter === 'A');
     if (btnA) selecionarAlternativa(btnA);
   }
+
   // Exibe hint de avaliação e botão enviar após tudo
   hint_avaliacao.style.display = "";
   if (btn_enviar) {
@@ -888,7 +890,7 @@ function mostrarEnunciado(texto, elemento, callback) {
         mostrarAlternativas();
       }
     }
-  }, VELOCIDADE_LETRA);
+  }, VELOCIDADE_LETRA_ENUNCIADO);
 }
 
 function mostrarPergunta() {

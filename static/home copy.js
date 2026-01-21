@@ -9,12 +9,10 @@ let tipo_pergunta = null;
 const mensagem = document.getElementById("mensagem");
 let permitir_escolher_tema = true;
 
-// Widgets do modal alertando confirmação de e-mail necessária ou convidando par registro
+// Widgets do modal alertando confirmação de e-mail necessária
 const modal = document.getElementById("modal-email-confirmacao");
 const texto_email_usuario = document.getElementById("email-usuario");
 const msgModal = document.getElementById("modal-msg");
-const btnFecharModal = document.getElementById("btn-fechar-modal");
-const btnReenviarEmail = document.getElementById("btn-reenviar-email");
 
 const perguntas_restantes = document.getElementById("perguntas-count")
 
@@ -81,11 +79,13 @@ else {
   exibirModalEmailConfirmacao();
 
   // Implementa função para botão de fechar modal
+  const btnFecharModal = document.getElementById("btn-fechar-modal");
   btnFecharModal.addEventListener("click", async () => {
     fecharModalEmail()
   });
 
   // Implementa função para botão de reenviar e-mail de confirmação
+  const btnReenviarEmail = document.getElementById("btn-reenviar-email");
   btnReenviarEmail.addEventListener("click", async () => {
     reenviarEmailConfirmacao()
   });
@@ -237,15 +237,12 @@ function carregarPreferenciasQuiz() {
   // Se não existirem, define valores padrão
   if (!tipo_pergunta) {
     tipo_pergunta = "discursiva";
-    document.getElementById("radio-discursiva").checked = true;
     localStorage.setItem("tipo_pergunta", tipo_pergunta);
   }
 
   // Marca os inputs na tela com os valores recuperados
   const tipoRadio = document.querySelector(`input[name="tipo-de-pergunta"][value="${tipo_pergunta}"]`);
-  if (tipoRadio) {
-    tipoRadio.checked = true;
-  }
+  if (tipoRadio) tipoRadio.checked = true;
 }
 
 async function carregarRegrasPontuacao() {
@@ -283,42 +280,6 @@ async function exibirModalEmailConfirmacao() {
   } catch (error) {
       console.error("Erro ao buscar e-mail do usuário:", error);
   }
-}
-
-function exibirModalRegistroVisitante(marco) {
-  btnFecharModal.textContent = "Continuar como visitante";
-  btnReenviarEmail.textContent = "Criar conta";
-  const titulo = modal.querySelector("h3");
-  const texto = modal.querySelector("#texto-modal");
-
-  titulo.textContent = `Você atingiu o marco de ${marco} perguntas 🎯`;
-  texto.innerHTML = `
-    Criar uma conta libera as seguintes vantagens:
-    <ul>
-      <li>📚 Acesso a <strong>mais de 1000 perguntas</strong></li>
-      <li>🏆 Progresso salvo nos rankings de temas</li>
-      <li>⭐ Revisão inteligente com perguntas favoritadas</li>
-    </ul>
-  `;
-
-  modal.classList.remove("hidden");
-
-  document.getElementById("btn-fechar-modal").onclick = () => {
-    localStorage.setItem(`modal_registro_recusado_${marco}`, "true");
-    modal.classList.add("hidden");
-  };
-
-  document.getElementById("btn-reenviar-email").onclick = async () => {
-    localStorage.setItem(`modal_registro_recusado_${marco}`, "true");
-    localStorage.setItem("ir_para_aba_registro", true);
-    await fetch("/pagina_destino", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ destino: "registro_de_modal" })
-    });
-
-    window.location.href = "/";
-  };
 }
 
 function fecharModalEmail() {
@@ -416,26 +377,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const dicas_restantes = document.getElementById("dicas-count")
 
   // Define o nome de usuário, as perguntas e dicas disponíveis e máximas para o usuário
-  if (MODO_VISITANTE) {
+  if (sessionStorage.getItem("modoVisitante") === "true") {
     nome_usuario.textContent = "Visitante"
     perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/60`
     dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes_visitante")}/20`
-
-    // Decide se deve exibir modal para convidar a fazer registro
-    const respondidas = JSON.parse(localStorage.getItem("visitante_respondidas"));
-    const totalRespondidas = (respondidas.objetiva?.length || 0) + (respondidas.discursiva?.length || 0);
-
-    const MARCO = 15;
-    const marcoAtual = Math.floor(totalRespondidas / MARCO) * MARCO;
-    const chaveRecusa = `modal_registro_recusado_${marcoAtual}`;
-
-    if (
-      totalRespondidas >= 15 &&
-      totalRespondidas % 15 === 0 &&
-      !localStorage.getItem(chaveRecusa)
-    ) {
-      exibirModalRegistroVisitante(marcoAtual);
-    }
   }
   else {
     nome_usuario.textContent = localStorage.getItem("nome_usuario")
@@ -448,4 +393,5 @@ document.addEventListener("DOMContentLoaded", () => {
   radios_tipo_pergunta.forEach(radio => {
     radio.disabled = false;
   })
+  document.getElementById("radio-discursiva").checked = true;
 })
