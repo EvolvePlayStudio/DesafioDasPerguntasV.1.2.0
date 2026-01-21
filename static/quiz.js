@@ -79,7 +79,7 @@ const PAUSA_ANTES_DA_A        = 500;
 const GAP_ANTES_DA_LETRA      = 120;
 const GAP_LETRA_PARA_TEXTO    = 180;
 const GAP_ENTRE_ALTERNATIVAS  = 380;
-const VELOCIDADE_LETRA_ENUNCIADO        = 21;
+const VELOCIDADE_LETRA_ENUNCIADO = 21;
 const VELOCIDADE_LETRA_ALTERNATIVAS = 15;
 
 // Variáveis para animação da barra de progresso
