@@ -1714,7 +1714,7 @@ def registrar():
     # Agora atual (truncado para segundos)
     agora_sp = datetime.now(tz_sp).replace(microsecond=0)
 
-    # Exemplo: expiração em 24 horas (21 horas porque fuso de São Paulo é -3)
+    # Exemplo: expiração em 24 horas
     expiracao = agora_sp + timedelta(hours=21)
     try:
         conn = get_db_connection()
@@ -1732,21 +1732,30 @@ def registrar():
 
         id_usuario = cur.fetchone()[0]
 
+        # Cria os registros de pontuações do usuário em cada tema
+        cur.execute("""
+          INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao)
+          SELECT %s, t.nome, 0
+          FROM temas t
+          ON CONFLICT (id_usuario, tema) DO NOTHING
+        """, (id_usuario,))
+
         # Migra dados do modo visitante para a nova conta caso o usuário tenha marcado esta opção
         id_visitante = data.get("id_visitante")
         usar_dados_visitante = data.get("usar_dados_visitante", False)
         if id_visitante and usar_dados_visitante:
             cur.execute("""
                 SELECT DISTINCT ON (id_pergunta)
-                    id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, criado_em
+                    id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario
                 FROM acesso_modo_visitante
                 WHERE id_visitante = %s
-                ORDER BY id_pergunta, criado_em ASC
+                ORDER BY id_pergunta
             """, (id_visitante,))
             
             respostas = cur.fetchall()
 
-            for id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, criado_em in respostas:
+            # Obs: A data da resposta registrada é a data em que ocorreu a migração dos dados
+            for id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario in respostas:
                 tipo_pergunta = tipo_pergunta.capitalize()
                 cur.execute("""
                     INSERT INTO respostas_usuarios (
@@ -1754,7 +1763,7 @@ def registrar():
                     )
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (id_usuario, id_pergunta, tipo_pergunta) DO NOTHING
-                """, (id_usuario, id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, criado_em, True))
+                """, (id_usuario, id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, agora_sp, True))
 
             # Limpeza das respostas do usuario no modo visitante
             cur.execute("""
@@ -1778,12 +1787,10 @@ def registrar():
         if cur: cur.close()
         if conn: conn.close()
     
+    # ATENÇÃO: ESTE LINK DE CONFIRMAÇÃO JÁ É DEFINIDO DENTRO DA FUNÇÃO ENVIAR_EMAIL_CONFIRMACAO
     link_confirmacao = f"{base_url}/confirmar_email?token={token}"
-    """enviar_email_confirmacao(email, nome, link_confirmacao)"""
-    """
+    enviar_email_confirmacao(email, nome, link_confirmacao)
     return jsonify(success=True, message="Registro realizado! Verifique seu e-mail para confirmar")
-    """
-    return jsonify(success=True, message="Registro realizado!")
 
 def registrar_pagina_visitada(pagina):
     conn = cur = None
