@@ -259,7 +259,10 @@ function calcularPontuacao(acertou) {
         pontos_ganhos = regras_usuario.pontos_pular_pergunta;
       } 
       else {
-        pontos_ganhos = regras_usuario.pontos_erro + 20;
+        pontos_ganhos = regras_usuario.pontos_erro;
+        if (tipo_pergunta === 'discursiva') {
+          pontos_ganhos = pontos_ganhos + 20;
+        }
       }
       // Trata casos em que a pontuação do usuário ficaria negativa
       if (pontuacoes_usuario[tema_atual] + pontos_ganhos < 0) {
