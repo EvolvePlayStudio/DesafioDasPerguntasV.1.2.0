@@ -3,7 +3,7 @@ import { detectarModoTela, deveEncerrarQuiz, obterDificuldadesDisponiveis, obter
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 // Envia erros para a base de dados caso ocorram (necessário enviar a linha onde ocorre o erro para melhor depuração)
 window.onerror = function (message) {
-  if (!localStorage.getItem("id_visitante") === 'e7e483b4-7315-4e7d-8e75-1bc980097006' && !localStorage.getItem("id_usuario") in (4, 6, 16)) {
+  if (!localStorage.getItem("id_visitante") === '58ef68c7-cef2-4250-acef-b74c13a4bacb' && !localStorage.getItem("id_usuario") in (4, 6, 16)) {
     fetch("/api/debug/frontend", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -92,6 +92,14 @@ const hint_avaliacao = document.getElementById("hint-avaliacao");
 if (tipo_pergunta === "objetiva") {
   hint_avaliacao.style.marginTop = "0.8rem";
 }
+
+// Variáveis relacionadas ao feedback que o usuário envia para a pergunta
+const estrelas_avaliacao = document.getElementById("avaliacao");
+const estrelas = document.querySelectorAll(".estrela");
+const box_comentario = document.getElementById("box-comentario");
+const textarea_comentario = document.getElementById("comentario-texto");
+let estrelas_iniciais;
+let comentario_inicial;
 
 const contador_perguntas_restantes = document.getElementById("perguntas-count")
 
@@ -323,35 +331,7 @@ function configurarEstrelas() {
   estrelas.forEach((estrela, i) => {
     estrela.addEventListener("click", () => {
       const valor = i + 1;
-      const id_pergunta = pergunta_selecionada.id_pergunta;
-      const versao_pergunta = pergunta_selecionada.versao_pergunta;
-
-      // Esta variável serve para economizar memória caso o usuário clique duas vezes na mesma estrela
-      let avaliacao_anterior = window.avaliacoes?.[id_pergunta] || 0;
-      if (valor === avaliacao_anterior) return;
-
-      renderizarEstrelas(valor); // reutilização
-
-      window.avaliacoes = window.avaliacoes || {};
-      window.avaliacoes[id_pergunta] = valor;
-      
-      fetch("/enviar_feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id_pergunta: id_pergunta,
-          tipo_pergunta: tipo_pergunta,
-          estrelas: valor,
-          versao_pergunta: versao_pergunta
-        })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (!data.sucesso) {
-          console.error("Erro ao registrar feedback:", data.erro);
-        }
-      })
-      .catch(err => console.error("Erro na requisição:", err));
+      renderizarEstrelas(valor);
     });
   });
 }
@@ -367,11 +347,33 @@ async function enviarResposta(pulando = false) {
   caixa_para_resposta.disabled = true;
   const pontuacao_atual = pontuacoes_usuario[tema_atual]
 
+  function carregarComentarioAnterior() {
+    // Estado inicial: desativado
+    textarea_comentario.value = "";
+    textarea_comentario.disabled = true;
+
+    // Exibe caixa
+    box_comentario.style.display = "block";
+
+    // Se não há dado algum, não mostra
+    if (!pergunta_selecionada.comentario) {
+      comentario_inicial = "";
+    }
+    // Preenche se houver comentário anterior
+    else {
+      textarea_comentario.value = pergunta_selecionada.comentario;
+      comentario_inicial = pergunta_selecionada.comentario;
+    }
+
+    // Ativa edição
+    textarea_comentario.disabled = false;
+  }
+
   function mostrarResultadoResposta(correto) {
     resultado.style.display = "block";
     if (tipo_pergunta === 'discursiva') {
 
-      // mostra as possibilidades de respostas corretas para a pergunta
+      // Mostra as possibilidades de respostas corretas para a pergunta
       const respostas_corretas = pergunta_selecionada.respostas_corretas
       mostrarRespostasAceitas(respostas_corretas);
 
@@ -403,20 +405,23 @@ async function enviarResposta(pulando = false) {
     else {
       resultado.style.color = "red";
       resultado.innerHTML = '❌ Resposta incorreta';
-  }
+    }
 
-  aguardando_proxima = true;
-  botoes_enviar_div.style.display = "none";
+    aguardando_proxima = true;
+    botoes_enviar_div.style.display = "none";
 
-  // Chama as estrelas de feedback e carrega as anteriores enviadas pelo usuário caso esteja no modo Revisão
-  if (modo_jogo === "revisao") {
+    // Chama as estrelas de feedback e carrega as anteriores enviadas pelo usuário
     const avaliacao_anterior = pergunta_selecionada.estrelas || 0;
     renderizarEstrelas(avaliacao_anterior);
-  }
-  document.getElementById("avaliacao").style.display = "block";
-  
-  // Exibe os comentários dos outros usuários
-  // document.getElementById('comentarios').style.display = 'block';
+    estrelas_iniciais = avaliacao_anterior;
+    
+    // Carrega comentário de feedback anterior do usuário caso exista
+    carregarComentarioAnterior();
+
+    estrelas_avaliacao.style.display = "block";
+
+    // Exibe os comentários dos outros usuários
+    // document.getElementById('comentarios').style.display = 'block';
   }
 
   async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ganhos, tempo_gasto, id_pergunta, versao_pergunta) {
@@ -676,7 +681,8 @@ function esconderRespostasAceitas() {
   document.getElementById("respostas-aceitas-box").style.display = "none";
 }
 
-function finalizarQuiz() {
+async function finalizarQuiz() {
+  await registrarFeedback();
   if (modo_jogo === 'desafio') {
     localStorage.setItem("perguntas_respondidas", JSON.stringify(perguntas_respondidas));
     localStorage.setItem("rankings_usuario", JSON.stringify(rankings_usuario));
@@ -1069,7 +1075,8 @@ function mostrarPergunta() {
   } 
 
   resultado.style.display = "none";
-  document.getElementById("avaliacao").style.display = "none";
+  estrelas_avaliacao.style.display = "none";
+  box_comentario.style.display = "none";
   document.getElementById("nota-box").style.display = "none";
   aguardando_proxima = false;
 
@@ -1095,7 +1102,9 @@ function mostrarRespostasAceitas(lista) {
   }
 }
 
-function proximaPergunta() {
+async function proximaPergunta() {
+  await registrarFeedback();
+
   hint_dica.style.display = "none";
   hint_pular.style.display = "none";
   lbl_pontos_ganhos.style.display = 'none'
@@ -1109,7 +1118,7 @@ function proximaPergunta() {
     }
     mostrarPergunta();
     document.getElementById('botoes-acao').style.display = "none";
-    document.getElementById("avaliacao").style.display = "none";
+    estrelas_avaliacao.style.display = "none";
     resultado.style.display = "none";
     document.getElementById("nota-box").style.display = "none";
     // document.getElementById('comentarios').style.display = 'none';
@@ -1117,8 +1126,31 @@ function proximaPergunta() {
   }
 }
 
+async function registrarFeedback() {
+  const estrelas_atual = document.querySelectorAll(".estrela.dourada").length;
+  const comentario_atual = textarea_comentario?.value?.trim() || "";
+
+  const mudouEstrelas = estrelas_atual !== estrelas_iniciais;
+  const mudouComentario = comentario_atual !== comentario_inicial;
+
+  if (!mudouEstrelas && !mudouComentario) {
+    return;
+  }
+
+  await fetch("/enviar_feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id_pergunta: pergunta_selecionada.id_pergunta,
+      tipo_pergunta,
+      versao_pergunta: pergunta_selecionada.versao_pergunta,
+      estrelas: estrelas_atual,
+      comentario: comentario_atual
+    })
+  });
+}
+
 function renderizarEstrelas(valor) {
-  const estrelas = document.querySelectorAll(".estrela");
   estrelas.forEach((estrela, index) => {
     if (index < valor) {
       estrela.textContent = "★";

@@ -192,11 +192,14 @@
   input {
     width: 95%;
     max-width: 900px;
-    border: 1px solid #ccc;
+    border: 1px solid #333333;
     display: block;
     margin-top: -20px;
     margin-left: auto;
     margin-right: auto;
+  }
+  input::placeholder {
+    color: var(--hint-text);
   }
   #resposta-input {
     font-size: 1rem;
@@ -311,6 +314,33 @@
   }
   .estrela.dourada {
     color: gold;
+  }
+  .box-comentario {
+    margin-top: 1.2rem;
+    width: 100%;
+  }
+  #comentario-texto {
+    width: 100%;
+    min-height: 110px;
+    padding: 10px;
+    font-size: 15px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-family: inherit;
+    resize: none;
+    box-sizing: border-box;
+  }
+  #comentario-texto::placeholder {
+    color: var(--hint-text);
+    opacity: 1;
+  }
+  #comentario-texto:disabled {
+    background: #eaeaea;
+    color: var(--hint-text);
+    cursor: not-allowed;
+  }
+  .hidden {
+    display: none;
   }
   #btn-enviar, #btn-pular {
     justify-content: center;
@@ -468,6 +498,7 @@
           <button class="alternativa-btn" data-letter="C" tabindex="-1"><strong>C)</strong></button>
           <button class="alternativa-btn" data-letter="D" tabindex="-1"><strong>D)</strong></button>
         </div>
+
         <!-- Botões para enviar a resposta e pular perguntas (apenas nas discursivas) -->
         <div id="botoes-envio">
           <button id="btn-enviar" class="btn-enviar" disabled>Enviar</button>
@@ -517,6 +548,17 @@
           <span class="estrela" data-valor="4">☆</span>
           <span class="estrela" data-valor="5">☆</span>
         </div>
+
+        <!-- Caixa de texto para envio de comentário de feedback -->
+        <div id="box-comentario" class="box-comentario hidden">
+          <textarea
+            id="comentario-texto"
+            placeholder="Campo opcional para críticas, sugestões e avaliações"
+            maxlength="400"
+            disabled
+          ></textarea>
+        </div>
+
       </div>
     </div>
     <!-- Comentários dos usuários para a pergunta -->

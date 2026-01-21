@@ -62,6 +62,7 @@ QUESTION_CONFIG = {
             'p.dica',
             'p.nota',
             "COALESCE(f.estrelas, NULL) AS estrelas",
+            "COALESCE(f.comentario, NULL) AS comentario",
             "r.id_resposta IS NOT NULL AS respondida",
             "p.dificuldade",
             "p.versao"
@@ -74,6 +75,7 @@ QUESTION_CONFIG = {
             'p.dica',
             'p.nota',
             "COALESCE(f.estrelas, NULL) AS estrelas",
+            "COALESCE(f.comentario, NULL) AS comentario",
             "p.dificuldade",
             "p.versao"
         ],
@@ -92,6 +94,7 @@ QUESTION_CONFIG = {
             'p.resposta_correta',
             'p.nota',
             "COALESCE(f.estrelas, NULL) AS estrelas",
+            "COALESCE(f.comentario, NULL) AS comentario",
             "r.id_resposta IS NOT NULL AS respondida",
             "p.dificuldade",
             "p.versao"
@@ -107,6 +110,7 @@ QUESTION_CONFIG = {
             'p.resposta_correta',
             'p.nota',
             "COALESCE(f.estrelas, NULL) AS estrelas",
+            "COALESCE(f.comentario, NULL) AS comentario",
             "p.dificuldade",
             "p.versao"
         ],
@@ -116,7 +120,7 @@ QUESTION_CONFIG = {
 EMAILS_PROIBIDOS = ['admin@gmail.com']
 SITE_EM_MANUTENCAO = False
 privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
-id_visitante_admin = "e7e483b4-7315-4e7d-8e75-1bc980097006"
+id_visitante_admin = "58ef68c7-cef2-4250-acef-b74c13a4bacb"
 
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
 
@@ -224,42 +228,44 @@ def enviar_feedback(user_id):
     data = request.get_json()
     id_pergunta = data.get("id_pergunta")
     tipo_pergunta = data.get("tipo_pergunta").capitalize()
-    estrelas = data.get("estrelas")
     versao_pergunta = data.get("versao_pergunta")
+    estrelas = data.get("estrelas")
+    comentario = data.get("comentario")
+    
     id_usuario = session.get("id_usuario")
     modo_visitante = session.get("visitante")
     id_visitante = session.get("id_visitante")
 
     if modo_visitante:
-        if not all([id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante]):
+        if not all([id_pergunta, tipo_pergunta, versao_pergunta, id_visitante]):
             return jsonify({"erro": "Dados incompletos como visitante"}), 400
     else:
-        if not all([id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario]):
+        if not all([id_pergunta, tipo_pergunta, versao_pergunta, id_usuario]):
             return jsonify({"erro": "Dados incompletos como usuário cadastrado"}), 400
-        
+
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         if modo_visitante:
             cur.execute("""
-                INSERT INTO feedbacks (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                ON CONFLICT (id_pergunta, tipo_pergunta, id_visitante)
-                DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
-            """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante))
+                INSERT INTO feedbacks (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id_pergunta, tipo_pergunta, versao_pergunta, id_visitante)
+                DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, comentario = EXCLUDED.comentario, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
+            """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario))
         else:
             cur.execute("""
-                INSERT INTO feedbacks (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                ON CONFLICT (id_pergunta, tipo_pergunta, id_usuario)
-                DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante,  ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
-            """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante))
+                INSERT INTO feedbacks (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id_pergunta, tipo_pergunta, versao_pergunta, id_usuario)
+                DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, comentario = EXCLUDED.comentario, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
+            """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario))
         conn.commit()
         cur.close()
         return jsonify({"sucesso": True})
     except Exception as e:
-        if conn:
-            conn.rollback()
+        app.logger.exception("Erro ao salvar feedback da pergunta")
+        if conn: conn.rollback()
         return jsonify({"erro": str(e)}), 500
 
 @app.route("/api/feedbacks/comentarios", methods=["POST"])
@@ -373,7 +379,7 @@ def enviar_feedback_comentario(user_id):
                 }), 201
 
     except Exception as e:
-        print("Erro ao salvar feedback:", e)
+        app.logger.exception("Erro ao salvar feedback")
         return jsonify({
             "erro": "Erro interno",
             "detalhe": str(e)
@@ -1008,7 +1014,7 @@ def listar_perguntas(user_id):
                 SELECT {select_cols_visitante}
                 FROM {table} p
                 LEFT JOIN feedbacks f
-                    ON p.id_pergunta = f.id_pergunta AND f.id_visitante = %s AND f.tipo_pergunta = %s
+                    ON p.id_pergunta = f.id_pergunta AND f.id_visitante = %s AND f.tipo_pergunta = %s AND p.versao = f.versao_pergunta
                 WHERE p.tema = %s AND {where_status}
                 LIMIT %s
             """
@@ -1020,7 +1026,7 @@ def listar_perguntas(user_id):
                 LEFT JOIN respostas_usuarios r
                     ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s AND r.tipo_pergunta = %s
                 LEFT JOIN feedbacks f
-                    ON p.id_pergunta = f.id_pergunta AND f.id_usuario = %s AND f.tipo_pergunta = %s
+                    ON p.id_pergunta = f.id_pergunta AND f.id_usuario = %s AND f.tipo_pergunta = %s AND p.versao = f.versao_pergunta
                 WHERE p.tema = %s AND {where_status}
                 LIMIT %s
             """
@@ -1043,13 +1049,6 @@ def listar_perguntas(user_id):
             else:
                 respondida = bool(row.get('respondida'))
             dificuldade = row.get('dificuldade') or 'Médio'  # Se por algum motivo for nulo, evita KeyError
-            
-            sb = row.get('subtemas') or []
-            try:
-                subtemas = [s.strip() if isinstance(s, str) else s for s in sb]
-            except Exception:
-                app.logger.exception("Erro ao tentar listar subtemas do usuário com id %s para a pergunta com id %s", id_usuario, row['id_pergunta'])
-                subtemas = list(sb)
 
             if tipo_pergunta == 'discursiva':
                 rc = row.get('respostas_corretas') or []
@@ -1067,6 +1066,7 @@ def listar_perguntas(user_id):
                     'dificuldade': dificuldade,
                     'versao_pergunta': row.get('versao'),
                     'estrelas': row.get('estrelas'),
+                    'comentario': row.get('comentario')
                 }
 
                 # No modo revisão pode mandar resposta correta
@@ -1088,6 +1088,7 @@ def listar_perguntas(user_id):
                     'dificuldade': dificuldade,
                     'versao_pergunta': row.get('versao'),
                     'estrelas': row.get('estrelas'),
+                    'comentario': row.get('comentario')
                 }
 
                 if modo == 'revisao':
