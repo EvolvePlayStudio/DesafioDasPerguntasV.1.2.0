@@ -179,6 +179,12 @@ def token_required(f):
 
     return decorated
 
+@app.route('/ads.txt')
+def ads_txt():
+    # Esta linha é o padrão exigido pelo Google
+    conteudo = "google.com, pub-9650050810390735, DIRECT, f08c47fec0942fa0"
+    return conteudo, 200, {'Content-Type': 'text/plain'}
+
 @app.route("/api/pontuacoes")
 @token_required
 def api_pontuacoes():
