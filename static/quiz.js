@@ -3,7 +3,7 @@ import { detectarModoTela, deveEncerrarQuiz, obterDificuldadesDisponiveis, obter
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 // Envia erros para a base de dados caso ocorram (necessário enviar a linha onde ocorre o erro para melhor depuração)
 window.onerror = function (message) {
-  if (!localStorage.getItem("id_visitante") === '58ef68c7-cef2-4250-acef-b74c13a4bacb' && !localStorage.getItem("id_usuario") in (4, 6, 16)) {
+  if (!localStorage.getItem("id_visitante") === 'c6e25528-e264-4ec6-8fbf-e417a53852e3' && !localStorage.getItem("id_usuario") in (4, 6, 16)) {
     fetch("/api/debug/frontend", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -439,7 +439,8 @@ async function enviarResposta(pulando = false) {
           id_pergunta: id_pergunta,
           versao_pergunta: versao_pergunta,
           tema: tema_atual,
-          pontos_usuario: pontuacao_atual
+          pontos_usuario: pontuacao_atual,
+          dificuldade: pergunta_selecionada.dificuldade
         })
       });
 
@@ -476,6 +477,7 @@ async function enviarResposta(pulando = false) {
   }
 
   function registrarRespostaVisitante(resposta_usuario, acertou, dica_gasta, pontos_ganhos, tempo_gasto) {
+    console.log("Dificuldade da pergunta: ", pergunta_selecionada.dificuldade)
     let respondidas = JSON.parse(localStorage.getItem("visitante_respondidas")) || {
     objetiva: [], discursiva: []};
 
@@ -490,7 +492,7 @@ async function enviarResposta(pulando = false) {
     }
 
     // Registra o envio da resposta no SQL
-    fetch("/log/visitante", {
+    fetch("/registrar-resposta-visitante", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -506,7 +508,8 @@ async function enviarResposta(pulando = false) {
         usou_dica: dica_gasta,
         modo_tela_usuario: detectarModoTela(),
         pontos_ganhos: pontos_ganhos,
-        pontos_usuario: pontuacao_atual
+        pontos_usuario: pontuacao_atual,
+        dificuldade: pergunta_selecionada.dificuldade
       })
       }).catch(() => {});
 
@@ -1145,7 +1148,8 @@ async function registrarFeedback() {
       tipo_pergunta,
       versao_pergunta: pergunta_selecionada.versao_pergunta,
       estrelas: estrelas_atual,
-      comentario: comentario_atual
+      comentario: comentario_atual,
+      dificuldade: pergunta_selecionada.dificuldade
     })
   });
 }

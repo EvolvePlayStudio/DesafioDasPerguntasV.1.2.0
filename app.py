@@ -121,7 +121,7 @@ QUESTION_CONFIG = {
 EMAILS_PROIBIDOS = ['admin@gmail.com']
 SITE_EM_MANUTENCAO = False
 privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
-id_visitante_admin = "58ef68c7-cef2-4250-acef-b74c13a4bacb"
+id_visitante_admin = "c6e25528-e264-4ec6-8fbf-e417a53852e3"
 
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
 
@@ -228,20 +228,21 @@ def entrar_visitante():
 def enviar_feedback(user_id):
     data = request.get_json()
     id_pergunta = data.get("id_pergunta")
-    tipo_pergunta = data.get("tipo_pergunta").capitalize()
-    versao_pergunta = data.get("versao_pergunta")
+    tipo_pergunta = data.get("tipo_pergunta").lower().capitalize()
     estrelas = data.get("estrelas")
+    versao_pergunta = data.get("versao_pergunta")
     comentario = data.get("comentario")
-    
+    dificuldade = data.get("dificuldade").lower().capitalize()
+
     id_usuario = session.get("id_usuario")
-    modo_visitante = session.get("visitante")
     id_visitante = session.get("id_visitante")
+    modo_visitante = session.get("visitante")
 
     if modo_visitante:
-        if not all([id_pergunta, tipo_pergunta, versao_pergunta, id_visitante]):
+        if not all([data.get("id_pergunta"), data.get("tipo_pergunta"), data.get("versao_pergunta"), id_visitante]):
             return jsonify({"erro": "Dados incompletos como visitante"}), 400
     else:
-        if not all([id_pergunta, tipo_pergunta, versao_pergunta, id_usuario]):
+        if not all([data.get("id_pergunta"), data.get("tipo_pergunta"), data.get("versao_pergunta"), id_usuario]):
             return jsonify({"erro": "Dados incompletos como usuário cadastrado"}), 400
 
     try:
@@ -249,25 +250,27 @@ def enviar_feedback(user_id):
         cur = conn.cursor()
         if modo_visitante:
             cur.execute("""
-                INSERT INTO feedbacks (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO feedbacks (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id_pergunta, tipo_pergunta, versao_pergunta, id_visitante)
                 DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, comentario = EXCLUDED.comentario, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
-            """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario))
+            """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade))
         else:
             cur.execute("""
-                INSERT INTO feedbacks (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO feedbacks (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id_pergunta, tipo_pergunta, versao_pergunta, id_usuario)
                 DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, comentario = EXCLUDED.comentario, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
-            """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario))
+            """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade))
         conn.commit()
-        cur.close()
         return jsonify({"sucesso": True})
     except Exception as e:
-        app.logger.exception("Erro ao salvar feedback da pergunta")
         if conn: conn.rollback()
+        app.logger.exception("Erro ao salvar feedback da pergunta")
         return jsonify({"erro": str(e)}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
 
 @app.route("/api/feedbacks/comentarios", methods=["POST"])
 @token_required
@@ -1246,62 +1249,6 @@ def login():
 
     return resp
 
-@app.route("/log/visitante", methods=["POST"])
-def log_visitante():
-    """return jsonify({"status": "ok"}), 200"""
-    dados = request.get_json()
-    tema = dados.get("tema")
-    tipo_pergunta = dados.get("tipo_pergunta").capitalize()
-    id_pergunta = dados.get("id_pergunta")
-    resposta_enviada = dados.get("resposta_enviada")
-    acertou = dados.get("acertou")
-    tempo_gasto = dados.get("tempo_gasto")
-    id_visitante = session["id_visitante"]
-    usou_dica = dados.get("usou_dica")
-    modo_tela = dados.get("modo_tela_usuario")
-    pontos_ganhos = dados.get("pontos_ganhos")
-    pontos_usuario = dados.get("pontos_usuario")
-    versao_pergunta = dados.get("versao_pergunta")
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-        INSERT INTO acesso_modo_visitante (
-            tema,
-            tipo_pergunta,
-            id_pergunta,
-            resposta_enviada,
-            acertou,
-            tempo_gasto,
-            id_visitante,
-            versao_pergunta,
-            usou_dica,
-            pontos_ganhos,
-            pontos_usuario,
-            modo_tela
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    """, (
-        tema,
-        tipo_pergunta,
-        id_pergunta,
-        resposta_enviada,
-        acertou,
-        tempo_gasto,
-        id_visitante,
-        versao_pergunta,
-        usou_dica,
-        pontos_ganhos,
-        pontos_usuario,
-        modo_tela
-    ))
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return jsonify({"status": "ok"}), 200
-
 @app.route("/reenviar-email-confirmacao", methods=["POST"])
 def reenviar_email_confirmacao_route():
     conn = cur = None
@@ -1822,12 +1769,13 @@ def registrar_pagina_visitada(pagina):
 
 @app.route("/registrar_resposta", methods=["POST"])
 @token_required
-def registrar_resposta(user_id):
+def registrar_resposta_usuario(user_id):
     dados = request.get_json()
-    dados["tipo_pergunta"] = dados["tipo_pergunta"].capitalize()
     id_usuario = session.get("id_usuario")
+
     if not id_usuario:
         return jsonify({"sucesso": False, "mensagem": "Usuário não autenticado"})
+
     conn = cur = None
     try:
         conn = get_db_connection()
@@ -1836,13 +1784,13 @@ def registrar_resposta(user_id):
             cur.execute("""
                 INSERT INTO respostas_usuarios (
                     id_usuario, id_pergunta, tipo_pergunta, versao_pergunta, resposta_usuario,
-                    acertou, usou_dica, pontos_ganhos, tempo_gasto, pontos_usuario, tema, dados_migrados
+                    acertou, usou_dica, pontos_ganhos, tempo_gasto, pontos_usuario, tema, dados_migrados, dificuldade
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 id_usuario,
                 dados["id_pergunta"],
-                dados["tipo_pergunta"],
+                dados["tipo_pergunta"].lower().capitalize(),
                 dados["versao_pergunta"],
                 dados["resposta_usuario"],
                 dados["acertou"],
@@ -1851,7 +1799,8 @@ def registrar_resposta(user_id):
                 dados["tempo_gasto"],
                 dados["pontos_usuario"],
                 dados["tema"],
-                False
+                False,
+                dados["dificuldade"].lower().capitalize()
             ))
             # Atualiza a pontuação do usuário
             cur.execute("""
@@ -1903,12 +1852,65 @@ def registrar_resposta(user_id):
                 "dicas_restantes": dicas_restantes
             })
     except Exception:
-        if conn:
-            conn.rollback()
-        app.logger.exception("Erro ao tentar registrar pergunta com id %s perguntas para o usuário com id %s", dados["id_pergunta"], id_usuario)
+        if conn: conn.rollback()
+        app.logger.exception("Erro ao tentar registrar resposta da pergunta de usuário")
+        return jsonify(success=False, message="Erro ao tentar registrar resposta da pergunta de usuário"), 500
     finally:
         if cur: cur.close()
         if conn: conn.close()
+
+@app.route("/registrar-resposta-visitante", methods=["POST"])
+def registrar_resposta_visitante():
+    """return jsonify({"status": "ok"}), 200"""
+    dados = request.get_json()
+    id_visitante = session["id_visitante"]
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO acesso_modo_visitante (
+                tema,
+                tipo_pergunta,
+                id_pergunta,
+                resposta_enviada,
+                acertou,
+                tempo_gasto,
+                id_visitante,
+                versao_pergunta,
+                usou_dica,
+                pontos_ganhos,
+                pontos_usuario,
+                modo_tela,
+                dificuldade
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            dados.get("tema"),
+            dados.get("tipo_pergunta").lower().capitalize(),
+            dados.get("id_pergunta"),
+            dados.get("resposta_enviada"),
+            dados.get("acertou"),
+            dados.get("tempo_gasto"),
+            id_visitante,
+            dados.get("versao_pergunta"),
+            dados.get("usou_dica"),
+            dados.get("pontos_ganhos"),
+            dados.get("pontos_usuario"),
+            dados.get("modo_tela"),
+            dados.get("dificuldade").lower().capitalize()
+        ))
+        conn.commit()
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.exception("Erro ao registrar resposta da pergunta de visitante")
+        return jsonify(success=False, message="Erro ao tentar registrar resposta da pergunta de visitante"), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+    return jsonify({"status": "ok"}), 200
 
 @app.route("/api/registrar_visitante", methods=["POST"])
 def registrar_visitante():

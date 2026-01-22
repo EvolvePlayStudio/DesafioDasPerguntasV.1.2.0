@@ -172,7 +172,7 @@ async function iniciarQuiz(event) {
           window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;
         }
         else {
-          exibirMensagem(mensagem, `Você não possui novas perguntas ${tipo_pergunta}s disponíveis para o tema ${tema_atual} no momento`, 'orange')
+          exibirMensagem(mensagem, `Você não possui novas perguntas ${tipo_pergunta.toLowerCase()}s disponíveis para o tema ${tema_atual} no momento`, 'orange')
           desbloquearBotoes();
           return
         }
