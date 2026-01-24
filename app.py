@@ -1015,9 +1015,9 @@ def listar_perguntas(user_id):
         table = cfg['table']         # Nome da tabela — vindo do cfg interno (seguro)
 
         where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
-        """
+        
         where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
-        """
+        
         
         if modo_visitante:
             sql = f"""
@@ -2024,7 +2024,6 @@ def registrar_visitante():
         session["id_visitante"] = id_visitante
 
     return jsonify({"ok": True})
-
 
 if not database_url:
     if __name__ == '__main__':

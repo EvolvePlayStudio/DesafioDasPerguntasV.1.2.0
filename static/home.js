@@ -86,6 +86,9 @@ else {
   if (sessionStorage.getItem("modal_confirmacao_email_exibido") === "false") {
     exibirModalConfirmacaoEmail();
   }
+  else {
+    permitir_escolher_tema = true;
+  }
 
   // Implementa função para botão de fechar modal
   btnFecharModal.addEventListener("click", async () => {
