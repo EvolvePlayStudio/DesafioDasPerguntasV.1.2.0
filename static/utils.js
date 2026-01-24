@@ -57,6 +57,7 @@ export async function fetchAutenticado(url, options= {}) {
   const response = await fetch(url, config);
 
   if (!response.ok) {
+    console.log("Resposta foi: ", response)
     localStorage.setItem("auth_message", "Sessão expirada");
     window.location.href = "/login";
   }

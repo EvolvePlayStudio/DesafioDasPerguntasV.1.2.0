@@ -21,6 +21,7 @@ const perguntas_restantes = document.getElementById("perguntas-count")
 // Botões no cabeçalho da página
 const btn_criar_conta = document.getElementById("btn-criar-conta");
 const btn_perfil = document.getElementById("btn-perfil");
+const btn_opcoes = document.getElementById("btn-opcoes");
 const btn_pesquisa = document.getElementById("btn-pesquisa");
 const btn_doacoes = document.getElementById("btn-doacoes");
 const btn_logout = document.getElementById("btn-logout");
@@ -77,6 +78,7 @@ if (MODO_VISITANTE) {
   });
 }
 else {
+  btn_opcoes.style.display = "";
   btn_doacoes.style.display = "";
   exibirModalEmailConfirmacao();
 
@@ -367,6 +369,11 @@ document.addEventListener("DOMContentLoaded", () => {
   btn_perfil.addEventListener("click", async () => {
     window.location.href = "/perfil";
   });
+
+  // Implementa a função de clique no botão de opções
+  btn_opcoes.addEventListener("click", async () => {
+    window.location.href = "/opcoes"
+  })
 
   // Implementa a função de clique no botão de pesquisa
   btn_pesquisa.addEventListener("click", async () => {

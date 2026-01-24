@@ -3,7 +3,7 @@ import { detectarModoTela, deveEncerrarQuiz, obterDificuldadesDisponiveis, obter
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 // Envia erros para a base de dados caso ocorram (necessário enviar a linha onde ocorre o erro para melhor depuração)
 window.onerror = function (message) {
-  if (!localStorage.getItem("id_visitante") === 'c6e25528-e264-4ec6-8fbf-e417a53852e3' && !localStorage.getItem("id_usuario") in (4, 6, 16)) {
+  if (!localStorage.getItem("id_visitante") === '36b23a50-145d-44b4-b7a0-2c5fb55cfd50' && !localStorage.getItem("id_usuario") in (4, 6, 16)) {
     fetch("/api/debug/frontend", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -54,8 +54,8 @@ const alternativaBtns = Array.from(alternativasContainer.querySelectorAll(".alte
 const resultado = document.getElementById('resultado')
 const caixa_para_resposta = document.getElementById('resposta-input')
 const dica_box = document.getElementById("dica-box")
-let alternativaSelecionada = null; // guarda a letra clicada (A, B, C, D)
-let respostasDesdeUltimaForcagem = 0; // para pegar a pergunta do nível que tem mais a cada x respondidas
+let alternativaSelecionada = null; // Guarda a letra clicada (A, B, C, D)
+let respostasDesdeUltimaForcagem = 0; // Para pegar a pergunta do nível que tem mais a cada x respondidas
 const PROBABILIDADES_POR_RANKING = {
   Iniciante: {Fácil: 0.65, Médio: 0.35, Difícil: 0.00},
   Aprendiz: {Fácil: 0.40, Médio: 0.45, Difícil: 0.15},
@@ -890,8 +890,16 @@ function mostrarEnunciado(texto, elemento, callback) {
         inicio_pergunta = Date.now()
         caixa_para_resposta.focus()
         botoes_enviar_div.style.display = "flex";
-        hint_dica.style.display = "";
-        hint_pular.style.display = "";
+        
+        // Mostra textos sobre dica e pulo de pergunta
+        const opcoesUsuarioRaw = sessionStorage.getItem("opcoes_usuario");
+        const opcoesUsuario = opcoesUsuarioRaw? JSON.parse(opcoesUsuarioRaw): null;
+        if (MODO_VISITANTE || opcoesUsuario?.exibir_instrucoes_quiz) {
+          hint_dica.style.display = "";
+          hint_pular.style.display = "";
+        }
+
+        // Mostra texto sobre avaliação e botões
         hint_avaliacao.style.display = "";
         btn_enviar.style.display = "inline-flex";
         btn_pular.style.display = "inline-flex";

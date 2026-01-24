@@ -121,7 +121,7 @@ QUESTION_CONFIG = {
 EMAILS_PROIBIDOS = ['admin@gmail.com']
 SITE_EM_MANUTENCAO = False
 privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
-id_visitante_admin = "c6e25528-e264-4ec6-8fbf-e417a53852e3"
+id_visitante_admin = "36b23a50-145d-44b4-b7a0-2c5fb55cfd50"
 
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
 
@@ -1194,6 +1194,34 @@ def login():
             if not check_password_hash(senha_hash, senha):
                 return jsonify(success=False, message="Senha incorreta")
 
+
+            # Pega as informações de opções do usuário
+            cur.execute("""
+                SELECT
+                exibir_instrucoes_quiz,
+                notificacoes_importantes,
+                notificacoes_adicionais,
+                temas_interesse
+                FROM opcoes_usuarios
+                WHERE id_usuario = %s
+            """, (id_usuario,))
+
+            opcoes = cur.fetchone()
+
+            if opcoes:
+                (   
+                    exibir_instrucoes_quiz,
+                    notificacoes_importantes,
+                    notificacoes_adicionais,
+                    temas_interesse
+                ) = opcoes
+            else:
+                # fallback defensivo (não deveria ocorrer)
+                exibir_instrucoes_quiz = True
+                notificacoes_importantes = True
+                notificacoes_adicionais = False
+                temas_interesse = []
+
             # Atualiza o horário da última sessão do usuário
             cur.execute("""
               UPDATE usuarios_registrados
@@ -1233,6 +1261,12 @@ def login():
         if conn: conn.close()
 
     # 🔑 Retorna JSON e define cookie HttpOnly
+    opcoes_usuario = {
+        "exibir_instrucoes_quiz": exibir_instrucoes_quiz,
+        "notificacoes_importantes": notificacoes_importantes,
+        "notificacoes_adicionais": notificacoes_adicionais,
+        "temas_interesse": temas_interesse or []     
+    }
     resp = make_response(jsonify(
         success=True,
         message="Login realizado com sucesso",
@@ -1241,6 +1275,7 @@ def login():
         dicas_restantes=dicas_restantes,
         perguntas_restantes=perguntas_restantes,
         nome_usuario=nome_usuario,
+        opcoes_usuario=opcoes_usuario
     ), 200)
 
     # Cookie HttpOnly, expirando junto com o token
@@ -1254,6 +1289,53 @@ def login():
     )
 
     return resp
+
+@app.route("/api/salvar-opcoes", methods=["POST"])
+@token_required
+def salvar_opcoes(user_id):
+    cur = conn = None
+    try:
+        data = request.get_json(silent=True) or {}
+        notificacoes_importantes = bool(data.get("notificacoes_importantes", True))
+        notificacoes_adicionais = bool(data.get("notificacoes_adicionais", False))
+        exibir_instrucoes_quiz = bool(data.get("exibir_instrucoes_quiz", True))
+        temas_interesse = data.get("temas_interesse", [])
+
+        # Garantia defensiva
+        if not isinstance(temas_interesse, list):
+            temas_interesse = []
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            UPDATE opcoes_usuarios
+            SET
+                exibir_instrucoes_quiz = %s,
+                notificacoes_importantes = %s,
+                notificacoes_adicionais = %s,
+                temas_interesse = %s,
+                ultima_atualizacao = date_trunc('seconds', NOW() AT TIME ZONE 'America/Sao_Paulo')
+            WHERE id_usuario = %s
+        """, (
+            exibir_instrucoes_quiz,
+            notificacoes_importantes,
+            notificacoes_adicionais,
+            temas_interesse,
+            user_id
+        ))
+
+        conn.commit()
+        return jsonify({"success": True})
+
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.exception("Erro ao tentar salvar opções do usuário")
+        return jsonify({"success": False}), 500
+
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
 
 @app.route("/reenviar-email-confirmacao", methods=["POST"])
 def reenviar_email_confirmacao_route():
@@ -1371,8 +1453,13 @@ def reset_senha():
         if cur: cur.close()
         if conn: conn.close()
 
+@app.route('/opcoes', methods=['GET'])
+def tela_opcoes():
+    registrar_pagina_visitada("Opções")
+    return render_template("opcoes.html")
+
 @app.route("/perfil")
-def perfil_usuario():
+def tela_perfil():
     registrar_pagina_visitada("Perfil")
     return render_template("perfil.html")
 
@@ -1638,6 +1725,7 @@ def buscar_pontuacoes_usuario(id_usuario):
 @app.route("/register", methods=["POST"])
 def registrar():
     data = request.get_json()
+    notificacoes_importantes = bool(data.get("notificacoes_importantes", True))
     nome = data.get("nome")
     email = data.get("email")
     senha = data.get("senha")
@@ -1685,6 +1773,15 @@ def registrar():
         """, (nome, email, senha_hash, token, expiracao))
 
         id_usuario = cur.fetchone()[0]
+
+        # Registra as opções de usuários na base de dados
+        cur.execute("""
+            INSERT INTO opcoes_usuarios (
+              id_usuario,
+              notificacoes_importantes
+            )
+            VALUES (%s, %s)
+        """, (id_usuario, notificacoes_importantes))
 
         # Cria os registros de pontuações do usuário em cada tema
         cur.execute("""

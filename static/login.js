@@ -40,15 +40,22 @@ document.addEventListener('DOMContentLoaded', function () {
   const info_section = document.querySelector('.info-section');
   const btnRegister = register_form?.querySelector('button[type="submit"]');
 
-  // Variáveis da caixa para marcar transferência de dados do modo visitante
+  // Variáveis relacionadas aos checkboxes da aba de registro
   const VISITOR_CHOICE_KEY = 'usar_dados_visitante_registro';
-  const container_migrar_dados_visitante = document.getElementById("container-migrar-dados-visitante")
+  const SEND_NOTIFICATION_KEY = 'enviar_notificacoes_registro';
+  const container_migrar_dados_visitante = document.getElementById("container-migrar-dados-visitante");
+  const container_enviar_notificacoes = document.getElementById("container-notificacoes-email");
+  const checkbox_migrar_dados = document.getElementById("usar-dados-visitante");
+  const checkbox_enviar_notificacoes = document.getElementById("receber-notificacoes-email"); 
+
   const hasVisitorData = localStorage.getItem('visitante_respondidas') || localStorage.getItem('visitante_avaliacoes');
 
-  // Função para marcar no sessionStorage estado de marcação bo box de migrar dados
-  const checkbox_migrar_dados = document.getElementById("usar-dados-visitante")
+  // Função para marcar no sessionStorage estado de marcação dos checkboxes da aba registro
   checkbox_migrar_dados.addEventListener('change', () => {
     sessionStorage.setItem(VISITOR_CHOICE_KEY, checkbox_migrar_dados.checked.toString());
+  });
+  checkbox_enviar_notificacoes.addEventListener('change', () => {
+    sessionStorage.setItem(SEND_NOTIFICATION_KEY, checkbox_enviar_notificacoes.checked.toString());
   });
 
   // CAPTCHA elementos (pode ser undefined se o HTML não tiver)
@@ -222,6 +229,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Se passou na validação, exibe o CAPTCHA
         if (captchaContainer) {
           container_migrar_dados_visitante.style.display = "none";
+          container_enviar_notificacoes.style.display = "none";
           captchaContainer.hidden = false;
 
           register_form.querySelectorAll('input, label, .form-group').forEach(el => {
@@ -265,7 +273,8 @@ document.addEventListener('DOMContentLoaded', function () {
           captcha_token: captchaToken,
           captcha_selecoes: selecoes,
           id_visitante: localStorage.getItem("id_visitante"),
-          usar_dados_visitante: checkbox_migrar_dados.checked
+          usar_dados_visitante: checkbox_migrar_dados.checked,
+          notificacoes_importantes: checkbox_enviar_notificacoes.checked
         })
       });
 
@@ -348,6 +357,14 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.setItem("dicas_restantes", JSON.stringify(data.dicas_restantes || 0));
         localStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes || 0));
         localStorage.setItem("nome_usuario", data.nome_usuario || '');
+
+        // Grava informações no sessionStorage
+        if (data.opcoes_usuario) {
+          sessionStorage.setItem(
+            'opcoes_usuario',
+            JSON.stringify(data.opcoes_usuario)
+          );
+        }
 
         if (data.onboarding_concluido === false) {
           localStorage.setItem("onboarding_concluido", "false");
@@ -480,13 +497,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
       if (register_form) {
 
-        // Se o usuário tem dados no modo visitante
+        // Exibe os containers dos checkboxes da aba registro
         if (hasVisitorData) {
           container_migrar_dados_visitante.style.display = "";
         }
         else {
           container_migrar_dados_visitante.style.display = "none";
         }
+        container_enviar_notificacoes.style.display = ""
 
         register_form.classList.add('active');
         login_form.classList.remove('active');
@@ -554,16 +572,25 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function sincronizarCheckboxMigracao() {
-    if (!checkbox_migrar_dados) return;
+    if (!checkbox_migrar_dados || !checkbox_enviar_notificacoes) return;
 
-    const savedChoice = sessionStorage.getItem(VISITOR_CHOICE_KEY);
-    const normalized = savedChoice === null ? null : savedChoice.trim().toLowerCase();
+    // Carrega estado do check para migrar dados
+    const savedChoiceDadosMigrados = sessionStorage.getItem(VISITOR_CHOICE_KEY);
+    const normalizedDadosMigrados = savedChoiceDadosMigrados === null ? null : savedChoiceDadosMigrados.trim().toLowerCase();
 
-    // reset defensivo
+    // Reset defensivo
     checkbox_migrar_dados.checked = false;
 
-    // regra de negócio
-    checkbox_migrar_dados.checked = normalized === null ? true : normalized === 'true';
+    // Regra de negócio
+    checkbox_migrar_dados.checked = normalizedDadosMigrados === null ? true : normalizedDadosMigrados === 'true';
+
+    // Carrega estado do check apra envio de notificações
+    const savedChoiceEnviarNotificacoes = sessionStorage.getItem(SEND_NOTIFICATION_KEY);
+    const normalizedEnviarNotificacoes = savedChoiceEnviarNotificacoes === null ? null : savedChoiceEnviarNotificacoes.trim().toLowerCase();
+
+    checkbox_enviar_notificacoes.checked = false;
+
+    checkbox_enviar_notificacoes.checked = normalizedEnviarNotificacoes === null ? true : normalizedEnviarNotificacoes === 'true';
   }
 
   function bloquearRegistro(info_bloqueio) {
