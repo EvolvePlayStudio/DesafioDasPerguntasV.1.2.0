@@ -1,5 +1,7 @@
 import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual, temas_disponiveis } from "./utils.js";
 
+let permitir_escolher_tema = false;
+
 const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
 sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
@@ -7,7 +9,6 @@ localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 let tema_atual = null;
 let tipo_pergunta = null;
 const mensagem = document.getElementById("mensagem");
-let permitir_escolher_tema = true;
 
 // Widgets do modal alertando confirmação de e-mail necessária ou convidando par registro
 const modal = document.getElementById("modal-email-confirmacao");
@@ -29,6 +30,7 @@ const btn_logout = document.getElementById("btn-logout");
 const radios_tipo_pergunta = document.querySelectorAll('.opcoes input[type="radio"]')
 
 if (MODO_VISITANTE) {
+  permitir_escolher_tema = true;
   btn_criar_conta.style.display = "";
   btn_criar_conta.addEventListener("click", async () => {
     localStorage.setItem("ir_para_aba_registro", true);
@@ -87,7 +89,8 @@ else {
 
   // Implementa função para botão de fechar modal
   btnFecharModal.addEventListener("click", async () => {
-    fecharModalEmail()
+    fecharModalEmail();
+    desabilitarBotoesModal();
   });
 
   // Implementa função para botão de reenviar e-mail de confirmação
@@ -107,7 +110,9 @@ async function iniciarQuiz(event) {
       radio.onclick = null;
   })};
 
-  if (!permitir_escolher_tema) return;
+  if (!permitir_escolher_tema) {
+    return;
+  } 
 
   // Bloqueia alteração no tipo de pergunta ou on tema quando se está iniciando quiz
   radios_tipo_pergunta.forEach(radio => {
@@ -270,7 +275,14 @@ async function carregarRegrasPontuacao() {
     localStorage.setItem("regras_pontuacao", JSON.stringify(data.regras_pontuacao));
 }
 
+function desabilitarBotoesModal () {
+  btnFecharModal.disabled = true;
+  btnReenviarEmail.disabled = true;
+}
+
 async function exibirModalConfirmacaoEmail() {
+  desabilitarBotoesModal();
+  programarHabilitacaoBotoesModais();
   try {
       const response = await fetch('/pegar_email_confirmado', {
           method: 'GET',
@@ -282,20 +294,24 @@ async function exibirModalConfirmacaoEmail() {
       const dados = await response.json();
       const email_confirmado = dados.email_confirmado;
       const email_usuario = dados.email_usuario;
-
+      
       if (modal && !email_confirmado) {
         texto_email_usuario.textContent = `${email_usuario}`
-
-        
         modal.classList.remove("hidden");
+      }
+      else {
+        permitir_escolher_tema = true;
       }
   }
   catch (error) {
+    permitir_escolher_tema = true;
     console.error("Erro ao buscar e-mail do usuário:", error);
   }
 }
 
 function exibirModalRegistroVisitante(marco) {
+  desabilitarBotoesModal();
+  programarHabilitacaoBotoesModais();
   btnFecharModal.textContent = "Continuar como visitante";
   btnReenviarEmail.textContent = "Criar conta";
   const titulo = modal.querySelector("h3");
@@ -306,7 +322,7 @@ function exibirModalRegistroVisitante(marco) {
     Criar uma conta libera as seguintes vantagens:
     <ul>
       <li>📚 Acesso a <strong>mais de 1000 perguntas</strong></li>
-      <li>🏆 Progresso salvo nos rankings de temas</li>
+      <li>🏆 Progresso salvo nos rankings e pontuações</li>
       <li>⭐ Revisão inteligente com perguntas favoritadas</li>
     </ul>
   `;
@@ -333,17 +349,30 @@ function exibirModalRegistroVisitante(marco) {
 
 function fecharModalEmail() {
   if (modal) modal.classList.add("hidden");
-  sessionStorage.setItem("modal_confirmacao_email_exibido", true)
+  sessionStorage.setItem("modal_confirmacao_email_exibido", true);
+  permitir_escolher_tema = true;
+}
+
+function programarHabilitacaoBotoesModais() {
+  setTimeout(() => {
+    btnFecharModal.disabled = false;
+    btnReenviarEmail.disabled = false;
+  }, 1000);
 }
 
 function reenviarEmailConfirmacao() {
 
-  if (sessionStorage.getItem("email_reenviado_neste_login")) {
+  sessionStorage.removeItem("email_reenviado_neste_login");
+  if (sessionStorage.getItem("email_reenviado_neste_login") === "true") {
     msgModal.innerText = "Um e-mail de confirmação já foi enviado recentemente";
     msgModal.style.display = "block";
     msgModal.style.color = "orange";
     return;
   }
+
+  msgModal.innerText = "Enviando e-mail de confirmação...";
+  msgModal.style.display = "block";
+  msgModal.style.color = "orange";
 
   fetch("/reenviar-email-confirmacao", {
     method: "POST",
@@ -351,7 +380,6 @@ function reenviarEmailConfirmacao() {
   })
   .then(res => res.json())
   .then(data => {
-    msgModal.style.display = "block";
 
     if (data.success) {
       sessionStorage.setItem("email_reenviado_neste_login", "true");
@@ -363,7 +391,6 @@ function reenviarEmailConfirmacao() {
     }
   })
   .catch(() => {
-    msgModal.style.display = "block";
     msgModal.innerText = "Erro de comunicação com o servidor.";
     msgModal.style.color = "red";
   });
