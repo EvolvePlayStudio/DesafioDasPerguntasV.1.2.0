@@ -80,7 +80,10 @@ if (MODO_VISITANTE) {
 else {
   btn_opcoes.style.display = "";
   btn_doacoes.style.display = "";
-  exibirModalEmailConfirmacao();
+
+  if (sessionStorage.getItem("modal_confirmacao_email_exibido") === "false") {
+    exibirModalConfirmacaoEmail();
+  }
 
   // Implementa função para botão de fechar modal
   btnFecharModal.addEventListener("click", async () => {
@@ -267,7 +270,7 @@ async function carregarRegrasPontuacao() {
     localStorage.setItem("regras_pontuacao", JSON.stringify(data.regras_pontuacao));
 }
 
-async function exibirModalEmailConfirmacao() {
+async function exibirModalConfirmacaoEmail() {
   try {
       const response = await fetch('/pegar_email_confirmado', {
           method: 'GET',
@@ -286,8 +289,9 @@ async function exibirModalEmailConfirmacao() {
         
         modal.classList.remove("hidden");
       }
-  } catch (error) {
-      console.error("Erro ao buscar e-mail do usuário:", error);
+  }
+  catch (error) {
+    console.error("Erro ao buscar e-mail do usuário:", error);
   }
 }
 
@@ -329,6 +333,7 @@ function exibirModalRegistroVisitante(marco) {
 
 function fecharModalEmail() {
   if (modal) modal.classList.add("hidden");
+  sessionStorage.setItem("modal_confirmacao_email_exibido", true)
 }
 
 function reenviarEmailConfirmacao() {

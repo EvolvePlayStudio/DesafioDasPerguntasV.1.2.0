@@ -365,6 +365,7 @@ document.addEventListener('DOMContentLoaded', function () {
             JSON.stringify(data.opcoes_usuario)
           );
         }
+        sessionStorage.setItem("modal_confirmacao_email_exibido", false)
 
         if (data.onboarding_concluido === false) {
           localStorage.setItem("onboarding_concluido", "false");
