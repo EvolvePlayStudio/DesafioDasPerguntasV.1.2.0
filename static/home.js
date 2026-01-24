@@ -115,13 +115,17 @@ async function iniciarQuiz(event) {
 
   // Atualiza o tema atual, modo de jogo e tipo de pergunta no localStorage
   tema_atual = decodeURIComponent(event.currentTarget.dataset.tema);
-  tipo_pergunta = document.querySelector('input[name="tipo-de-pergunta"]:checked').value;
+  tipo_pergunta = document.querySelector('input[name="tipo-de-pergunta"]:checked')?.value?? null;
+  if (!tipo_pergunta) {
+    exibirMensagem(mensagem, "Escolha um tipo de pergunta", 'orange', true)
+    return
+  }
   localStorage.setItem("tema_atual", tema_atual);
   localStorage.setItem("modo_jogo", 'desafio');
   localStorage.setItem("tipo_pergunta", tipo_pergunta);
 
-  if (!tema_atual || !tipo_pergunta) {
-    console.error("Tema ou tipo de pergunta não definidos na URL.");
+  if (!tema_atual) {
+    console.error("Tema não definidos na URL");
     desbloquearBotoes();
     return;
   }
@@ -238,7 +242,7 @@ function carregarPreferenciasQuiz() {
   
   // Se não existirem, define valores padrão
   if (!tipo_pergunta) {
-    tipo_pergunta = "discursiva";
+    tipo_pergunta = "Discursiva";
     document.getElementById("radio-discursiva").checked = true;
     localStorage.setItem("tipo_pergunta", tipo_pergunta);
   }
