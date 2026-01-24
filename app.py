@@ -36,9 +36,23 @@ app.logger.addHandler(handler)
 temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia", "Variedades"]
 
 # IDs de perguntas para os usuários no modo visitante
-ids_perguntas_objetivas_visitante = {"Artes": [172, 333, 338, 353], "Astronomia": [11, 12, 479, 492], "Biologia": [22, 365, 371, 581], "Esportes": [55, 63, 75, 462], "Filosofia": [142, 146, 150, 305], "Geografia": [82, 86, 90, 318], "História": [118, 127, 209, 262], "Mídia": [99, 106, 381, 385], "Música": [222, 238, 231, 439], "Química": [184, 188, 189, 202], "Tecnologia": [243, 245, 251, 273], "Variedades": [136, 192, 453, 627]}
+ids_perguntas_objetivas_visitante = {"Artes": [172, 333, 338, 353], "Astronomia": [11, 12, 479, 492], "Biologia": [361, 365, 371, 581], "Esportes": [55, 63, 75, 462], "Filosofia": [142, 146, 150, 305], "Geografia": [82, 86, 90, 318], "História": [118, 127, 209, 262], "Mídia": [99, 106, 381, 385], "Música": [222, 238, 231, 439], "Química": [184, 188, 189, 202], "Tecnologia": [243, 245, 273, 411], "Variedades": [136, 192, 453, 627]}
 
-ids_perguntas_discursivas_visitante = {"Artes": [258, 269, 270, 612], "Astronomia": [103, 104, 108, 539], "Biologia": [8, 10, 43, 52], "Esportes": [12, 14, 79, 523], "Filosofia": [235, 237, 408, 558], "Geografia": [157, 158, 163, 169], "História": [29, 35, 129, 275], "Mídia": [184, 451, 635, 650], "Música": [313, 317, 479, 500], "Química": [291, 303, 577, 582], "Tecnologia": [345, 351, 392, 462], "Variedades": [67, 221, 658, 662]}
+
+
+
+
+
+
+
+ids_perguntas_discursivas_visitante = {"Artes": [258, 269, 270, 612], "Astronomia": [103, 104, 108, 539], "Biologia": [8, 10, 43, 52], "Esportes": [12, 14, 79, 523], "Filosofia": [235, 237, 408, 558], "Geografia": [157, 158, 163, 169], "História": [29, 35, 129, 275], "Mídia": [184, 451, 635, 650], "Música": [313, 317, 479, 500], "Química": [291, 303, 577, 582], "Tecnologia": [345, 352, 392, 462], "Variedades": [67, 221, 658, 662]}
+
+"""
+IDs Perguntas Objetivas:
+11, 12, 22, 55, 63, 75, 82, 86, 90, 99, 106, 118, 127, 136, 142, 146, 150, 172, 184, 188, 189, 192, 202, 209, 222, 231, 238, 243, 245, 251, 262, 273, 305, 318, 333, 338, 353, 365, 371, 381, 385, 439, 453, 462, 479, 492, 581, 627
+​IDs Perguntas Discursivas:
+8, 10, 12, 14, 29, 35, 43, 52, 67, 79, 103, 104, 108, 129, 157, 158, 163, 169, 184, 221, 235, 237, 258, 269, 270, 275, 291, 303, 313, 317, 345, 351, 392, 408, 451, 462, 479, 500, 523, 539, 558, 577, 582, 612, 635, 650, 658, 662
+"""
 
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
