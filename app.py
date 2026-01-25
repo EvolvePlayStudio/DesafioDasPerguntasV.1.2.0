@@ -120,6 +120,7 @@ QUESTION_CONFIG = {
 }
 EMAILS_PROIBIDOS = ['admin@gmail.com']
 SITE_EM_MANUTENCAO = False
+TESTANDO_PERGUNTAS = False
 privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
 id_visitante_admin = "36b23a50-145d-44b4-b7a0-2c5fb55cfd50"
 
@@ -1014,10 +1015,10 @@ def listar_perguntas(user_id):
         tipo_str = cfg['tipo_str']   # Usado para filtrar feedbacks/respostas
         table = cfg['table']         # Nome da tabela — vindo do cfg interno (seguro)
 
-        where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
-        
-        """
-        where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'""""
+        if not TESTANDO_PERGUNTAS:
+            where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
+        else:
+            where_status = "p.status != 'Em teste'" if is_privileged else "p.status = 'Ativa'"
         
         if modo_visitante:
             sql = f"""

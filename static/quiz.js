@@ -106,7 +106,11 @@ const textarea_comentario = document.getElementById("comentario-texto");
 let estrelas_iniciais;
 let comentario_inicial;
 
-const contador_perguntas_restantes = document.getElementById("perguntas-count")
+const contador_perguntas_restantes = document.getElementById("perguntas-count");
+
+// Ids de perguntas que são selecionados primeiro
+const ids_objetivas_prioridade = {"Artes": [], "Astronomia": [], "Biologia": [], "Esportes": [], "Filosofia": [], "Geografia": [], "História": [], "Mídia": [], "Música": [], "Química": [], "Tecnologia": [], "Variedades": []}
+const ids_discursivas_prioridade = {"Artes": [], "Astronomia": [], "Biologia": [], "Esportes": [], "Filosofia": [], "Geografia": [], "História": [], "Mídia": [], "Música": [], "Química": [], "Tecnologia": [], "Variedades": []}
 
 function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
   const intervaloMin = 20; // ms entre frames no máximo, para smooth
@@ -427,6 +431,18 @@ async function enviarResposta(pulando = false) {
 
     // Exibe os comentários dos outros usuários
     // document.getElementById('comentarios').style.display = 'block';
+  }
+
+  function mostrarRespostasAceitas(lista) {
+    try {
+      const container = document.getElementById("respostas-aceitas-box");
+      const lista_respostas_aceitas = document.getElementById("lista-respostas");
+      lista_respostas_aceitas.textContent = lista.join(" / ");
+      container.style.display = "block";
+    }
+    catch (err) {
+      console.log("Erro ocorrido ao tentar mostrar respostas aceitas:", err)
+    }
   }
 
   async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ganhos, tempo_gasto, id_pergunta, versao_pergunta) {
@@ -1015,6 +1031,28 @@ function mostrarPergunta() {
     console.log("Último recurso do fallback")
     return disponiveis.find(d => estoque[d] > 0) ?? null;
   }
+
+  function selecionarPergunta({perguntasDisponiveis, idsPrioridadeTema, tipoPergunta // "Objetiva" ou "Discursiva"
+  }) {
+    // 1. Tenta pegar da prioridade
+    if (idsPrioridadeTema.length > 0) {
+      const idPrioritario = idsPrioridadeTema.shift(); // remove o primeiro
+
+      const pergunta = perguntasDisponiveis.find(
+        p => p.id_pergunta === idPrioritario
+      );
+
+      if (pergunta) {
+        return pergunta;
+      }
+      // se não achou (id inválido), continua para aleatório
+    }
+
+    // 2. Fallback: aleatória
+    const indice = Math.floor(Math.random() * perguntasDisponiveis.length);
+    return perguntasDisponiveis[indice];
+  }
+
   const dificuldade_selecionada = escolherProximaDificuldade();
 
   // Pega uma pergunta aleatória da dificuldade selecionada
@@ -1101,19 +1139,6 @@ function mostrarPergunta() {
 
   esconderRespostasAceitas()
   });
-}
-
-function mostrarRespostasAceitas(lista) {
-  try {
-    const container = document.getElementById("respostas-aceitas-box");
-    const lista_respostas_aceitas = document.getElementById("lista-respostas");
-    lista_respostas_aceitas.textContent = lista.join(" / ");
-    container.style.display = "block";
-  }
-  catch (err) {
-    console.log("Erro ocorrido ao tentar mostrar respostas aceitas:")
-    console.log(err)
-  }
 }
 
 async function proximaPergunta() {
