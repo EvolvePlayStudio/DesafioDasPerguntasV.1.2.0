@@ -75,11 +75,11 @@ const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
 </svg>`;
 // Tempos para as alternativas
 const sleep = ms => new Promise(res => setTimeout(res, ms));
-const PAUSA_ANTES_DA_A        = 500;
-const GAP_ANTES_DA_LETRA      = 120;
-const GAP_LETRA_PARA_TEXTO    = 180;
-const GAP_ENTRE_ALTERNATIVAS  = 380;
-const VELOCIDADE_LETRA_ENUNCIADO = 21;
+const PAUSA_ANTES_DA_A              = 500;
+const GAP_ANTES_DA_LETRA            = 120;
+const GAP_LETRA_PARA_TEXTO          = 180;
+const GAP_ENTRE_ALTERNATIVAS        = 380;
+const VELOCIDADE_LETRA_ENUNCIADO    = 21;
 const VELOCIDADE_LETRA_ALTERNATIVAS = 15;
 
 // Variáveis para animação da barra de progresso
@@ -109,8 +109,8 @@ let comentario_inicial;
 const contador_perguntas_restantes = document.getElementById("perguntas-count");
 
 // Ids de perguntas que são selecionados primeiro
-const ids_objetivas_prioridade = {"Artes": [], "Astronomia": [], "Biologia": [], "Esportes": [], "Filosofia": [], "Geografia": [], "História": [], "Mídia": [], "Música": [], "Química": [], "Tecnologia": [], "Variedades": []}
-const ids_discursivas_prioridade = {"Artes": [], "Astronomia": [], "Biologia": [], "Esportes": [], "Filosofia": [], "Geografia": [], "História": [], "Mídia": [], "Música": [], "Química": [], "Tecnologia": [], "Variedades": []}
+const ids_objetivas_prioridade = {"Artes": [], "Astronomia": [], "Biologia": [18, 22, 365], "Esportes": [], "Filosofia": [146], "Geografia": [90], "História": [], "Mídia": [106], "Música": [], "Química": [], "Tecnologia": [], "Variedades": []}
+const ids_discursivas_prioridade = {"Artes": [269], "Astronomia": [10], "Biologia": [], "Esportes": [], "Filosofia": [558], "Geografia": [], "História": [35], "Mídia": [], "Música": [317, 327], "Química": [], "Tecnologia": [], "Variedades": [221]}
 
 function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
   const intervaloMin = 20; // ms entre frames no máximo, para smooth
@@ -717,6 +717,34 @@ async function finalizarQuiz() {
   }
 }
 
+function limparIdsPrioritariosInvalidos() {
+  // 1. IDs válidos (todas as dificuldades)
+  const idsValidos = new Set();
+
+  for (const nivel of ["Fácil", "Médio", "Difícil"]) {
+    for (const p of perguntas_por_dificuldade[nivel] || []) {
+      idsValidos.add(p.id_pergunta);
+    }
+  }
+
+  // 2. Escolhe o objeto certo (objetiva / discursiva)
+  const objPrioridades =
+    tipo_pergunta === "objetiva"
+      ? ids_objetivas_prioridade
+      : ids_discursivas_prioridade;
+
+  const lista = objPrioridades[tema_atual];
+
+  // 3. Limpa IDs inválidos
+  objPrioridades[tema_atual] = lista.filter(id => idsValidos.has(id));
+
+  // 4. Embaralha (Fisher–Yates)
+  for (let i = lista.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [lista[i], lista[j]] = [lista[j], lista[i]];
+  }
+}
+
 async function mostrarAlternativas() {
   const container = document.getElementById('alternativas-container');
   if (!container || !pergunta_selecionada) return;
@@ -951,14 +979,12 @@ function mostrarPergunta() {
     };
     console.log("Estoque: ", estoque)
     
-    // Caso esteja no modo revisão
+    // Caso esteja no modo revisão ou visitante
     if (modo_jogo === "revisao" || MODO_VISITANTE) {
-      //return disponiveis[Math.floor(Math.random() * disponiveis.length)]
-      //return resolverFallback(escolhida, estoque, probsBase, disponiveis);
       return disponiveis.find(d => estoque[d] > 0) ?? null;
     }
 
-    // 🔥 1. FORÇAGEM POR ESTOQUE
+    // 🔥 1. FORÇAGEM PELA DIFICULDADE COM MAIOR ESTOQUE
     if (respostasDesdeUltimaForcagem === 5) {
       console.log("Pegando a dificuldade com maior estoque...")
       // Põe as dificuldades em ordem descrescente de estoque
@@ -969,7 +995,6 @@ function mostrarPergunta() {
       let escolhida = ordenadas[0]; // Pega a que tem o maior estoque
 
       if ((probsBase[escolhida] ?? 0) <= 0.10 && ordenadas[1]) {
-        console.log("Pegarei a segunda com maior estoque")
         escolhida = ordenadas[1];
       }
 
@@ -978,8 +1003,7 @@ function mostrarPergunta() {
     }
 
     // 🎯 2. SORTEIO PROBABILÍSTICO NORMAL
-    const sorteio = Math.random(); // Número de 0 e 1
-    console.log("Sorteio foi: ", sorteio)
+    const sorteio = Math.round(Math.random() * 100) / 100; // Número entre 0 e 1 com 2 casas decimais
     let acumulado = 0; // Probabilidade acumulada (ex: 0.2 da fácil + 0.3 da médio = 0.5)
 
     for (const d of disponiveis) {
@@ -1032,35 +1056,53 @@ function mostrarPergunta() {
     return disponiveis.find(d => estoque[d] > 0) ?? null;
   }
 
-  function selecionarPergunta({perguntasDisponiveis, idsPrioridadeTema, tipoPergunta // "Objetiva" ou "Discursiva"
-  }) {
-    // 1. Tenta pegar da prioridade
-    if (idsPrioridadeTema.length > 0) {
-      const idPrioritario = idsPrioridadeTema.shift(); // remove o primeiro
+  function selecionarPergunta(perguntasDisponiveis) {
+    if (!perguntasDisponiveis || perguntasDisponiveis.length === 0) {
+      return -1;
+    }
+    
+    let idsPrioridadeTema =
+      tipo_pergunta === "objetiva"
+        ? ids_objetivas_prioridade[tema_atual]
+        : ids_discursivas_prioridade[tema_atual];
 
-      const pergunta = perguntasDisponiveis.find(
+    // ===============================
+    // 1. Seleciona um id dos prioritários
+    // ===============================
+    for (let i = 0; i < idsPrioridadeTema.length; i++) {
+      const idPrioritario = idsPrioridadeTema[i];
+
+      const indicePergunta = perguntasDisponiveis.findIndex(
         p => p.id_pergunta === idPrioritario
       );
-
-      if (pergunta) {
-        return pergunta;
+      
+      // Caso encontre um id de pergunta prioritária na lista de perguntas da dificuldade escolhida
+      if (indicePergunta !== -1) {
+        idsPrioridadeTema.splice(i, 1);
+        pergunta_selecionada = perguntasDisponiveis[indicePergunta];
+        return indicePergunta;
       }
-      // se não achou (id inválido), continua para aleatório
     }
 
-    // 2. Fallback: aleatória
+    // ===============================
+    // 2. Fallback caso não tenha encontrado um id dentre os prioritários
+    // ===============================
     const indice = Math.floor(Math.random() * perguntasDisponiveis.length);
-    return perguntasDisponiveis[indice];
+    pergunta_selecionada = perguntasDisponiveis[indice];
+    return indice;
   }
 
+
+  // Escolhe uma pergunta
   const dificuldade_selecionada = escolherProximaDificuldade();
-
-  // Pega uma pergunta aleatória da dificuldade selecionada
   const perguntas_disponiveis = perguntas_por_dificuldade[dificuldade_selecionada];
-  const indicePergunta = Math.floor(Math.random() * perguntas_disponiveis.length);
-
-  pergunta_selecionada = perguntas_disponiveis[indicePergunta];
+  const indicePergunta = selecionarPergunta(perguntas_disponiveis);
   console.log(`Pergunta selecionada: (${pergunta_selecionada.id_pergunta}) ${pergunta_selecionada.enunciado}`)
+
+  if (indicePergunta === -1) {
+    console.warn("Nenhuma pergunta disponível");
+    return;
+  }
 
   // Remove a pergunta do array para não repetir
   perguntas_disponiveis.splice(indicePergunta, 1);
@@ -1626,6 +1668,7 @@ document.addEventListener("DOMContentLoaded", () => {
   else {
     callbackAtualizarUI (pontuacoes_usuario[tema_atual])
   }
+  limparIdsPrioritariosInvalidos();
   definirRankingAnterior(); // Útil para quando for animar barra de progresso
   atualizarRankingVisual();
   mostrarPergunta();
