@@ -38,7 +38,7 @@ temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia",
 # IDs de perguntas para os usuários no modo visitante
 ids_perguntas_objetivas_visitante = {"Artes": [172, 333, 338, 353], "Astronomia": [11, 12, 479, 492], "Biologia": [361, 365, 371, 581], "Esportes": [55, 63, 75, 462], "Filosofia": [142, 146, 150, 305], "Geografia": [82, 86, 90, 318], "História": [118, 127, 209, 262], "Mídia": [99, 106, 381, 385], "Música": [222, 238, 231, 439], "Química": [184, 188, 189, 202], "Tecnologia": [243, 245, 273, 411], "Variedades": [136, 192, 453, 627]}
 
-ids_perguntas_discursivas_visitante = {"Artes": [258, 269, 270, 612], "Astronomia": [103, 104, 108, 539], "Biologia": [8, 10, 43, 52], "Esportes": [12, 14, 79, 523], "Filosofia": [235, 237, 408, 558], "Geografia": [157, 158, 163, 169], "História": [29, 35, 129, 275], "Mídia": [184, 451, 635, 650], "Música": [313, 317, 479, 500], "Química": [291, 303, 577, 582], "Tecnologia": [345, 352, 392, 462], "Variedades": [67, 221, 658, 662]}
+ids_perguntas_discursivas_visitante = {"Artes": [258, 269, 270, 612], "Astronomia": [103, 104, 108, 539], "Biologia": [8, 10, 43, 52], "Esportes": [12, 14, 79, 523], "Filosofia": [235, 237, 408, 558], "Geografia": [157, 158, 163, 169], "História": [29, 35, 59, 129], "Mídia": [184, 451, 635, 650], "Música": [313, 317, 479, 500], "Química": [291, 303, 577, 582], "Tecnologia": [345, 352, 392, 462], "Variedades": [67, 107, 221, 662]}
 
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
@@ -1016,8 +1016,8 @@ def listar_perguntas(user_id):
 
         where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
         
-        where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
-        
+        """
+        where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'""""
         
         if modo_visitante:
             sql = f"""

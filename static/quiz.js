@@ -89,7 +89,12 @@ const barra = document.getElementById("barra-progresso");
 const hint_dica = document.getElementById("hint-dica");
 const hint_pular = document.getElementById("hint-pular");;
 const hint_avaliacao = document.getElementById("hint-avaliacao");
-if (tipo_pergunta === "objetiva") {
+
+const opcoesUsuarioRaw = sessionStorage.getItem("opcoes_usuario");
+const opcoesUsuario = opcoesUsuarioRaw? JSON.parse(opcoesUsuarioRaw): null;
+const exibir_instrucoes_quiz = opcoesUsuario?.exibir_instrucoes_quiz;
+
+if (tipo_pergunta === "objetiva" || !exibir_instrucoes_quiz) {
   hint_avaliacao.style.marginTop = "0.8rem";
 }
 
@@ -892,9 +897,7 @@ function mostrarEnunciado(texto, elemento, callback) {
         botoes_enviar_div.style.display = "flex";
         
         // Mostra textos sobre dica e pulo de pergunta
-        const opcoesUsuarioRaw = sessionStorage.getItem("opcoes_usuario");
-        const opcoesUsuario = opcoesUsuarioRaw? JSON.parse(opcoesUsuarioRaw): null;
-        if (MODO_VISITANTE || opcoesUsuario?.exibir_instrucoes_quiz) {
+        if (MODO_VISITANTE || exibir_instrucoes_quiz) {
           hint_dica.style.display = "";
           hint_pular.style.display = "";
         }
