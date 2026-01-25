@@ -1018,7 +1018,7 @@ def listar_perguntas(user_id):
         if not TESTANDO_PERGUNTAS:
             where_status = "p.status != 'Deletada'" if is_privileged else "p.status = 'Ativa'"
         else:
-            where_status = "p.status != 'Em teste'" if is_privileged else "p.status = 'Ativa'"
+            where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
         
         if modo_visitante:
             sql = f"""
@@ -1113,17 +1113,16 @@ def listar_perguntas(user_id):
                 perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
             elif modo == 'revisao' and respondida:
                 perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
+
     except Exception:
         app.logger.exception("2.Erro ao tentar conectar para buscar perguntas para o usuário com id %s", id_usuario)
         return jsonify({'erro': 'Erro interno ao consultar perguntas'}), 500
+    
     finally:
         if cur: cur.close()
         if conn: conn.close()
 
-    if not modo_visitante:
-        pontuacoes_usuario = buscar_pontuacoes_usuario(id_usuario)
-    else:
-        pontuacoes_usuario = {}
+    pontuacoes_usuario = buscar_pontuacoes_usuario(id_usuario) if not modo_visitante else {}
 
     return jsonify({
         'perguntas': perguntas_por_dificuldade,
