@@ -111,7 +111,7 @@ const contador_perguntas_restantes = document.getElementById("perguntas-count");
 // Ids de perguntas que são selecionados primeiro
 const ids_objetivas_prioridade = {"Artes": [], "Astronomia": [], "Biologia": [18, 22, 365], "Esportes": [], "Filosofia": [146], "Geografia": [90], "História": [], "Mídia": [106], "Música": [], "Química": [], "Tecnologia": [], "Variedades": []}
 
-const ids_discursivas_prioridade = {"Artes": [269], "Astronomia": [96, 104, 111], "Biologia": [10], "Esportes": [11], "Filosofia": [237, 246, 558], "Geografia": [174], "História": [35, 275], "Mídia": [209, 637], "Música": [317, 327], "Química": [301], "Tecnologia": [358, 470], "Variedades": [221, 658]}
+const ids_discursivas_prioridade = {"Artes": [251, 269], "Astronomia": [96, 104, 111], "Biologia": [10], "Esportes": [11], "Filosofia": [237, 246, 558], "Geografia": [174], "História": [35, 275], "Mídia": [209, 637], "Música": [317, 327], "Química": [301], "Tecnologia": [358, 470], "Variedades": [221, 658]}
 
 function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
   const intervaloMin = 20; // ms entre frames no máximo, para smooth
