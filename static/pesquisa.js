@@ -346,7 +346,6 @@ async function pesquisar() {
     if (!response.ok) throw new Error("Erro na busca");
 
     const data = await response.json();
-    console.log("Perguntas retornadas: ", data.perguntas)
 
     let perguntasPorDificuldade = null;
     if (MODO_VISITANTE) {

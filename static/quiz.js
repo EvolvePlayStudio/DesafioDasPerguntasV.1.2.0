@@ -1347,7 +1347,7 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
 
   // Identifica se a palavra tem padrões estrangeiros (alemão, inglês, etc)
   function temPadraoEstrangeiro(texto) {
-    return /(sch|ck|tz|ph|th)/.test(texto);
+    return /(sch|ck|tz|ph|th|mm)/.test(texto);
   }
 
   // Normalização que não distorce tanto a resposta correta
