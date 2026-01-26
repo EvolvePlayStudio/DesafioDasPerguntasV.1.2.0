@@ -464,7 +464,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Define o nome de usuário, as perguntas e dicas disponíveis e máximas para o usuário
   if (MODO_VISITANTE) {
     nome_usuario.textContent = "Visitante"
-    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/60`
+    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/80`
     dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes_visitante")}/20`
 
     // Decide se deve exibir modal para convidar a fazer registro
@@ -485,7 +485,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   else {
     nome_usuario.textContent = localStorage.getItem("nome_usuario")
-    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}/60`
+    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}/80`
     dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes")}/20`
   }
   // Carrega as preferências de modo de jogo e tipo de pergunta
