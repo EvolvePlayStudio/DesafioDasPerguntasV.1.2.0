@@ -118,7 +118,7 @@ QUESTION_CONFIG = {
         'tipo_str': 'Objetiva'
     }
 }
-EMAILS_PROIBIDOS = ['admin@gmail.com']
+EMAILS_PROIBIDOS = ['admin@gmail.com', 'teste@gmail.com']
 SITE_EM_MANUTENCAO = False
 TESTANDO_PERGUNTAS = False
 privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
