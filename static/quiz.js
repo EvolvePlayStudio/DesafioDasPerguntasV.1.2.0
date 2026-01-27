@@ -111,7 +111,7 @@ const contador_perguntas_restantes = document.getElementById("perguntas-count");
 // Ids de perguntas que são selecionados primeiro
 const ids_objetivas_prioridade = {"Artes": [], "Astronomia": [], "Biologia": [18, 22, 365], "Esportes": [], "Filosofia": [146], "Geografia": [90], "História": [], "Mídia": [106], "Música": [], "Química": [], "Tecnologia": [], "Variedades": []}
 
-const ids_discursivas_prioridade = {"Artes": [251, 269], "Astronomia": [96, 104, 111], "Biologia": [10], "Esportes": [11], "Filosofia": [237, 246, 558], "Geografia": [174], "História": [35, 275], "Mídia": [209, 637], "Música": [317, 327], "Química": [301], "Tecnologia": [358, 470], "Variedades": [221, 658]}
+const ids_discursivas_prioridade = {"Artes": [251, 261, 269, 270, 612], "Astronomia": [96, 104, 111], "Biologia": [8, 10, 43, 48], "Esportes": [11, 12, 79, 523], "Filosofia": [227, 237, 246, 408, 410, 554, 558], "Geografia": [134, 157, 158, 174], "História": [35, 59, 275], "Mídia": [184, 209, 451, 637, 641], "Música": [313, 317, 327, 479, 500], "Química": [291, 301, 303, 308, 577, 582], "Tecnologia": [352, 358, 392, 470], "Variedades": [27, 221, 658, 662]}
 
 function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
   const intervaloMin = 20; // ms entre frames no máximo, para smooth
@@ -1272,7 +1272,7 @@ function resetarAlternativas() {
 }
 
 function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
-  const stopwords = ["a", "o", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "no", "na", "nos", "nas", "por", "pelo", "pela", "com", "para", "um", "uma", "uns", "umas", "ao", "aos", "à", "às"];
+  const stopwords = new Set(["a", "o", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "no", "na", "nos", "nas", "por", "pelo", "pela", "com", "para", "um", "uma", "uns", "umas", "ao", "aos", "à", "às"]);
 
   function aceitaPorDistancia(dist, lenOriginal, textoCorreto) {
     if (lenOriginal <= 3) return false;
@@ -1289,6 +1289,42 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
       if (lenOriginal <= 10) return dist <= 2;
       return dist <= 3;
     }
+  }
+
+  // Remove os espaços do texto (nunca se deve fazer antes de remover as stopwords)
+  function colapsarEspacos(texto) {
+    return texto.replace(/\s+/g, "")
+  }
+
+  // Cria lista com possíveis respostas aceitas (com e sem stopwords)
+  function gerarVariantesResposta(respostas) {
+    const variantes = [];
+
+    for (const resposta of respostas) {
+      if (typeof resposta !== "string") continue;
+
+      const palavras = resposta
+        .toLowerCase()
+        .trim()
+        .split(/\s+/);
+
+      const temStopword = palavras.some(p => stopwords.has(p));
+
+      // Sempre inclui a original
+      variantes.push(resposta);
+
+      if (temStopword) {
+        const semStopwords = palavras
+          .filter(p => !stopwords.has(p))
+          .join(" ");
+
+        if (semStopwords && semStopwords !== resposta) {
+          variantes.push(semStopwords);
+        }
+      }
+    }
+
+    return variantes;
   }
 
   // Trata os casos dos dígrafos (ex: x no lugar de ch)
@@ -1351,15 +1387,19 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
   }
 
   // Normalização que não distorce tanto a resposta correta
-  function normalizarLeve(texto) {
-    return texto
-      .toLowerCase()
-      .trim()
-      .replace(/[.\-:!;?]/g, " ")
-      .split(/\s+/)
-      .map(removerAcentos)
-      .filter(p => !stopwords.includes(p))
-      .join(" ");
+  function normalizarLeve(texto = "", removerStopWords = true) {
+    let textoNormalizado = texto
+      .toLowerCase() // Deixa as letras minúsculas
+      .trim() // Remove espaços no ínicio e no final
+      .replace(/[.\-:!;?]/g, "") // Remove caracteres especiais
+      .split(/\s+/) // Transforma em array com cada palavra como um item
+      .map(removerAcentos) // Remove os acentos
+
+    if (removerStopWords) {
+      textoNormalizado = textoNormalizado.filter(p => !stopwords.has(p)) // Remove as stopwords
+    }
+    textoNormalizado = textoNormalizado.join(""); // Transforma de array em string novamente
+    return textoNormalizado
   }
 
   // Converte subscritos e sobrescritos para dígitos normais e sinais normais
@@ -1372,14 +1412,14 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
     return texto.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉⁺₊⁻₋]/g, c => mapa[c] || c);
   }
 
-  function normalizarResposta(texto) {
+  function normalizarResposta(texto = "", removerStopWords = true) {
     let t = texto.toLowerCase().trim();
 
     // Normaliza notações químicas
     t = normalizarNotacaoQuimica(t);
 
     // Remove stopwords e normaliza pontuações e acentos
-    t = limparTexto(t);
+    t = normalizarLeve(t, removerStopWords);
 
     // Aplica regras fonéticas gerais
     t = normalizarDigrafos(t);
@@ -1389,6 +1429,9 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
 
     // Aplica apenas equivalências finais controladas
     t = normalizarSufixosFinais(t);
+
+    // Remove espaços
+    t = colapsarEspacos(t);
 
     return t;
   }
@@ -1407,17 +1450,6 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
     .replace(/us$/, "os")  // humerus → humeros
     .replace(/is$/, "es")  // metatarsis → metatarses
     .replace(/um$/, "o");  // datum → dato
-  }
-
-  function limparTexto(texto) {
-    return texto
-      .trim()
-      .toLowerCase()
-      .replace(/[.\-:!;?]/g, " ")
-      .split(/\s+/)
-      .map(removerAcentos)
-      .filter(palavra => !stopwords.includes(palavra))
-      .join(" ");
   }
 
   function distanciaDamerauLevenshtein(a, b) {
@@ -1457,16 +1489,17 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
   }
 
   const textoUsuarioLeve = normalizarLeve(resposta_usuario);
-  const textoUsuario = normalizarResposta(resposta_usuario);
+  const textoUsuarioPesado = normalizarResposta(resposta_usuario);
 
-  return respostas_aceitas.some(resposta => {
+  const tot_respostas_aceitas = gerarVariantesResposta(respostas_aceitas);
+  return tot_respostas_aceitas.some(resposta => {
     const lenOriginal = resposta.length;
 
-    const textoCorretoLeve = normalizarLeve(resposta);
-    const textoCorreto = normalizarResposta(resposta);
+    const textoCorretoLeve = normalizarLeve(resposta, false);
+    const textoCorretoPesado = normalizarResposta(resposta, false);
 
     // 1. Igualdade forte
-    if (textoUsuario === textoCorreto) return true;
+    if (textoUsuarioPesado === textoCorretoPesado) return true;
 
     // 2. Comparação leve (prioritária)
     const distLeve = distanciaDamerauLevenshtein(
@@ -1477,24 +1510,26 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
     /*
     console.log("Texto leve do usuário: ", textoUsuarioLeve);
     console.log("Texto leve da resposta: ", textoCorretoLeve);
-    console.log("Distância leve: ", distLeve);*/
-
-    if (aceitaPorDistancia(distLeve, lenOriginal, textoCorreto)) {
+    console.log("Distância leve: ", distLeve);
+    */
+    
+    if (aceitaPorDistancia(distLeve, lenOriginal, textoCorretoPesado)) {
       return true;
     }
 
     // 3. fallback pesado
     const distPesado = distanciaDamerauLevenshtein(
-      textoUsuario,
-      textoCorreto
+      textoUsuarioPesado,
+      textoCorretoPesado
     );
 
     /*
-    console.log("Texto pesado do usuário: ", textoUsuario);
-    console.log("Texto pesado da resposta: ", textoCorreto);
-    console.log("Distância pesada: ", distPesado);*/
-
-    return aceitaPorDistancia(distPesado, lenOriginal, textoCorreto);
+    console.log("Texto pesado do usuário: ", textoUsuarioPesado);
+    console.log("Texto pesado da resposta: ", textoCorretoPesado);
+    console.log("Distância pesada: ", distPesado);
+    */
+   
+    return aceitaPorDistancia(distPesado, lenOriginal, textoCorretoPesado);
   });
 }
 
