@@ -167,166 +167,167 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Submissão do formulário de registro
   if (register_form) {
-  register_form?.addEventListener('submit', async function (event) {
-    event.preventDefault();
+    register_form?.addEventListener('submit', async function (event) {
+      event.preventDefault();
 
-    const nome = this.nome?.value.trim();
-    const email = this.email?.value.trim();
-    const senha = this.senha?.value;
-    const confirmar_senha = this.confirmar_senha?.value;
+      const nome = this.nome?.value.trim();
+      const email = this.email?.value.trim();
+      const senha = this.senha?.value;
+      const confirmar_senha = this.confirmar_senha?.value;
 
-    // Validações locais simples
-    if (!nome) {
-      lbl_mensagem_registro.style.visibility = 'visible';
-      lbl_mensagem_registro.style.color = 'red';
-      lbl_mensagem_registro.textContent = 'O nome é obrigatório';
-      return;
-    }
-
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      lbl_mensagem_registro.style.visibility = 'visible';
-      lbl_mensagem_registro.style.color = 'red';
-      lbl_mensagem_registro.textContent = 'Informe um e-mail válido';
-      return;
-    }
-
-    if (senha !== confirmar_senha) {
-      lbl_mensagem_registro.style.visibility = 'visible';
-      lbl_mensagem_registro.style.color = 'red';
-      lbl_mensagem_registro.textContent = 'As senhas não coincidem';
-      return;
-    }
-
-    if (!senha || senha.length < 6) {
-      lbl_mensagem_registro.style.visibility = 'visible';
-      lbl_mensagem_registro.style.color = 'red';
-      lbl_mensagem_registro.textContent = 'A senha deve ter pelo menos 6 caracteres';
-      return;
-    }
-
-    // Se o CAPTCHA não está visível, primeiro valida o registro no backend
-    if (!captchaContainer || captchaContainer.hidden) {
-      try {
-        const validaResponse = await fetch('/register_validate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nome, email, senha })
-        });
-
-        if (!validaResponse.ok) {
-          throw new Error(`Erro na validação: ${validaResponse.status}`);
-        }
-
-        const validaData = await validaResponse.json();
-
-        if (!validaData.success) {
-          lbl_mensagem_registro.style.visibility = 'visible';
-          lbl_mensagem_registro.style.color = 'red';
-          lbl_mensagem_registro.textContent = validaData.message || 'Erro na validação';
-          return;
-        }
-
-        // Se passou na validação, exibe o CAPTCHA
-        if (captchaContainer) {
-          container_migrar_dados_visitante.style.display = "none";
-          container_enviar_notificacoes.style.display = "none";
-          captchaContainer.hidden = false;
-
-          register_form.querySelectorAll('input, label, .form-group').forEach(el => {
-            if (!el.closest('#captcha-container')) {
-              el.style.display = 'none';
-            }
-          });
-
-          if (btnRegister) btnRegister.disabled = true;
-          await carregarCaptcha();
-        }
-      } catch (error) {
+      // Validações locais simples
+      if (!nome) {
         lbl_mensagem_registro.style.visibility = 'visible';
         lbl_mensagem_registro.style.color = 'red';
-        lbl_mensagem_registro.textContent = 'Erro na comunicação com o servidor';
-        console.error('Erro validação registro:', error);
+        lbl_mensagem_registro.textContent = 'O nome é obrigatório';
+        return;
       }
 
-      return; // Espera o usuário completar CAPTCHA e submeter de novo
-    }
-
-    // Aqui já está no passo do CAPTCHA
-    if (selecoes.length !== 3) {
-      lbl_mensagem_registro.style.visibility = 'visible';
-      lbl_mensagem_registro.style.color = 'red';
-      lbl_mensagem_registro.textContent = 'Selecione exatamente 3 imagens no CAPTCHA';
-      return;
-    }
-
-    // Envia dados para registrar usuário com CAPTCHA
-    try {
-      lbl_mensagem_registro.style.visibility = 'visible';
-      lbl_mensagem_registro.style.color = '#d1d1d1ff';
-      lbl_mensagem_registro.textContent = 'Fazendo registro...';
-
-      const response = await fetch('/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nome, email, senha,
-          captcha_token: captchaToken,
-          captcha_selecoes: selecoes,
-          id_visitante: localStorage.getItem("id_visitante"),
-          usar_dados_visitante: checkbox_migrar_dados.checked,
-          notificacoes_importantes: checkbox_enviar_notificacoes.checked
-        })
-      });
-
-      if (!response.ok) {
-        const text = await response.text().catch(() => null);
-        throw new Error(`Servidor respondeu com status ${response.status} ${text || ''}`);
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        lbl_mensagem_registro.style.visibility = 'visible';
+        lbl_mensagem_registro.style.color = 'red';
+        lbl_mensagem_registro.textContent = 'Informe um e-mail válido';
+        return;
       }
 
-      const data = await response.json();
-
-      if (data.success) {
-        // Registra meta de conversão de registro no GoogleAds
-        if (typeof gtag_report_conversion === 'function') {
-            gtag_report_conversion(); 
-        }
-        
-        // Chama novamente a tela de login
-        if (btnRegister) btnRegister.disabled = true;
-        if (lbl_mensagem_login) {
-          lbl_mensagem_login.style.visibility = 'visible'
-          lbl_mensagem_login.style.color = 'green'
-          lbl_mensagem_login.textContent = data.message
-        }
-        this.reset();
-        if (captchaContainer) captchaContainer.hidden = true;
-        showForm('login', true);
+      if (senha !== confirmar_senha) {
+        lbl_mensagem_registro.style.visibility = 'visible';
+        lbl_mensagem_registro.style.color = 'red';
+        lbl_mensagem_registro.textContent = 'As senhas não coincidem';
+        return;
       }
-      else {
-          // Registra a falha no CAPTCHA
-          const resposta_captcha = await fetch('/registrar_falha_captcha', {
+
+      if (!senha || senha.length < 6) {
+        lbl_mensagem_registro.style.visibility = 'visible';
+        lbl_mensagem_registro.style.color = 'red';
+        lbl_mensagem_registro.textContent = 'A senha deve ter pelo menos 6 caracteres';
+        return;
+      }
+
+      // Se o CAPTCHA não está visível, primeiro valida o registro no backend
+      if (!captchaContainer || captchaContainer.hidden) {
+        try {
+          const validaResponse = await fetch('/register_validate', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome, email, senha })
           });
 
-          const info_bloqueio = await resposta_captcha.json();
-          // Se já está bloqueado, manda para o login e mostra mensagem
-          if (info_bloqueio.tentativas_registro > 0 && info_bloqueio.bloqueado_ate > 0) {
-            bloquearRegistro(info_bloqueio)
+          if (!validaResponse.ok) {
+            throw new Error(`Erro na validação: ${validaResponse.status}`);
+          }
+
+          const validaData = await validaResponse.json();
+
+          if (!validaData.success) {
+            lbl_mensagem_registro.style.visibility = 'visible';
+            lbl_mensagem_registro.style.color = 'red';
+            lbl_mensagem_registro.textContent = validaData.message || 'Erro na validação';
             return;
           }
 
-          // Caso não esteja bloqueado, apenas recarrega o CAPTCHA
-          carregarCaptcha();
+          // Se passou na validação, exibe o CAPTCHA
+          if (captchaContainer) {
+            container_migrar_dados_visitante.style.display = "none";
+            container_enviar_notificacoes.style.display = "none";
+            captchaContainer.hidden = false;
+
+            register_form.querySelectorAll('input, label, .form-group').forEach(el => {
+              if (!el.closest('#captcha-container')) {
+                el.style.display = 'none';
+              }
+            });
+
+            if (btnRegister) btnRegister.disabled = true;
+            await carregarCaptcha();
+          }
+        } catch (error) {
+          lbl_mensagem_registro.style.visibility = 'visible';
+          lbl_mensagem_registro.style.color = 'red';
+          lbl_mensagem_registro.textContent = 'Erro na comunicação com o servidor';
+          console.error('Erro validação registro:', error);
         }
-      
-    } catch (error) {
-      lbl_mensagem_registro.style.visibility = 'visible';
-      lbl_mensagem_registro.style.color = 'red';
-      lbl_mensagem_registro.textContent = 'Erro na comunicação com o servidor';
-      console.error('register submit error:', error);
-    }
-  });
+
+        return; // Espera o usuário completar CAPTCHA e submeter de novo
+      }
+
+      // Aqui já está no passo do CAPTCHA
+      if (selecoes.length !== 3) {
+        lbl_mensagem_registro.style.visibility = 'visible';
+        lbl_mensagem_registro.style.color = 'red';
+        lbl_mensagem_registro.textContent = 'Selecione exatamente 3 imagens no CAPTCHA';
+        return;
+      }
+
+      // Envia dados para registrar usuário com CAPTCHA
+      try {
+        lbl_mensagem_registro.style.visibility = 'visible';
+        lbl_mensagem_registro.style.color = '#d1d1d1ff';
+        lbl_mensagem_registro.textContent = 'Fazendo registro...';
+
+        const response = await fetch('/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nome, email, senha,
+            captcha_token: captchaToken,
+            captcha_selecoes: selecoes,
+            id_visitante: localStorage.getItem("id_visitante"),
+            usar_dados_visitante: checkbox_migrar_dados.checked,
+            notificacoes_importantes: checkbox_enviar_notificacoes.checked
+          })
+        });
+
+        if (!response.ok) {
+          const text = await response.text().catch(() => null);
+          throw new Error(`Servidor respondeu com status ${response.status} ${text || ''}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Registra meta de conversão de registro no GoogleAds
+          if (typeof gtag_report_conversion === 'function') {
+              gtag_report_conversion(); 
+          }
+          
+          // Chama novamente a tela de login
+          if (btnRegister) btnRegister.disabled = true;
+          if (lbl_mensagem_login) {
+            lbl_mensagem_login.style.visibility = 'visible'
+            lbl_mensagem_login.style.color = 'green'
+            lbl_mensagem_login.textContent = data.message
+          }
+          this.reset();
+          if (captchaContainer) captchaContainer.hidden = true;
+          showForm('login', true);
+        }
+        else {
+            // Registra a falha no CAPTCHA
+            const resposta_captcha = await fetch('/registrar_falha_captcha', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            });
+
+            const info_bloqueio = await resposta_captcha.json();
+            // Se já está bloqueado, manda para o login e mostra mensagem
+            if (info_bloqueio.tentativas_registro > 0 && info_bloqueio.bloqueado_ate > 0) {
+              bloquearRegistro(info_bloqueio)
+              return;
+            }
+
+            // Caso não esteja bloqueado, apenas recarrega o CAPTCHA
+            carregarCaptcha();
+          }
+        
+      }
+      catch (error) {
+        lbl_mensagem_registro.style.visibility = 'visible';
+        lbl_mensagem_registro.style.color = 'red';
+        lbl_mensagem_registro.textContent = 'Erro na comunicação com o servidor';
+        console.error('register submit error:', error);
+      }
+    });
   }
 
   // Submissão do formulário de login
@@ -365,7 +366,8 @@ document.addEventListener('DOMContentLoaded', function () {
             JSON.stringify(data.opcoes_usuario)
           );
         }
-        sessionStorage.setItem("modal_confirmacao_email_exibido", false)
+        sessionStorage.setItem("modal_confirmacao_email_exibido", false);
+        sessionStorage.setItem("email_usuario", data.email);
 
         if (data.onboarding_concluido === false) {
           localStorage.setItem("onboarding_concluido", "false");

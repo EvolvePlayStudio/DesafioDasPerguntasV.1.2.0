@@ -107,23 +107,17 @@
       flex-direction: column;
       gap: 1rem;
     }
-
-    /* Título da seção */
     .opcoes-titulo {
       font-size: 1.05rem;
       font-weight: 700;
       margin-bottom: 0.4rem;
       color: #ffffff;
     }
-
-    /* Espaço visual entre grupos */
     .opcoes-grupo + .opcoes-grupo {
       margin-top: 0.8rem;
       padding-top: 0.6rem;
       border-top: 1px solid rgba(255,255,255,0.08);
     }
-
-    /* Textos abaixo dos checkboxes */
     .opcao-descricao {
       margin-left: 1.6rem;
       margin-top: 0.35rem;
@@ -131,8 +125,9 @@
       color: rgba(255,255,255,0.65);   /* mais suave */
       line-height: 1.35;
     }
-
-    /* Estilo dos temas para selecionar */
+    .opcao-descricao-sem-recuo {
+      margin-left: 0;
+    }
     .temas-grid {
       margin-top: 0.6rem;
       display: grid;
@@ -173,29 +168,40 @@
         grid-template-columns: repeat(2, 1fr);
       }
     }
-
-    /* Estilo dos botões*/
     .opcoes-acoes {
       margin-top: 1.2rem;
       display: flex;
       justify-content: center;
     }
-
-    /* Estilo da mensagem */
     .opcoes-status {
       position: fixed;
       left: 50%;
-      bottom: calc(var(--footer-h) + 12px); /* acima do footer */
+      bottom: calc(var(--footer-h) + 12px);
       transform: translateX(-50%);
       padding: 0.45rem 0.9rem;
       border-radius: 6px;
       font-size: 1rem;
       font-weight: 600;
       text-align: center;
-      backdrop-filter: blur(4px);
-      min-height: 1em;
-      pointer-events: none; /* Não interfere em cliques */
-      transition: opacity 0.2s ease, color 0.2s ease;
+      background: transparent;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    .opcoes-status.visivel {
+      opacity: 1;
+      visibility: visible;
+    }
+    .opcao-item-coluna {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .opcoes-acoes-esquerda {
+      display: flex;
+      justify-content: flex-start;
+      margin-top: 1rem;
     }
     .opcoes-status.sucesso {
       color: green;
@@ -206,8 +212,6 @@
     .opcoes-status.erro {
       color: red;
     }
-
-    /* Bloqueio de botões e checks antes da tela ser carregada copmpletamente */
     body.tela-bloqueada {
       pointer-events: none;
       opacity: 0.65;
@@ -217,28 +221,28 @@
       pointer-events: auto; /* mantém leitura */
       opacity: 1;
     }
+
+    /* ===== Footer ===== */
     .footer-duplo {
       gap: 0.8rem;
       padding: 0 0.8rem;
     }
     .btn-footer {
-        flex: 1;
-        max-width: 420px;
-        padding: 0.7rem 1rem;
-        font-size: 1rem;
-        font-weight: 700;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: background 0.2s ease, transform 0.15s ease;
+      flex: 1;
+      max-width: 420px;
+      padding: 0.7rem 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.15s ease;
+      background: var(--bg-botao-login);
+      transform: translateY(-1px);
+      color: white;
     }
-    .btn-footer {
-        background: var(--bg-botao-login);
-        color: #fff;
-    }
-    .btn-footer {
-        background: var(--bg-hover-botao-login);
-        transform: translateY(-1px);
+    .btn-footer:hover {
+      background: var(--bg-hover-botao-login)
     }
 
   </style>
@@ -252,73 +256,121 @@
       </div>
     </header>
 
-    <!-- Opções para marcar -->
     <main id="opcoes">
-        <section class="opcoes-grupo">
-            <h2 class="opcoes-titulo">🎮 Jogo</h2>
 
-            <div class="opcao-item">
-                <label class="opcao-label">
-                <input type="checkbox" id="mostrar-instrucoes-quiz" checked disabled>
-                Mostrar instruções durante o quiz
-                </label>
+      <!-- Opções de conta -->
+      <section class="opcoes-grupo" style="margin-top: -1.5rem;">
+        <h2 class="opcoes-titulo">👤 Conta</h2>
 
-                <div class="opcao-descricao">
-                Exibe orientações sobre uso de dicas e possibilidade de pular perguntas
-                </div>
-            </div>
-            </section>
+        <div class="opcao-item">
+          <div class="opcao-label">E-mail atual</div>
+          <div class="opcao-descricao opcao-descricao-sem-recuo" id="email-atual"></div>
+        </div>
 
-            <section class="opcoes-grupo">
-            <h2 class="opcoes-titulo">📩 Notificações</h2>
-            
-            <!-- Checkbox de notificações importantes -->
-            <div class="opcao-item">
-                <label class="opcao-label">
-                <input type="checkbox" id="notif-importantes" checked disabled>
-                Receber notificações importantes
-                </label>
+        <!-- Campo para digitar o novo e-mail -->
+        <div class="opcao-item opcao-item-coluna" style="margin-top: 0.8rem;">
+          <label class="opcao-label" for="novo-email">Novo e-mail</label>
 
-                <div class="opcao-descricao">
-                Avisos que afetam diretamente seu progresso, como energia cheia após alguns dias de ausência ou correções de pontuação
-                </div>
-            </div>
-            
-            <!-- Checkbox de notificações adicionais -->
-            <div class="opcao-item">
-                <label class="opcao-label">
-                <input type="checkbox" id="notif-adicionais" disabled>
-                Receber notificações adicionais
-                </label>
+          <input
+            type="email"
+            id="novo-email"
+            placeholder="Digite o novo e-mail"
+            style="
+              width: 100%;
+              max-width: 420px;
+              padding: 0.6rem;
+              border-radius: 6px;
+              border: none;
+              margin-top: 0.6rem;
+              margin-bottom: 0.2rem;
+            "
+          />
 
-                <div class="opcao-descricao">
-                Avisos sobre novas perguntas lançadas nos seus temas de interesse e alterações em conteúdo já respondido
-                </div>
-            </div>
+          <div class="opcao-descricao opcao-descricao-sem-recuo">
+            Será necessário confirmar o novo e-mail após alteração
+          </div>
+        </div>
+        
+        <!-- Botão para salvar o novo e-mail -->
+        <div class="opcoes-acoes opcoes-acoes-esquerda">
+          <button
+            id="btn-alterar-email"
+            class="btn-footer"
+            style="max-width: 260px; margin-top: -0.8rem; margin-bottom: -0.4rem;"
+            disabled
+          >
+            Alterar e-mail
+          </button>
+        </div>
+      </section>
 
-            <!-- Temas de interesse -->
-            <div class="opcao-item">
-                <div class="opcao-label">
-                    Temas de interesse
-                </div>
+      <!-- Opções de jogo -->
+      <section class="opcoes-grupo">
+        <h2 class="opcoes-titulo">🎮 Jogo</h2>
 
-                <div class="temas-interesse">
-                    <label><input type="checkbox" name="temas-interesse" value="Artes" disabled> Artes</label>
-                    <label><input type="checkbox" name="temas-interesse" value="Astronomia" disabled> Astronomia</label>
-                    <label><input type="checkbox" name="temas-interesse" value="Biologia" disabled> Biologia</label>
-                    <label><input type="checkbox" name="temas-interesse" value="Esportes" disabled> Esportes</label>
-                    <label><input type="checkbox" name="temas-interesse" value="Filosofia" disabled> Filosofia</label>
-                    <label><input type="checkbox" name="temas-interesse" value="Geografia" disabled> Geografia</label>
-                    <label><input type="checkbox" name="temas-interesse" value="Historia" disabled> História</label>
-                    <label><input type="checkbox" name="temas-interesse" value="Midia" disabled> Mídia</label>
-                    <label><input type="checkbox" name="temas-interesse" value="Musica" disabled> Música</label>
-                    <label><input type="checkbox" name="temas-interesse" value="Quimica" disabled> Química</label>
-                    <label><input type="checkbox" name="temas-interesse" value="Tecnologia" disabled> Tecnologia</label>
-                    <label><input type="checkbox" name="temas-interesse" value="Variedades" disabled> Variedades</label>
-                </div>
-            </div>
+        <div class="opcao-item">
+          <label class="opcao-label">
+          <input type="checkbox" id="mostrar-instrucoes-quiz" checked disabled>
+            Mostrar instruções durante o quiz
+          </label>
 
-            </section>
+          <div class="opcao-descricao">
+            Exibe orientações sobre uso de dicas e possibilidade de pular perguntas
+          </div>
+        </div>
+      </section>
+
+      <!-- Opções de notificações -->
+      <section class="opcoes-grupo">
+        <h2 class="opcoes-titulo">📩 Notificações</h2>
+          
+        <!-- Checkbox de notificações importantes -->
+        <div class="opcao-item">
+          <label class="opcao-label">
+          <input type="checkbox" id="notif-importantes" checked disabled>
+            Receber notificações importantes
+          </label>
+
+          <div class="opcao-descricao">
+            Avisos que afetam diretamente seu progresso, como energia cheia após alguns dias de ausência ou correções de pontuação
+          </div>
+        </div>
+        
+        <!-- Checkbox de notificações adicionais -->
+        <div class="opcao-item">
+          <label class="opcao-label">
+          <input type="checkbox" id="notif-adicionais" disabled>
+            Receber notificações adicionais
+          </label>
+
+          <div class="opcao-descricao">
+            Avisos sobre novas perguntas lançadas nos seus temas de interesse e alterações em conteúdo já respondido
+          </div>
+        </div>
+
+        <!-- Temas de interesse -->
+        <div class="opcao-item">
+          <div class="opcao-label">
+            Temas de interesse
+          </div>
+
+          <div class="temas-interesse">
+            <label><input type="checkbox" name="temas-interesse" value="Artes" disabled> Artes</label>
+            <label><input type="checkbox" name="temas-interesse" value="Astronomia" disabled> Astronomia</label>
+            <label><input type="checkbox" name="temas-interesse" value="Biologia" disabled> Biologia</label>
+            <label><input type="checkbox" name="temas-interesse" value="Esportes" disabled> Esportes</label>
+            <label><input type="checkbox" name="temas-interesse" value="Filosofia" disabled> Filosofia</label>
+            <label><input type="checkbox" name="temas-interesse" value="Geografia" disabled> Geografia</label>
+            <label><input type="checkbox" name="temas-interesse" value="Historia" disabled> História</label>
+            <label><input type="checkbox" name="temas-interesse" value="Midia" disabled> Mídia</label>
+            <label><input type="checkbox" name="temas-interesse" value="Musica" disabled> Música</label>
+            <label><input type="checkbox" name="temas-interesse" value="Quimica" disabled> Química</label>
+            <label><input type="checkbox" name="temas-interesse" value="Tecnologia" disabled> Tecnologia</label>
+            <label><input type="checkbox" name="temas-interesse" value="Variedades" disabled> Variedades</label>
+          </div>
+        </div>
+
+      </section>
     </main>
 
     <!-- Mensagem de status -->
@@ -326,13 +378,13 @@
 
     <!-- Rodapé com botões -->
     <div class="footer footer-duplo">
-        <button id="btn-voltar-menu" class="btn-footer">
-            Voltar ao menu
-        </button>
+      <button id="btn-voltar-menu" class="btn-footer">
+        Voltar ao menu
+      </button>
 
-        <button id="btn-salvar-opcoes" class="btn-footer" style="display: none;" disabled>
-            Salvar alterações
-        </button>
+      <button id="btn-salvar-opcoes" class="btn-footer" style="display: none;" disabled>
+        Salvar alterações
+      </button>
   </body>
 
   <script type="module" src="{{ url_for('static', filename='opcoes.js') }}?v=1.1.0"></script>

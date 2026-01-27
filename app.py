@@ -186,6 +186,86 @@ def ads_txt():
     conteudo = "google.com, pub-9650050810390735, DIRECT, f08c47fec0942fa0"
     return conteudo, 200, {'Content-Type': 'text/plain'}
 
+@app.route("/alterar-email", methods=["POST"])
+def alterar_email_route():
+    conn = cur = None
+    try:
+        data = request.get_json()
+        novo_email = data.get("email").strip().lower()
+
+        if not novo_email:
+            return jsonify(success=False, message="E-mail inválido"), 400
+
+        if not email_dominio_valido(novo_email):
+            return jsonify(success=False, message="Domínio de e-mail não permitido"), 400
+
+        id_usuario = session.get("id_usuario")
+        if not id_usuario:
+            return jsonify(success=False, message="Não autenticado"), 401
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Busca nome do usuário
+        cur.execute("""
+            SELECT nome
+            FROM usuarios_registrados
+            WHERE id_usuario = %s
+        """, (id_usuario,))
+        row = cur.fetchone()
+
+        if not row:
+            return jsonify(success=False, message="Usuário não encontrado"), 404
+
+        nome_usuario = row[0]
+
+        # Verifica se e-mail já está em uso
+        cur.execute("""
+            SELECT 1 FROM usuarios_registrados
+            WHERE email = %s
+              AND id_usuario <> %s
+        """, (novo_email, id_usuario))
+
+        if cur.fetchone():
+            return jsonify(success=False, message="E-mail já está em uso"), 409
+
+        # Gera novo token
+        token = secrets.token_urlsafe(32)
+        expiracao = datetime.now(
+            pytz.timezone("America/Sao_Paulo")
+        ) + timedelta(hours=21)
+
+        # Atualiza e-mail + estado de confirmação
+        cur.execute("""
+            UPDATE usuarios_registrados
+            SET email = %s,
+                email_confirmado = FALSE,
+                token_confirmacao = %s,
+                expiracao_token_confirmacao = date_trunc('second', %s)
+            WHERE id_usuario = %s
+        """, (novo_email, token, expiracao, id_usuario))
+
+        conn.commit()
+
+        link_confirmacao = f"{base_url}/confirmar_email?token={token}"
+        enviado = enviar_email_confirmacao(
+            novo_email, nome_usuario, link_confirmacao
+        )
+
+        if not enviado:
+            return jsonify(success=False, message="Falha ao enviar e-mail")
+
+        return jsonify(success=True)
+
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.error("Erro ao alterar e-mail:\n" + traceback.format_exc())
+        return jsonify(success=False, message="Erro ao tentar alterar e-mail"), 500
+
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
 @app.route("/api/pontuacoes")
 @token_required
 def api_pontuacoes():
@@ -278,6 +358,20 @@ def enviar_feedback(user_id):
     finally:
         if cur: cur.close()
         if conn: conn.close()
+
+def email_dominio_valido(email: str) -> bool:
+    if not email or "@" not in email:
+        return False
+
+    dominio = email.split("@")[-1].lower()
+
+    if dominio in dominios_descartaveis:
+        return False
+
+    if dominio not in dominios_permitidos:
+        return False
+
+    return True
 
 @app.route("/api/feedbacks/comentarios", methods=["POST"])
 @token_required
@@ -502,15 +596,6 @@ def checar_dados_registro(nome, email, senha):
 
     return True, "Validação OK"
 
-@app.route("/register_validate", methods=["POST"])
-def validar_registro():
-    data = request.get_json()
-    ok, msg = checar_dados_registro(data.get("nome"), data.get("email"), data.get("senha"))
-    if not ok:
-        return jsonify(success=False, message=msg)
-
-    return jsonify(success=True, message="Validação OK")
-        
 def carregar_e_transformar(caminho_img):
     """Carrega a imagem do CAPTCHA com alguns ajustes para evitar identificação automática"""
     img = Image.open(caminho_img).convert("RGB")
@@ -864,11 +949,15 @@ def enviar_email_confirmacao(email_destinatario, nome_destinatario, link_confirm
     corpo = f"""
     Olá, {nome_destinatario}!
 
-    Clique no link abaixo para confirmar seu cadastro em desafiodasperguntas.com.br:
+    Clique no link abaixo para confirmar seu cadastro no Desafio das Perguntas:
 
     {link_confirmacao}
 
     O link expira em 24 horas.
+
+    URL do site:
+
+    desafiodasperguntas.com.br
 
     """
 
@@ -1163,11 +1252,11 @@ def login():
                 return jsonify(success=False, message="Content-Type deve ser application/json"), 415
 
             data = request.get_json()
-            email = data.get("email")
+            email = data.get("email").strip().lower()
             senha = data.get("senha")
 
             if not email or not senha:
-                return jsonify(success=False, message="Email e senha são obrigatórios.")
+                return jsonify(success=False, message="Email e senha são obrigatórios")
             
             if not re.match(email_regex, email):
                 return jsonify(success=False, message="Formato de e-mail inválido"), 400
@@ -1247,11 +1336,41 @@ def login():
 
             for tema in temas_faltantes:
                 cur.execute("INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao) VALUES (%s, %s, %s)", (id_usuario, tema, 0))
+
             conn.commit()
 
+            opcoes_usuario = {
+                "exibir_instrucoes_quiz": exibir_instrucoes_quiz,
+                "notificacoes_importantes": notificacoes_importantes,
+                "notificacoes_adicionais": notificacoes_adicionais,
+                "temas_interesse": temas_interesse or []
+            }
+
+            # 🔑 Retorna JSON e define cookie HttpOnly
+            resp = make_response(jsonify(
+                success=True,
+                message="Login realizado com sucesso",
+                token=token,
+                id_usuario=id_usuario,
+                email=email,
+                nome_usuario=nome_usuario,
+                dicas_restantes=dicas_restantes,
+                perguntas_restantes=perguntas_restantes,
+                opcoes_usuario=opcoes_usuario
+            ), 200)
+
+            resp.set_cookie(
+                "token_sessao",
+                token,
+                httponly=True,
+                secure=False,   # True em produção com HTTPS
+                samesite="Lax",
+                max_age=6 * 3600
+            )
+
+            return resp
         else:
             return render_template("login.html")
-
     except Exception:
         if conn: conn.rollback()
         app.logger.error("Erro no login:\n" + traceback.format_exc())
@@ -1259,37 +1378,7 @@ def login():
     finally:
         if cur: cur.close()
         if conn: conn.close()
-
-    # 🔑 Retorna JSON e define cookie HttpOnly
-    opcoes_usuario = {
-        "exibir_instrucoes_quiz": exibir_instrucoes_quiz,
-        "notificacoes_importantes": notificacoes_importantes,
-        "notificacoes_adicionais": notificacoes_adicionais,
-        "temas_interesse": temas_interesse or []     
-    }
-    resp = make_response(jsonify(
-        success=True,
-        message="Login realizado com sucesso",
-        token=token,
-        id_usuario=id_usuario,
-        dicas_restantes=dicas_restantes,
-        perguntas_restantes=perguntas_restantes,
-        nome_usuario=nome_usuario,
-        opcoes_usuario=opcoes_usuario
-    ), 200)
-
-    # Cookie HttpOnly, expirando junto com o token
-    resp.set_cookie(
-        "token_sessao",
-        token,
-        httponly=True,
-        secure=False,       # mudar para True se usar HTTPS
-        samesite="Lax",
-        max_age=6*3600      # 6 horas em segundos
-    )
-
-    return resp
-
+   
 @app.route("/api/salvar-opcoes", methods=["POST"])
 @token_required
 def salvar_opcoes(user_id):
@@ -1727,7 +1816,7 @@ def registrar():
     data = request.get_json()
     notificacoes_importantes = bool(data.get("notificacoes_importantes", True))
     nome = data.get("nome")
-    email = data.get("email")
+    email = data.get("email").strip().lower()
     senha = data.get("senha")
     captcha_token = data.get("captcha_token")
     captcha_selecoes = list(map(int, data.get("captcha_selecoes", [])))
@@ -2024,6 +2113,17 @@ def registrar_visitante():
         session["id_visitante"] = id_visitante
 
     return jsonify({"ok": True})
+
+@app.route("/register_validate", methods=["POST"])
+def validar_registro():
+    data = request.get_json()
+    ok, msg = checar_dados_registro(data.get("nome"), data.get("email"), data.get("senha"))
+    if not ok:
+        return jsonify(success=False, message=msg)
+
+    return jsonify(success=True, message="Validação OK")
+
+
 
 if not database_url:
     if __name__ == '__main__':

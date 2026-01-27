@@ -44,24 +44,41 @@ export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIG
   return false;
 }
 
-export async function fetchAutenticado(url, options= {}) {
-  const token = sessionStorage.getItem("token_sessao")
+export async function fetchAutenticado(url, options = {}) {
+  const token = sessionStorage.getItem("token_sessao");
+
   const config = {
     method: options.method || "GET",
-    headers: {"Authorization": `Bearer ${token}`,
-    ...(options.body? {"Content-Type": "application/json"}: {})
-  },
-  ...(options.body? {body:JSON.stringify(options.body)}: {})
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      ...(options.body ? { "Content-Type": "application/json" } : {})
+    },
+    ...(options.body ? { body: JSON.stringify(options.body) } : {})
   };
 
   const response = await fetch(url, config);
 
-  if (!response.ok) {
-    console.log("Resposta foi: ", response)
-    localStorage.setItem("auth_message", "Sessão expirada");
+  // 🔐 Sessão expirada
+  if (response.status === 401) {
+    localStorage.setItem(
+      "auth_message",
+      "Sessão expirada"
+    );
     window.location.href = "/login";
+    return;
   }
 
+  // 🚧 Site em manutenção
+  if (response.status === 503) {
+    localStorage.setItem(
+      "auth_message",
+      "Site em manutenção"
+    );
+    window.location.href = "/login";
+    return;
+  }
+
+  // ❗ Erro interno → deixa o chamador decidir
   return response;
 }
 
