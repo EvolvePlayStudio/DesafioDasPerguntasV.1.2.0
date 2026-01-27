@@ -51,7 +51,7 @@ dominios_descartaveis = {
     "mailinator.com", "10minutemail.com", "guerrillamail.com", "tempmail.com"
 }
 CAPTCHA_BASE_DIR = "static/captcha_imgs"
-FUSO_SERVIDOR = timezone(timedelta(hours=-3))
+FUSO_SERVIDOR = timezone(timedelta(hours=-3)) # Depois ver se não dá para tirar esat variável
 QUESTION_CONFIG = {
     'discursiva': {
         'table': 'perguntas_discursivas',
