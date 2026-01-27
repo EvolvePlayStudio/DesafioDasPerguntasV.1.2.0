@@ -365,7 +365,6 @@ function programarHabilitacaoBotoesModais() {
 
 function reenviarEmailConfirmacao() {
 
-  sessionStorage.removeItem("email_reenviado_neste_login");
   if (sessionStorage.getItem("email_reenviado_neste_login") === "true") {
     msgModal.innerText = "Um e-mail de confirmação já foi enviado recentemente";
     msgModal.style.display = "block";
@@ -388,7 +387,8 @@ function reenviarEmailConfirmacao() {
       sessionStorage.setItem("email_reenviado_neste_login", "true");
       msgModal.innerText = "E-mail de confirmação reenviado com sucesso";
       msgModal.style.color = "green";
-    } else {
+    }
+    else {
       msgModal.innerText = data.message || "Não foi possível reenviar o e-mail.";
       msgModal.style.color = "red";
     }
