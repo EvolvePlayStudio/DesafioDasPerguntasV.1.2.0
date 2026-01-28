@@ -120,9 +120,35 @@ let comentario_inicial;
 const contador_perguntas_restantes = document.getElementById("perguntas-count");
 
 // Ids de perguntas que são selecionados primeiro
-const ids_objetivas_prioridade = {"Artes": [167], "Astronomia": [], "Biologia": [18, 22, 29, 365], "Esportes": [], "Filosofia": [132, 146], "Geografia": [90, 206], "História": [], "Mídia": [106, 604], "Música": [424], "Química": [], "Tecnologia": [], "Variedades": []}
+const ids_objetivas_prioridade = {
+  'Artes':      [163, 167, 172, 336, 338, 353],
+  'Astronomia': [6, 11, 12, 479, 492, 500],
+  'Biologia':   [18, 22, 29, 361, 365, 371, 580, 581, 585],
+  'Esportes':   [55, 63, 66, 75, 462, 467, 471],
+  'Filosofia':  [132, 142, 146, 149, 150, 302, 305],
+  'Geografia':  [80, 82, 84, 86, 90, 93, 206, 318],
+  'História':   [35, 41, 42, 118, 127, 209, 262],
+  'Mídia':      [99, 106, 381, 385, 391, 604],
+  'Música':     [222, 226, 229, 231, 238, 424, 439],
+  'Química':    [184, 188, 189, 202, 538],
+  'Tecnologia': [243, 245, 246, 251, 273, 411, 415],
+  'Variedades': [136, 192, 270, 451, 453, 621, 627]
+}
 
-const ids_discursivas_prioridade = {"Artes": [251, 261, 269, 270, 524, 612], "Astronomia": [96, 104, 111], "Biologia": [8, 10, 43, 48, 55], "Esportes": [11, 12, 79, 80, 523], "Filosofia": [227, 237, 246, 408, 410, 554, 557, 558], "Geografia": [134, 157, 158, 174], "História": [35, 59, 275], "Mídia": [184, 209, 451, 637, 641], "Música": [313, 317, 327, 479, 500], "Química": [291, 301, 303, 308, 577, 582], "Tecnologia": [352, 358, 392, 470], "Variedades": [27, 221, 658, 662]}
+const ids_discursivas_prioridade = {
+  'Artes': [251, 261, 269, 270, 524, 612],
+  'Astronomia': [96, 97, 103, 104, 108, 111, 531, 539],
+  'Biologia': [8, 10, 43, 48, 50, 52, 55, 438, 620],
+  'Esportes': [11, 12, 14, 79, 80, 82, 83, 513, 523],
+  'Filosofia': [227, 237, 246, 408, 410, 554, 557, 558],
+  'Geografia': [134, 157, 158, 163, 169, 174],
+  'História': [29, 30, 35, 59, 128, 129, 275],
+  'Mídia': [184, 209, 451, 635, 637, 641, 642, 650],
+  'Música': [313, 317, 327, 479, 500],
+  'Química': [291, 301, 303, 308, 577, 582],
+  'Tecnologia': [152, 342, 345, 351, 352, 358, 392, 462, 470],
+  'Variedades': [24, 25, 27, 67, 107, 120, 221, 376, 658, 659, 662]
+}
 
 function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
   const intervaloMin = 20; // ms entre frames no máximo, para smooth
