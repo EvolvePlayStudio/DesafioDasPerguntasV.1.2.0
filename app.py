@@ -121,6 +121,7 @@ QUESTION_CONFIG = {
 EMAILS_PROIBIDOS = ['admin@gmail.com', 'teste@gmail.com']
 SITE_EM_MANUTENCAO = False
 TESTANDO_PERGUNTAS = False
+# FALTA AQUI CRIAR VARIÁVEL PARA DECIDIR SE REGISTRA RESPOSTA COMO VISITANTE
 privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
 id_visitante_admin = "b0f221ea-f7df-43a4-b843-7df448eccf15"
 

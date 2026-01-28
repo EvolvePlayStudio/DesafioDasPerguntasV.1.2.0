@@ -100,23 +100,6 @@
       -webkit-transform: scale(1.6);
       margin-right: 0.3rem;
     }
-
-    @media (max-width: 768px) {
-    .top-bar {
-      grid-template-columns: 1fr;
-      gap: 1rem;
-    }
-    .filtro-esquerda,
-    .filtro-direita {
-      justify-content: flex-start;
-    }
-    .filtro-centro {
-      justify-content: flex-start;
-    }
-  }
-
-
-
     select {
       padding: 0.3rem 0.5rem;
       border-radius: 6px;
@@ -265,6 +248,35 @@
     }
     button:hover {
       background-color: var(--bg-hover-botao-login);
+    }
+    @media (max-width: 768px) {
+      .filtro-esquerda,
+      .filtro-direita,
+      .filtro-centro {
+        font-size: 1rem;
+      }
+      .filtro-esquerda label,
+      .filtro-centro label,
+      .filtro-direita label,
+      .filtro-centro span {
+        font-size: 0.95rem;
+      }
+      .filtro-centro {
+        gap: 0.5rem 0.8rem;
+      }
+      select {
+        font-size: 0.85rem;
+        padding: 0.25rem 0.35rem;
+      }
+      select option,
+      .subtemas-label,
+      .subtema-btn {
+        font-size: 0.85rem;
+      }
+      .filtro-centro input[type="checkbox"],
+      .checkbox-selecionar {
+        transform: scale(1.2);
+      }
     }
   </style>
 </head>
