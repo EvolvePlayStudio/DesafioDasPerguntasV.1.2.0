@@ -309,7 +309,7 @@ async function pesquisar() {
       tabela.innerHTML = `
         <tr>
           <td colspan="7" style="text-align:center; font-weight:bold;">
-            Nenhuma pergunta encontrada
+            Você ainda não respondeu perguntas com estes filtros
           </td>
         </tr>
       `;
@@ -357,7 +357,6 @@ async function pesquisar() {
       localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes));
       };
       perguntasPorDificuldade = filtrarPerguntasVisitante(data.perguntas);
-      console.log("Perguntas filtradas: ", perguntasPorDificuldade);
     }
     else {
       localStorage.setItem("pontuacoes_usuario", JSON.stringify(data.pontuacoes_usuario));
@@ -384,7 +383,7 @@ async function pesquisar() {
 
   }
   catch (err) {
-    console.error(err);
+    console.error("Erro ao buscar perguntas", err);
     tabela.innerHTML = `
       <tr>
         <td colspan="7" style="text-align:center; font-weight:bold; color:red;">
