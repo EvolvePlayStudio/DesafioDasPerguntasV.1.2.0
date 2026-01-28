@@ -36,7 +36,7 @@ app.logger.addHandler(handler)
 temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia", "Variedades"]
 
 # IDs de perguntas para os usuários no modo visitante
-ids_perguntas_objetivas_visitante = {"Artes": [172, 333, 338, 353], "Astronomia": [11, 12, 479, 492], "Biologia": [361, 365, 371, 581], "Esportes": [55, 63, 75, 462], "Filosofia": [142, 146, 150, 305], "Geografia": [82, 86, 90, 318], "História": [118, 127, 209, 262], "Mídia": [99, 106, 381, 385], "Música": [222, 238, 231, 439], "Química": [184, 188, 189, 202], "Tecnologia": [243, 245, 273, 411], "Variedades": [136, 192, 453, 627]}
+ids_perguntas_objetivas_visitante = {"Artes": [167, 333, 338, 353], "Astronomia": [11, 12, 479, 492], "Biologia": [29, 361, 365, 581], "Esportes": [55, 63, 75, 462], "Filosofia": [132, 142, 146, 150], "Geografia": [82, 86, 90, 206], "História": [118, 127, 209, 262], "Mídia": [106, 381, 385, 604], "Música": [222, 238, 424, 439], "Química": [184, 188, 189, 202], "Tecnologia": [243, 245, 273, 411], "Variedades": [136, 192, 453, 627]}
 
 ids_perguntas_discursivas_visitante = {"Artes": [250, 251, 270, 524], "Astronomia": [104, 108, 531, 541], "Biologia": [43, 55, 620, 624], "Esportes": [14, 80, 82, 513], "Filosofia": [235, 408, 410, 557], "Geografia": [95, 158, 169, 411], "História": [29, 35, 59, 129], "Mídia": [186, 207, 642, 650], "Música": [313, 317, 339, 500], "Química": [288, 291, 303, 581], "Tecnologia": [345, 352, 392, 462], "Variedades": [67, 110, 120, 221]}
 
@@ -120,7 +120,7 @@ QUESTION_CONFIG = {
 }
 EMAILS_PROIBIDOS = ['admin@gmail.com', 'teste@gmail.com']
 SITE_EM_MANUTENCAO = False
-TESTANDO_PERGUNTAS = False
+TESTANDO_PERGUNTAS = True
 privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
 id_visitante_admin = "36b23a50-145d-44b4-b7a0-2c5fb55cfd50"
 
@@ -1104,7 +1104,9 @@ def listar_perguntas(user_id):
         tipo_str = cfg['tipo_str']   # Usado para filtrar feedbacks/respostas
         table = cfg['table']         # Nome da tabela — vindo do cfg interno (seguro)
 
-        if not TESTANDO_PERGUNTAS:
+        if modo_visitante:
+            where_status = "p.status = 'Ativa' OR p.status = 'Em teste'"
+        elif not TESTANDO_PERGUNTAS:
             where_status = "p.status = 'Ativa'"
         else:
             where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
