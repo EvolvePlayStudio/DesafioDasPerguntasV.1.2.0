@@ -19,27 +19,31 @@ export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIG
   const qtdFacil = perguntas_por_dificuldade["Fácil"]?.length ?? 0;
   const qtdMedio = perguntas_por_dificuldade["Médio"]?.length ?? 0;
   const qtdDificil = perguntas_por_dificuldade["Difícil"]?.length ?? 0;
+  const qtdExtremo = perguntas_por_dificuldade["Extremo"]?.length ?? 0;
+
+  const apenasFaceis = qtdMedio === 0 && qtdDificil === 0 && qtdExtremo === 0;
+  const apenasMedias = qtdFacil === 0 && qtdDificil === 0 && qtdExtremo === 0;
+  const apenasDificeis = qtdFacil === 0 && qtdMedio === 0 && qtdExtremo === 0;
+  const apenasExtremas = qtdFacil === 0 && qtdMedio === 0 && qtdDificil === 0;
+  const apenasDificeisOuExtremas = qtdFacil === 0 && qtdMedio === 0;
+  const apenas_1_nivel = apenasFaceis || apenasMedias || apenasDificeis || apenasExtremas;
 
   if (!MODO_VISITANTE) {
-    // 🧠 SÁBIO ou LENDA
-    // Encerra se NÃO houver nenhuma média nem difícil
-    if (ranking === "Sábio" || ranking === "Lenda") {
-      if (qtdMedio === 0 && qtdDificil === 0) {
-        return true;
-      }
+    // Não permite prosseguir se houver apenas 1 nível de dificuldade
+    if (apenas_1_nivel) {
+      return true;
     }
+    
+    // 🧑‍🎓 APRENDIZ: encerra se SÓ houverem difíceis e extremas
+    if (ranking === "Aprendiz" && apenasDificeisOuExtremas) return true;
 
-    // 🧑‍🎓 APRENDIZ
-    // Encerra se SÓ houver difíceis
-    if (ranking === "Aprendiz") {
-      if (qtdFacil === 0 && qtdMedio === 0) {
-        return true;
-      }
-    }
+    // 🧠 SÁBIO: encerra se Só houverem fáceis e extremas
+    if (ranking === "Sábio" && qtdMedio === 0 && qtdDificil === 0) return true;
+
+    // 🔥 Lenda: encerra se NÃO houverem difíceis ou extremas
+    if (ranking === "Lenda" && qtdDificil === 0 && qtdExtremo === 0) return true;
   }
-  else if (ranking === "Iniciante" && qtdFacil === 0 && qtdMedio === 0) {
-    return true
-  }
+  else if (ranking === "Iniciante" && apenasDificeisOuExtremas) return true;
   
   return false;
 }
@@ -117,12 +121,10 @@ export function obterDificuldadesDisponiveis(tema=null, MODO_VISITANTE=null) {
 
   // Define as dificuldades de perguntas disponíveis de acordo com o ranking atual
   const dificuldades_disponiveis = ['Fácil'];
-  if (info_ranking_atual.pode_receber_medio) {
-    dificuldades_disponiveis.push('Médio');
-  }
-  if (info_ranking_atual.pode_receber_dificil) {
-    dificuldades_disponiveis.push('Difícil');
-  }
+  if (info_ranking_atual.pode_receber_medio) dificuldades_disponiveis.push('Médio');
+  if (info_ranking_atual.pode_receber_dificil) dificuldades_disponiveis.push('Difícil');
+  if (info_ranking_atual.pode_receber_extremo) dificuldades_disponiveis.push('Extremo');
+
   return dificuldades_disponiveis
 }
 

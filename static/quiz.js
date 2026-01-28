@@ -18,6 +18,7 @@ window.onerror = function (message) {
 };
 
 let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"));
+console.log("Perguntas: ", perguntas_por_dificuldade);
 let perguntas_respondidas = [];
 let aguardando_proxima = false // Variável que indica quando se está aguardando próxima pergunta
 let dica_gasta = false
@@ -56,13 +57,23 @@ const caixa_para_resposta = document.getElementById('resposta-input')
 const dica_box = document.getElementById("dica-box")
 let alternativaSelecionada = null; // Guarda a letra clicada (A, B, C, D)
 let respostasDesdeUltimaForcagem = 0; // Para pegar a pergunta do nível que tem mais a cada x respondidas
+
+// Variáveis relacionadas ao nível de dificuldade
 const PROBABILIDADES_POR_RANKING = {
-  Iniciante: {Fácil: 0.65, Médio: 0.35, Difícil: 0.00},
-  Aprendiz: {Fácil: 0.40, Médio: 0.45, Difícil: 0.15},
-  Estudante: {Fácil: 0.20, Médio: 0.55, Difícil: 0.25},
-  Sábio: {Fácil: 0.10, Médio: 0.50, Difícil: 0.40},
-  Lenda: {Fácil: 0.02, Médio: 0.48, Difícil: 0.50}
-}
+  Iniciante: { Fácil: 0.65, Médio: 0.35, Difícil: 0.00, Extremo: 0.00 },
+  Aprendiz:  { Fácil: 0.40, Médio: 0.45, Difícil: 0.15, Extremo: 0.00 },
+  Estudante: { Fácil: 0.20, Médio: 0.50, Difícil: 0.25, Extremo: 0.05 },
+  Sábio:     { Fácil: 0.10, Médio: 0.45, Difícil: 0.35, Extremo: 0.10 },
+  Lenda:     { Fácil: 0.02, Médio: 0.38, Difícil: 0.40, Extremo: 0.20 }
+};
+const coresDificuldade = {
+    fácil: "green",
+    médio: "gold",
+    difícil: "red",
+    extremo: "#3e16d1"
+};
+const DIFICULDADES_ORDENADAS = ["Fácil", "Médio", "Difícil", "Extremo"];
+
 // Círculo amarelo com interrogação preta para símbolo de pergunta pulada
 const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
   viewBox="0 0 24 24" style="vertical-align: middle;">
@@ -272,15 +283,16 @@ function calcularPontuacao(acertou) {
       pontos_ganhos = 0
     }
     else {
-      // Caso o usuário tenha enviado uma resposta vazia numa pergunta discursiva
-      if (resposta_usuario === "" && tipo_pergunta === 'discursiva') {
-        pontos_ganhos = regras_usuario.pontos_pular_pergunta;
-      } 
-      else {
-        pontos_ganhos = regras_usuario.pontos_erro;
-        if (tipo_pergunta === 'discursiva') {
-          pontos_ganhos = pontos_ganhos + 20;
+      if (tipo_pergunta === 'discursiva') {
+        if (resposta_usuario === "") { // Caso de resposta vazia
+          pontos_ganhos = regras_usuario.pontos_pular_pergunta;
         }
+        else {
+          pontos_ganhos = regras_usuario.pontos_erro
+        }
+      }
+      else {
+        pontos_ganhos = regras_usuario.pontos_erro
       }
       // Trata casos em que a pontuação do usuário ficaria negativa
       if (pontuacoes_usuario[tema_atual] + pontos_ganhos < 0) {
@@ -292,18 +304,21 @@ function calcularPontuacao(acertou) {
 
   let pontosBase = 0;
   switch (dificuldade) {
-      case "Fácil":
-          pontosBase = regras_usuario.pontos_acerto_facil;
-          break;
-      case "Médio":
-          pontosBase = regras_usuario.pontos_acerto_medio;
-          break;
-      case "Difícil":
-          pontosBase = regras_usuario.pontos_acerto_dificil;
-          break;
-      default:
-          console.warn("Dificuldade desconhecida:", dificuldade);
-          return 0;
+    case "Fácil":
+      pontosBase = regras_usuario.pontos_acerto_facil;
+      break;
+    case "Médio":
+      pontosBase = regras_usuario.pontos_acerto_medio;
+      break;
+    case "Difícil":
+      pontosBase = regras_usuario.pontos_acerto_dificil;
+      break;
+    case "Extremo":
+      pontosBase = regras_usuario.pontos_acerto_extremo;
+      break;
+    default:
+        console.warn("Dificuldade desconhecida:", dificuldade);
+        return 0;
   }
 
   let pontos_ganhos = pontosBase;
@@ -313,7 +328,7 @@ function calcularPontuacao(acertou) {
       const inteiroPenalidade = Math.round((pontosBase * percentualPenalidade) / 10) * 10;
       pontos_ganhos = pontosBase - inteiroPenalidade;
       
-      // fallback defensivo
+      // Fallback defensivo
       if (pontos_ganhos < 0) {
           console.warn("Penalidade excedeu a pontuação base. Aplicando pontuação base.");
           pontos_ganhos = pontosBase;
@@ -977,6 +992,7 @@ function mostrarPergunta() {
       "Fácil": perguntas_por_dificuldade["Fácil"]?.length || 0,
       "Médio": perguntas_por_dificuldade["Médio"]?.length || 0,
       "Difícil": perguntas_por_dificuldade["Difícil"]?.length || 0,
+      "Extremo": perguntas_por_dificuldade["Extremo"]?.length || 0
     };
     console.log("Estoque: ", estoque)
     
@@ -995,7 +1011,7 @@ function mostrarPergunta() {
 
       let escolhida = ordenadas[0]; // Pega a que tem o maior estoque
 
-      if ((probsBase[escolhida] ?? 0) <= 0.10 && ordenadas[1]) {
+      if ((probsBase[escolhida] ?? 0) <= 0.05 && ordenadas[1]) {
         escolhida = ordenadas[1];
       }
 
@@ -1026,35 +1042,77 @@ function mostrarPergunta() {
   }
 
   function resolverFallback(escolhida, estoque, probsBase, disponiveis) {
+    // Se a escolhida ainda tem estoque
     if (estoque[escolhida] > 0) return escolhida;
 
-    // ❌ Difícil ou Fácil sem estoque → tenta Médio
-    if ((escolhida === "Difícil" || escolhida === "Fácil") && estoque["Médio"] > 0) {
-      console.log("O substituto correto para este caso é o nível médio")
-      return "Médio";
+    const idx = DIFICULDADES_ORDENADAS.indexOf(escolhida);
+    if (idx === -1) {
+      console.warn("1.Fallback utilizado na escolha da dificuldade")
+      return disponiveis.find(d => estoque[d] > 0) ?? null;
     }
 
-    // ❌ Médio sem estoque
-    if (escolhida === "Médio") {
-      const pDif = probsBase["Difícil"] ?? 0;
-      const pFac = probsBase["Fácil"] ?? 0;
-
-      // Caso em que a diferença entre as probabilidades de pegar uma fácil ou difícil seja maior do que 10%
-      if (Math.abs(pDif - pFac) > 0.1) { 
-        console.log("Retornarei a dificuldade com maior probabilidade")
-        const preferida = pDif > pFac ? "Difícil" : "Fácil";
-        if (estoque[preferida] > 0) return preferida;  // Retorna a que tem maior probabiliddade
+    // 1️⃣ Extremos colapsam para dentro
+    if (escolhida === "Fácil") {
+      if (estoque["Médio"] > 0 && disponiveis.includes("Médio")) {
+        return "Médio"
       }
-      // Probabilidades próximas → usa estoque
-      else {
-        console.log("2.Retornarei a dificuldade com maior estoque")
-        return estoque["Difícil"] >= estoque["Fácil"] ? "Difícil" : "Fácil";
+      else if (estoque["Difícil"] > 0 && disponiveis.includes("Difícil")) {
+        return "Difícil"
       }
+      console.warn("2.Fallback utilizado na escolha da dificuldade")
+      return disponiveis.find(d => estoque[d] > 0) ?? null;
     }
 
-    // Último recurso
-    console.log("Último recurso do fallback")
-    return disponiveis.find(d => estoque[d] > 0) ?? null;
+    if (escolhida === "Extremo") {
+      if (estoque["Difícil"] > 0 && disponiveis.includes("Difícil")) {
+        return "Difícil"
+      }
+      if (estoque["Médio"] > 0 && disponiveis.includes("Médio")) {
+        return "Médio"
+      }
+      console.warn("3.Fallback utilizado na escolha da dificuldade")
+      return disponiveis.find(d => estoque[d] > 0) ?? null;
+    }
+
+    // 2️⃣ Casos intermediários: comparar acima vs abaixo
+    const abaixo = DIFICULDADES_ORDENADAS[idx - 1];
+    const acima  = DIFICULDADES_ORDENADAS[idx + 1];
+
+    const candidatos = [];
+
+    if (abaixo && disponiveis.includes(abaixo) && estoque[abaixo] > 0) {
+      candidatos.push(abaixo);
+    }
+    if (acima && disponiveis.includes(acima) && estoque[acima] > 0) {
+      candidatos.push(acima);
+    }
+
+    if (candidatos.length === 0) {
+      // Último recurso: qualquer disponível com estoque
+      return disponiveis.find(d => estoque[d] > 0) ?? null;
+    }
+
+    if (candidatos.length === 1) {
+      return candidatos[0];
+    }
+
+    // 3️⃣ Dois candidatos válidos → critério objetivo
+    const [c1, c2] = candidatos;
+
+    if (estoque[c1] !== estoque[c2]) {
+      return estoque[c1] > estoque[c2] ? c1 : c2;
+    }
+
+    // Estoque igual → usa probabilidade base
+    const p1 = probsBase[c1] ?? 0;
+    const p2 = probsBase[c2] ?? 0;
+
+    if (Math.abs(p1 - p2) > 0.1) {
+      return p1 > p2 ? c1 : c2;
+    }
+
+    // Último desempate: puxa levemente para baixo
+    return DIFICULDADES_ORDENADAS.indexOf(c1) < DIFICULDADES_ORDENADAS.indexOf(c2) ? c1 : c2;
   }
 
   function selecionarPergunta(perguntasDisponiveis) {
@@ -1093,7 +1151,6 @@ function mostrarPergunta() {
     return indice;
   }
 
-
   // Escolhe uma pergunta
   const dificuldade_selecionada = escolherProximaDificuldade();
   const perguntas_disponiveis = perguntas_por_dificuldade[dificuldade_selecionada];
@@ -1122,19 +1179,7 @@ function mostrarPergunta() {
   titulo.textContent = `${tema_atual} - ${dificuldade}`;
 
   // Define a cor com base na dificuldade
-  switch (dificuldade.toLowerCase()) {
-    case "fácil":
-      titulo.style.color = "green";
-      break;
-    case "médio":
-      titulo.style.color = "gold";
-      break;
-    case "difícil":
-      titulo.style.color = "red";
-      break;
-    default:
-      titulo.style.color = "black";
-  }
+  titulo.style.color = coresDificuldade[dificuldade.toLowerCase()] ?? "#3b2f2f";
 
   let ranking_usuario = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking
   regras_usuario = regras_pontuacao.find(r => r.ranking === ranking_usuario);

@@ -87,6 +87,9 @@ resultado.perguntas_respondidas.forEach((p, i) => {
     case "difícil":
         cor_dificuldade = 'red';
         break;
+    case "extremo":
+        cor_dificuldade = '#3e16d1';
+        break;
     default:
         cor_dificuldade = 'black'
     }
@@ -220,10 +223,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         feedbackSucesso(data.id_feedback);
 
-    } catch (err) {
+    }
+    catch (err) {
         console.error(err);
         feedbackErro();
-    } finally {
+    }
+    finally {
         // Só libera se for permitido editar novamente
         feedbackEmEnvio = false;
         btnEnviar.disabled = false;

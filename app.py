@@ -1135,7 +1135,7 @@ def listar_perguntas(user_id):
         cur.execute(sql, params)
         linhas = cur.fetchall()
 
-        perguntas_por_dificuldade = {'Fácil': [], 'Médio': [], 'Difícil': []}
+        perguntas_por_dificuldade = {'Fácil': [], 'Médio': [], 'Difícil': [], 'Extremo': []}
 
         for row in linhas:
             if modo_visitante:
