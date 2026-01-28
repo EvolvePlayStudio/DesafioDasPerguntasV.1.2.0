@@ -55,7 +55,7 @@
     }
     .top-bar {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: auto 2fr auto;
       align-items: start;
       gap: 2rem;
       font-size: 1.25rem;
@@ -81,9 +81,11 @@
     .filtro-centro {
       font-size: 1.2rem;
       display: flex;
-      flex-direction: row;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 0.8rem;
+      justify-content: center;
+      text-align: center;
+      gap: 0.8rem 1.2rem;
     }
     .filtro-centro label {
       display: block;
@@ -91,12 +93,30 @@
       font-weight: normal;
       align-items: center;
       gap: 0.3rem;
+      white-space: nowrap;
     }
     .filtro-centro input[type="checkbox"] {
       transform: scale(1.6);
       -webkit-transform: scale(1.6);
       margin-right: 0.3rem;
     }
+
+    @media (max-width: 768px) {
+    .top-bar {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    .filtro-esquerda,
+    .filtro-direita {
+      justify-content: flex-start;
+    }
+    .filtro-centro {
+      justify-content: flex-start;
+    }
+  }
+
+
+
     select {
       padding: 0.3rem 0.5rem;
       border-radius: 6px;
@@ -283,6 +303,7 @@
       <label><input type="checkbox" value="Fácil" checked> Fácil</label>
       <label><input type="checkbox" value="Médio" checked> Médio</label>
       <label><input type="checkbox" value="Difícil" checked> Difícil</label>
+      <label><input type="checkbox" value="Extremo" checked> Extremo</label>
     </div>
 
     <!-- Coluna Direita: Tipo -->

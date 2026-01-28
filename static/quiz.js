@@ -3,7 +3,7 @@ import { detectarModoTela, deveEncerrarQuiz, obterDificuldadesDisponiveis, obter
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 // Envia erros para a base de dados caso ocorram (necessário enviar a linha onde ocorre o erro para melhor depuração)
 window.onerror = function (message) {
-  if (!localStorage.getItem("id_visitante") === '36b23a50-145d-44b4-b7a0-2c5fb55cfd50' && !localStorage.getItem("id_usuario") in (4, 6, 16)) {
+  if (!localStorage.getItem("id_visitante") === 'b0f221ea-f7df-43a4-b843-7df448eccf15' && !localStorage.getItem("id_usuario") in (4, 6, 16)) {
     fetch("/api/debug/frontend", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -18,7 +18,6 @@ window.onerror = function (message) {
 };
 
 let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"));
-console.log("Perguntas: ", perguntas_por_dificuldade);
 let perguntas_respondidas = [];
 let aguardando_proxima = false // Variável que indica quando se está aguardando próxima pergunta
 let dica_gasta = false

@@ -120,9 +120,9 @@ QUESTION_CONFIG = {
 }
 EMAILS_PROIBIDOS = ['admin@gmail.com', 'teste@gmail.com']
 SITE_EM_MANUTENCAO = False
-TESTANDO_PERGUNTAS = True
+TESTANDO_PERGUNTAS = False
 privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
-id_visitante_admin = "36b23a50-145d-44b4-b7a0-2c5fb55cfd50"
+id_visitante_admin = "b0f221ea-f7df-43a4-b843-7df448eccf15"
 
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
 
@@ -2124,8 +2124,6 @@ def validar_registro():
         return jsonify(success=False, message=msg)
 
     return jsonify(success=True, message="Validação OK")
-
-
 
 if not database_url:
     if __name__ == '__main__':

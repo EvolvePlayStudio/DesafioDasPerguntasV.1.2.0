@@ -5,7 +5,7 @@ let tipo_pergunta;
 let contador_perguntas = 0;
 let favoritos_selecionados = new Set();
 const tabela = document.querySelector("#tabela-perguntas tbody");
-const ordem_dificuldades = ["Fácil", "Médio", "Difícil"];
+const ordem_dificuldades = ["Fácil", "Médio", "Difícil", "Extremo"];
 const contadorEl = document.getElementById("contador");
 const btn_voltar = document.getElementById("btn-voltar");
 const btn_marcar_todas = document.getElementById("marcar-todas");
@@ -85,7 +85,7 @@ btn_salvar_favoritos.addEventListener("click", () => {
 btn_revisar.addEventListener("click", () => {
   const linhas = tabela.querySelectorAll("tr");
   const perguntas_totais = JSON.parse(localStorage.getItem("perguntas_para_revisar"));
-  const perguntas_filtradas = {Fácil: [], Médio: [], Difícil: []};
+  const perguntas_filtradas = {Fácil: [], Médio: [], Difícil: [], Extremo: []};
   tema_atual = box_tema.value;
   tipo_pergunta = box_tipo_pergunta.value;
 
@@ -101,7 +101,7 @@ btn_revisar.addEventListener("click", () => {
     }
   })
 
-  if (perguntas_filtradas["Fácil"].length > 0 || perguntas_filtradas["Médio"].length > 0 || perguntas_filtradas["Difícil"].length > 0) {
+  if (perguntas_filtradas["Fácil"].length > 0 || perguntas_filtradas["Médio"].length > 0 || perguntas_filtradas["Difícil"].length > 0 || perguntas_filtradas["Extremo"].length > 0) {
     localStorage.setItem("perguntas", JSON.stringify(perguntas_filtradas));
     localStorage.setItem("modo_jogo", "revisao")
     localStorage.setItem("tipo_pergunta", tipo_pergunta)
@@ -157,7 +157,7 @@ async function carregarFavoritos() {
     });
   }
   catch (err) {
-    console.log("Erro ao carregar favoritos: ", err)
+    console.error("Erro ao carregar favoritos: ", err)
   }
 }
 
@@ -229,7 +229,8 @@ async function mostrarSubtemasDisponiveis(subtemasRestaurar = []) {
     );
 
     atualizarBotoesSubtemas(subtemasDisponiveis, new Set(subtemasValidos));
-  } catch (e) {
+  }
+  catch (e) {
     console.error("Erro ao carregar subtemas", e);
   }
 
