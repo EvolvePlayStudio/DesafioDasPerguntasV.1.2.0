@@ -122,7 +122,7 @@ const contador_perguntas_restantes = document.getElementById("perguntas-count");
 // Ids de perguntas que são selecionados primeiro
 const ids_objetivas_prioridade = {"Artes": [], "Astronomia": [], "Biologia": [18, 22, 365], "Esportes": [], "Filosofia": [146], "Geografia": [90], "História": [], "Mídia": [106], "Música": [], "Química": [], "Tecnologia": [], "Variedades": []}
 
-const ids_discursivas_prioridade = {"Artes": [251, 261, 269, 270, 612], "Astronomia": [96, 104, 111], "Biologia": [8, 10, 43, 48], "Esportes": [11, 12, 79, 523], "Filosofia": [227, 237, 246, 408, 410, 554, 558], "Geografia": [134, 157, 158, 174], "História": [35, 59, 275], "Mídia": [184, 209, 451, 637, 641], "Música": [313, 317, 327, 479, 500], "Química": [291, 301, 303, 308, 577, 582], "Tecnologia": [352, 358, 392, 470], "Variedades": [27, 221, 658, 662]}
+const ids_discursivas_prioridade = {"Artes": [251, 261, 269, 270, 524, 612], "Astronomia": [96, 104, 111], "Biologia": [8, 10, 43, 48, 55], "Esportes": [11, 12, 79, 80, 523], "Filosofia": [227, 237, 246, 408, 410, 554, 557, 558], "Geografia": [134, 157, 158, 174], "História": [35, 59, 275], "Mídia": [184, 209, 451, 637, 641], "Música": [313, 317, 327, 479, 500], "Química": [291, 301, 303, 308, 577, 582], "Tecnologia": [352, 358, 392, 470], "Variedades": [27, 221, 658, 662]}
 
 function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
   const intervaloMin = 20; // ms entre frames no máximo, para smooth
