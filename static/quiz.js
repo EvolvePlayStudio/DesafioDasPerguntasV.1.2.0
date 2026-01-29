@@ -151,7 +151,7 @@ const ids_discursivas_prioridade = {
   'Música': [313, 317, 327, 479, 500],
   'Química': [291, 301, 303, 308, 577, 582],
   'Tecnologia': [152, 342, 345, 351, 352, 358, 392, 462, 470],
-  'Variedades': [24, 25, 27, 67, 107, 120, 221, 376, 658, 659, 662]
+  'Variedades': [24, 25, 27, 67, 107, 120, 221, 376, 392, 658, 659, 662]
 }
 
 function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
