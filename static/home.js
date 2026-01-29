@@ -97,7 +97,7 @@ btn_perfil.style.display = "";
 btn_pesquisa.style.display = "";
 btn_logout.style.display = "";
 
-function abrirModal({titulo = "", corpoHTML = "", textoPrimario = null, textoSecundario = null, onPrimario = null, onSecundario = null}) {
+function abrirModal({titulo = "", corpoHTML = "", textoPrimario = null, textoSecundario = null, onPrimario = null, onSecundario = null, modalReenvioEmail = false}) {
 
   // Bloqueia interação geral
   permitir_escolher_tema = false;
@@ -109,8 +109,10 @@ function abrirModal({titulo = "", corpoHTML = "", textoPrimario = null, textoSec
   }, 1000);
 
   // Conteúdo
-  modal.querySelector("h3").textContent = titulo;
-  modal.querySelector("#texto-modal").innerHTML = corpoHTML;
+  if (!modalReenvioEmail) {
+    modal.querySelector("h3").textContent = titulo;
+    modal.querySelector("#texto-modal").innerHTML = corpoHTML;
+  }
   if (spanEmail) spanEmail.textContent = "";
 
   // Botão primário
@@ -296,12 +298,6 @@ async function exibirModalConfirmacaoEmail() {
     }
 
     abrirModal({
-      titulo: "Confirmação de e-mail pendente",
-      corpoHTML: `
-        É necessário confirmar o e-mail
-        <span id="email-usuario"></span> para garantir o acesso contínuo aos recursos do jogo e evitar bloqueios futuros
-        <samll>É possível alterar o e-mail da conta na tela de opções</small>
-      `,
       textoPrimario: "Fechar",
       textoSecundario: "Reenviar e-mail",
       onPrimario: () => {
@@ -341,7 +337,8 @@ async function exibirModalConfirmacaoEmail() {
           msgModal.innerText = "Erro de comunicação com o servidor.";
           msgModal.style.color = "red";
         });
-      }
+      },
+      modalReenvioEmail: true
     });
 
     // Preenche o e-mail destacado
@@ -397,7 +394,7 @@ function exibirModalEscolhaTipoPergunta() {
       <p class="observacoes">Obs:</p>
 
       <small class="nota">. As perguntas objetivas possuem 4 alternativas cada</small>
-      <small class="nota">. Nas respostas digitadas utiliza-se corretor ortográfico para erros leves</small>
+      <small class="nota">. Nas respostas digitadas utiliza-se corretor para erros ortográficos</small>
       <small class="nota">. Você pode alterar o tipo de resposta a qualquer momento no menu</small>
     `,
     textoPrimario: "Alternativas",
@@ -411,7 +408,7 @@ function exibirModalRegistroVisitante(marco) {
   abrirModal({
     titulo: `Você atingiu o marco de ${marco} perguntas 🎯`,
     corpoHTML: `
-    Ao se registrar você obtém as seguintes vantagens:
+    Obtenha as seguintes vantagens se registrando:
       <ul>
         <li>📚 Acesso a mais de 1000 perguntas</li>
         <li>🏆 Pontuações e rankings salvos</li>
