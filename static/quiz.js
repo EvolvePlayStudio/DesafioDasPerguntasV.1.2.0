@@ -19,8 +19,6 @@ window.onerror = function (message) {
 
 let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"));
 let perguntas_respondidas = [];
-let aguardando_proxima = false // Variável que indica quando se está aguardando próxima pergunta
-let dica_gasta = false
 let inicio_pergunta;  // horário inicial da pergunta
 let pontuacoes_usuario;
 const tema_atual = decodeURIComponent(localStorage.getItem("tema_atual"))
@@ -32,9 +30,8 @@ else {
   pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario"));
 }
 localStorage.setItem("pontuacao_anterior", pontuacoes_usuario[tema_atual]);
-let animacao_concluida = false;
+
 let pergunta_selecionada = null;
-let ha_perguntas_disponiveis = false;
 let regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"));
 let info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1];
 let regras_usuario = null;
@@ -45,17 +42,25 @@ const modo_jogo = localStorage.getItem("modo_jogo").toLocaleLowerCase();
 const tipo_pergunta = localStorage.getItem("tipo_pergunta").toLocaleLowerCase();
 const lbl_pontuacao_usuario = document.getElementById('pontuacao');
 const lbl_pontos_ganhos = document.getElementById('incremento-pontuacao');
-const btn_enviar = document.getElementById("btn-enviar");
-const btn_pular = document.getElementById("btn-pular");
-const botoes_finalizar_div = document.getElementById("botoes-acao");
-const botoes_enviar_div = document.getElementById("botoes-envio");
 const alternativasContainer = document.getElementById("alternativas-container")
-const alternativaBtns = Array.from(alternativasContainer.querySelectorAll(".alternativa-btn"))
 const resultado = document.getElementById('resultado')
 const caixa_para_resposta = document.getElementById('resposta-input')
 const dica_box = document.getElementById("dica-box")
 let alternativaSelecionada = null; // Guarda a letra clicada (A, B, C, D)
 let respostasDesdeUltimaForcagem = 0; // Para pegar a pergunta do nível que tem mais a cada x respondidas
+
+// Booleanas
+let dica_gasta = false;
+let animacao_concluida = false;
+let ha_perguntas_disponiveis = false;
+let aguardando_proxima = false; // Quando estiver aguardando a próximo pergunta
+
+// Botões
+const btn_enviar = document.getElementById("btn-enviar");
+const btn_pular = document.getElementById("btn-pular");
+const botoes_finalizar_div = document.getElementById("botoes-acao");
+const botoes_enviar_div = document.getElementById("botoes-envio");
+const alternativaBtns = Array.from(alternativasContainer.querySelectorAll(".alternativa-btn"))
 
 // Variáveis relacionadas ao nível de dificuldade
 const PROBABILIDADES_POR_RANKING = {
@@ -182,6 +187,11 @@ function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtuali
   }
 
   window.requestAnimationFrame(passo);
+}
+
+function ativarBotoes() {
+  btn_enviar.disabled = false;
+  btn_pular.disabled = false;
 }
 
 function atualizarRankingVisual() {
@@ -342,10 +352,9 @@ function calcularPontuacao(acertou) {
       pontosBase = regras_usuario.pontos_acerto_extremo;
       break;
     default:
-        console.warn("Dificuldade desconhecida:", dificuldade);
-        return 0;
+      console.warn("Dificuldade desconhecida:", dificuldade);
+      return 0;
   }
-
   let pontos_ganhos = pontosBase;
 
   if (dica_gasta && tipo_pergunta === 'discursiva') {
@@ -386,16 +395,18 @@ function configurarEstrelas() {
   });
 }
 
+function desativarBotoes() {
+  btn_enviar.disabled = true;
+  btn_pular.disabled = true;
+}
+
 async function enviarResposta(pulando = false) {
   hint_dica.style.display = "none";
   hint_pular.style.display = "none";
   hint_avaliacao.style.display = "none";
-  if (pulando) {
-    caixa_para_resposta.value = "";
-  }
-  // Desativa caixa de texto da resposta
-  caixa_para_resposta.disabled = true;
-  const pontuacao_atual = pontuacoes_usuario[tema_atual]
+
+  if (pulando) caixa_para_resposta.value = "";
+  const pontuacao_atual = pontuacoes_usuario[tema_atual];
 
   function carregarComentarioAnterior() {
     // Estado inicial: desativado
@@ -482,7 +493,7 @@ async function enviarResposta(pulando = false) {
       container.style.display = "block";
     }
     catch (err) {
-      console.log("Erro ocorrido ao tentar mostrar respostas aceitas:", err)
+      console.error("Erro ocorrido ao tentar mostrar respostas aceitas:", err)
     }
   }
 
@@ -621,7 +632,8 @@ async function enviarResposta(pulando = false) {
   if (!animacao_concluida || btn_enviar.disabled) return;
   resultado.style.color = "#FFD700";
   resultado.innerHTML = 'Enviando resposta...';
-  btn_enviar.disabled = true;
+  desativarBotoes();
+  caixa_para_resposta.disabled = true;
 
   let resposta_usuario;
   let acertou;
@@ -738,7 +750,8 @@ async function enviarResposta(pulando = false) {
   else {
     resultado.style.color = "red";
     resultado.innerHTML = 'Não foi possível se conectar com o servidor';
-    btn_enviar.disabled = false;
+    ativarBotoes(); // Caso dê erro, ativa botões para o usuário fazer nova tentativa
+    caixa_para_resposta.disabled = false;
   }
 }
 
@@ -963,50 +976,53 @@ function mostrarDica() {
   }
 }
 
-function mostrarEnunciado(texto, elemento, callback) {
-  elemento.textContent = "";
-  let i = 0;
-  const intervalo = setInterval(() => {
-    // Se ainda há letras para serem carregadas no enunciado
-    if (i < texto.length) { 
-      elemento.textContent += texto[i];
-      i++;
-    }
-    // Quando acaba a animação do enunciado da pergunta
-    else {  
-      clearInterval(intervalo);
-      if (tipo_pergunta === 'discursiva') {
-        animacao_concluida = true
-        inicio_pergunta = Date.now()
-        caixa_para_resposta.focus()
-        botoes_enviar_div.style.display = "flex";
-        
-        // Mostra textos sobre dica e pulo de pergunta
-        if (MODO_VISITANTE || exibir_instrucoes_quiz) {
-          hint_dica.style.display = "";
-          hint_pular.style.display = "";
-        }
+function mostrarEnunciado(texto, elemento) {
+  return new Promise(resolve => {
+    elemento.textContent = "";
+    let i = 0;
 
-        // Mostra texto sobre avaliação e botões
-        hint_avaliacao.style.display = "";
-        btn_enviar.style.display = "inline-flex";
-        btn_pular.style.display = "inline-flex";
-        btn_enviar.disabled = false;
-        if (callback) callback();
-      } 
-      else {
-        mostrarAlternativas();
+    const intervalo = setInterval(() => {
+      // Se ainda há letras para mostrar
+      if (i < texto.length) {
+        elemento.textContent += texto[i];
+        i++;
       }
-    }
-  }, VELOCIDADE_LETRA_ENUNCIADO);
+      // Quando acaba a animação
+      else {
+        clearInterval(intervalo);
+        if (tipo_pergunta === 'discursiva') {
+          animacao_concluida = true;
+          inicio_pergunta = Date.now();
+          botoes_enviar_div.style.display = "flex";
+
+          // Exibe os hint-textos de instruções
+          if (MODO_VISITANTE || exibir_instrucoes_quiz) {
+            hint_dica.style.display = "";
+            hint_pular.style.display = "";
+          }
+          hint_avaliacao.style.display = "";
+
+          // Mostra e ativa botões
+          btn_enviar.style.display = "inline-flex";
+          btn_pular.style.display = "inline-flex";
+          ativarBotoes();
+        }
+        else {
+          mostrarAlternativas();
+        }
+        resolve();
+      }
+    }, VELOCIDADE_LETRA_ENUNCIADO);
+  });
 }
 
-function mostrarPergunta() {
+async function mostrarPergunta() {
   ranking_visual_anterior = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking; // Útil para identificar mudança de ranking depois quando vai fazer animação na barra de progresso
 
   animacao_concluida = false;
   botoes_enviar_div.style.display = "none";
-  btn_enviar.disabled = true;
+  desativarBotoes();
+  caixa_para_resposta.disabled = true;
 
   function escolherProximaDificuldade() {
     const ranking = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking;
@@ -1196,8 +1212,7 @@ function mostrarPergunta() {
 
   // Faz animação do enunciado da pergunta
   const enunciadoElemento = document.getElementById("pergunta-enunciado");
-  mostrarEnunciado(pergunta_selecionada.enunciado, enunciadoElemento);
-
+  
   // Mostra o nível da pergunta
   const dificuldade = pergunta_selecionada.dificuldade
   const titulo = document.getElementById("tema-nivel-pergunta");
@@ -1209,9 +1224,10 @@ function mostrarPergunta() {
   let ranking_usuario = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking
   regras_usuario = regras_pontuacao.find(r => r.ranking === ranking_usuario);
 
+  await mostrarEnunciado(pergunta_selecionada.enunciado, enunciadoElemento);
   if (tipo_pergunta.toLowerCase() === 'discursiva') {
-    // Ativa e esvazia a caixa de texto 
     caixa_para_resposta.disabled = false;
+    caixa_para_resposta.focus();
     caixa_para_resposta.value = "";
   
     // Decide se deve mostrar o ícone de dica
@@ -1226,11 +1242,11 @@ function mostrarPergunta() {
 
     // Exibe o ícone de dica
     if (dica_permitida) {
-    document.getElementById("dica-icon").style.display = "flex";
-      } 
+      document.getElementById("dica-icon").style.display = "flex";
+    } 
     else {
-    document.getElementById("dica-icon").style.display = "none";
-      }
+      document.getElementById("dica-icon").style.display = "none";
+    }
     
     // No modo revisão não exibe contador de dicas
     if (modo_jogo === 'revisao') {
@@ -1268,7 +1284,7 @@ async function proximaPergunta() {
       dica_box.style.display = "none"
       caixa_para_resposta.value = "";
     }
-    mostrarPergunta();
+    await mostrarPergunta();
     document.getElementById('botoes-acao').style.display = "none";
     estrelas_avaliacao.style.display = "none";
     resultado.style.display = "none";
@@ -1657,7 +1673,7 @@ async function definirRankingAnterior() {
   ranking_visual_anterior = await obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   // Declara as variáveis que serão úteis
   let dicas;
   if (MODO_VISITANTE) {
@@ -1777,6 +1793,6 @@ document.addEventListener("DOMContentLoaded", () => {
   limparIdsPrioritariosInvalidos();
   definirRankingAnterior(); // Útil para quando for animar barra de progresso
   atualizarRankingVisual();
-  mostrarPergunta();
+  await mostrarPergunta();
   configurarEstrelas();
 });
