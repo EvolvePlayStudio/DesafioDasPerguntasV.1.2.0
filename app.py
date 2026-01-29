@@ -121,6 +121,7 @@ QUESTION_CONFIG = {
 EMAILS_PROIBIDOS = ['admin@gmail.com', 'teste@gmail.com']
 SITE_EM_MANUTENCAO = False
 TESTANDO_PERGUNTAS = False
+TESTANDO_VISITANTE = False
 # FALTA AQUI CRIAR VARIÁVEL PARA DECIDIR SE REGISTRA RESPOSTA COMO VISITANTE
 privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
 id_visitante_admin = "b6c5d32c-c5d8-41aa-811e-aa45c328b372"
@@ -2056,8 +2057,10 @@ def registrar_resposta_usuario(user_id):
 
 @app.route("/registrar-resposta-visitante", methods=["POST"])
 def registrar_resposta_visitante():
-    return jsonify({"status": "ok"}), 200
+    if TESTANDO_VISITANTE:
+        return jsonify({"status": "ok"}), 200
     dados = request.get_json()
+
     id_visitante = session["id_visitante"]
 
     conn = cur = None
