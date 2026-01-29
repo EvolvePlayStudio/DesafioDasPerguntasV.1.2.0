@@ -1,23 +1,23 @@
 import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual, temas_disponiveis } from "./utils.js";
 
 let permitir_escolher_tema = false;
+let tema_atual = null;
+let tipo_pergunta = null;
 
 const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
 sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 
-let tema_atual = null;
-let tipo_pergunta = null;
 const mensagem = document.getElementById("mensagem");
+const perguntas_restantes = document.getElementById("perguntas-count");
+const radios_tipo_pergunta = document.querySelectorAll('.opcoes input[type="radio"]');
 
-// Widgets do modal alertando confirmação de e-mail necessária ou convidando par registro
-const modal = document.getElementById("modal-email-confirmacao");
-const texto_email_usuario = document.getElementById("email-usuario");
+// Widgets do modal
+const modal = document.getElementById("modal");
 const msgModal = document.getElementById("modal-msg");
-const btnFecharModal = document.getElementById("btn-fechar-modal");
-const btnReenviarEmail = document.getElementById("btn-reenviar-email");
-
-const perguntas_restantes = document.getElementById("perguntas-count")
+const btnModalPrimario = document.getElementById("btn-modal-primario");
+const btnModalSecundario = document.getElementById("btn-modal-secundario");
+const spanEmail = modal.querySelector("#email-usuario");
 
 // Botões no cabeçalho da página
 const btn_criar_conta = document.getElementById("btn-criar-conta");
@@ -26,8 +26,6 @@ const btn_opcoes = document.getElementById("btn-opcoes");
 const btn_pesquisa = document.getElementById("btn-pesquisa");
 const btn_doacoes = document.getElementById("btn-doacoes");
 const btn_logout = document.getElementById("btn-logout");
-
-const radios_tipo_pergunta = document.querySelectorAll('.opcoes input[type="radio"]')
 
 if (MODO_VISITANTE) {
   permitir_escolher_tema = true;
@@ -42,34 +40,38 @@ if (MODO_VISITANTE) {
 
     window.location.href = "/";
   });
-
+  
   // Gera ID de visitante para o usuário caso não tenha
   let idVisitante = localStorage.getItem("id_visitante");
   if (!idVisitante) {
     idVisitante = crypto.randomUUID();
-    localStorage.setItem("id_visitante", idVisitante)
-  }
-
-  // Cria pontuações de usuário como visitante (obs: esta função está repetida na tela de pesquisa)
-  if (!localStorage.getItem("pontuacoes_visitante")) {
-      const pontuacoes = {};
-      temas_disponiveis.forEach(tema => {
-        pontuacoes[tema] = 1500;
-      });
-      localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes));
+    localStorage.setItem("id_visitante", idVisitante);
   }
 
   // Cria as informações de perguntas e dicas restantes do usuário
   if (!localStorage.getItem("perguntas_restantes_visitante")) {
     localStorage.setItem("perguntas_restantes_visitante", 60);
-  }
-  if (!localStorage.getItem("dicas_restantes_visitante")) {
     localStorage.setItem("dicas_restantes_visitante", 20);
   }
   
+  // Cria pontuações de usuário como visitante (obs: esta função está repetida na tela de pesquisa)
+  if (!localStorage.getItem("pontuacoes_visitante")) {
+    const pontuacoes = {};
+    temas_disponiveis.forEach(tema => {pontuacoes[tema] = 1500});
+    localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes));
+  }
+
   // Cria armazenamento de ids de perguntas já respondidas no localStorage
   if (!localStorage.getItem("visitante_respondidas")) {
     localStorage.setItem("visitante_respondidas", JSON.stringify({ objetiva: [], discursiva: []}));
+  }
+
+  // Exibe modal para escolha do tipo de pergunta
+  if (!localStorage.getItem("preferencia_tipo_pergunta")) {
+    exibirModalEscolhaTipoPergunta();
+  }
+  else {
+    permitir_escolher_tema = true;
   }
 
   // Registra o id de visitante em session no backend
@@ -89,22 +91,51 @@ else {
   else {
     permitir_escolher_tema = true;
   }
-
-  // Implementa função para botão de fechar modal
-  btnFecharModal.addEventListener("click", async () => {
-    fecharModalEmail();
-    desabilitarBotoesModal();
-  });
-
-  // Implementa função para botão de reenviar e-mail de confirmação
-  btnReenviarEmail.addEventListener("click", async () => {
-    reenviarEmailConfirmacao()
-  });
 }
 
 btn_perfil.style.display = "";
 btn_pesquisa.style.display = "";
 btn_logout.style.display = "";
+
+function abrirModal({titulo = "", corpoHTML = "", textoPrimario = null, textoSecundario = null, onPrimario = null, onSecundario = null}) {
+
+  // Bloqueia interação geral
+  permitir_escolher_tema = false;
+  btnModalPrimario.disabled = true;
+  btnModalSecundario.disabled = true;
+  setTimeout(() => {
+    btnModalPrimario.disabled = false;
+    btnModalSecundario.disabled = false;
+  }, 1000);
+
+  // Conteúdo
+  modal.querySelector("h3").textContent = titulo;
+  modal.querySelector("#texto-modal").innerHTML = corpoHTML;
+  if (spanEmail) spanEmail.textContent = "";
+
+  // Botão primário
+  if (textoPrimario) {
+    btnModalPrimario.textContent = textoPrimario;
+    btnModalPrimario.style.display = "";
+    btnModalPrimario.onclick = onPrimario;
+  }
+  else {
+    btnModalPrimario.style.display = "none";
+  }
+
+  // Botão secundário
+  if (textoSecundario) {
+    btnModalSecundario.textContent = textoSecundario;
+    btnModalSecundario.style.display = "";
+    btnModalSecundario.onclick = onSecundario;
+  }
+  else {
+    btnModalSecundario.style.display = "none";
+  }
+
+  // Exibe o modal
+  modal.classList.remove("hidden");
+}
 
 async function iniciarQuiz(event) {
   function desbloquearBotoes() {
@@ -202,7 +233,7 @@ async function iniciarQuiz(event) {
         
         // Elimina perguntas já respondidas pelo visitante
         const respondidas = JSON.parse(localStorage.getItem("visitante_respondidas"));
-        const idsRespondidas = respondidas[tipo_pergunta] || [];
+        const idsRespondidas = respondidas[tipo_pergunta.toLowerCase()] || [];
         Object.keys(data.perguntas).forEach(dificuldade => {
           if (!Array.isArray(data.perguntas[dificuldade])) return;
           data.perguntas[dificuldade] = data.perguntas[dificuldade].filter(
@@ -247,162 +278,178 @@ async function iniciarQuiz(event) {
   }
 }
 
-function carregarPreferenciasQuiz() {
-  // Pega valores salvos
-  tipo_pergunta = localStorage.getItem("tipo_pergunta");
-  
-  // Se não existirem, define valores padrão
-  if (!tipo_pergunta) {
-    tipo_pergunta = "Discursiva";
-    document.getElementById("radio-discursiva").checked = true;
-    localStorage.setItem("tipo_pergunta", tipo_pergunta);
-  }
-
-  // Marca os inputs na tela com os valores recuperados
-  const tipoRadio = document.querySelector(`input[name="tipo-de-pergunta"][value="${tipo_pergunta}"]`);
-  if (tipoRadio) {
-    tipoRadio.checked = true;
-  }
-}
-
-async function carregarRegrasPontuacao() {
-    
-    const response = await fetch("/api/regras_pontuacao");
-    const data = await response.json();
-
-    if (!data.success) {
-        console.error("Erro ao carregar regras de pontuação");
-        return;
-    }
-
-    localStorage.setItem("regras_pontuacao", JSON.stringify(data.regras_pontuacao));
-}
-
-function desabilitarBotoesModal () {
-  btnFecharModal.disabled = true;
-  btnReenviarEmail.disabled = true;
-}
-
 async function exibirModalConfirmacaoEmail() {
-  desabilitarBotoesModal();
-  programarHabilitacaoBotoesModais();
+  permitir_escolher_tema = false;
   try {
-      const response = await fetch('/pegar_email_confirmado', {
-          method: 'GET',
-          credentials: 'include' 
-      });
-
-      if (!response.ok) throw new Error("Erro na requisição");
-
-      const dados = await response.json();
-      const email_confirmado = dados.email_confirmado;
-      const email_usuario = dados.email_usuario;
-      
-      if (modal && !email_confirmado) {
-        texto_email_usuario.textContent = `${email_usuario}`
-        modal.classList.remove("hidden");
-      }
-      else {
-        permitir_escolher_tema = true;
-      }
-  }
-  catch (error) {
-    permitir_escolher_tema = true;
-    console.error("Erro ao buscar e-mail do usuário:", error);
-  }
-}
-
-function exibirModalRegistroVisitante(marco) {
-  desabilitarBotoesModal();
-  programarHabilitacaoBotoesModais();
-  btnFecharModal.textContent = "Continuar como visitante";
-  btnReenviarEmail.textContent = "Criar conta";
-  const titulo = modal.querySelector("h3");
-  const texto = modal.querySelector("#texto-modal");
-
-  titulo.textContent = `Você atingiu o marco de ${marco} perguntas 🎯`;
-  texto.innerHTML = `
-    Criar uma conta libera as seguintes vantagens:
-    <ul>
-      <li>📚 Acesso a <strong>mais de 1000 perguntas</strong></li>
-      <li>🏆 Progresso salvo nos rankings e pontuações</li>
-      <li>⭐ Revisão inteligente com perguntas favoritadas</li>
-    </ul>
-  `;
-
-  modal.classList.remove("hidden");
-
-  document.getElementById("btn-fechar-modal").onclick = () => {
-    localStorage.setItem(`modal_registro_recusado_${marco}`, "true");
-    modal.classList.add("hidden");
-  };
-
-  document.getElementById("btn-reenviar-email").onclick = async () => {
-    localStorage.setItem(`modal_registro_recusado_${marco}`, "true");
-    localStorage.setItem("ir_para_aba_registro", true);
-    await fetch("/pagina_destino", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ destino: "registro_de_modal" })
+    const response = await fetch("/pegar_email_confirmado", {
+      method: "GET",
+      credentials: "include"
     });
 
-    window.location.href = "/";
-  };
+    if (!response.ok) throw new Error();
+
+    const { email_confirmado, email_usuario } = await response.json();
+
+    if (email_confirmado) {
+      permitir_escolher_tema = true;
+      return;
+    }
+
+    abrirModal({
+      titulo: "Confirmação de e-mail pendente",
+      corpoHTML: `
+        É necessário confirmar o e-mail
+        <span id="email-usuario"></span> para garantir o acesso contínuo aos recursos do jogo e evitar bloqueios futuros
+        <samll>É possível alterar o e-mail da conta na tela de opções</small>
+      `,
+      textoPrimario: "Fechar",
+      textoSecundario: "Reenviar e-mail",
+      onPrimario: () => {
+        modal.classList.add("hidden");
+        sessionStorage.setItem("modal_confirmacao_email_exibido", "true");
+        permitir_escolher_tema = true;
+      },
+      onSecundario: () => {
+        if (sessionStorage.getItem("email_reenviado_neste_login") === "true") {
+          msgModal.innerText = "Um e-mail de confirmação já foi enviado recentemente";
+          msgModal.style.display = "block";
+          msgModal.style.color = "orange";
+          return;
+        }
+
+        msgModal.innerText = "Enviando e-mail de confirmação...";
+        msgModal.style.display = "block";
+        msgModal.style.color = "orange";
+
+        fetch("/reenviar-email-confirmacao", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            sessionStorage.setItem("email_reenviado_neste_login", "true");
+            msgModal.innerText = "E-mail de confirmação reenviado com sucesso";
+            msgModal.style.color = "green";
+          }
+          else {
+            msgModal.innerText = data.message || "Não foi possível reenviar o e-mail.";
+            msgModal.style.color = "red";
+          }
+        })
+        .catch(() => {
+          msgModal.innerText = "Erro de comunicação com o servidor.";
+          msgModal.style.color = "red";
+        });
+      }
+    });
+
+    // Preenche o e-mail destacado
+    spanEmail.textContent = email_usuario;
+
+  }
+  catch (e) {
+    permitir_escolher_tema = true;
+    console.error("Erro ao tentar abrir modal de confirmação de e-mail", e);
+  }
 }
 
-function fecharModalEmail() {
-  if (modal) modal.classList.add("hidden");
-  sessionStorage.setItem("modal_confirmacao_email_exibido", true);
-  permitir_escolher_tema = true;
-}
+function exibirModalEscolhaTipoPergunta() {
+  
+  function salvarTipoPergunta(tipo) {
+    localStorage.setItem("tipo_pergunta", tipo);
+    localStorage.setItem("preferencia_tipo_pergunta", "true");
 
-function programarHabilitacaoBotoesModais() {
-  setTimeout(() => {
-    btnFecharModal.disabled = false;
-    btnReenviarEmail.disabled = false;
-  }, 1000);
-}
+    const radio = document.querySelector(
+      `input[name="tipo-de-pergunta"][value="${tipo}"]`
+    );
+    if (radio) radio.checked = true;
 
-function reenviarEmailConfirmacao() {
-
-  if (sessionStorage.getItem("email_reenviado_neste_login") === "true") {
-    msgModal.innerText = "Um e-mail de confirmação já foi enviado recentemente";
-    msgModal.style.display = "block";
-    msgModal.style.color = "orange";
-    return;
+    modal.classList.add("hidden");
+    permitir_escolher_tema = true;
   }
 
-  msgModal.innerText = "Enviando e-mail de confirmação...";
-  msgModal.style.display = "block";
-  msgModal.style.color = "orange";
+  abrirModal({
+    titulo: "Que tipo de resposta você prefere?",
+    corpoHTML: `
+      <table class="comparacao">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Alternativas</th>
+            <th>Digitada</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Dicas</td>
+            <td class="centro">❌</td>
+            <td class="centro">✅</td>
+          </tr>
+          <tr>
+            <td>Pular</td>
+            <td class="centro">❌</td>
+            <td class="centro">✅</td>
+          </tr>
+        </tbody>
+      </table>
 
-  fetch("/reenviar-email-confirmacao", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" }
-  })
-  .then(res => res.json())
-  .then(data => {
+      <p class="observacoes">Obs:</p>
 
-    if (data.success) {
-      sessionStorage.setItem("email_reenviado_neste_login", "true");
-      msgModal.innerText = "E-mail de confirmação reenviado com sucesso";
-      msgModal.style.color = "green";
-    }
-    else {
-      msgModal.innerText = data.message || "Não foi possível reenviar o e-mail.";
-      msgModal.style.color = "red";
-    }
-  })
-  .catch(() => {
-    msgModal.innerText = "Erro de comunicação com o servidor.";
-    msgModal.style.color = "red";
+      <small class="nota">. As perguntas objetivas possuem 4 alternativas cada</small>
+      <small class="nota">. Nas respostas digitadas utiliza-se corretor ortográfico para erros leves</small>
+      <small class="nota">. Você pode alterar o tipo de resposta a qualquer momento no menu</small>
+    `,
+    textoPrimario: "Alternativas",
+    textoSecundario: "Digitada",
+    onPrimario: () => salvarTipoPergunta("Objetiva"),
+    onSecundario: () => salvarTipoPergunta("Discursiva")
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+function exibirModalRegistroVisitante(marco) {
+  abrirModal({
+    titulo: `Você atingiu o marco de ${marco} perguntas 🎯`,
+    corpoHTML: `
+    Ao se registrar você obtém as seguintes vantagens:
+      <ul>
+        <li>📚 Acesso a mais de 1000 perguntas</li>
+        <li>🏆 Pontuações e rankings salvos</li>
+        <li>⭐ Revisão inteligente com perguntas favoritadas</li>
+      </ul>
+    `,
+    textoPrimario: "Continuar como visitante",
+    textoSecundario: "Criar uma conta",
+    onPrimario: () => {
+      localStorage.setItem(`modal_registro_fechado_${marco}`, "true");
+      modal.classList.add("hidden");
+      permitir_escolher_tema = true;
+    },
+    onSecundario: async () => {
+      localStorage.setItem("ir_para_aba_registro", true);
+      await fetch("/pagina_destino", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ destino: "registro_de_modal" })
+      });
+      window.location.href = "/";
+    }
+  });
+}
 
-  // Carrega as regras de pontuações
-  carregarRegrasPontuacao()
+document.addEventListener("DOMContentLoaded", async () => {
+  // Carrega as regras de pontuações do jogo
+  try {
+    const response = await fetch("/api/regras_pontuacao");
+    const data = await response.json();
+
+    if (data.success) {
+      localStorage.setItem("regras_pontuacao", JSON.stringify(data.regras_pontuacao));
+    }
+  }
+  catch(e) {
+    console.error("Erro ao carregar regras de pontuação", e);
+  }
 
   // Implementa a função de clique no botão de perfil
   btn_perfil.addEventListener("click", async () => {
@@ -461,10 +508,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const nome_usuario = document.getElementById("user-name")
   const dicas_restantes = document.getElementById("dicas-count")
 
-  // Define o nome de usuário, as perguntas e dicas disponíveis e máximas para o usuário
+  // Define o nome de usuário, as perguntas e dicas disponíveis e máximas
   if (MODO_VISITANTE) {
     nome_usuario.textContent = "Visitante"
-    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/80`
+    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/60`
     dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes_visitante")}/20`
 
     // Decide se deve exibir modal para convidar a fazer registro
@@ -473,7 +520,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const MARCO = 15;
     const marcoAtual = Math.floor(totalRespondidas / MARCO) * MARCO;
-    const chaveRecusa = `modal_registro_recusado_${marcoAtual}`;
+    const chaveRecusa = `modal_registro_fechado_${marcoAtual}`;
 
     if (
       totalRespondidas >= 15 &&
@@ -488,8 +535,16 @@ document.addEventListener("DOMContentLoaded", () => {
     perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}/80`
     dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes")}/20`
   }
-  // Carrega as preferências de modo de jogo e tipo de pergunta
-  carregarPreferenciasQuiz();
+  
+  // Carrega as preferências de tipo de pergunta
+  tipo_pergunta = localStorage.getItem("tipo_pergunta");
+  if (!tipo_pergunta) {
+    tipo_pergunta = "Discursiva"; // Padrão caso não haja preferência
+    document.getElementById("radio-discursiva").checked = true;
+    localStorage.setItem("tipo_pergunta", tipo_pergunta);
+  }
+  const tipoRadio = document.querySelector(`input[name="tipo-de-pergunta"][value="${tipo_pergunta}"]`);
+  if (tipoRadio) tipoRadio.checked = true;
   
   radios_tipo_pergunta.forEach(radio => {
     radio.disabled = false;

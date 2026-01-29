@@ -123,7 +123,7 @@ SITE_EM_MANUTENCAO = False
 TESTANDO_PERGUNTAS = False
 # FALTA AQUI CRIAR VARIÁVEL PARA DECIDIR SE REGISTRA RESPOSTA COMO VISITANTE
 privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
-id_visitante_admin = "b0f221ea-f7df-43a4-b843-7df448eccf15"
+id_visitante_admin = "b6c5d32c-c5d8-41aa-811e-aa45c328b372"
 
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
 

@@ -235,6 +235,10 @@
       color: #000000;
       line-height: 1.5;
     }
+    .email-destaque {
+      color: blue;
+      font-weight: bold;
+    }
     .modal-actions {
       display: flex;
       justify-content: space-between;
@@ -249,18 +253,18 @@
       cursor: pointer;
       border: none;
     }
-    .btn-fechar {
+    .btn-modal-primario {
       background: var(--bg-botao-login);
       color: #fff;
     }
-    .btn-fechar:hover {
+    .btn-modal-primario:hover {
       background: var(--bg-hover-botao-login);
     }
-    .btn-reenviar {
+    .btn-modal-secundario {
       background: #1e8f3f;
       color: #fff;
     }
-    .btn-reenviar:hover {
+    .btn-modal-secundario:hover {
       background: #157232;
     }
     .modal-feedback {
@@ -270,6 +274,46 @@
       color: green;
       display: none;
       text-align: center
+    }
+    table.comparacao {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      background-color: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .comparacao th,
+    .comparacao td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #ddd;
+      font-size: 14px;
+    }
+    .comparacao thead th {
+      background-color: #f2f2f2;
+      font-weight: 600;
+      text-align: center;
+    }
+    .comparacao tbody td:first-child {
+      text-align: left;
+      font-weight: 500;
+    }
+    .comparacao .centro {
+      text-align: center;
+      font-size: 16px;
+    }
+    .comparacao tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .observacoes {
+      margin-top: 14px;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    small.nota {
+      display: block;
+      font-size: 12px;
+      margin-top: 4px;
     }
   </style>
 </head>
@@ -395,15 +439,17 @@
     {% endif %}
   </footer>
 
-  <div id="modal-email-confirmacao" class="modal-overlay hidden">
+  <div id="modal" class="modal-overlay hidden">
     <div class="modal">
-      <h3>Confirmação de e-mail pendente</h3>
+      <h3></h3>
 
-      <p id="texto-modal">Identificamos que o e-mail <span id="email-usuario" style="color: blue; font-weight: bold;"></span> ainda não foi confirmado. A confirmação garante acesso contínuo aos recursos do jogo e evita bloqueios futuros.</p>
+      <p id="texto-modal">
+        <span id="email-usuario" class="email-destaque"></span>
+      </p>
 
       <div class="modal-actions">
-        <button id="btn-fechar-modal" class="btn-fechar">Fechar</button>
-        <button id="btn-reenviar-email" class="btn-reenviar">Reenviar e-mail</button>
+        <button id="btn-modal-primario" class="btn-modal-primario"></button>
+        <button id="btn-modal-secundario" class="btn-modal-secundario"></button>
       </div>
 
       <p class="modal-feedback" id="modal-msg"></p>

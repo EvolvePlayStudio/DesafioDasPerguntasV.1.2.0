@@ -3,7 +3,7 @@ import { detectarModoTela, deveEncerrarQuiz, obterDificuldadesDisponiveis, obter
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 // Envia erros para a base de dados caso ocorram (necessário enviar a linha onde ocorre o erro para melhor depuração)
 window.onerror = function (message) {
-  if (!localStorage.getItem("id_visitante") === 'b0f221ea-f7df-43a4-b843-7df448eccf15' && !localStorage.getItem("id_usuario") in (4, 6, 16)) {
+  if (!localStorage.getItem("id_visitante") === 'b6c5d32c-c5d8-41aa-811e-aa45c328b372' && !localStorage.getItem("id_usuario") in (4, 6, 16)) {
     fetch("/api/debug/frontend", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -42,10 +42,10 @@ const modo_jogo = localStorage.getItem("modo_jogo").toLocaleLowerCase();
 const tipo_pergunta = localStorage.getItem("tipo_pergunta").toLocaleLowerCase();
 const lbl_pontuacao_usuario = document.getElementById('pontuacao');
 const lbl_pontos_ganhos = document.getElementById('incremento-pontuacao');
-const alternativasContainer = document.getElementById("alternativas-container")
-const resultado = document.getElementById('resultado')
-const caixa_para_resposta = document.getElementById('resposta-input')
-const dica_box = document.getElementById("dica-box")
+const alternativasContainer = document.getElementById("alternativas-container");
+const resultado = document.getElementById('resultado');
+const caixa_para_resposta = document.getElementById('resposta-input');
+const dica_box = document.getElementById("dica-box");
 let alternativaSelecionada = null; // Guarda a letra clicada (A, B, C, D)
 let respostasDesdeUltimaForcagem = 0; // Para pegar a pergunta do nível que tem mais a cada x respondidas
 
@@ -475,11 +475,12 @@ async function enviarResposta(pulando = false) {
     const avaliacao_anterior = pergunta_selecionada.estrelas || 0;
     renderizarEstrelas(avaliacao_anterior);
     estrelas_iniciais = avaliacao_anterior;
+    estrelas_avaliacao.style.display = "block";
     
     // Carrega comentário de feedback anterior do usuário caso exista
     carregarComentarioAnterior();
 
-    estrelas_avaliacao.style.display = "block";
+    
 
     // Exibe os comentários dos outros usuários
     // document.getElementById('comentarios').style.display = 'block';
@@ -755,10 +756,6 @@ async function enviarResposta(pulando = false) {
   }
 }
 
-function esconderRespostasAceitas() {
-  document.getElementById("respostas-aceitas-box").style.display = "none";
-}
-
 async function finalizarQuiz() {
   await registrarFeedback();
   if (modo_jogo === 'desafio') {
@@ -1017,6 +1014,20 @@ function mostrarEnunciado(texto, elemento) {
 }
 
 async function mostrarPergunta() {
+  // Remove widgets anteriores
+  aguardando_proxima = false;
+  document.getElementById("nota-box").style.display = "none";
+  resultado.style.display = "none";
+  estrelas_avaliacao.style.display = "none";
+  document.getElementById("respostas-aceitas-box").style.display = "none";
+  box_comentario.style.display = "none";
+
+  // Reseta estrelas
+  document.querySelectorAll(".estrela").forEach(e => {
+    e.textContent = "☆";
+    e.classList.remove("dourada");
+  });
+
   ranking_visual_anterior = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking; // Útil para identificar mudança de ranking depois quando vai fazer animação na barra de progresso
 
   animacao_concluida = false;
@@ -1254,20 +1265,6 @@ async function mostrarPergunta() {
     }
     dica_box.style.display = "none"
   } 
-
-  resultado.style.display = "none";
-  estrelas_avaliacao.style.display = "none";
-  box_comentario.style.display = "none";
-  document.getElementById("nota-box").style.display = "none";
-  aguardando_proxima = false;
-
-  // Resetar estrelas
-  document.querySelectorAll(".estrela").forEach(e => {
-  e.textContent = "☆";
-  e.classList.remove("dourada");
-
-  esconderRespostasAceitas()
-  });
 }
 
 async function proximaPergunta() {
@@ -1284,11 +1281,12 @@ async function proximaPergunta() {
       dica_box.style.display = "none"
       caixa_para_resposta.value = "";
     }
-    await mostrarPergunta();
     document.getElementById('botoes-acao').style.display = "none";
     estrelas_avaliacao.style.display = "none";
     resultado.style.display = "none";
+    box_comentario.display = "none";
     document.getElementById("nota-box").style.display = "none";
+    mostrarPergunta();
     // document.getElementById('comentarios').style.display = 'none';
     aguardando_proxima = false;
   }
