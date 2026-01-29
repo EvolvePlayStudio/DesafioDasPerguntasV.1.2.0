@@ -2056,7 +2056,7 @@ def registrar_resposta_usuario(user_id):
 
 @app.route("/registrar-resposta-visitante", methods=["POST"])
 def registrar_resposta_visitante():
-    if TESTANDO_VISITANTE:
+    if TESTANDO_VISITANTE or session["id_visitante"] == id_visitante_admin:
         return jsonify({"status": "ok"}), 200
     dados = request.get_json()
 
