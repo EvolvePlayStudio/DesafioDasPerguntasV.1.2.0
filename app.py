@@ -38,7 +38,7 @@ temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia",
 # IDs de perguntas para os usuários no modo visitante
 ids_perguntas_objetivas_visitante = {"Artes": [167, 333, 338, 353, 558, 571], "Astronomia": [11, 12, 477, 479, 492, 493], "Biologia": [21, 29, 361, 365, 581, 592], "Esportes": [55, 59, 63, 65, 75, 462], "Filosofia": [132, 142, 145, 146, 150, 300], "Geografia": [82, 86, 89, 90, 206, 322], "História": [49, 118, 127, 209, 259, 262], "Mídia": [106, 381, 385, 390, 604, 605], "Música": [222, 225, 238, 424, 439, 432], "Química": [184, 188, 189, 200, 202, 550], "Tecnologia": [155, 243, 245, 273, 398, 411], "Variedades": [125, 271, 501, 624, 632, 634]}
 
-ids_perguntas_discursivas_visitante = {"Artes": [250, 251, 270, 524, 548, 610], "Astronomia": [104, 108, 531, 537, 545, 547], "Biologia": [43, 51, 55, 444, 620, 624], "Esportes": [14, 80, 82, 364, 381, 513], "Filosofia": [235, 242, 408, 410, 557, 575], "Geografia": [95, 136, 156, 172, 181, 411], "História": [21, 29, 59, 368, 401, 406], "Mídia": [186, 188, 207, 448, 642, 650], "Música": [313, 317, 339, 475, 480, 500], "Química": [288, 291, 299, 303, 579, 581], "Tecnologia": [149, 206, 344, 352, 392, 462], "Variedades": [101, 110, 120, 160, 290, 660]}
+ids_perguntas_discursivas_visitante = {"Artes": [251, 268, 270, 524, 548, 610], "Astronomia": [104, 108, 531, 537, 545, 547], "Biologia": [43, 51, 55, 444, 620, 624], "Esportes": [14, 80, 82, 364, 381, 513], "Filosofia": [235, 242, 408, 410, 557, 575], "Geografia": [136, 156, 172, 178, 181, 411], "História": [21, 29, 59, 368, 401, 406], "Mídia": [186, 188, 203, 207, 448, 642], "Música": [313, 317, 339, 473, 475, 480], "Química": [288, 291, 299, 303, 579, 581], "Tecnologia": [149, 206, 344, 352, 392, 462], "Variedades": [101, 110, 118, 160, 377, 660]}
 
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
@@ -51,7 +51,7 @@ dominios_descartaveis = {
     "mailinator.com", "10minutemail.com", "guerrillamail.com", "tempmail.com"
 }
 CAPTCHA_BASE_DIR = "static/captcha_imgs"
-FUSO_SERVIDOR = timezone(timedelta(hours=-3)) # Depois ver se não dá para tirar esat variável
+FUSO_SERVIDOR = timezone(timedelta(hours=-3)) # Depois ver se não dá para tirar este variável
 QUESTION_CONFIG = {
     'discursiva': {
         'table': 'perguntas_discursivas',
@@ -158,6 +158,7 @@ def token_required(f):
             return redirect("/login")
 
         # 3️⃣ Verifica token no banco
+        conn = cur = None
         try:
             conn = get_db_connection()
             cur = conn.cursor()
@@ -318,6 +319,8 @@ def enviar_feedback(user_id):
     id_pergunta = data.get("id_pergunta")
     tipo_pergunta = data.get("tipo_pergunta").lower().capitalize()
     estrelas = data.get("estrelas")
+    if estrelas not in (1, 2, 3, 4, 5):
+        estrelas = None
     versao_pergunta = data.get("versao_pergunta")
     comentario = data.get("comentario")
     dificuldade = data.get("dificuldade").lower().capitalize()
@@ -341,16 +344,36 @@ def enviar_feedback(user_id):
                 INSERT INTO feedbacks (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id_pergunta, tipo_pergunta, versao_pergunta, id_visitante)
-                DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, comentario = EXCLUDED.comentario, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
+                DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, comentario = EXCLUDED.comentario, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'))
+                RETURNING id_feedback;
             """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade))
         else:
             cur.execute("""
                 INSERT INTO feedbacks (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id_pergunta, tipo_pergunta, versao_pergunta, id_usuario)
-                DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, comentario = EXCLUDED.comentario, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'));
+                DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, comentario = EXCLUDED.comentario, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'))
+                RETURNING id_feedback;
             """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade))
+        id_feedback = cur.fetchone()[0]
         conn.commit()
+
+        # Notifica por e-mail o feedback enviado caso tenha comentário
+        if comentario:
+            try:
+                enviar_email_feedback_pergunta(
+                    id_feedback=id_feedback,
+                    id_pergunta=id_pergunta,
+                    tipo_pergunta=tipo_pergunta,
+                    enunciado=data.get("enunciado"),
+                    comentario=comentario,
+                    estrelas=estrelas,
+                    dificuldade=dificuldade,
+                    modo_visitante=modo_visitante
+                )
+            except Exception:
+                app.logger.warning("Falha ao enviar email de feedback da pergunta", exc_info=True)
+
         return jsonify({"sucesso": True})
     except Exception as e:
         if conn: conn.rollback()
@@ -359,20 +382,6 @@ def enviar_feedback(user_id):
     finally:
         if cur: cur.close()
         if conn: conn.close()
-
-def email_dominio_valido(email: str) -> bool:
-    if not email or "@" not in email:
-        return False
-
-    dominio = email.split("@")[-1].lower()
-
-    if dominio in dominios_descartaveis:
-        return False
-
-    if dominio not in dominios_permitidos:
-        return False
-
-    return True
 
 @app.route("/api/feedbacks/comentarios", methods=["POST"])
 @token_required
@@ -478,6 +487,18 @@ def enviar_feedback_comentario(user_id):
                 novo_id = cur.fetchone()["id_feedback"]
                 conn.commit()
 
+                # Envia o feedback feito para o e-mail do admin
+                try:
+                    enviar_email_feedback_site(
+                        id_feedback=feedback_id,
+                        tema=tema,
+                        comentario=comentario,
+                        pontuacao_saldo=pontuacao_saldo,
+                        modo_visitante=modo_visitante
+                    )
+                except Exception:
+                    app.logger.warning("Falha ao enviar email de feedback do site",exc_info=True)
+
                 return jsonify({
                     "sucesso": True,
                     "id_feedback": novo_id,
@@ -490,6 +511,20 @@ def enviar_feedback_comentario(user_id):
             "erro": "Erro interno",
             "detalhe": str(e)
         }), 500
+
+def email_dominio_valido(email: str) -> bool:
+    if not email or "@" not in email:
+        return False
+
+    dominio = email.split("@")[-1].lower()
+
+    if dominio in dominios_descartaveis:
+        return False
+
+    if dominio not in dominios_permitidos:
+        return False
+
+    return True
 
 def identificar_dispositivo():
     ua = (request.headers.get("User-Agent") or "").lower()
@@ -692,7 +727,6 @@ def formatar_hora_servidor(timestamp):
     if not timestamp:
         return None
     dt = datetime.fromtimestamp(timestamp, FUSO_SERVIDOR)
-    offset = FUSO_SERVIDOR.utcoffset(None)
     return dt.strftime("%H:%M")
 
 @app.route('/verificar_bloqueio')
@@ -1819,16 +1853,15 @@ def registrar():
     data = request.get_json()
     notificacoes_importantes = bool(data.get("notificacoes_importantes", True))
     nome = data.get("nome")
-    email = data.get("email").strip().lower()
+    email_raw = data.get("email")
     senha = data.get("senha")
     captcha_token = data.get("captcha_token")
     captcha_selecoes = list(map(int, data.get("captcha_selecoes", [])))
 
-    if not email:
-        return
-
-    if email in EMAILS_PROIBIDOS:
-        return jsonify(success=False, message="E-mail inválido")
+    # Validação do e-mail
+    if not email_raw or email_raw in EMAILS_PROIBIDOS:
+        return jsonify(success=False, message="E-mail inválido"), 400
+    email = email_raw.strip().lower()
 
     # Validação do CAPTCHA
     if not captcha_token:
@@ -1836,10 +1869,10 @@ def registrar():
 
     dados_captcha = session.get(f"captcha_{captcha_token}")
     if not dados_captcha or time.time() > dados_captcha.get("expira", 0):
-        return jsonify(success=False, message="CAPTCHA expirado ou inválido")
+        return jsonify(success=False, message="CAPTCHA expirado ou inválido"), 400
 
     if sorted(captcha_selecoes) != sorted(dados_captcha.get("corretos", [])):
-        return jsonify(success=False, message="Seleções do CAPTCHA incorretas")
+        return jsonify(success=False, message="Seleções do CAPTCHA incorretas"), 400
 
     # Invalida o CAPTCHA para evitar reutilização
     session.pop(f"captcha_{captcha_token}", None)
@@ -1851,7 +1884,7 @@ def registrar():
     # Agora atual (truncado para segundos)
     agora_sp = datetime.now(tz_sp).replace(microsecond=0)
 
-    # Exemplo: expiração em 24 horas
+    # Exemplo: expiração em 24 horas (obs: horário de São Paulo é 3 horas atrasado em relação ao horário padrão do sistema, por isso o número 21 passado no timedelta)
     expiracao = agora_sp + timedelta(hours=21)
     try:
         conn = get_db_connection()
@@ -1892,11 +1925,11 @@ def registrar():
         if id_visitante:
             if usar_dados_visitante:
                 cur.execute("""
-                    SELECT DISTINCT ON (id_pergunta)
+                    SELECT DISTINCT ON (id_pergunta, id_visitante, tipo_pergunta)
                         id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario
                     FROM acesso_modo_visitante
-                    WHERE id_visitante = %s
-                    ORDER BY id_pergunta
+                    WHERE id_visitante = %s AND data_resposta >= NOW() - INTERVAL '1 month'
+                    ORDER BY id_pergunta, data_resposta ASC
                 """, (id_visitante,))
                 
                 respostas = cur.fetchall()
@@ -1912,9 +1945,11 @@ def registrar():
                         ON CONFLICT (id_usuario, id_pergunta, tipo_pergunta) DO NOTHING
                     """, (id_usuario, id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, agora_sp, True))
 
+                app.logger.info(f"{len(respostas)} respostas migradas do visitante {id_visitante}")
+
                 # Limpeza das respostas do usuario no modo visitante
                 cur.execute("""
-                    DELETE FROM acesso_modo_visitante WHERE id_visitante = %s
+                    DELETE FROM acesso_modo_visitante WHERE id_visitante = %s AND data_resposta >= NOW() - INTERVAL '1 month'
                 """, (id_visitante,))
 
             # Atualiza os feedbacks para as perguntas que o usuário fez como visitante
@@ -2144,6 +2179,107 @@ def validar_registro():
         return jsonify(success=False, message=msg)
 
     return jsonify(success=True, message="Validação OK")
+
+def enviar_email_feedback_pergunta(id_feedback, id_pergunta, tipo_pergunta, enunciado, comentario, estrelas, dificuldade, modo_visitante):
+    assunto = "[Feedback] Comentário em pergunta"
+    
+    link_lido = (
+        f"{base_url}/admin/marcar_feedback_lido"
+        f"?tipo=pergunta&id={id_feedback}"
+    )
+
+    corpo = f"""
+        Novo feedback em pergunta:
+
+        ID da pergunta: {id_pergunta}
+        Tipo: {tipo_pergunta}
+        Enunciado: {enunciado}
+        Dificuldade: {dificuldade}
+        Estrelas: {estrelas if estrelas is not None else '—'}
+        Modo visitante: {'Sim' if modo_visitante else 'Não'}
+
+        Comentário:
+        {comentario}
+
+        Marcar como lido:
+        {link_lido}
+    """
+
+    enviado = enviar_email_admin(assunto, corpo)
+    if not enviado:
+        app.logger.warning("Falha ao enviar email de feedback para pergunta (não crítico)")
+
+def enviar_email_feedback_site(id_feedback, tema, comentario, pontuacao_saldo, modo_visitante
+):
+    assunto = "[Feedback] Comentário sobre o site"
+
+    link_lido = (
+        f"{base_url}/admin/marcar_feedback_lido"
+        f"?tipo=site&id={id_feedback}"
+    )
+
+    corpo = f"""
+        Novo feedback geral do site:
+
+        Tema: {tema}
+        Pontos ganhos no quiz: {pontuacao_saldo}
+        Modo visitante: {'Sim' if modo_visitante else 'Não'}
+
+        Comentário:
+        {comentario}
+
+        Marcar como lido:
+        {link_lido}
+    """
+
+    enviado = enviar_email_admin(assunto, corpo)
+    if not enviado:
+        app.logger.warning("Falha ao enviar email de feedback para o site (não crítico)")
+
+def enviar_email_admin(assunto, corpo):
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = email_remetente
+        msg["To"] = email_remetente
+        msg["Subject"] = assunto
+        msg.attach(MIMEText(corpo, 'plain'))
+
+        with smtplib.SMTP("smtp.gmail.com", int(porta_email)) as servidor:
+            servidor.starttls()
+            servidor.login(email_remetente, senha_app)
+            servidor.send_message(msg)
+
+        return True
+
+    except Exception:
+        app.logger.exception("Erro ao enviar email de feedback para admin")
+        return False
+
+@app.route("/admin/marcar_feedback_lido", methods=["GET"])
+def marcar_feedback_lido():
+    tipo = request.args.get("tipo")
+    id_feedback = request.args.get("id")
+
+    if tipo not in ("pergunta", "site") or not id_feedback:
+        return "Parâmetros inválidos", 400
+
+    tabela = "feedbacks" if tipo == "pergunta" else "feedbacks_comentarios"
+
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(f"""
+                    UPDATE {tabela}
+                    SET lido = TRUE
+                    WHERE id_feedback = %s
+                """, (id_feedback,))
+                conn.commit()
+
+        return "Feedback marcado como lido ✔️"
+
+    except Exception:
+        app.logger.exception("Erro ao marcar feedback como lido")
+        return "Erro interno", 500
 
 if not database_url:
     if __name__ == '__main__':

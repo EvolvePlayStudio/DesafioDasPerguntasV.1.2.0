@@ -1308,7 +1308,8 @@ async function registrarFeedback() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       id_pergunta: pergunta_selecionada.id_pergunta,
-      tipo_pergunta,
+      tipo_pergunta: tipo_pergunta,
+      enunciado: pergunta_selecionada.enunciado,
       versao_pergunta: pergunta_selecionada.versao_pergunta,
       estrelas: estrelas_atual,
       comentario: comentario_atual,
@@ -1356,7 +1357,7 @@ function resetarAlternativas() {
 }
 
 function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
-  const stopwords = new Set(["a", "o", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "no", "na", "nos", "nas", "por", "pelo", "pela", "com", "para", "um", "uma", "uns", "umas", "ao", "aos", "à", "às"]);
+  const stopwords = new Set(["a", "o", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "no", "na", "nos", "nas", "por", "pelo", "pela", "com", "para", "um", "uma", "uns", "umas", "ao", "aos", "à", "às", "the"]);
 
   function aceitaPorDistancia(dist, lenOriginal, textoCorreto) {
     if (lenOriginal <= 3) return false;
