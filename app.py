@@ -38,7 +38,7 @@ temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia",
 # IDs de perguntas para os usuários no modo visitante
 ids_perguntas_objetivas_visitante = {"Artes": [167, 333, 338, 353, 558, 571], "Astronomia": [11, 12, 477, 479, 492, 493], "Biologia": [21, 29, 361, 365, 581, 592], "Esportes": [55, 59, 63, 65, 75, 462], "Filosofia": [132, 142, 145, 146, 150, 300], "Geografia": [82, 86, 89, 90, 206, 322], "História": [49, 118, 127, 209, 259, 262], "Mídia": [106, 381, 385, 390, 604, 605], "Música": [222, 225, 238, 424, 439, 432], "Química": [184, 188, 189, 200, 202, 550], "Tecnologia": [155, 243, 245, 273, 398, 411], "Variedades": [125, 271, 501, 624, 632, 634]}
 
-ids_perguntas_discursivas_visitante = {"Artes": [250, 251, 270, 524, 548, 610], "Astronomia": [104, 108, 531, 537, 541, 547], "Biologia": [43, 51, 55, 444, 620, 624], "Esportes": [14, 80, 82, 364, 381, 513], "Filosofia": [235, 242, 408, 410, 557, 575], "Geografia": [95, 136, 156, 172, 181, 411], "História": [21, 29, 59, 368, 401, 406], "Mídia": [186, 188, 207, 448, 642, 650], "Música": [313, 317, 339, 475, 480, 500], "Química": [288, 291, 299, 303, 579, 581], "Tecnologia": [149, 206, 344, 352, 392, 462], "Variedades": [101, 110, 120, 160, 290, 660]}
+ids_perguntas_discursivas_visitante = {"Artes": [250, 251, 270, 524, 548, 610], "Astronomia": [104, 108, 531, 537, 545, 547], "Biologia": [43, 51, 55, 444, 620, 624], "Esportes": [14, 80, 82, 364, 381, 513], "Filosofia": [235, 242, 408, 410, 557, 575], "Geografia": [95, 136, 156, 172, 181, 411], "História": [21, 29, 59, 368, 401, 406], "Mídia": [186, 188, 207, 448, 642, 650], "Música": [313, 317, 339, 475, 480, 500], "Química": [288, 291, 299, 303, 579, 581], "Tecnologia": [149, 206, 344, 352, 392, 462], "Variedades": [101, 110, 120, 160, 290, 660]}
 
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
@@ -1824,6 +1824,9 @@ def registrar():
     captcha_token = data.get("captcha_token")
     captcha_selecoes = list(map(int, data.get("captcha_selecoes", [])))
 
+    if not email:
+        return
+
     if email in EMAILS_PROIBIDOS:
         return jsonify(success=False, message="E-mail inválido")
 
@@ -1886,39 +1889,53 @@ def registrar():
         # Migra dados do modo visitante para a nova conta caso o usuário tenha marcado esta opção
         id_visitante = data.get("id_visitante")
         usar_dados_visitante = data.get("usar_dados_visitante", False)
-        if id_visitante and usar_dados_visitante:
-            cur.execute("""
-                SELECT DISTINCT ON (id_pergunta)
-                    id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario
-                FROM acesso_modo_visitante
-                WHERE id_visitante = %s
-                ORDER BY id_pergunta
-            """, (id_visitante,))
-            
-            respostas = cur.fetchall()
-
-            # Obs: A data da resposta registrada é a data em que ocorreu a migração dos dados
-            for id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario in respostas:
-                tipo_pergunta = tipo_pergunta.capitalize()
+        if id_visitante:
+            if usar_dados_visitante:
                 cur.execute("""
-                    INSERT INTO respostas_usuarios (
-                        id_usuario, id_pergunta, tipo_pergunta, tema, resposta_usuario, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, data_resposta, dados_migrados
-                    )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (id_usuario, id_pergunta, tipo_pergunta) DO NOTHING
-                """, (id_usuario, id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, agora_sp, True))
+                    SELECT DISTINCT ON (id_pergunta)
+                        id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario
+                    FROM acesso_modo_visitante
+                    WHERE id_visitante = %s
+                    ORDER BY id_pergunta
+                """, (id_visitante,))
+                
+                respostas = cur.fetchall()
 
-            # Limpeza das respostas do usuario no modo visitante
-            cur.execute("""
-                DELETE FROM acesso_modo_visitante WHERE id_visitante = %s
-            """, (id_visitante,))
+                # Obs: A data da resposta registrada é a data em que ocorreu a migração dos dados
+                for id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario in respostas:
+                    tipo_pergunta = tipo_pergunta.capitalize()
+                    cur.execute("""
+                        INSERT INTO respostas_usuarios (
+                            id_usuario, id_pergunta, tipo_pergunta, tema, resposta_usuario, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, data_resposta, dados_migrados
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (id_usuario, id_pergunta, tipo_pergunta) DO NOTHING
+                    """, (id_usuario, id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, agora_sp, True))
 
-            # Transferência de avaliações do usuário
+                # Limpeza das respostas do usuario no modo visitante
+                cur.execute("""
+                    DELETE FROM acesso_modo_visitante WHERE id_visitante = %s
+                """, (id_visitante,))
+
+            # Atualiza os feedbacks para as perguntas que o usuário fez como visitante
             cur.execute("""
                 UPDATE feedbacks
-                SET id_usuario = %s,
-                id_visitante = NULL
+                SET id_usuario = %s
                 WHERE id_visitante = %s
+                AND id_usuario IS NULL
+                RETURNING id_feedback
+            """, (id_usuario, id_visitante))
+            qtd = cur.rowcount
+            app.logger.info(
+                f"{qtd} feedbacks migrados do visitante {id_visitante} para usuario {id_usuario}"
+            )
+
+            # Atualiza os feedbacks gerais para o site que o usuário fez como visitante
+            cur.execute("""
+                UPDATE feedbacks_comentarios
+                SET id_usuario = %s
+                WHERE id_visitante = %s
+                AND id_usuario IS NULL
             """, (id_usuario, id_visitante))
 
         conn.commit()

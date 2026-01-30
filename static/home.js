@@ -502,14 +502,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Define as variáveis do cabeçalho
-  const nome_usuario = document.getElementById("user-name")
-  const dicas_restantes = document.getElementById("dicas-count")
+  const nome_usuario = document.getElementById("user-name");
+  const dicas_restantes = document.getElementById("dicas-count");
 
   // Define o nome de usuário, as perguntas e dicas disponíveis e máximas
   if (MODO_VISITANTE) {
-    nome_usuario.textContent = "Visitante"
-    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/60`
-    dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes_visitante")}/20`
+    nome_usuario.textContent = "Visitante";
+    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/60`;
+    dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes_visitante")}/20`;
 
     // Decide se deve exibir modal para convidar a fazer registro
     const respondidas = JSON.parse(localStorage.getItem("visitante_respondidas"));
@@ -519,13 +519,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const marcoAtual = Math.floor(totalRespondidas / MARCO) * MARCO;
     const chaveRecusa = `modal_registro_fechado_${marcoAtual}`;
 
-    if (
-      totalRespondidas >= 15 &&
-      totalRespondidas % 15 === 0 &&
-      !localStorage.getItem(chaveRecusa)
-    ) {
+    if (totalRespondidas >= 15 && totalRespondidas % 15 === 0 && !localStorage.getItem(chaveRecusa)) {
       exibirModalRegistroVisitante(marcoAtual);
-    }
+    };
   }
   else {
     nome_usuario.textContent = localStorage.getItem("nome_usuario")
