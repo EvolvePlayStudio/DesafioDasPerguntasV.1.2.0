@@ -36,7 +36,16 @@ app.logger.addHandler(handler)
 temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia", "Variedades"]
 
 # IDs de perguntas para os usuários no modo visitante
-ids_perguntas_objetivas_visitante = {"Artes": [164, 167, 333, 338, 558, 571], "Astronomia": [474, 475, 482, 486, 492, 493], "Biologia": [21, 29, 361, 365, 581, 592], "Esportes": [55, 59, 75, 448, 454, 462], "Filosofia": [132, 142, 145, 146, 150, 300], "Geografia": [82, 89, 90, 206, 322, 525], "História": [34, 49, 124, 127, 209, 259], "Mídia": [374, 382, 386, 387, 604, 612], "Música": [222, 225, 238, 424, 440, 432], "Química": [184, 200, 550, 653, 654, 655], "Tecnologia": [155, 245, 273, 395, 398, 411], "Variedades": [125, 271, 501, 632, 634, 640]}
+ids_perguntas_objetivas_visitante = {"Artes": [164, 167, 333, 338, 558, 571], "Astronomia": [ 482, 486, 492, 493], "Biologia": [21, 29, 361, 365, 581, 592], "Esportes": [55, 59, 75, 448, 454, 462], "Filosofia": [132, 142, 145, 146, 150, 300], "Geografia": [82, 89, 90, 206, 322, 525], "História": [34, 49, 124, 127, 209, 259], "Mídia": [374, 382, 386, 387, 604, 612], "Música": [222, 225, 238, 424, 440, 432], "Química": [184, 200, 550, 653, 654, 655], "Tecnologia": [155, 245, 273, 395, 398, 411], "Variedades": [125, 271, 501, 632, 634, 640]}
+
+
+
+
+
+
+
+
+
 
 ids_perguntas_discursivas_visitante = {"Artes": [251, 268, 270, 524, 548, 610], "Astronomia": [104, 108, 531, 537, 545, 547], "Biologia": [43, 51, 55, 444, 620, 624], "Esportes": [80, 82, 364, 381, 386, 513], "Filosofia": [235, 242, 408, 410, 557, 575], "Geografia": [136, 156, 172, 178, 181, 411], "História": [21, 29, 59, 368, 401, 406], "Mídia": [186, 188, 203, 207, 448, 642], "Música": [313, 317, 339, 473, 475, 480], "Química": [288, 291, 299, 303, 579, 581], "Tecnologia": [149, 206, 344, 352, 383, 462], "Variedades": [101, 110, 118, 160, 377, 660]}
 
