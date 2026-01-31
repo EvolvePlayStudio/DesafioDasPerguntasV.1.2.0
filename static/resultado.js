@@ -43,7 +43,7 @@ else {
 }
 
 const resultado = {
-    tema: `${tema_atual} (${tipo_pergunta})`,
+    tema: `${tema_atual}`,
     pontuacaoAnterior: pontuacao_anterior,
     pontuacaoFinal: nova_pontuacao,
     saldo: str_saldo,
@@ -202,8 +202,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const payload = {
         id_visitante: localStorage.getItem("id_visitante"),
         tema: document.getElementById("tema-perguntas").textContent,
+        tipo_pergunta: tipo_pergunta,
         pontuacao_saldo: valor_saldo,
-        comentario,
+        comentario: comentario,
         feedback_id: feedbackIdAtual
     };
 

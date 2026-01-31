@@ -46,6 +46,7 @@ const alternativasContainer = document.getElementById("alternativas-container");
 const resultado = document.getElementById('resultado');
 const caixa_para_resposta = document.getElementById('resposta-input');
 const dica_box = document.getElementById("dica-box");
+const dica_icon = document.getElementById("dica-icon");
 let alternativaSelecionada = null; // Guarda a letra clicada (A, B, C, D)
 let respostasDesdeUltimaForcagem = 0; // Para pegar a pergunta do nível que tem mais a cada x respondidas
 
@@ -1021,6 +1022,7 @@ async function mostrarPergunta() {
   estrelas_avaliacao.style.display = "none";
   document.getElementById("respostas-aceitas-box").style.display = "none";
   box_comentario.style.display = "none";
+  dica_icon.style.display = "none";
 
   // Reseta estrelas
   document.querySelectorAll(".estrela").forEach(e => {
@@ -1253,11 +1255,8 @@ async function mostrarPergunta() {
 
     // Exibe o ícone de dica
     if (dica_permitida) {
-      document.getElementById("dica-icon").style.display = "flex";
+      dica_icon.style.display = "flex";
     } 
-    else {
-      document.getElementById("dica-icon").style.display = "none";
-    }
     
     // No modo revisão não exibe contador de dicas
     if (modo_jogo === 'revisao') {
@@ -1362,7 +1361,8 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
   function aceitaPorDistancia(dist, lenOriginal, textoCorreto) {
     if (lenOriginal <= 3) return false;
 
-    const estrangeiro = temPadraoEstrangeiro(textoCorreto);
+    //const estrangeiro = temPadraoEstrangeiro(textoCorreto);
+    const estrangeiro = false
 
     if (estrangeiro) {
       if (lenOriginal <= 6) return dist <= 2;
@@ -1683,7 +1683,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   const contador_dicas = contador_dicas_restantes;
   const icone_perguntas_restantes = document.getElementById("perguntas-restantes-icon");
-  const dica_icon = document.getElementById("dica-icon");
   const btn_proxima = document.getElementById("btn-proxima");
   const btn_finalizar = document.getElementById("btn-finalizar");
 

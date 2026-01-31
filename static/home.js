@@ -177,7 +177,7 @@ async function iniciarQuiz(event) {
   // Mensagem avisando que as perguntas acabaram
   if (parseInt(perguntas_restantes.textContent) <= 0) {
     if (!MODO_VISITANTE) {
-      exibirMensagem(mensagem, `Você precisa aguardar para poder responder novas perguntas`, 'orange')
+      exibirMensagem(mensagem, `Aguarde a recarga diária de energia para responder mais perguntas`, 'orange')
     }
     else {
       exibirMensagem(
@@ -388,6 +388,11 @@ function exibirModalEscolhaTipoPergunta() {
             <td class="centro">❌</td>
             <td class="centro">✅</td>
           </tr>
+          <tr>
+            <td>Foco</td>
+            <td class="centro">Interpretação</td>
+            <td class="centro">Memorização</td>
+          </tr>
         </tbody>
       </table>
 
@@ -532,8 +537,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Carrega as preferências de tipo de pergunta
   tipo_pergunta = localStorage.getItem("tipo_pergunta");
   if (!tipo_pergunta) {
-    tipo_pergunta = "Discursiva"; // Padrão caso não haja preferência
-    document.getElementById("radio-discursiva").checked = true;
+    tipo_pergunta = "Objetiva"; // Padrão caso não haja preferência
+    document.getElementById("radio-objetiva").checked = true;
     localStorage.setItem("tipo_pergunta", tipo_pergunta);
   }
   const tipoRadio = document.querySelector(`input[name="tipo-de-pergunta"][value="${tipo_pergunta}"]`);
