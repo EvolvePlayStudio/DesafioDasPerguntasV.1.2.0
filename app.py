@@ -36,16 +36,7 @@ app.logger.addHandler(handler)
 temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia", "Variedades"]
 
 # IDs de perguntas para os usuários no modo visitante
-ids_perguntas_objetivas_visitante = {"Artes": [164, 167, 333, 338, 558, 571], "Astronomia": [ 482, 486, 492, 493], "Biologia": [21, 29, 361, 365, 581, 592], "Esportes": [55, 59, 75, 448, 454, 462], "Filosofia": [132, 142, 145, 146, 150, 300], "Geografia": [82, 89, 90, 206, 322, 525], "História": [34, 49, 124, 127, 209, 259], "Mídia": [374, 382, 386, 387, 604, 612], "Música": [222, 225, 238, 424, 440, 432], "Química": [184, 200, 550, 653, 654, 655], "Tecnologia": [155, 245, 273, 395, 398, 411], "Variedades": [125, 271, 501, 632, 634, 640]}
-
-
-
-
-
-
-
-
-
+ids_perguntas_objetivas_visitante = {"Artes": [164, 167, 333, 338, 558, 571], "Astronomia": [5, 478, 482, 486, 492, 493], "Biologia": [21, 29, 361, 365, 579, 591, 592], "Esportes": [55, 59, 75, 290, 448, 454], "Filosofia": [132, 142, 145, 146, 150, 300], "Geografia": [82, 89, 90, 97, 322, 525], "História": [34, 45, 49, 124, 209, 259], "Mídia": [107, 374, 382, 386, 604, 612], "Música": [225, 238, 424, 432, 440, 443], "Química": [184, 200, 550, 653, 654, 655], "Tecnologia": [155, 245, 293, 395, 398, 411], "Variedades": [125, 281, 298, 501, 634, 640]}
 
 ids_perguntas_discursivas_visitante = {"Artes": [251, 268, 270, 524, 548, 610], "Astronomia": [104, 108, 531, 537, 545, 547], "Biologia": [43, 51, 55, 444, 620, 624], "Esportes": [80, 82, 364, 381, 386, 513], "Filosofia": [235, 242, 408, 410, 557, 575], "Geografia": [136, 156, 172, 178, 181, 411], "História": [21, 29, 59, 368, 401, 406], "Mídia": [186, 188, 203, 207, 448, 642], "Música": [313, 317, 339, 473, 475, 480], "Química": [288, 291, 299, 303, 579, 581], "Tecnologia": [149, 206, 344, 352, 383, 462], "Variedades": [101, 110, 118, 160, 377, 660]}
 
@@ -326,6 +317,7 @@ def entrar_visitante():
 def enviar_feedback(user_id):
     data = request.get_json()
     id_pergunta = data.get("id_pergunta")
+    tema = data.get("tema").lower().capitalize()
     tipo_pergunta = data.get("tipo_pergunta").lower().capitalize()
     estrelas = data.get("estrelas")
     if estrelas not in (1, 2, 3, 4, 5):
@@ -342,7 +334,7 @@ def enviar_feedback(user_id):
         if not all([data.get("id_pergunta"), data.get("tipo_pergunta"), data.get("versao_pergunta"), id_visitante]):
             return jsonify({"erro": "Dados incompletos como visitante"}), 400
     else:
-        if not all([data.get("id_pergunta"), data.get("tipo_pergunta"), data.get("versao_pergunta"), id_usuario]):
+        if not all([data.get("id_pergunta"), data.get("tema"), data.get("tipo_pergunta"), data.get("versao_pergunta"), id_usuario]):
             return jsonify({"erro": "Dados incompletos como usuário cadastrado"}), 400
 
     try:
@@ -350,20 +342,20 @@ def enviar_feedback(user_id):
         cur = conn.cursor()
         if modo_visitante:
             cur.execute("""
-                INSERT INTO feedbacks (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO feedbacks (id_pergunta, tema, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id_pergunta, tipo_pergunta, versao_pergunta, id_visitante)
                 DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, comentario = EXCLUDED.comentario, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'))
                 RETURNING id_feedback;
-            """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade))
+            """, (id_pergunta, tema, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade))
         else:
             cur.execute("""
-                INSERT INTO feedbacks (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO feedbacks (id_pergunta, tema, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id_pergunta, tipo_pergunta, versao_pergunta, id_usuario)
                 DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, comentario = EXCLUDED.comentario, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'))
                 RETURNING id_feedback;
-            """, (id_pergunta, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade))
+            """, (id_pergunta, tema, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade))
         id_feedback = cur.fetchone()[0]
         conn.commit()
 
@@ -373,6 +365,7 @@ def enviar_feedback(user_id):
                 enviar_email_feedback_pergunta(
                     id_feedback=id_feedback,
                     id_pergunta=id_pergunta,
+                    tema = tema,
                     tipo_pergunta=tipo_pergunta,
                     enunciado=data.get("enunciado"),
                     comentario=comentario,
@@ -2192,7 +2185,7 @@ def validar_registro():
 
     return jsonify(success=True, message="Validação OK")
 
-def enviar_email_feedback_pergunta(id_feedback, id_pergunta, tipo_pergunta, enunciado, comentario, estrelas, dificuldade, modo_visitante):
+def enviar_email_feedback_pergunta(id_feedback, id_pergunta, tema, tipo_pergunta, enunciado, comentario, estrelas, dificuldade, modo_visitante):
     assunto = "[Feedback] Comentário em pergunta"
     
     link_lido = (
@@ -2204,7 +2197,7 @@ def enviar_email_feedback_pergunta(id_feedback, id_pergunta, tipo_pergunta, enun
         Novo feedback em pergunta:
 
         ID da pergunta: {id_pergunta}
-        Tipo: {tipo_pergunta}
+        Tema: {tema} ({tipo_pergunta})
         Enunciado: {enunciado}
         Dificuldade: {dificuldade}
         Estrelas: {estrelas if estrelas is not None else '—'}

@@ -1307,6 +1307,7 @@ async function registrarFeedback() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       id_pergunta: pergunta_selecionada.id_pergunta,
+      tema: tema_atual,
       tipo_pergunta: tipo_pergunta,
       enunciado: pergunta_selecionada.enunciado,
       versao_pergunta: pergunta_selecionada.versao_pergunta,
