@@ -1,3 +1,4 @@
+import { playSound, playKeySound } from "./sound.js";
 const perguntas_respondidas = JSON.parse(localStorage.getItem("perguntas_respondidas"))
 const tema_atual = localStorage.getItem("tema_atual");
 const tipo_pergunta = localStorage.getItem("tipo_pergunta").toLowerCase();
@@ -11,20 +12,28 @@ let str_saldo;
 let cor_saldo;
 let peso_fonte_saldo;
 
+// Variáveis de som
+let lastKeySoundTime = 0;
+const KEY_SOUND_INTERVAL = 35; // Em milissegundos
+const buttonClickSound = document.getElementById("button-click-sound");
+const keySound = document.getElementById("key-sound");
+
 // Variáveis para envio de feedback
 const FEEDBACK_DRAFT_KEY = "feedback_comentario_rascunho";
 localStorage.removeItem(FEEDBACK_DRAFT_KEY);
-const textarea = document.getElementById("feedback-texto")
+const caixaTextoFeedback = document.getElementById("caixa-texto-feedback");
 const btnFeedback = document.getElementById("btn-feedback");
 const modal = document.getElementById("modal-feedback");
 const btnCancelar = document.getElementById("cancelar-feedback");
 const btnEnviar = document.getElementById("enviar-feedback");
+const btnProsseguir = document.getElementById('btn-prosseguir');
 const msgBox = document.getElementById("feedback-mensagem");
 const actionsForm = document.getElementById("feedback-actions-form");
 const actionsVoltar = document.getElementById("feedback-actions-pos-envio");
 const btnVoltar = document.getElementById("voltar-feedback");
 let feedbackIdAtual = null;
 let feedbackEmEnvio = false;
+modal, caixaTextoFeedback
 
 if (valor_saldo > 0) {
     cor_saldo = 'lime';
@@ -160,10 +169,10 @@ function exibirMensagem(label, texto, cor) {
   }, 10000)
 }
 
-function fecharModalFeedback(modal, textarea) {
+function fecharModalFeedback() {
     modal.classList.add("hidden");
     document.body.style.overflow = "";
-    localStorage.setItem(FEEDBACK_DRAFT_KEY, textarea.value);
+    localStorage.setItem(FEEDBACK_DRAFT_KEY, caixaTextoFeedback.value);
 }
 
 function feedbackErro() {
@@ -174,7 +183,7 @@ function feedbackErro() {
 
 function feedbackSucesso(idFeedback) {
   feedbackIdAtual = idFeedback;
-  textarea.disabled = true;
+  caixaTextoFeedback.disabled = true;
 
   msgBox.textContent = "Feedback enviado com sucesso.";
   msgBox.className = "feedback-mensagem sucesso";
@@ -185,13 +194,25 @@ function feedbackSucesso(idFeedback) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  
+// Adiciona som de tecla digitada na caixa de texto
+  if (caixaTextoFeedback) {
+    caixaTextoFeedback.addEventListener("input", () => {lastKeySoundTime = playKeySound(keySound, lastKeySoundTime, KEY_SOUND_INTERVAL)});
+    caixaTextoFeedback.addEventListener("paste", () => {lastKeySoundTime = Date.now()});
+  }
+
+  // Função para prosseguir para a tela hom
+  btnProsseguir.addEventListener("click", () => {
+    playSound(buttonClickSound);
+    window.location.href = 'home';
+  });
+
   // Função para envio do feedback
   btnEnviar.addEventListener("click", async () => {
     if (feedbackEmEnvio) return;
 
-    const comentario = textarea.value.trim();
+    const comentario = caixaTextoFeedback.value.trim();
     if (!comentario) return;
+    playSound(buttonClickSound);
 
     msgBox.textContent = "Enviando feedback...";
     msgBox.className = "feedback-mensagem enviando";
@@ -234,11 +255,12 @@ document.addEventListener("DOMContentLoaded", () => {
         feedbackEmEnvio = false;
         btnEnviar.disabled = false;
     }
-    });
+  });
 
   // Função para editar o feedback
   document.getElementById("editar-feedback").addEventListener("click", () => {
-    textarea.disabled = false;
+    playSound(buttonClickSound);
+    caixaTextoFeedback.disabled = false;
     actionsVoltar.classList.add("hidden");
     actionsForm.classList.remove("hidden");
     msgBox.classList.add("hidden");
@@ -246,8 +268,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Abrir modal
   btnFeedback.addEventListener("click", () => {
+    playSound(buttonClickSound);
     const draft = localStorage.getItem(FEEDBACK_DRAFT_KEY);
-    if (draft && feedbackIdAtual === null) textarea.value = draft;
+    if (draft && feedbackIdAtual === null) caixaTextoFeedback.value = draft;
 
     modal.classList.remove("hidden");
     document.body.style.overflow = "hidden";
@@ -255,18 +278,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Fechar pelo botão cancelar
   btnCancelar.addEventListener("click", () => {
-    fecharModalFeedback(modal, textarea)
+    playSound(buttonClickSound);
+    fecharModalFeedback()
   });
 
   // Fechar clicando fora do conteúdo
   modal.addEventListener("click", (e) => {
     if (e.target === modal) {
-      fecharModalFeedback(modal, textarea)
+      fecharModalFeedback()
     }
   });
 
   // Fechar pelo botão voltar
   btnVoltar.addEventListener("click", () => {
-    fecharModalFeedback(modal, textarea)
+    playSound(buttonClickSound);
+    fecharModalFeedback()
   })
 });

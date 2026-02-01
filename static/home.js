@@ -27,6 +27,8 @@ const btn_pesquisa = document.getElementById("btn-pesquisa");
 const btn_doacoes = document.getElementById("btn-doacoes");
 const btn_logout = document.getElementById("btn-logout");
 
+// console.log("Id de visitante: ", localStorage.getItem("id_visitante"))
+
 if (MODO_VISITANTE) {
   permitir_escolher_tema = true;
   btn_criar_conta.style.display = "";
@@ -57,7 +59,7 @@ if (MODO_VISITANTE) {
   // Cria pontuações de usuário como visitante (obs: esta função está repetida na tela de pesquisa)
   if (!localStorage.getItem("pontuacoes_visitante")) {
     const pontuacoes = {};
-    temas_disponiveis.forEach(tema => {pontuacoes[tema] = 1500});
+    temas_disponiveis.forEach(tema => {pontuacoes[tema] = 1800});
     localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes));
   }
 
@@ -244,7 +246,9 @@ async function iniciarQuiz(event) {
         });
 
         // Analisa se há perguntas disponíveis para prosseguir com o quiz
+        console.log("Perguntas são: ", data["perguntas"])
         const encerrar_quiz = deveEncerrarQuiz(data["perguntas"], MODO_VISITANTE);
+        console.log("Devo encerrar quiz? ", encerrar_quiz)
         const haPerguntas = Object.values(data.perguntas).some(arr => arr.length > 0);
         if (!haPerguntas || encerrar_quiz) {
           exibirMensagem(

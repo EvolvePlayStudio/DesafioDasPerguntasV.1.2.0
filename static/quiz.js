@@ -1,9 +1,9 @@
-import { detectarModoTela, deveEncerrarQuiz, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado } from "./utils.js"
+import { dificuldadesOrdenadas, detectarModoTela, deveEncerrarQuiz, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado } from "./utils.js"
+import { playSound, playKeySound } from "./sound.js"
 
-const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 // Envia erros para a base de dados caso ocorram (necessário enviar a linha onde ocorre o erro para melhor depuração)
 window.onerror = function (message) {
-  if (!localStorage.getItem("id_visitante") === 'b6c5d32c-c5d8-41aa-811e-aa45c328b372' && !localStorage.getItem("id_usuario") in (4, 6, 16)) {
+  if (!id_visitante === id_visitante_admin && !localStorage.getItem("id_usuario") in (4, 6, 16)) {
     fetch("/api/debug/frontend", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -17,29 +17,51 @@ window.onerror = function (message) {
   }
 };
 
-let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"));
 let perguntas_respondidas = [];
-let inicio_pergunta;  // horário inicial da pergunta
+let inicio_pergunta;  // Horário inicial da pergunta
 let pontuacoes_usuario;
-const tema_atual = decodeURIComponent(localStorage.getItem("tema_atual"))
+let pergunta_selecionada;
+let regras_usuario;
+let ranking_usuario;
+let ranking_visual_anterior;
+let estrelas_iniciais;
+let comentario_inicial;
+let alternativaSelecionada; // Guarda a letra selecionada (A, B, C, D)
+let respostasDesdeUltimaForcagem = 0; // Para pegar a pergunta do nível que tem mais a cada x respondidas
+
+// Variáveis de som
+let lastKeySoundTime = 0;
+const KEY_SOUND_INTERVAL = 35; // Em milissegundos
+const buttonClickSound = document.getElementById("button-click-sound");
+const correctSound = document.getElementById("correct-sound");
+const errorSound = document.getElementById("error-sound");
+const keySound = document.getElementById("key-sound");
+
+// Elementos de localStorage e sessionStorage
+const tema_atual = decodeURIComponent(localStorage.getItem("tema_atual"));
+const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
+const id_visitante = localStorage.getItem("id_visitante");
+const id_visitante_admin = "b6c5d32c-c5d8-41aa-811e-aa45c328b372";
 if (MODO_VISITANTE) {
-  pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_visitante"))
-  localStorage.setItem("pontuacao_anterior", pontuacoes_usuario[tema_atual])
+  pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_visitante"));
+  localStorage.setItem("pontuacao_anterior", pontuacoes_usuario[tema_atual]);
 }
 else {
   pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario"));
 }
 localStorage.setItem("pontuacao_anterior", pontuacoes_usuario[tema_atual]);
-
-let pergunta_selecionada = null;
+let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"));
 let regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"));
 let info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1];
-let regras_usuario = null;
-let ranking_usuario = null;
-const contador_dicas_restantes = document.getElementById("contador-dicas");
 const rankings_usuario = JSON.parse(localStorage.getItem("rankings_usuario"));
 const modo_jogo = localStorage.getItem("modo_jogo").toLocaleLowerCase();
 const tipo_pergunta = localStorage.getItem("tipo_pergunta").toLocaleLowerCase();
+const opcoesUsuarioRaw = sessionStorage.getItem("opcoes_usuario");
+const opcoesUsuario = opcoesUsuarioRaw? JSON.parse(opcoesUsuarioRaw): null;
+const exibir_instrucoes_quiz = opcoesUsuario?.exibir_instrucoes_quiz;
+
+// Elementos do HTML
+const contador_dicas_restantes = document.getElementById("contador-dicas");
 const lbl_pontuacao_usuario = document.getElementById('pontuacao');
 const lbl_pontos_ganhos = document.getElementById('incremento-pontuacao');
 const alternativasContainer = document.getElementById("alternativas-container");
@@ -47,21 +69,30 @@ const resultado = document.getElementById('resultado');
 const caixa_para_resposta = document.getElementById('resposta-input');
 const dica_box = document.getElementById("dica-box");
 const dica_icon = document.getElementById("dica-icon");
-let alternativaSelecionada = null; // Guarda a letra clicada (A, B, C, D)
-let respostasDesdeUltimaForcagem = 0; // Para pegar a pergunta do nível que tem mais a cada x respondidas
+const barra = document.getElementById("barra-progresso");
+const hint_dica = document.getElementById("hint-dica");
+const hint_pular = document.getElementById("hint-pular");;
+const hint_avaliacao = document.getElementById("hint-avaliacao");
+const estrelas_avaliacao = document.getElementById("avaliacao");
+const estrelas = document.querySelectorAll(".estrela");
+const box_comentario = document.getElementById("box-comentario");
+const textarea_comentario = document.getElementById("comentario-texto");
+const contador_perguntas_restantes = document.getElementById("perguntas-count");
 
 // Booleanas
 let dica_gasta = false;
 let animacao_concluida = false;
-let ha_perguntas_disponiveis = false;
+let haPerguntasDisponiveis = false;
 let aguardando_proxima = false; // Quando estiver aguardando a próximo pergunta
 
 // Botões
 const btn_enviar = document.getElementById("btn-enviar");
 const btn_pular = document.getElementById("btn-pular");
-const botoes_finalizar_div = document.getElementById("botoes-acao");
+const btn_proxima = document.getElementById("btn-proxima");
+const btn_finalizar = document.getElementById("btn-finalizar");
 const botoes_enviar_div = document.getElementById("botoes-envio");
-const alternativaBtns = Array.from(alternativasContainer.querySelectorAll(".alternativa-btn"))
+const botoes_finalizar_div = document.getElementById("botoes-acao");
+const alternativaBtns = Array.from(alternativasContainer.querySelectorAll(".alternativa-btn"));
 
 // Variáveis relacionadas ao nível de dificuldade
 const PROBABILIDADES_POR_RANKING = {
@@ -77,7 +108,6 @@ const coresDificuldade = {
     difícil: "red",
     extremo: "#3e16d1"
 };
-const DIFICULDADES_ORDENADAS = ["Fácil", "Médio", "Difícil", "Extremo"];
 
 // Círculo amarelo com interrogação preta para símbolo de pergunta pulada
 const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
@@ -98,31 +128,17 @@ const GAP_ENTRE_ALTERNATIVAS        = 380;
 const VELOCIDADE_LETRA_ENUNCIADO    = 21;
 const VELOCIDADE_LETRA_ALTERNATIVAS = 15;
 
-// Variáveis para animação da barra de progresso
-let ranking_visual_anterior = null;
-const barra = document.getElementById("barra-progresso");
-
-const hint_dica = document.getElementById("hint-dica");
-const hint_pular = document.getElementById("hint-pular");;
-const hint_avaliacao = document.getElementById("hint-avaliacao");
-
-const opcoesUsuarioRaw = sessionStorage.getItem("opcoes_usuario");
-const opcoesUsuario = opcoesUsuarioRaw? JSON.parse(opcoesUsuarioRaw): null;
-const exibir_instrucoes_quiz = opcoesUsuario?.exibir_instrucoes_quiz;
-
 if (tipo_pergunta === "objetiva" || !exibir_instrucoes_quiz) {
   hint_avaliacao.style.marginTop = "0.8rem";
 }
 
-// Variáveis relacionadas ao feedback que o usuário envia para a pergunta
-const estrelas_avaliacao = document.getElementById("avaliacao");
-const estrelas = document.querySelectorAll(".estrela");
-const box_comentario = document.getElementById("box-comentario");
-const textarea_comentario = document.getElementById("comentario-texto");
-let estrelas_iniciais;
-let comentario_inicial;
-
-const contador_perguntas_restantes = document.getElementById("perguntas-count");
+let dicas;
+const contador_dicas = contador_dicas_restantes;
+const icone_perguntas_restantes = document.getElementById("perguntas-restantes-icon");
+if (MODO_VISITANTE) {
+  dicas = JSON.parse(localStorage.getItem("dicas_restantes_visitante"))}
+else {
+  dicas = JSON.parse(localStorage.getItem("dicas_restantes"))}
 
 // Ids de perguntas que são selecionados primeiro
 const ids_objetivas_prioridade = {
@@ -487,6 +503,49 @@ async function enviarResposta(pulando = false) {
     // document.getElementById('comentarios').style.display = 'block';
   }
 
+  function mostrarBotoesAcao() {
+    botoes_finalizar_div.style.display = "flex";
+
+    // POSSÍVEL ALTERAÇÃO AQUI, SERÁ QUE NÃO DEVE USAR A FUNÇÃO PARA MODO VISITANTE TAMBÉM?
+    const difPermitidas = (MODO_VISITANTE) ? dificuldadesOrdenadas : obterDificuldadesDisponiveis();
+    haPerguntasDisponiveis = difPermitidas.some(dif => perguntas_por_dificuldade[dif].length > 0)
+
+    let encerrar_quiz = false
+    if (modo_jogo === "desafio") {
+      encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE)
+      if (parseInt(contador_perguntas_restantes.textContent) <= 0) {
+        encerrar_quiz = true
+        }
+    }
+    
+    // Mostrar apenas o botão Finalizar
+    if (encerrar_quiz || !haPerguntasDisponiveis) {
+      btn_proxima.style.display = "none";
+      btn_finalizar.style.display = "inline-block";
+      btn_finalizar.style.flex = "unset"; // remove flex igual ao botão enviar
+      btn_finalizar.style.width = "100%";
+      btn_finalizar.style.margin = "0 auto";
+
+    }
+    // Mostrar ambos
+    else {
+      btn_proxima.style.display = "inline-block";
+      btn_finalizar.style.display = "inline-block";
+      btn_finalizar.style.flex = "1";
+      btn_finalizar.style.width = "unset";
+    }
+
+    // Desabilita ambos por precaução
+    btn_finalizar.disabled = true;
+    btn_proxima.disabled = true;
+
+    // Reativa após 500ms
+    setTimeout(() => {
+      btn_finalizar.disabled = false;
+      btn_proxima.disabled = false;
+    }, 500);
+  }
+
   function mostrarRespostasAceitas(lista) {
     try {
       const container = document.getElementById("respostas-aceitas-box");
@@ -695,6 +754,11 @@ async function enviarResposta(pulando = false) {
     }
     acertou = respostaDiscursivaCorreta(resposta_usuario, respostas_corretas);
   }
+
+  if (acertou) {
+    playSound(correctSound, id_visitante, id_visitante_admin)}
+  else {
+    playSound(errorSound, id_visitante, id_visitante_admin)}
 
   // Exibe os pontos ganhos ou perdidos
   pontos_ganhos = calcularPontuacao(acertou);
@@ -908,59 +972,6 @@ async function mostrarAlternativas() {
     btn_enviar.style.display = "inline-flex";
     btn_enviar.disabled = false;
   }
-}
-
-function mostrarBotoesAcao() {
-  const btn_finalizar = document.getElementById("btn-finalizar");
-  const btn_proxima = document.getElementById("btn-proxima");
-
-  // Mostra a div de botões
-  botoes_finalizar_div.style.display = "flex";
-  
-  let dificuldades_permitidas = null
-  // POSSÍVEL ALTERAÇÃO AQUI, SERÁ QUE NÃO DEVE FAZER PARA MODO VISITANTE?
-  if (!MODO_VISITANTE) {
-    dificuldades_permitidas = obterDificuldadesDisponiveis(tema_atual, MODO_VISITANTE)
-  }
-  else {
-    dificuldades_permitidas = ['Fácil', 'Médio', 'Difícil']
-  }
-  ha_perguntas_disponiveis = dificuldades_permitidas.some(dif => perguntas_por_dificuldade[dif].length > 0)
-
-  let encerrar_quiz = false
-  if (modo_jogo === "desafio") {
-    encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE)
-    if (parseInt(contador_perguntas_restantes.textContent) <= 0) {
-      encerrar_quiz = true
-      }
-  }
-  
-  // Mostrar apenas o botão Finalizar
-  if (encerrar_quiz || !ha_perguntas_disponiveis) {
-    btn_proxima.style.display = "none";
-    btn_finalizar.style.display = "inline-block";
-    btn_finalizar.style.flex = "unset"; // remove flex igual ao botão enviar
-    btn_finalizar.style.width = "100%";
-    btn_finalizar.style.margin = "0 auto";
-
-  }
-  // Mostrar ambos
-  else {
-    btn_proxima.style.display = "inline-block";
-    btn_finalizar.style.display = "inline-block";
-    btn_finalizar.style.flex = "1";
-    btn_finalizar.style.width = "unset";
-  }
-
-  // Desabilita ambos por precaução
-  btn_finalizar.disabled = true;
-  btn_proxima.disabled = true;
-
-  // Reativa após 500ms
-  setTimeout(() => {
-    btn_finalizar.disabled = false;
-    btn_proxima.disabled = false;
-  }, 500);
 }
 
 function mostrarDica() {
@@ -1262,8 +1273,7 @@ async function mostrarPergunta() {
     if (modo_jogo === 'revisao') {
       contador_dicas_restantes.textContent = ''
     }
-    dica_box.style.display = "none"
-  } 
+    dica_box.styledificuldadesOrdenadas}
 }
 
 async function proximaPergunta() {
@@ -1272,7 +1282,7 @@ async function proximaPergunta() {
   hint_dica.style.display = "none";
   hint_pular.style.display = "none";
   lbl_pontos_ganhos.style.display = 'none'
-  if (ha_perguntas_disponiveis) {
+  if (haPerguntasDisponiveis) {
     if (tipo_pergunta === 'objetiva') {
       resetarAlternativas();
     } 
@@ -1674,26 +1684,30 @@ async function definirRankingAnterior() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // Declara as variáveis que serão úteis
-  let dicas;
-  if (MODO_VISITANTE) {
-    dicas = JSON.parse(localStorage.getItem("dicas_restantes_visitante"));
-  }
-  else {
-    dicas = JSON.parse(localStorage.getItem("dicas_restantes"));
-  }
-  const contador_dicas = contador_dicas_restantes;
-  const icone_perguntas_restantes = document.getElementById("perguntas-restantes-icon");
-  const btn_proxima = document.getElementById("btn-proxima");
-  const btn_finalizar = document.getElementById("btn-finalizar");
 
+  // Adiciona som de tecla digitada nas caixas de texto
+  if (caixa_para_resposta) {
+    caixa_para_resposta.addEventListener("input", () => {
+      lastKeySoundTime = playKeySound(keySound, lastKeySoundTime, KEY_SOUND_INTERVAL);
+    })
+    caixa_para_resposta.addEventListener("paste", () => {
+      lastKeySoundTime = Date.now();
+    })
+  }
+  if (box_comentario) {
+    box_comentario.addEventListener("input", () => {
+      lastKeySoundTime = playKeySound(keySound, lastKeySoundTime, KEY_SOUND_INTERVAL);
+    })
+    box_comentario.addEventListener("paste", () => {
+      lastKeySoundTime = Date.now();
+    })
+  }
+  
   // Exibe a contagem de dicas restantes
   if (contador_dicas && dicas !== null) {
     contador_dicas.textContent = dicas;
   }
 
-  // Exibe o ícone de perguntas restantes caso esteja no modo desafio
-  icone_perguntas_restantes.style.display = "flex"
   if (modo_jogo === 'desafio') {
     const num_perguntas_restantes = contador_perguntas_restantes
     if (!MODO_VISITANTE) {
@@ -1708,58 +1722,60 @@ document.addEventListener("DOMContentLoaded", async () => {
       icone_perguntas_restantes.style.visibility = 'hidden';
   }
 
-  // Implementa a função para usar dica
   if (tipo_pergunta === 'discursiva') {
+    // Implementa a função para usar dica
     caixa_para_resposta.style.display = ''
     if (dica_icon) {
       dica_icon.addEventListener("click", () => {
         usarDica()
       })
     }
-    if (btn_enviar) {
-      botoes_enviar_div.style.marginTop = "1.5rem";
+
+    // Implementa a função para pular a resposta
+    if (btn_pular) {
+      btn_pular.addEventListener("click", () => {
+        if (modo_jogo === 'desafio') {
+          playSound(buttonClickSound, id_visitante, id_visitante_admin);
+      }
+        enviarResposta(true);
+      })
     }
-    document.getElementById('botoes-acao').style.marginTop = '1.5rem'
+
+    // Ajuste nos botões que ficam abaixo da caixa de texto para respostas
+    if (botoes_enviar_div) {botoes_enviar_div.style.marginTop = "1.5rem"};
+    if (botoes_finalizar_div) {botoes_finalizar_div.style.marginTop = '1.5rem'};
+  }
+  else {
+    // Implementa a função de marcar alternativas
+    alternativaBtns.forEach(btn => {
+      btn.addEventListener('click', () => selecionarAlternativa(btn));
+    });
   }
 
   // Implementa a função de chamar próxima pergunta
   if (btn_proxima) {
     btn_proxima.addEventListener("click", () => {
-      proximaPergunta()
+      playSound(buttonClickSound, id_visitante, id_visitante_admin);
+      proximaPergunta();
     })
   }
 
   // Implementa a função para finalizar o quiz
   if (btn_finalizar) {
     btn_finalizar.addEventListener("click", () => {
-      finalizarQuiz()
+      playSound(buttonClickSound, id_visitante, id_visitante_admin);
+      finalizarQuiz();
     })
   }
 
   // Implementa a função de enviar resposta
   if (btn_enviar) {
     btn_enviar.addEventListener("click", () => {
-      enviarResposta()
+      if (modo_jogo === 'desafio') {
+        playSound(buttonClickSound, id_visitante, id_visitante_admin);
+      }
+      enviarResposta();
     })
-  }
-
-  // Implementa a função para pular a resposta (no caso das discursivas)
-  if (tipo_pergunta === "discursiva") {
-    if (btn_pular) {
-      btn_pular.addEventListener("click", () => {
-        enviarResposta(true)
-      })
-    }
-  }
-  else {
-    botoes_enviar_div.style.marginTop = "0.8rem"
-  }
-  
-  // Implementa a função de marcar alternativas
-  if (tipo_pergunta === 'objetiva') {
-    alternativaBtns.forEach(btn => {
-      btn.addEventListener('click', () => selecionarAlternativa(btn));
-    });
   }
 
   // Implementa a função para enviar resposta com enter
@@ -1783,15 +1799,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Chama as funções que são necessárias na inicialização
-  if (MODO_VISITANTE) {
-    callbackAtualizarUI (pontuacoes_usuario[tema_atual])
-  }
-  else {
-    callbackAtualizarUI (pontuacoes_usuario[tema_atual])
-  }
+  callbackAtualizarUI (pontuacoes_usuario[tema_atual]);
   limparIdsPrioritariosInvalidos();
-  definirRankingAnterior(); // Útil para quando for animar barra de progresso
+  definirRankingAnterior(); // útil para quando for animar barra de progresso
   atualizarRankingVisual();
   await mostrarPergunta();
   configurarEstrelas();
-});
+})

@@ -2,11 +2,9 @@ from flask import Flask, jsonify, render_template, request, session, redirect, s
 from werkzeug.security import generate_password_hash, check_password_hash
 from utils import *
 import secrets
-import smtplib
 import string
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from datetime import datetime, timedelta, timezone
+from email_service import enviar_email_confirmacao, enviar_email_recuperacao, enviar_email_feedback_pergunta, enviar_email_feedback_site
+from datetime import datetime, timedelta # timedelta também é importado no utils
 import re
 import logging
 import sys
@@ -19,110 +17,21 @@ from io import BytesIO
 import urllib.parse
 import qrcode
 from functools import wraps
-import pytz
-
-# Definir timezone de São Paulo
-tz_sp = pytz.timezone("America/Sao_Paulo")
+import pytz # Também importado no utils
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
-# Para fazer depuração na render
 app.logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
-
-temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia", "Variedades"]
-
-# IDs de perguntas para os usuários no modo visitante
-ids_perguntas_objetivas_visitante = {"Artes": [164, 167, 333, 338, 558, 571], "Astronomia": [5, 478, 482, 486, 492, 493], "Biologia": [21, 29, 361, 365, 579, 591, 592], "Esportes": [55, 59, 75, 290, 448, 454], "Filosofia": [132, 142, 145, 146, 150, 300], "Geografia": [82, 89, 90, 97, 322, 525], "História": [34, 45, 49, 124, 209, 259], "Mídia": [107, 374, 382, 386, 604, 612], "Música": [225, 238, 424, 432, 440, 443], "Química": [184, 200, 550, 653, 654, 655], "Tecnologia": [155, 245, 293, 395, 398, 411], "Variedades": [125, 281, 298, 501, 634, 640]}
-
-ids_perguntas_discursivas_visitante = {"Artes": [251, 268, 270, 524, 548, 610], "Astronomia": [104, 108, 531, 537, 545, 547], "Biologia": [43, 51, 55, 444, 620, 624], "Esportes": [80, 82, 364, 381, 386, 513], "Filosofia": [235, 242, 408, 410, 557, 575], "Geografia": [136, 156, 172, 178, 181, 411], "História": [21, 29, 59, 368, 401, 406], "Mídia": [186, 188, 203, 207, 448, 642], "Música": [313, 317, 339, 473, 475, 480], "Química": [288, 291, 299, 303, 579, 581], "Tecnologia": [149, 206, 344, 352, 383, 462], "Variedades": [101, 110, 118, 160, 377, 660]}
-
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
-email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-dominios_permitidos = {
-    "gmail.com", "outlook.com", "hotmail.com", "yahoo.com",
-    "protonmail.com", "icloud.com", "live.com"
-}
-dominios_descartaveis = {
-    "mailinator.com", "10minutemail.com", "guerrillamail.com", "tempmail.com"
-}
-CAPTCHA_BASE_DIR = "static/captcha_imgs"
-FUSO_SERVIDOR = timezone(timedelta(hours=-3)) # Depois ver se não dá para tirar este variável
-QUESTION_CONFIG = {
-    'discursiva': {
-        'table': 'perguntas_discursivas',
-        'select_cols': [
-            'p.id_pergunta',
-            'p.subtemas',
-            'p.enunciado',
-            'p.respostas_corretas',   
-            'p.dica',
-            'p.nota',
-            "COALESCE(f.estrelas, NULL) AS estrelas",
-            "COALESCE(f.comentario, NULL) AS comentario",
-            "r.id_resposta IS NOT NULL AS respondida",
-            "p.dificuldade",
-            "p.versao"
-        ],
-        'select_cols_visitante': [
-            'p.id_pergunta',
-            'p.subtemas',
-            'p.enunciado',
-            'p.respostas_corretas',   
-            'p.dica',
-            'p.nota',
-            "COALESCE(f.estrelas, NULL) AS estrelas",
-            "COALESCE(f.comentario, NULL) AS comentario",
-            "p.dificuldade",
-            "p.versao"
-        ],
-        'tipo_str': 'Discursiva'
-    },
-    'objetiva': {
-        'table': 'perguntas_objetivas',
-        'select_cols': [
-            'p.id_pergunta',
-            'p.subtemas',
-            'p.enunciado',
-            'p.alternativa_a',
-            'p.alternativa_b',
-            'p.alternativa_c',
-            'p.alternativa_d',
-            'p.resposta_correta',
-            'p.nota',
-            "COALESCE(f.estrelas, NULL) AS estrelas",
-            "COALESCE(f.comentario, NULL) AS comentario",
-            "r.id_resposta IS NOT NULL AS respondida",
-            "p.dificuldade",
-            "p.versao"
-        ],
-        'select_cols_visitante': [
-            'p.id_pergunta',
-            'p.subtemas',
-            'p.enunciado',
-            'p.alternativa_a',
-            'p.alternativa_b',
-            'p.alternativa_c',
-            'p.alternativa_d',
-            'p.resposta_correta',
-            'p.nota',
-            "COALESCE(f.estrelas, NULL) AS estrelas",
-            "COALESCE(f.comentario, NULL) AS comentario",
-            "p.dificuldade",
-            "p.versao"
-        ],
-        'tipo_str': 'Objetiva'
-    }
-}
-EMAILS_PROIBIDOS = ['admin@gmail.com', 'teste@gmail.com']
+
 SITE_EM_MANUTENCAO = False
 TESTANDO_PERGUNTAS = False
-TESTANDO_VISITANTE = False
-privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
+TESTANDO_VISITANTE = True
 id_visitante_admin = "b6c5d32c-c5d8-41aa-811e-aa45c328b372"
 
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
@@ -233,9 +142,7 @@ def alterar_email_route():
 
         # Gera novo token
         token = secrets.token_urlsafe(32)
-        expiracao = datetime.now(
-            pytz.timezone("America/Sao_Paulo")
-        ) + timedelta(hours=21)
+        expiracao = datetime.now(tz_sp) + timedelta(hours=21)
 
         # Atualiza e-mail + estado de confirmação
         cur.execute("""
@@ -578,8 +485,6 @@ def iniciar_agendamento():
     atualizar_perguntas_dicas, 'cron', hour=20, minute=0, id='atualizacao_20h', replace_existing=True
     )
     scheduler.start()
-
-iniciar_agendamento()
 
 @app.route("/", methods=["GET"])
 def index():
@@ -980,59 +885,6 @@ def pegar_email_confirmado():
         'email_confirmado': session["email_confirmado"]
     })
 
-def enviar_email_confirmacao(email_destinatario, nome_destinatario, link_confirmacao):
-    remetente = email_remetente
-    senha = senha_app
-    porta = int(porta_email)
-
-    assunto = "Confirmação de Cadastro - Desafio das Perguntas"
-    corpo = f"""
-    Olá, {nome_destinatario}!
-
-    Clique no link abaixo para confirmar seu cadastro no Desafio das Perguntas:
-
-    {link_confirmacao}
-
-    O link expira em 24 horas.
-
-    URL do site:
-
-    desafiodasperguntas.com.br
-
-    """
-
-    msg = MIMEMultipart()
-    msg['From'] = remetente
-    msg['To'] = email_destinatario
-    msg['Subject'] = assunto
-    msg.attach(MIMEText(corpo, 'plain'))
-
-    try:
-        with smtplib.SMTP("smtp.gmail.com", porta) as servidor:
-            servidor.starttls()
-            servidor.login(remetente, senha)
-            servidor.send_message(msg)
-        return True
-    except Exception:
-        app.logger.exception("Erro ao enviar email de confirmação de conta")
-        return False
-
-def enviar_email_recuperacao(destinatario, assunto, conteudo):
-
-    remetente = email_remetente
-    senha = senha_app
-
-    msg = MIMEMultipart()
-    msg['From'] = remetente
-    msg['To'] = destinatario
-    msg['Subject'] = assunto
-
-    msg.attach(MIMEText(conteudo, 'plain'))
-
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-        server.login(remetente, senha)
-        server.send_message(msg)
-
 @app.route("/pergunta/<int:id_pergunta>/<tipo_pergunta>/gabarito", methods=["GET"])
 @token_required
 def get_gabarito(id_pergunta, tipo_pergunta, user_id):
@@ -1150,14 +1002,29 @@ def listar_perguntas(user_id):
             where_status = "p.status = 'Ativa'"
         else:
             where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
-        
+
         if modo_visitante:
+            caminho_json = (
+                "c.ids_perguntas -> 'visitantes' -> 'discursivas'"
+                if tipo_pergunta == "discursiva"
+                else "c.ids_perguntas -> 'visitantes' -> 'objetivas'"
+            )
+
             sql = f"""
                 SELECT {select_cols_visitante}
                 FROM {table} p
+                JOIN configuracoes_tema c
+                ON c.tema = p.tema
                 LEFT JOIN feedbacks f
-                    ON p.id_pergunta = f.id_pergunta AND f.id_visitante = %s AND f.tipo_pergunta = %s AND p.versao = f.versao_pergunta
-                WHERE p.tema = %s AND {where_status}
+                ON p.id_pergunta = f.id_pergunta
+                AND f.id_visitante = %s
+                AND f.tipo_pergunta = %s
+                AND p.versao = f.versao_pergunta
+                WHERE p.tema = %s
+                AND ({where_status})
+                AND p.id_pergunta = ANY (
+                    SELECT jsonb_array_elements_text({caminho_json})::int
+                )
                 LIMIT %s
             """
             params = (id_visitante, tipo_str, tema, limit)
@@ -1182,16 +1049,9 @@ def listar_perguntas(user_id):
         for row in linhas:
             if modo_visitante:
                 respondida = False
-                if tipo_pergunta == "discursiva":
-                    if row["id_pergunta"] not in ids_perguntas_discursivas_visitante[tema]:
-                        continue
-                else:
-                    if row["id_pergunta"] not in ids_perguntas_objetivas_visitante[tema]:
-                        continue
             else:
                 respondida = bool(row.get('respondida'))
-            dificuldade = row.get('dificuldade') or 'Médio'  # Se por algum motivo for nulo, evita KeyError
-
+            dificuldade = row.get('dificuldade') or 'Médio'
             if tipo_pergunta == 'discursiva':
                 rc = row.get('respostas_corretas') or []
                 try:
@@ -2185,81 +2045,6 @@ def validar_registro():
 
     return jsonify(success=True, message="Validação OK")
 
-def enviar_email_feedback_pergunta(id_feedback, id_pergunta, tema, tipo_pergunta, enunciado, comentario, estrelas, dificuldade, modo_visitante):
-    assunto = "[Feedback] Comentário em pergunta"
-    
-    link_lido = (
-        f"{base_url}/admin/marcar_feedback_lido"
-        f"?tipo=pergunta&id={id_feedback}"
-    )
-
-    corpo = f"""
-        Novo feedback em pergunta:
-
-        ID da pergunta: {id_pergunta}
-        Tema: {tema} ({tipo_pergunta})
-        Enunciado: {enunciado}
-        Dificuldade: {dificuldade}
-        Estrelas: {estrelas if estrelas is not None else '—'}
-        Modo visitante: {'Sim' if modo_visitante else 'Não'}
-
-        Comentário:
-        {comentario}
-
-        Marcar como lido:
-        {link_lido}
-    """
-
-    enviado = enviar_email_admin(assunto, corpo)
-    if not enviado:
-        app.logger.warning("Falha ao enviar email de feedback para pergunta (não crítico)")
-
-def enviar_email_feedback_site(id_feedback, tema, tipo_pergunta, comentario, pontuacao_saldo, modo_visitante
-):
-    assunto = "[Feedback] Comentário sobre o site"
-
-    link_lido = (
-        f"{base_url}/admin/marcar_feedback_lido"
-        f"?tipo=site&id={id_feedback}"
-    )
-
-    corpo = f"""
-        Novo feedback geral do site:
-
-        Tema: {tema} ({tipo_pergunta})
-        Pontos ganhos no quiz: {pontuacao_saldo}
-        Modo visitante: {'Sim' if modo_visitante else 'Não'}
-
-        Comentário:
-        {comentario}
-
-        Marcar como lido:
-        {link_lido}
-    """
-
-    enviado = enviar_email_admin(assunto, corpo)
-    if not enviado:
-        app.logger.warning("Falha ao enviar email de feedback para o site (não crítico)")
-
-def enviar_email_admin(assunto, corpo):
-    try:
-        msg = MIMEMultipart()
-        msg["From"] = email_remetente
-        msg["To"] = email_remetente
-        msg["Subject"] = assunto
-        msg.attach(MIMEText(corpo, 'plain'))
-
-        with smtplib.SMTP("smtp.gmail.com", int(porta_email)) as servidor:
-            servidor.starttls()
-            servidor.login(email_remetente, senha_app)
-            servidor.send_message(msg)
-
-        return True
-
-    except Exception:
-        app.logger.exception("Erro ao enviar email de feedback para admin")
-        return False
-
 @app.route("/admin/marcar_feedback_lido", methods=["GET"])
 def marcar_feedback_lido():
     tipo = request.args.get("tipo")
@@ -2285,6 +2070,8 @@ def marcar_feedback_lido():
     except Exception:
         app.logger.exception("Erro ao marcar feedback como lido")
         return "Erro interno", 500
+
+iniciar_agendamento()
 
 if not database_url:
     if __name__ == '__main__':

@@ -345,14 +345,8 @@
   #btn-enviar, #btn-pular {
     justify-content: center;
   }
-  #botoes-acao {
-    display: none;
+  #botoes-acao,  #botoes-envio{
     margin-top: 0.8rem;
-    justify-content: space-between;
-    gap: 12px
-  }
-  #botoes-envio {
-    display: flex;
     justify-content: space-between;
     gap: 12px
   }
@@ -439,6 +433,13 @@
   </style>
 </head>
   <body style="margin: 0; font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1E1E14, #1E1E14);">
+
+    <!-- Áudio -->
+    <audio id="button-click-sound" src="/static/sounds/button_click.wav" preload="auto"></audio>
+    <audio id="error-sound" src="/static/sounds/error.aac" preload="auto"></audio>
+    <audio id="correct-sound" src="/static/sounds/correct.wav" preload="auto"></audio>
+    <audio id="key-sound" src="/static/sounds/key.wav" preload="auto"></audio>
+
     <div style="display: flex; flex-direction: column; align-items: center; padding: 2rem 0;">
 
       <!-- Pontuação atual do jogador (à esquerda) -->
@@ -470,7 +471,7 @@
       <div class="quiz-container">
         <div class="quiz-header">
           <!-- Ícone do raio (Perguntas restantes) à esquerda -->
-          <div id="perguntas-restantes-icon" class="dica-icon" title="Perguntas restantes">
+          <div id="perguntas-restantes-icon" class="dica-icon" title="Perguntas restantes" style="display: flex;">
             <span>⚡</span>
             <span id="perguntas-count">0</span>
           </div>
@@ -500,13 +501,13 @@
         </div>
 
         <!-- Botões para enviar a resposta e pular perguntas (apenas nas discursivas) -->
-        <div id="botoes-envio">
+        <div id="botoes-envio" style="display: flex">
           <button id="btn-enviar" class="btn-enviar" disabled>Enviar</button>
           <button id="btn-pular" class="btn-pular">Pular</button>
         </div>
 
         <!-- Botões de finalizar o quiz e chamar próxima pergunta -->
-        <div id="botoes-acao">
+        <div id="botoes-acao" style="display: none">
           <button id="btn-proxima" class="btn-proxima">Próxima</button>
           <button id="btn-finalizar" class="btn-finalizar">Finalizar</button>
         </div>

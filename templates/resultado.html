@@ -136,7 +136,7 @@
       margin-bottom: 12px;
     }
     /* Textarea */
-    #feedback-texto {
+    #caixa-texto-feedback {
       width: 100%;
       min-height: 120px;
       resize: vertical;
@@ -202,6 +202,11 @@
   </style>
 </head>
 <body>
+
+  <!-- Áudio -->
+  <audio id="button-click-sound" src="/static/sounds/button_click.wav" preload="auto"></audio>
+  <audio id="key-sound" src="/static/sounds/key.wav" preload="auto"></audio>
+
   <div class="main">
     <div class="container">
       <h1>Resultado</h1>
@@ -222,13 +227,13 @@
 
     <!-- Rodapé da página com os botões -->
     <div class="footer">
-      <!-- Feedback (todos) -->
+      <!-- Feedback -->
       <a id="btn-feedback" class="btn">
         Enviar feedback
       </a>
 
-      <!-- Prosseguir (todos) -->
-      <a href="{{ url_for('home') }}" class="btn">
+      <!-- Prosseguir -->
+      <a id="btn-prosseguir" class="btn">
         Prosseguir
       </a>
     </div>
@@ -243,7 +248,7 @@
           Não é necessário falar apenas sobre as perguntas respondidas recentemente.
         </p>
         
-        <textarea id="feedback-texto"
+        <textarea id="caixa-texto-feedback"
           placeholder="Exemplo: tive dificuldade em entender o ranking, não concordo com a dificuldade das perguntas..."
           maxlength="800"></textarea>
 
