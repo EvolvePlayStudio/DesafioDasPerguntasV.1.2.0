@@ -60,7 +60,7 @@ def enviar_email_recuperacao(destinatario, assunto, conteudo):
         server.send_message(msg)
 
 def enviar_email_feedback_pergunta(id_feedback, id_pergunta, tema, tipo_pergunta, enunciado, comentario, estrelas, dificuldade, modo_visitante):
-    assunto = "[Feedback] Comentário em pergunta"
+    assunto = "Desafio das Perguntas - Comentário em Pergunta"
     
     link_lido = (
         f"{base_url}/admin/marcar_feedback_lido"
@@ -68,10 +68,8 @@ def enviar_email_feedback_pergunta(id_feedback, id_pergunta, tema, tipo_pergunta
     )
 
     corpo = f"""
-        Novo feedback em pergunta:
-
         ID da pergunta: {id_pergunta}
-        Tema: {tema} ({tipo_pergunta})
+        Tema: {tema} ({tipo_pergunta.lower()})
         Enunciado: {enunciado}
         Dificuldade: {dificuldade}
         Estrelas: {estrelas if estrelas is not None else '—'}
@@ -90,7 +88,7 @@ def enviar_email_feedback_pergunta(id_feedback, id_pergunta, tema, tipo_pergunta
 
 def enviar_email_feedback_site(id_feedback, tema, tipo_pergunta, comentario, pontuacao_saldo, modo_visitante
 ):
-    assunto = "[Feedback] Comentário sobre o site"
+    assunto = "Desafio das Perguntas - Comentário Sobre o Site"
 
     link_lido = (
         f"{base_url}/admin/marcar_feedback_lido"
@@ -98,9 +96,7 @@ def enviar_email_feedback_site(id_feedback, tema, tipo_pergunta, comentario, pon
     )
 
     corpo = f"""
-        Novo feedback geral do site:
-
-        Tema: {tema} ({tipo_pergunta})
+        Tema: {tema} ({tipo_pergunta.lower()})
         Pontos ganhos no quiz: {pontuacao_saldo}
         Modo visitante: {'Sim' if modo_visitante else 'Não'}
 
