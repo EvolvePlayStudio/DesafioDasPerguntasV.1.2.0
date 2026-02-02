@@ -5,16 +5,20 @@ function gtag_report_conversion() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  const btnEntrarSemLogin = document.getElementById("entrar-visitante")
-
-  async function entrarVisitante() {
-    localStorage.setItem("modoVisitante", "true");
-    sessionStorage.setItem("modoVisitante", "true");
-    window.location.href = "/entrar_visitante";
+  // Trecho abaixo se repete em home.js
+  let idVisitante = localStorage.getItem("id_visitante");
+  if (!idVisitante) {
+    idVisitante = crypto.randomUUID();
+    localStorage.setItem("id_visitante", idVisitante);
   }
 
   // Implementa a função de click no botão de entrar sem login
-  btnEntrarSemLogin.addEventListener("click", () => entrarVisitante());
+  const btnEntrarSemLogin = document.getElementById("entrar-visitante")
+  btnEntrarSemLogin.addEventListener("click", () => {
+    localStorage.setItem("modoVisitante", "true")
+    sessionStorage.setItem("modoVisitante", "true")
+    window.location.href = "/entrar_visitante"
+  })
 
   // Variáveis globais para CAPTCHA
   let captchaToken = null;

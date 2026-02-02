@@ -1,4 +1,5 @@
 import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual, temas_disponiveis } from "./utils.js";
+import { playSound } from "./sound.js";
 
 let permitir_escolher_tema = false;
 let tema_atual = null;
@@ -148,9 +149,8 @@ async function iniciarQuiz(event) {
       radio.onclick = null;
   })};
 
-  if (!permitir_escolher_tema) {
-    return;
-  } 
+  if (!permitir_escolher_tema) return;
+  playSound("click");
 
   // Bloqueia alteração no tipo de pergunta ou on tema quando se está iniciando quiz
   radios_tipo_pergunta.forEach(radio => {
@@ -444,6 +444,22 @@ function exibirModalRegistroVisitante(marco) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  // Adiciona áudio no clique dos botões
+  if (btnModalPrimario) {
+    btnModalPrimario.addEventListener("click", () => {
+      playSound("click");
+    })
+  }
+  if (btnModalSecundario) {
+    btnModalSecundario.addEventListener("click", () => {
+      playSound("click");
+    })
+  }
+  document.querySelectorAll('input[type="radio"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      playSound("checkbox")})
+  })
+  
   // Carrega as regras de pontuações do jogo
   try {
     const response = await fetch("/api/regras_pontuacao");
@@ -458,46 +474,54 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // Implementa a função de clique no botão de perfil
-  btn_perfil.addEventListener("click", async () => {
-    window.location.href = "/perfil";
-  });
+  if (btn_perfil) {
+    btn_perfil.addEventListener("click", async () => {
+      playSound("click");
+      window.location.href = "/perfil";
+    })
+  }
 
   // Implementa a função de clique no botão de opções
-  btn_opcoes.addEventListener("click", async () => {
-    window.location.href = "/opcoes"
-  })
+  if (btn_opcoes) {
+    btn_opcoes.addEventListener("click", async () => {
+      playSound("click");
+      window.location.href = "/opcoes"
+    })
+  }
 
   // Implementa a função de clique no botão de pesquisa
-  btn_pesquisa.addEventListener("click", async () => {
-    const response = await fetchAutenticado("/pesquisa");
-    if (response.ok) {
-      window.location.href = "/pesquisa";
-    }
-  });
+  if (btn_pesquisa) {
+    btn_pesquisa.addEventListener("click", async () => {
+      playSound("click");
+      const response = await fetchAutenticado("/pesquisa");
+      if (response.ok) window.location.href = "/pesquisa";
+    })
+  }
 
   // Implementa a função de clique no botão de doações
-  btn_doacoes.addEventListener("click", async () => {
-    if (!MODO_VISITANTE) {
-      const response = await fetchAutenticado("/doações");
-      if (response.ok) {
-        window.location.href = "/doações";
+  if (btn_doacoes) {
+    btn_doacoes.addEventListener("click", async () => {
+      playSound("click");
+      if (!MODO_VISITANTE) {
+        const response = await fetchAutenticado("/doações");
+        if (response.ok) window.location.href = "/doações";
       }
-    }
-    else {
-      window.location.href = "/doações";
-    }
-  });
+      else window.location.href = "/doações";
+    })
+  }
 
   // Implementa a função de clique no botão de logout
-  btn_logout.addEventListener("click", async () => {
-    await fetch("/pagina_destino", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ destino: "login_de_home" })
-    });
-
-    window.location.href = "/"
-  })
+  if (btn_logout) {
+    btn_logout.addEventListener("click", async () => {
+      playSound("click")
+      await fetch("/pagina_destino", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ destino: "login_de_home" })
+      });
+      window.location.href = "/"
+    })
+  }
 
   // Implementa a função de ir para a página home
   document.getElementById("link-home").addEventListener("click", async (e) => {

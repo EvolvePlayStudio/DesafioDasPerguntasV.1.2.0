@@ -13,10 +13,7 @@ let cor_saldo;
 let peso_fonte_saldo;
 
 // Variáveis de som
-let lastKeySoundTime = 0;
-const KEY_SOUND_INTERVAL = 35; // Em milissegundos
-const buttonClickSound = document.getElementById("button-click-sound");
-const keySound = document.getElementById("key-sound");
+const keySoundState = {last: 0, interval: 35};
 
 // Variáveis para envio de feedback
 const FEEDBACK_DRAFT_KEY = "feedback_comentario_rascunho";
@@ -194,15 +191,17 @@ function feedbackSucesso(idFeedback) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-// Adiciona som de tecla digitada na caixa de texto
+  // Adiciona som de tecla digitada na caixa de texto
   if (caixaTextoFeedback) {
-    caixaTextoFeedback.addEventListener("input", () => {lastKeySoundTime = playKeySound(keySound, lastKeySoundTime, KEY_SOUND_INTERVAL)});
-    caixaTextoFeedback.addEventListener("paste", () => {lastKeySoundTime = Date.now()});
+    caixaTextoFeedback.addEventListener("keydown", (e) => {
+        if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
+        playKeySound(keySoundState);
+    });
   }
 
   // Função para prosseguir para a tela hom
   btnProsseguir.addEventListener("click", () => {
-    playSound(buttonClickSound);
+    playSound("click");
     window.location.href = 'home';
   });
 
@@ -212,7 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const comentario = caixaTextoFeedback.value.trim();
     if (!comentario) return;
-    playSound(buttonClickSound);
+    playSound("click");
 
     msgBox.textContent = "Enviando feedback...";
     msgBox.className = "feedback-mensagem enviando";
@@ -259,7 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Função para editar o feedback
   document.getElementById("editar-feedback").addEventListener("click", () => {
-    playSound(buttonClickSound);
+    playSound("click");
     caixaTextoFeedback.disabled = false;
     actionsVoltar.classList.add("hidden");
     actionsForm.classList.remove("hidden");
@@ -268,7 +267,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Abrir modal
   btnFeedback.addEventListener("click", () => {
-    playSound(buttonClickSound);
+    playSound("click");
     const draft = localStorage.getItem(FEEDBACK_DRAFT_KEY);
     if (draft && feedbackIdAtual === null) caixaTextoFeedback.value = draft;
 
@@ -278,7 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Fechar pelo botão cancelar
   btnCancelar.addEventListener("click", () => {
-    playSound(buttonClickSound);
+    playSound("click");
     fecharModalFeedback()
   });
 
@@ -291,7 +290,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Fechar pelo botão voltar
   btnVoltar.addEventListener("click", () => {
-    playSound(buttonClickSound);
+    playSound("click");
     fecharModalFeedback()
   })
 });

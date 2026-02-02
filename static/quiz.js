@@ -30,12 +30,7 @@ let alternativaSelecionada; // Guarda a letra selecionada (A, B, C, D)
 let respostasDesdeUltimaForcagem = 0; // Para pegar a pergunta do nível que tem mais a cada x respondidas
 
 // Variáveis de som
-let lastKeySoundTime = 0;
-const KEY_SOUND_INTERVAL = 35; // Em milissegundos
-const buttonClickSound = document.getElementById("button-click-sound");
-const correctSound = document.getElementById("correct-sound");
-const errorSound = document.getElementById("error-sound");
-const keySound = document.getElementById("key-sound");
+const keySoundState = {last: 0, interval: 35};
 
 // Elementos de localStorage e sessionStorage
 const tema_atual = decodeURIComponent(localStorage.getItem("tema_atual"));
@@ -513,9 +508,7 @@ async function enviarResposta(pulando = false) {
     let encerrar_quiz = false
     if (modo_jogo === "desafio") {
       encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE)
-      if (parseInt(contador_perguntas_restantes.textContent) <= 0) {
-        encerrar_quiz = true
-        }
+      if (parseInt(contador_perguntas_restantes.textContent) <= 0) {encerrar_quiz = true};
     }
     
     // Mostrar apenas o botão Finalizar
@@ -755,10 +748,8 @@ async function enviarResposta(pulando = false) {
     acertou = respostaDiscursivaCorreta(resposta_usuario, respostas_corretas);
   }
 
-  if (acertou) {
-    playSound(correctSound, id_visitante, id_visitante_admin)}
-  else {
-    playSound(errorSound, id_visitante, id_visitante_admin)}
+  // Toca áudio de acerto ou erro
+  (acertou) ? playSound("correct") : playSound("error");
 
   // Exibe os pontos ganhos ou perdidos
   pontos_ganhos = calcularPontuacao(acertou);
@@ -1687,20 +1678,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Adiciona som de tecla digitada nas caixas de texto
   if (caixa_para_resposta) {
-    caixa_para_resposta.addEventListener("input", () => {
-      lastKeySoundTime = playKeySound(keySound, lastKeySoundTime, KEY_SOUND_INTERVAL);
-    })
-    caixa_para_resposta.addEventListener("paste", () => {
-      lastKeySoundTime = Date.now();
-    })
+    caixa_para_resposta.addEventListener("keydown", (e) => {
+        if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
+        playKeySound(keySoundState);
+    });
   }
   if (box_comentario) {
-    box_comentario.addEventListener("input", () => {
-      lastKeySoundTime = playKeySound(keySound, lastKeySoundTime, KEY_SOUND_INTERVAL);
-    })
-    box_comentario.addEventListener("paste", () => {
-      lastKeySoundTime = Date.now();
-    })
+    box_comentario.addEventListener("keydown", (e) => {
+        if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
+        playKeySound(keySoundState);
+    });
   }
   
   // Exibe a contagem de dicas restantes
@@ -1734,9 +1721,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Implementa a função para pular a resposta
     if (btn_pular) {
       btn_pular.addEventListener("click", () => {
-        if (modo_jogo === 'desafio') {
-          playSound(buttonClickSound, id_visitante, id_visitante_admin);
-      }
+        if (modo_jogo === 'desafio') {playSound("click")};
         enviarResposta(true);
       })
     }
@@ -1755,7 +1740,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Implementa a função de chamar próxima pergunta
   if (btn_proxima) {
     btn_proxima.addEventListener("click", () => {
-      playSound(buttonClickSound, id_visitante, id_visitante_admin);
+      playSound("click");
       proximaPergunta();
     })
   }
@@ -1763,7 +1748,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Implementa a função para finalizar o quiz
   if (btn_finalizar) {
     btn_finalizar.addEventListener("click", () => {
-      playSound(buttonClickSound, id_visitante, id_visitante_admin);
+      playSound("click");
       finalizarQuiz();
     })
   }
@@ -1771,9 +1756,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Implementa a função de enviar resposta
   if (btn_enviar) {
     btn_enviar.addEventListener("click", () => {
-      if (modo_jogo === 'desafio') {
-        playSound(buttonClickSound, id_visitante, id_visitante_admin);
-      }
+      if (modo_jogo === 'desafio') {playSound("click")};
       enviarResposta();
     })
   }
