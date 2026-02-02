@@ -193,10 +193,7 @@ function feedbackSucesso(idFeedback) {
 document.addEventListener("DOMContentLoaded", () => {
   // Adiciona som de tecla digitada na caixa de texto
   if (caixaTextoFeedback) {
-    caixaTextoFeedback.addEventListener("keydown", (e) => {
-        if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
-        playKeySound(keySoundState);
-    });
+    caixaTextoFeedback.addEventListener("keydown", (e) => {playKeySound(e)});
   }
 
   // Função para prosseguir para a tela hom

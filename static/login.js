@@ -1,3 +1,5 @@
+import { playSound, playKeySound } from './sound.js'
+
 function gtag_report_conversion() { 
   gtag('event', 'conversion', {
     'send_to': 'AW-17529321916/TyLzCMyw5sobELzz0KZB'
@@ -5,6 +7,16 @@ function gtag_report_conversion() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+  // Adiciona áudio nas caixas de texto
+  const caixasTexto = document.querySelectorAll("#email, #senha, #nome-registro, #email-registro, #senha-registro, #confirmar-senha-registro")
+  caixasTexto.forEach(caixa => {caixa.addEventListener("keydown", (e) => {playKeySound(e)})});
+  
+  // Adiciona áudio nos checkboxes
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      playSound("checkbox")})
+  })
+
   // Trecho abaixo se repete em home.js
   let idVisitante = localStorage.getItem("id_visitante");
   if (!idVisitante) {
@@ -15,9 +27,10 @@ document.addEventListener('DOMContentLoaded', function () {
   // Implementa a função de click no botão de entrar sem login
   const btnEntrarSemLogin = document.getElementById("entrar-visitante")
   btnEntrarSemLogin.addEventListener("click", () => {
-    localStorage.setItem("modoVisitante", "true")
-    sessionStorage.setItem("modoVisitante", "true")
-    window.location.href = "/entrar_visitante"
+    playSound("click");
+    localStorage.setItem("modoVisitante", "true");
+    sessionStorage.setItem("modoVisitante", "true");
+    window.location.href = "/entrar_visitante";
   })
 
   // Variáveis globais para CAPTCHA
@@ -172,6 +185,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Submissão do formulário de registro
   if (register_form) {
     register_form?.addEventListener('submit', async function (event) {
+      playSound("click");
       event.preventDefault();
 
       const nome = this.nome?.value.trim();
@@ -298,6 +312,7 @@ document.addEventListener('DOMContentLoaded', function () {
           // Chama novamente a tela de login
           if (btnRegister) btnRegister.disabled = true;
           if (lbl_mensagem_login) {
+            lbl_mensagem_login.style.display = '';
             lbl_mensagem_login.style.visibility = 'visible'
             lbl_mensagem_login.style.color = 'green'
             lbl_mensagem_login.textContent = data.message
@@ -337,6 +352,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Submissão do formulário de login
   if (login_form) {
   login_form?.addEventListener("submit", async function (event) {
+    playSound("click");
     event.preventDefault();
 
     const email = document.getElementById("email")?.value;
@@ -383,13 +399,16 @@ document.addEventListener('DOMContentLoaded', function () {
       } 
       else {
         if (lbl_mensagem_login) {
+          lbl_mensagem_login.style.display = '';
           lbl_mensagem_login.style.visibility = 'visible';
           lbl_mensagem_login.style.color = 'red';
           lbl_mensagem_login.textContent = data.message || 'Falha no login';
         }
       }
-    } catch (error) {
+    }
+    catch (error) {
       if (lbl_mensagem_login) {
+        lbl_mensagem_login.style.display = '';
         lbl_mensagem_login.style.visibility = 'visible';
         lbl_mensagem_login.style.color = 'red';
         lbl_mensagem_login.textContent = 'Erro na comunicação com o servidor';

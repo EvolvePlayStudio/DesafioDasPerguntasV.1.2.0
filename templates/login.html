@@ -161,8 +161,10 @@
             line-height: 1.3;
         }
         .info-section {
-            margin-top: 25px;
-            text-align: center;
+          margin-top: 0.9rem;
+          margin-bottom: -0.9rem;
+          display: flex;
+          justify-content: center;
         }
         .info-section p {
             margin-bottom: 10px;
@@ -173,10 +175,11 @@
             list-style: none;
             padding: 0;
             margin: 0;
+            text-align: left;
         }
         .info-section li {
             margin: 6px 0;
-            font-size: 14px;
+            font-size: 0.9rem;
             font-weight: bold;
         }
         #captcha-grid img {
@@ -234,17 +237,17 @@
             </button>
 
             <!-- Mensagem na tela de login -->
-            <div id="login-message" style="color: red; font-weight: bold; margin-top: 0.7rem; margin-bottom: 0.7rem;  min-height: 0.1em; visibility: hidden; transition: 0.3s ease; text-align: center;">
+            <div id="login-message" style="color: red; font-weight: bold; margin-top: 0.8rem; margin-bottom: -0.6rem;  min-height: 0.1em; visibility: hidden; transition: 0.3s ease; text-align: center; display: none;">
                 Digite seu email e senha
             </div>
             
             <!-- Informações sobre o aplicativo -->
-            <div class="info-section" style="margin-top: -0.4rem;">
+            <div class="info-section">
             <ul>
-              <li style="padding-right: 1.5rem;">🎁 Conteúdo 100% gratuito</li>
-              <li style="padding-right: 2.2rem;">🧠 4 níveis de dificuldade</li>
-              <li style="padding-right: 0.4rem;">✨ Vários temas de perguntas</li>
-              <li style="padding-right: 0.1rem;">🏆 Ranking pessoal e histórico</li>
+              <li style="padding-left: 0.15rem;">🎁 Conteúdo 100% grátis</li>
+              <li>🧠 4 níveis de perguntas</li>
+              <li>✨ Vários temas únicos</li>
+              <li style="padding-left: 0.1rem;">🏆 Sistema de rankings</li>
             </ul>
             </div>
         </form>
@@ -276,11 +279,12 @@
                 <input type="hidden" id="captcha-token" name="captcha_token">
                 <input type="hidden" id="captcha-selecoes" name="captcha_selecoes">
             </div>
+
             <!-- Campos para registro -->
-            <input type="text" name="nome" placeholder="Nome de usuário" maxlength="50" required>
-            <input type="email" name="email" placeholder="Email" maxlength="50" required>
-            <input type="password" name="senha" placeholder="Senha" maxlength="50" required>
-            <input type="password" name="confirmar_senha" placeholder="Confirmar senha" maxlength="50" required>
+            <input type="text" id="nome-registro" name="nome" placeholder="Nome de usuário" maxlength="50" required>
+            <input type="email" id="email-registro" name="email" placeholder="Email" maxlength="50" required>
+            <input type="password" id="senha-registro" name="senha" placeholder="Senha" maxlength="50" required>
+            <input type="password" id="confirmar-senha-registro" name="confirmar_senha" placeholder="Confirmar senha" maxlength="50" required>
 
             <!-- Opção de migração de dados do modo visitante -->
             <div id="container-migrar-dados-visitante" class="visitor-migration">

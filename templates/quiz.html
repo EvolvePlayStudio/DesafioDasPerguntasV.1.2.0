@@ -49,7 +49,6 @@
   .ranking-atual {
     right: 1rem;
   }
-  /* Container do ranking */
   .ranking-container {
     position: relative;
     width: 100%;
@@ -60,7 +59,6 @@
     color: white;
     font-weight: bold;
   }
-  /* Barra central fixa */
   .barra-container {
     position: absolute;
     left: 50%; /* centraliza horizontalmente */
@@ -73,14 +71,12 @@
     z-index: 1;
     margin-top: 0.25rem;
   }
-  /* Progresso da barra */
   #barra-progresso {
     height: 100%;
     width: 0%; /* valor inicial do progresso */
     background: linear-gradient(to right, #f9a825, #fdd835);
     transition: width 1.1s linear; /* Isto também é alterado na função de atualizar baraar no js*/
   }
-  /* Texto do ranking anterior (lado esquerdo) */
   #ranking-anterior {
     position: absolute;
     left: calc(48% - var(--largura-barra) / 2);
@@ -91,7 +87,6 @@
     z-index: 2;
     font-size: 1rem;
   }
-  /* Texto do próximo ranking (lado direito) */
   #ranking-proximo {
     position: absolute;
     left: calc(52% + var(--largura-barra) / 2);

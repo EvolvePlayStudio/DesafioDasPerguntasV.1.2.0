@@ -1,4 +1,5 @@
 let sounds = {};
+const keySoundState = {last: 0, interval: 35};
 
 const html = `
   <audio id="checkbox-marked-sound" src="/static/sounds/checkbox.wav" preload="auto"></audio>
@@ -28,18 +29,15 @@ export function playSound(name) {
   sound.play().catch(() => {console.log("Erro ao reproduzir som")});
 }
 
-export function playKeySound(state) {
-  const now = Date.now();
-
+export function playKeySound(e) {
+  if (!e.key) return;
+  if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
   if (!sounds.key) return;
-  if (now - state.last < state.interval) return;
 
-  state.last = now;
+  const now = Date.now();
+  if (now - keySoundState.last < keySoundState.interval) return;
+
+  keySoundState.last = now;
   sounds.key.currentTime = 0;
   sounds.key.play().catch(() => {});
-  return state.last
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-  document.body.insertAdjacentHTML("beforeend", html);
-});

@@ -123,9 +123,7 @@ const GAP_ENTRE_ALTERNATIVAS        = 380;
 const VELOCIDADE_LETRA_ENUNCIADO    = 21;
 const VELOCIDADE_LETRA_ALTERNATIVAS = 15;
 
-if (tipo_pergunta === "objetiva" || !exibir_instrucoes_quiz) {
-  hint_avaliacao.style.marginTop = "0.8rem";
-}
+if (tipo_pergunta === "objetiva" || !exibir_instrucoes_quiz) hint_avaliacao.style.marginTop = "0.8rem";
 
 let dicas;
 const contador_dicas = contador_dicas_restantes;
@@ -1678,16 +1676,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Adiciona som de tecla digitada nas caixas de texto
   if (caixa_para_resposta) {
-    caixa_para_resposta.addEventListener("keydown", (e) => {
-        if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
-        playKeySound(keySoundState);
-    });
+    caixa_para_resposta.addEventListener("keydown", (e) => {playKeySound(e)});
   }
   if (box_comentario) {
-    box_comentario.addEventListener("keydown", (e) => {
-        if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
-        playKeySound(keySoundState);
-    });
+    box_comentario.addEventListener("keydown", (e) => {playKeySound(e)});
   }
   
   // Exibe a contagem de dicas restantes
