@@ -246,9 +246,7 @@ async function iniciarQuiz(event) {
         });
 
         // Analisa se há perguntas disponíveis para prosseguir com o quiz
-        console.log("Perguntas são: ", data["perguntas"])
         const encerrar_quiz = deveEncerrarQuiz(data["perguntas"], MODO_VISITANTE);
-        console.log("Devo encerrar quiz? ", encerrar_quiz)
         const haPerguntas = Object.values(data.perguntas).some(arr => arr.length > 0);
         if (!haPerguntas || encerrar_quiz) {
           exibirMensagem(

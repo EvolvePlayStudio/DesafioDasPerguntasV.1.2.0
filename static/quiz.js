@@ -29,9 +29,6 @@ let comentario_inicial;
 let alternativaSelecionada; // Guarda a letra selecionada (A, B, C, D)
 let respostasDesdeUltimaForcagem = 0; // Para pegar a pergunta do nível que tem mais a cada x respondidas
 
-// Variáveis de som
-const keySoundState = {last: 0, interval: 35};
-
 // Elementos de localStorage e sessionStorage
 const tema_atual = decodeURIComponent(localStorage.getItem("tema_atual"));
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
@@ -105,13 +102,10 @@ const coresDificuldade = {
 };
 
 // Círculo amarelo com interrogação preta para símbolo de pergunta pulada
-const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
-  viewBox="0 0 24 24" style="vertical-align: middle;">
+const svg1 = `<svg class="icon-pular" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="vertical-align: middle;">
   <g transform="translate(0,-1)">
     <circle cx="12" cy="12" r="11" fill="#FFD700"/>
-    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
-          font-family="Segoe UI Emoji,Segoe UI Symbol,Arial" font-size="13"
-          font-weight="700" fill="#111">?</text>
+    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-weight="700" fill="#111">?</text>
   </g>
 </svg>`;
 // Tempos para as alternativas
@@ -121,7 +115,7 @@ const GAP_ANTES_DA_LETRA            = 120;
 const GAP_LETRA_PARA_TEXTO          = 180;
 const GAP_ENTRE_ALTERNATIVAS        = 380;
 const VELOCIDADE_LETRA_ENUNCIADO    = 21;
-const VELOCIDADE_LETRA_ALTERNATIVAS = 15;
+const VELOCIDADE_LETRA_ALTERNATIVAS = 16; // quanto menor, mais rápido
 
 if (tipo_pergunta === "objetiva" || !exibir_instrucoes_quiz) hint_avaliacao.style.marginTop = "0.8rem";
 
@@ -746,11 +740,16 @@ async function enviarResposta(pulando = false) {
     acertou = respostaDiscursivaCorreta(resposta_usuario, respostas_corretas);
   }
 
-  // Toca áudio de acerto ou erro
-  (acertou) ? playSound("correct") : playSound("error");
+  // Calcula pontos ganhos toca áudio de acerto ou erro
+  pontos_ganhos = calcularPontuacao(acertou);
+  if (acertou) {
+    playSound("correct")
+  }
+  else if (pontos_ganhos === regras_usuario.pontos_erro) {
+    playSound("error");
+  }
 
   // Exibe os pontos ganhos ou perdidos
-  pontos_ganhos = calcularPontuacao(acertou);
   if (modo_jogo === 'desafio') {
     if (pontos_ganhos > 0) {
       lbl_pontos_ganhos.style.color = 'lime'
@@ -850,41 +849,10 @@ function limparIdsPrioritariosInvalidos() {
   }
 }
 
-async function mostrarAlternativas() {
-  const container = document.getElementById('alternativas-container');
-  if (!container || !pergunta_selecionada) return;
+async function mostrarAlternativasAntiga() {
 
-  // assegura que o container está visível e com coluna
-  container.style.display = 'flex';
-  container.style.flexDirection = 'column';
-  container.style.gap = '8px';
-
-  const alternativas = Array.from(container.querySelectorAll('.alternativa-btn'));
-
-  // Inicializa estado: layout presente, mas letra/texto invisíveis
+  
   alternativas.forEach(btn => {
-    // garante layout inline (letra + texto lado a lado)
-    btn.style.display = 'flex';
-    btn.style.justifyContent = 'flex-start';
-    btn.style.gap = '8px';
-    btn.style.verticalAlign = 'top'
-
-    // Coloca o texto vindo da pergunta no data-text
-    const letra = btn.dataset.letter;
-    let texto = '';
-    if (letra === 'A') texto = pergunta_selecionada.alternativa_a || '';
-    else if (letra === 'B') texto = pergunta_selecionada.alternativa_b || '';
-    else if (letra === 'C') texto = pergunta_selecionada.alternativa_c || '';
-    else if (letra === 'D') texto = pergunta_selecionada.alternativa_d || '';
-    btn.dataset.text = texto;
-
-    // Garante elemento full-text dentro do botão
-    let fullText = btn.querySelector('.full-text');
-    if (!fullText) {
-      fullText = document.createElement('span');
-      fullText.className = 'full-text';
-      btn.appendChild(fullText);
-    }
 
     // estado inicial: vazio e invisível (reserva o espaço do botão)
     fullText.textContent = '';
@@ -961,6 +929,82 @@ async function mostrarAlternativas() {
     btn_enviar.style.display = "inline-flex";
     btn_enviar.disabled = false;
   }
+}
+
+async function mostrarAlternativas() {
+  const container = document.getElementById('alternativas-container');
+  if (!container || !pergunta_selecionada) return;
+
+  // Assegura que o container está visível e com coluna
+  container.style.display = 'flex';
+  container.style.flexDirection = 'column';
+  container.style.gap = '0.5rem';
+
+  const alternativas = Array.from(
+    container.querySelectorAll('.alternativa-btn')
+  );
+
+  // 1) Prepara estado inicial
+  alternativas.forEach(btn => {
+    const letra = btn.dataset.letter;
+    let texto = '';
+
+    if (letra === 'A') texto = pergunta_selecionada.alternativa_a;
+    else if (letra === 'B') texto = pergunta_selecionada.alternativa_b;
+    else if (letra === 'C') texto = pergunta_selecionada.alternativa_c;
+    else if (letra === 'D') texto = pergunta_selecionada.alternativa_d;
+
+    btn.dataset.texto = texto || '';
+
+    // Cria full-text se não existir
+    let fullText = btn.querySelector('.full-text');
+    if (!fullText) {
+      fullText = document.createElement('span');
+      fullText.className = 'full-text';
+      btn.appendChild(fullText);
+    }
+
+    fullText.innerHTML = `
+      <span class="prefixo">${letra}) </span><span class="texto"></span>
+    `;
+
+    btn.style.opacity = '0';
+    btn.style.transform = 'translateY(6px)';
+  });
+
+  await sleep(PAUSA_ANTES_DA_A);
+
+  // 2) Anima alternativas
+  for (const btn of alternativas) {
+    btn.style.opacity = '1';
+    btn.style.transform = 'translateY(0)';
+
+    const textoSpan = btn.querySelector('.texto');
+    const texto = btn.dataset.texto;
+
+    textoSpan.textContent = '';
+
+    for (let i = 0; i < texto.length; i++) {
+      textoSpan.textContent += texto[i];
+      await sleep(VELOCIDADE_LETRA_ALTERNATIVAS);
+    }
+
+    await sleep(GAP_ENTRE_ALTERNATIVAS);
+  }
+
+  // 3) Finalização
+  animacao_concluida = true;
+  inicio_pergunta = Date.now();
+
+  if (!alternativas.some(b => b.classList.contains('selected'))) {
+    const btnA = alternativas.find(b => b.dataset.letter === 'A');
+    if (btnA) selecionarAlternativa(btnA);
+  }
+
+  hint_avaliacao.style.display = "";
+  botoes_enviar_div.style.display = "flex";
+  btn_enviar.style.display = "inline-flex";
+  btn_enviar.disabled = false;
 }
 
 function mostrarDica() {
@@ -1099,7 +1143,7 @@ async function mostrarPergunta() {
     // Se a escolhida ainda tem estoque
     if (estoque[escolhida] > 0) return escolhida;
 
-    const idx = DIFICULDADES_ORDENADAS.indexOf(escolhida);
+    const idx = dificuldadesOrdenadas.indexOf(escolhida);
     if (idx === -1) {
       console.warn("1.Fallback utilizado na escolha da dificuldade")
       return disponiveis.find(d => estoque[d] > 0) ?? null;
@@ -1129,8 +1173,8 @@ async function mostrarPergunta() {
     }
 
     // 2️⃣ Casos intermediários: comparar acima vs abaixo
-    const abaixo = DIFICULDADES_ORDENADAS[idx - 1];
-    const acima  = DIFICULDADES_ORDENADAS[idx + 1];
+    const abaixo = dificuldadesOrdenadas[idx - 1];
+    const acima  = dificuldadesOrdenadas[idx + 1];
 
     const candidatos = [];
 
@@ -1166,7 +1210,7 @@ async function mostrarPergunta() {
     }
 
     // Último desempate: puxa levemente para baixo
-    return DIFICULDADES_ORDENADAS.indexOf(c1) < DIFICULDADES_ORDENADAS.indexOf(c2) ? c1 : c2;
+    return dificuldadesOrdenadas.indexOf(c1) < dificuldadesOrdenadas.indexOf(c2) ? c1 : c2;
   }
 
   function selecionarPergunta(perguntasDisponiveis) {
@@ -1266,7 +1310,20 @@ async function mostrarPergunta() {
 }
 
 async function proximaPergunta() {
-  await registrarFeedback();
+  function resetarAlternativas() {
+    alternativaBtns.forEach(btn => {
+      // Remove estados visuais
+      btn.classList.remove('selected', 'correct', 'wrong');
+
+      // Garante que o botão exista visualmente
+      btn.style.opacity = '0';
+
+      const fullText = btn.querySelector('.full-text');
+      if (fullText) {fullText.textContent = ''};
+    });
+
+    alternativaSelecionada = null;
+  }
 
   hint_dica.style.display = "none";
   hint_pular.style.display = "none";
@@ -1327,32 +1384,6 @@ function renderizarEstrelas(valor) {
       estrela.classList.remove("dourada");
     }
   });
-}
-
-function resetarAlternativas() {
-  alternativaBtns.forEach(btn => {
-    // Remove seleção visual
-    btn.classList.remove('selected', 'correct', 'wrong');
-
-    // Oculta o botão visualmente
-    btn.style.opacity = '0';
-    //btn.style.transform = 'translateY(8px)'; // ou valor que você já usa para animação
-
-    // Limpa o texto da alternativa
-    const fullText = btn.querySelector('.full-text');
-    if (fullText) {
-      fullText.textContent = '';
-      fullText.style.opacity = '0';
-      //fullText.style.transform = 'translateY(6px)'; // volta para posição inicial de animação
-    }
-
-    // Opcional: oculta a letra também, se quiser reiniciar animação
-    const letraEl = btn.querySelector('strong, .letter');
-    if (letraEl) letraEl.style.opacity = '0';
-  });
-
-  // Reseta a variável de alternativa selecionada
-  alternativaSelecionada = null;
 }
 
 function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {

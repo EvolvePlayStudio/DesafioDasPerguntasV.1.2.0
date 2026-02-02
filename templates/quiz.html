@@ -18,16 +18,45 @@
   
   <style>
   :root {
+    --altura-barra: 1rem;
     --largura-barra: 29.8rem;
+    --fs-aux: 0.85rem;
+    --fs-base: 0.95rem;
+    --fs-emph: 1.10rem;
+    --fs-title: 1.25rem;
+    /*--fs-estrelas: 2.2rem;*/
+    --fs-icon-pular: 1.35rem;
+    --fs-estrelas: 2.2rem;
+  }
+  @media (max-width: 900px) { 
+    :root {
+      --altura-barra: 0.9rem;
+      --largura-barra: 16rem;
+      --fs-aux: 0.75rem;
+      --fs-base: 0.85rem;
+      --fs-emph: 1.00rem;
+      --fs-title: 1.15rem;
+      --fs-icon-pular: 1.35rem;
+      --fs-estrelas: 1.9rem;
+    }
   }
   body {
+    font-size: var(--fs-base);
     background: var(--cor-fundo-padrao);
     display: block;
     min-height: 100vh;
   }
+  #resposta-input, #box-comentario, #comentario-texto {
+    font-size: var(--fs-base);
+  }
+  .icon-pular {
+    font-size: calc(var(--fs-icon-pular) - 0.45rem);
+    font-family: 'Segoe UI Emoji', 'Segoe UI Symbol', 'Arial';
+    width: var(--fs-icon-pular);
+    height: var(--fs-icon-pular);
+  }
   #incremento-pontuacoes {
     font-weight: bold;
-    font-size: 1.2rem;
     transition: transform 0.8s ease-out;
     display: none;
     user-select: none;
@@ -35,7 +64,6 @@
   .pontuacoes, .ranking-atual {
     position: absolute;
     font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-size: 1.2rem;
     font-weight: bold;
     color: white;
     top: 1.1rem;
@@ -59,12 +87,16 @@
     color: white;
     font-weight: bold;
   }
+  .icon-inline {
+    width: var(--fs-base);
+    height: var(--fs-base);
+  }
   .barra-container {
     position: absolute;
-    left: 50%; /* centraliza horizontalmente */
+    left: 50%;
     transform: translateX(-50%);
-    width: var(--largura-barra); /* tamanho fixo da barra */
-    height: 1rem;
+    width: var(--largura-barra);
+    height: var(--altura-barra);
     background-color: #444;
     border-radius: 10px;
     overflow: hidden;
@@ -77,25 +109,22 @@
     background: linear-gradient(to right, #f9a825, #fdd835);
     transition: width 1.1s linear; /* Isto também é alterado na função de atualizar baraar no js*/
   }
-  #ranking-anterior {
+  #ranking-anterior, #ranking-proximo {
     position: absolute;
+    white-space: nowrap;
+    z-index: 2;
+  }
+  #ranking-anterior {
     left: calc(48% - var(--largura-barra) / 2);
     transform: translateX(-100%); /* posiciona à esquerda da barra */
-    white-space: nowrap;
     text-align: right;
     margin-right: 0.4rem; /* distância da barra */
-    z-index: 2;
-    font-size: 1rem;
   }
   #ranking-proximo {
-    position: absolute;
     left: calc(52% + var(--largura-barra) / 2);
     transform: translateX(0); /* colado à borda direita da barra */
-    white-space: nowrap;
     text-align: left;
     margin-left: 0.4rem; /* distância da barra */
-    z-index: 2;
-    font-size: 1rem;
   }
   .quiz-container {
     background: var(--cor-fundo-claro);
@@ -106,8 +135,53 @@
     max-width: 38rem;
     position: relative;
   }
+  .quiz-header {
+    display: grid;
+    grid-template-columns: 80px 1fr 80px;
+    align-items: center;
+    gap: 12px;
+    margin-top: -10px;
+    padding: 0;
+    color: white;
+  }
+  #perguntas-restantes-icon, #dica-icon {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: gold;
+    cursor: pointer;
+  }
+  #perguntas-restantes-icon {
+    justify-content: flex-start;
+    cursor: default
+  }
+  #perguntas-count, #contador-dicas {
+    font-weight: bold;
+    margin-left: 6px;
+    color: black;
+  }
+  #tema-nivel-pergunta {
+    font-size: var(--fs-title);
+    font-family: 'Noto Serif', 'Roboto', serif, sans-serif;
+    font-weight: bold;
+    text-align: center;
+    white-space: nowrap;
+    margin: 0;
+    flex-grow: 1;
+  }
+  .dica-icon {
+    display: none;
+    align-items: center;
+    cursor: pointer;
+    justify-content: flex-end;
+  }
+  .dica-icon img {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-right: 0.3rem;
+  }
   #pergunta-enunciado {
-    font-size: 22px;
+    font-size: var(--fs-emph);
     font-family: 'Noto Serif', 'Roboto', serif, sans-serif;
     font-weight: bold;
     margin-top: 1rem;
@@ -119,7 +193,13 @@
     align-items: flex-start;
     gap: 0.5rem;
   }
+  .alternativa-btn .prefixo {
+    font-size: var(--fs-base);
+    font-weight: 1000;
+    margin-right: 0.3ch;
+  }
   .alternativa-btn {
+    font-size: var(--fs-aux);
     display: flex;
     align-items: flex-start;
     gap: .5rem;
@@ -158,11 +238,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-  .alternativa-btn .letter {
-    font-weight: bold;
-    width: 2.2ch;
-    flex: 0 0 auto;
-  }
   .alternativa-btn .full-text {
     font-weight: var(--peso-fonte-botoes);
     flex: 1;
@@ -194,15 +269,20 @@
     margin-right: auto;
   }
   input::placeholder {
+    font-size: var(--fs-aux);
     color: var(--hint-text);
   }
-  #resposta-input {
-    font-size: 1rem;
+  #hint-pular, #hint-avaliacao {
+    margin-top: 0.3rem
+  }
+  #hint-dica {
+    margin-top: 0.8rem
   }
   .nota-box {
     font-weight: var(--peso-fonte-botoes);
   }
   .btn-enviar, .btn-finalizar, .btn-pular, .btn-proxima {
+    font-size: var(--fs-aux);
     flex: 1;
     color: white;
     font-weight: var(--peso-fonte-botoes);
@@ -233,60 +313,13 @@
     outline: none;
     box-shadow: none;
   }
-  .quiz-header {
-    display: grid;
-    grid-template-columns: 80px 1fr 80px;
-    align-items: center;
-    gap: 12px;
-    margin-top: -10px;
-    padding: 0;
-    color: white;
-  }
-  #perguntas-restantes-icon, #dica-icon {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    color: gold;
-    font-size: 24px;
-    cursor: pointer;
-  }
-  #perguntas-restantes-icon {
-    justify-content: flex-start;
-    cursor: default
-  }
-  #perguntas-count, #contador-dicas {
-    font-weight: bold;
-    font-size: 1.1rem;
-    margin-left: 6px;
-    color: black;
-  }
-  #tema-nivel-pergunta {
-    text-align: center;
-    white-space: nowrap;
-    font-family: 'Noto Serif', 'Roboto', serif, sans-serif;
-    font-weight: bold;
-    margin: 0;
-    flex-grow: 1
-  }
-  .dica-icon {
-    display: none;
-    align-items: center;
-    cursor: pointer;
-    font-size: 1rem;
-    justify-content: flex-end;
-  }
-  .dica-icon img {
-    width: 1.5rem;
-    height: 1.5rem;
-    margin-right: 0.3rem;
-  }
   #dica-box, #nota-box, #respostas-aceitas-box {
+    font-size: var(--fs-aux);
     display: none;
     margin-top: 1rem;
     background: #f0f0f0;
     padding: 0.75rem;
     border-radius: 8px;
-    font-size: 1rem;
     font-weight: var(--peso-fonte-padrao);
   }
   #avaliacao {
@@ -300,7 +333,7 @@
     text-align: center;
   }
   .estrela {
-    font-size: 2.2rem;
+    font-size: var(--fs-estrelas);
     cursor: pointer;
     color: black;
     user-select: none;
@@ -318,7 +351,6 @@
     width: 100%;
     min-height: 110px;
     padding: 10px;
-    font-size: 15px;
     border-radius: 8px;
     border: 1px solid #ccc;
     font-family: inherit;
@@ -326,6 +358,7 @@
     box-sizing: border-box;
   }
   #comentario-texto::placeholder {
+    font-size: var(--fs-aux);
     color: var(--hint-text);
     opacity: 1;
   }
@@ -347,7 +380,6 @@
   }
   #resultado {
     display: none;
-    font-size: 1.1rem;
     font-family: 'Noto Serif', 'Roboto', serif, sans-serif;
     margin-top: 12px;
     font-weight: bold
@@ -364,55 +396,27 @@
     box-shadow: 0 0 10px rgba(0,0,0,0.05);
     width: 100%;
     max-width: 38rem;
-    font-size: 1rem;
   }
+
   /* Responsivo */
-  @media (max-width: 1180px) {
-    .barra-container {
-      width: 22rem;
-      height: 0.8rem;
-      margin-top: 0.06rem;
-    }
-    #ranking-anterior, #ranking-proximo {
-      font-size: 0.9rem;
-    }
+  @media (max-width: 900px) {
     #ranking-anterior {
-      left: calc(48% - 11rem);
+      left: calc(50% - var(--largura-barra) / 2 - 0.6rem);
     }
     #ranking-proximo {
-      left: calc(52% + 10.5rem);
+      left: calc(50% + var(--largura-barra) / 2 + 0.6rem);
     }
     .quiz-container {
-      width: 100%;
-      max-width: 28rem;
-      }
-    #tema-nivel-pergunta,
-    #pergunta-enunciado
-    {
-      font-size: 1.1rem;
+      margin-top: -0.5rem;
+      width: 85%;
+      max-width: 20rem;
     }
     .alternativa-btn strong {
       display: inline-block;
       margin-top: 0.22rem;
     }
-    #perguntas-restantes-icon,
-    #dica-icon,
-    #perguntas-count,
-    #contador-dicas,
-    .pontuacoes,
-    #incremento-pontuacoes,
-    .ranking-atual {
-      font-size: 1rem;
-    }
-    #resposta-input, #resultado, #dica-box, #nota-box, #respostas-aceitas-box, #comentarios {
-      font-size: 0.9rem;
-    }
-    #btn-finalizar, #btn-proxima, .btn-enviar, .btn-pular {
-      font-size: 0.8rem;
-    }
     .estrela {
-      font-size: 1.9rem;
-      padding: 0 1.5rem;
+      padding: 0 0.85rem;
     }
     .pontuacoes {
       gap: 0.3rem;
@@ -445,7 +449,7 @@
 
       <div class="ranking-container">
         <!-- Ranking anterior -->
-        <span id="ranking-anterior">Ranking Anterior</span>
+        <span id="ranking-anterior"></span>
 
         <!-- Barra de progresso -->
         <div class="barra-container">
@@ -453,7 +457,7 @@
         </div>
 
         <!-- Próximo ranking -->
-        <span id="ranking-proximo">Próximo Ranking</span>
+        <span id="ranking-proximo"></span>
       </div>
 
       <!-- Layout contendo o enunciado, ícone de dica, etc -->
@@ -483,10 +487,10 @@
 
         <!-- Container das alternativas (para objetivas) -->
         <div id="alternativas-container" style="display: none; margin-top: 12px;">
-          <button class="alternativa-btn" data-letter="A" tabindex="-1"><strong>A)</strong></button>
-          <button class="alternativa-btn" data-letter="B" tabindex="-1"><strong>B)</strong></button>
-          <button class="alternativa-btn" data-letter="C" tabindex="-1"><strong>C)</strong></button>
-          <button class="alternativa-btn" data-letter="D" tabindex="-1"><strong>D)</strong></button>
+          <button class="alternativa-btn" data-letter="A" tabindex="-1"></button>
+          <button class="alternativa-btn" data-letter="B" tabindex="-1"></button>
+          <button class="alternativa-btn" data-letter="C" tabindex="-1"></button>
+          <button class="alternativa-btn" data-letter="D" tabindex="-1"></button>
         </div>
 
         <!-- Botões para enviar a resposta e pular perguntas (apenas nas discursivas) -->
@@ -509,20 +513,20 @@
           <strong>Respostas aceitas:</strong> <span id="lista-respostas"></span>
         </div>
 
+        <!-- Botões de hints para instruir o usuário -->
+        <div id="hint-dica" style="display: none">
+          💡 Algumas perguntas oferecem dica ao clicar no ícone de lâmpada
+        </div>
+        <div id="hint-pular" style="display: none">
+          ⏭ Pressione "Pular" caso não saiba a resposta para reduzir a penalidade
+        </div>
+        <div id="hint-avaliacao" style="display: none">
+          ⭐ Apoie a melhoria do conteúdo avaliando a pergunta no final
+        </div>
+
         <!-- Box da dica -->
         <div id="dica-box">
           <strong>Dica:</strong> <span id="dica-texto"></span>
-        </div>
-
-        <!-- Botões de hints para instruir o usuário -->
-        <div id="hint-dica" style="display: none; margin-top: 0.8rem;">
-          💡 Algumas perguntas oferecem dica ao clicar no ícone de lâmpada
-        </div>
-        <div id="hint-pular" style="display: none; margin-top: 0.3rem;">
-          ⏭ Pressione "Pular" caso não saiba a resposta para reduzir a penalidade
-        </div>
-        <div id="hint-avaliacao" style="display: none; margin-top: 0.3rem;">
-          ⭐ Apoie a melhoria do conteúdo avaliando a pergunta no final
         </div>
 
         <!-- Box da nota -->
