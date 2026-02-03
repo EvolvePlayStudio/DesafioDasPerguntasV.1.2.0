@@ -138,7 +138,7 @@ function ajustarRowGap() {
   const totalCardsHeight = numRows * cardHeight;
   const freeSpace = availableHeight - totalCardsHeight;
 
-  const minGap = cardHeight * 0.45;
+  const minGap = cardHeight * 0.35;
   const maxGap = cardHeight * 0.6;
 
   const calculatedGap = freeSpace / (numRows - 1);
@@ -152,8 +152,8 @@ function ajustarRowGap() {
 }
 
 // Atualiza ao carregar e ao redimensionar
-//window.addEventListener('load', ajustarRowGap);
-//window.addEventListener('resize', ajustarRowGap);
+window.addEventListener('load', ajustarRowGap);
+window.addEventListener('resize', ajustarRowGap);
 
 function abrirModal({titulo = "", corpoHTML = "", textoPrimario = null, textoSecundario = null, onPrimario = null, onSecundario = null, modalReenvioEmail = false}) {
 

@@ -14,21 +14,6 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9650050810390735"
      crossorigin="anonymous"></script>
 
-  <!-- Para cálculo de rowgap entre os cards de temas mais à frente -->
-  <script>
-    (function () {
-      const vh = window.innerHeight;
-      const vw = window.innerWidth;
-
-      // Variáveis globais de viewport
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
-      document.documentElement.style.setProperty('--vw', `${vw}px`);
-
-      // Flag para o CSS saber que o viewport já está pronto
-      document.documentElement.classList.add('viewport-ready');
-    })();
-  </script>
-
   <style>
     html, body {
       height: 100%;
@@ -131,16 +116,12 @@
       color: white;
     }
     main {
-      visibility: hidden;
       flex: 1 1 auto;
       display: flex;
       flex-direction: column;
       height: 100%;
       text-align: center;
       overflow: hidden;
-    }
-    main.layout-ready {
-      visibility: visible;
     }
     .opcoes-container {
       display: flex;
@@ -157,7 +138,7 @@
       font-weight: bold;
     }
     .bloco-opcao h2 {
-      margin-top: 0.9rem;
+      margin-top: 0.2rem;
       margin-bottom: 0.7rem;
     }
     .bloco-opcao .opcoes {
@@ -175,17 +156,24 @@
       display: flex;
       flex-direction: column;
       overflow-y: auto;
+      /*padding: 0.2rem;*/
       margin-top: 0.4rem;
     }
     .cards-container {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
+
+      /*
+      row-gap: 3.5rem;*/
       column-gap: 1.5rem;
+
       justify-items: center;
       align-content: space-between;
       padding-top: 0.4rem;
       padding-bottom: 1.6rem;
     }
+
+
     .card {
       width: 200px;
       height: 168px;
@@ -335,76 +323,24 @@
         max-height: calc(100vh -64px -56px);
       }*/
       .cards-container {
-        grid-template-columns: repeat(3, 1fr);
-        /*column-gap: 0.75rem;*/
+        row-gap: clamp(0.75rem, 4vh, 2rem);
+        column-gap: 0.75rem;
       }
-      /*
       .cards-scroll-wrapper {
         flex: 1 1 auto;
         display: grid;
         align-content: space-between;
         grid-auto-rows: 1fr;
-        gap: clamp(1rem, 3vh, rem);
+        /*gap: clamp(1rem, 3vh, rem);*/
       }
       .modal-actions {
         justify-content: center;
-      }*/
+      }
       .footer {
         position: relative;
       }
     }
   </style>
-
-  <!-- Calcula o rowgap entres os cards de temas -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-
-          // ======= SEU CÓDIGO ATUAL =======
-          const header = document.querySelector('header');
-          const footer = document.querySelector('footer');
-          const opcoes = document.querySelector('.bloco-opcao');
-          const mensagem = document.querySelector('.mensagem');
-          const main = document.querySelector('main');
-
-          const cardsContainer = document.querySelector('.cards-container');
-          if (!cardsContainer) return;
-
-          const card = cardsContainer.querySelector('.card');
-          if (!card) return;
-
-          const headerH = header?.offsetHeight || 0;
-          const footerH = footer?.offsetHeight || 0;
-          const opcoesH = opcoes?.offsetHeight || 0;
-          const mensagemH = mensagem?.offsetHeight || 0;
-
-          const availableHeight =
-            window.innerHeight - headerH - footerH - opcoesH - mensagemH;
-
-          const cardHeight = card.offsetHeight;
-          const numRows = Math.ceil(cardsContainer.children.length / 3);
-
-          if (numRows > 1) {
-            const totalCardsHeight = numRows * cardHeight;
-            const freeSpace = availableHeight - totalCardsHeight;
-
-            const minGap = cardHeight * 0.45;
-            const maxGap = cardHeight * 0.65;
-
-            const calculatedGap = freeSpace / (numRows - 1);
-            const finalGap = Math.max(minGap, Math.min(calculatedGap, maxGap));
-
-            cardsContainer.style.rowGap = `${finalGap}px`;
-          }
-
-          // ======= LIBERA O MAIN =======
-          main.classList.add('layout-ready');
-        });
-      });
-    });
-  </script>
-
 </head>
 <body>
   

@@ -18,7 +18,7 @@
       --fs-emph: 1.10rem;
       --fs-title: 1.25rem;
       --fs-estrela: 1.85rem;
-      --size-checkbox-selecionar: 1.65;
+      --size-checkbox-selecionar: 1.50;
     }
     @media (max-width: 900px) { 
       :root {
@@ -26,8 +26,8 @@
         --fs-base: 0.85rem;
         --fs-emph: 1.00rem;
         --fs-title: 1.15rem;
-        --fs-estrela: 1.75rem;
-        --size-checkbox-selecionar: 1.50;
+        --fs-estrela: 1.65rem;
+        --size-checkbox-selecionar: 1.20;
       }
     }
     body {
@@ -107,9 +107,9 @@
       white-space: nowrap;
     }
     .filtro-centro input[type="checkbox"] {
-      transform: scale(1.6);
-      -webkit-transform: scale(1.6);
-      margin-right: 0.3rem;
+      transform: scale(var(--size-checkbox-selecionar));
+      -webkit-transform: scale(var(--size-checkbox-selecionar));
+      margin-right: 0.4rem;
     }
     select {
       font-size: var(--fs-aux);
@@ -134,10 +134,11 @@
     }
     .subtemas-wrap {
       display: grid;
+      align-items: center;
       grid-template-columns: auto 1fr;
       column-gap: 0.75rem;
       align-items: start;
-      margin-top: 0.5rem;
+      margin-top: 1rem;
       color: white;
     }
     .subtemas span {
@@ -153,7 +154,7 @@
       font-weight: var(--peso-fonte-botoes);
       white-space: nowrap;
       align-self: start;
-      margin-top: 0.5rem;
+      margin-top: 0.85rem;
     }
     .subtemas-grid {
       display: flex;
@@ -211,12 +212,8 @@
       font-weight: bold;
     }
     .checkbox-selecionar {
-      /*
-      transform: scale(1.6);
-      -webkit-transform: scale(1.6);*/
       transform: scale(var(--size-checkbox-selecionar));
       -webkit-transform: scale(var(--size-checkbox-selecionar));
-
     }
     .estrela {
       cursor: pointer;
@@ -267,33 +264,11 @@
     button:hover {
       background-color: var(--bg-hover-botao-login);
     }
-    @media (max-width: 900px) {
-      .filtro-esquerda,
-      .filtro-direita,
-      .filtro-centro {
-        font-size: 1rem;
-      }
-      .filtro-esquerda label,
-      .filtro-centro label,
-      .filtro-direita label,
-      .filtro-centro span {
-        font-size: 0.95rem;
-      }
-      .filtro-centro {
-        gap: 0.5rem 0.8rem;
-      }
-      select {
-        font-size: 0.85rem;
-        padding: 0.25rem 0.35rem;
-      }
-      select option,
-      .subtemas-label,
-      .subtema-btn {
-        font-size: 0.85rem;
-      }
-      .filtro-centro input[type="checkbox"],
-      .checkbox-selecionar {
-        transform: scale(1.2);
+    @media (max-width: 900px) { 
+      .subtemas-wrap {
+        margin-top: 1.3rem;
+        margin-bottom: 0.1rem;
+        color: white;
       }
     }
   </style>
