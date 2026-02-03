@@ -27,7 +27,7 @@
     --fs-icon-pular: 1.35rem;
     --fs-estrelas: 2.2rem;
   }
-  @media (max-width: 900px) { 
+  @media (max-width: 1900px) { 
     :root {
       --altura-barra: 0.9rem;
       --largura-barra: 16rem;
@@ -163,7 +163,7 @@
     display: inline-block;
     text-align: left;
   }
-  #pontuacao::after, pontuacao-mobile::after {
+  #pontuacao::after, #pontuacao-mobile::after {
     content: attr(data-inc);
     position: absolute;
     left: 100%;
@@ -174,14 +174,17 @@
     white-space: nowrap;
     pointer-events: none;
   }
-  #pontuacao[data-inc-type="pos"]::after, pontuacao-mobile[data-inc-type="pos"]::after {
+  #pontuacao[data-inc-type="pos"]::after, #pontuacao-mobile[data-inc-type="pos"]::after {
     color: lime;
   }
-  #pontuacao[data-inc-type="neg"]::after, pontuacao-mobile[data-inc-type="neg"]::after {
+  #pontuacao[data-inc-type="neg"]::after, #pontuacao-mobile[data-inc-type="neg"]::after {
     color: red;
   }
   #pontuacao.show-inc::after, #pontuacao-mobile.show-inc::after {
     opacity: 1;
+  }
+  #pontuacao.hide-inc::after, #pontuacao-mobile.hide-inc::after {
+    opacity: 0;
   }
   .quiz-container {
     background: var(--cor-fundo-claro);
@@ -455,7 +458,7 @@
     max-width: 38rem;
   }
   /* Responsivo */
-  @media (max-width: 900px) {
+  @media (max-width: 1900px) {
     .status-wrapper-mobile {
       display: flex;
     }

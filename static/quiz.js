@@ -207,6 +207,7 @@ function renderizarPontuacaoAtual(pontuacaoAtual, incremento=0) {
         incremento > 0 ? "pos" : "neg"
       );
 
+      el.classList.remove("hide-inc");
       el.classList.add("show-inc");
     }
   });
@@ -1243,6 +1244,12 @@ async function proximaPergunta() {
 
     alternativaSelecionada = null;
   }
+
+  // Esconde incremento de pontos ao chamar nova pergunta
+  document.querySelectorAll('[data-ui="pontuacao"]').forEach(el => {
+    el.classList.remove("show_inc");
+    el.classList.add("hide-inc");
+  })
 
   hint_dica.style.display = "none";
   hint_pular.style.display = "none";
