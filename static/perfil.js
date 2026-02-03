@@ -1,3 +1,5 @@
+import { playSound } from "./sound.js"
+
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 let pontuacoes = {};
 let animando = false;
@@ -30,6 +32,7 @@ document.getElementById("ordenacao").addEventListener("change", (e) => {
 });
 
 document.getElementById("btn-voltar-menu").addEventListener("click", () => {
+  playSound("click");
   window.location.href = "/home";
 });
 
@@ -114,7 +117,8 @@ async function buscarPontuacoesBackend() {
     const dados = await res.json();
     return dados || {};
 
-  } catch (erro) {
+  }
+  catch (erro) {
     console.error("Falha ao buscar pontuações do servidor:", erro);
     return {}; // fallback seguro
   }
@@ -134,6 +138,7 @@ function ordenarTemas(modo, pontuacoes) {
   const lista = document.getElementById("lista-temas");
   const temas = Array.from(lista.children);
 
+  console.log("Pontuações: ", pontuacoes)
   temas.sort((a, b) => {
     const temaA = a.dataset.tema;
     const temaB = b.dataset.tema;

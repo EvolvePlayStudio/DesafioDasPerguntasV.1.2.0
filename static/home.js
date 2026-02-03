@@ -100,61 +100,6 @@ btn_perfil.style.display = "";
 btn_pesquisa.style.display = "";
 btn_logout.style.display = "";
 
-
-function ajustarRowGap() {
-  const header = document.querySelector('header');
-  const footer = document.querySelector('footer');
-  const opcoes = document.querySelector('.bloco-opcao');
-  const mensagem = document.querySelector('.mensagem');
-
-  const cardsScroll = document.querySelector('.cards-scroll-wrapper');
-  const cardsContainer = document.querySelector('.cards-container');
-  const card = cardsContainer.querySelector('.card');
-  if (!card) return;
-
-  const headerH = header ? header.offsetHeight : 0;
-  const footerH = footer ? footer.offsetHeight : 0;
-  const opcoesH = opcoes ? opcoes.offsetHeight : 0;
-  const mensagemH = mensagem ? mensagem.offsetHeight : 0;
-
-  const availableHeight =
-    window.innerHeight -
-    headerH -
-    footerH -
-    opcoesH -
-    mensagemH;
-
-  // garante que o wrapper use TODO o espaço
-  cardsScroll.style.maxHeight = `${availableHeight}px`;
-
-  const cardHeight = card.offsetHeight;
-  const numRows = Math.ceil(cardsContainer.children.length / 3);
-
-  if (numRows <= 1) {
-    cardsContainer.style.rowGap = '0px';
-    return;
-  }
-
-  const totalCardsHeight = numRows * cardHeight;
-  const freeSpace = availableHeight - totalCardsHeight;
-
-  const minGap = cardHeight * 0.45;
-  const maxGap = cardHeight * 0.6;
-
-  const calculatedGap = freeSpace / (numRows - 1);
-
-  const finalGap = Math.max(
-    minGap,
-    Math.min(calculatedGap, maxGap)
-  );
-
-  cardsContainer.style.rowGap = `${finalGap}px`;
-}
-
-// Atualiza ao carregar e ao redimensionar
-//window.addEventListener('load', ajustarRowGap);
-//window.addEventListener('resize', ajustarRowGap);
-
 function abrirModal({titulo = "", corpoHTML = "", textoPrimario = null, textoSecundario = null, onPrimario = null, onSecundario = null, modalReenvioEmail = false}) {
 
   // Bloqueia interação geral

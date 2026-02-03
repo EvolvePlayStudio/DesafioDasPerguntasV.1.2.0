@@ -1,4 +1,5 @@
 import { fetchAutenticado } from "./utils.js";
+import { playSound } from "./sound.js"
 
 // ===============================
 // Elementos principais
@@ -16,6 +17,8 @@ const btnAlterarEmail = document.getElementById('btn-alterar-email');
 const email_atual = document.getElementById('email-atual');
 
 btnAlterarEmail.addEventListener('click', async () => {
+  playSound("click");
+  return
   const novoEmail = inputNovoEmail.value.trim();
 
   if (!emailBasicoValido(novoEmail)) {
@@ -61,7 +64,8 @@ btnAlterarEmail.addEventListener('click', async () => {
 });
 
 btnVoltarMenu.addEventListener("click", () => {
-  window.location.href = '/home';
+  playSound("click");
+  //window.location.href = '/home';
 });
 
 // Checkboxes de temas (quando existirem no HTML)
@@ -169,6 +173,7 @@ function setTelaBloqueada(bloquear) {
 // Eventos
 // ===============================
 chkNotifImportantes.addEventListener('change', () => {
+  playSound("checkbox");
   atualizarEstadoNotificacoes();
   atualizarBotaoSalvar();
 });
@@ -185,6 +190,9 @@ chkNotifImportantes.addEventListener('change', () => {
 // Salvar opções
 // ===============================
 btnSalvar.addEventListener('click', async () => {
+  playSound("click");
+  return
+  
   const payload = obterEstadoAtual();
 
   mostrarStatus('Salvando alterações...', 'loading');

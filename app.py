@@ -193,6 +193,31 @@ def api_regras_pontuacao():
             message="Erro ao carregar regras de pontuação"
         ), 500
 
+
+def buscar_pontuacoes_usuario(id_usuario):
+    """Busca pontuações do usuário em cada tema de perguntas"""
+    pontuacoes_usuario = {}
+    conn = cur = None
+
+    print(f"Buscarei pontuações do usuário com id: {id_usuario}")
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT tema, pontuacao FROM pontuacoes_usuarios WHERE id_usuario = %s",
+            (id_usuario,)
+        )
+        pontuacoes_usuario = {tema: pontuacao for tema, pontuacao in cur.fetchall()}
+        print(f"Pontuações do usuário: {pontuacoes_usuario}")
+    except Exception as e:
+        app.logger.exception("Erro ao tentar obter pontuações do usuário %s", id_usuario)
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+    return pontuacoes_usuario
+
+
 def carregar_regras_pontuacao():
     conn = cur = None
     try:
@@ -1684,34 +1709,6 @@ def usar_dica(user_id):
     conn.close()
 
     return jsonify(success=True, dicas_restantes=novas_dicas)
-
-def buscar_pontuacoes_usuario(id_usuario):
-    """Busca pontuações do usuário em cada tema de perguntas"""
-    pontuacoes_usuario = {}
-    conn = cur = None
-
-    # Conexão com o servidor
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-    except Exception as e:
-        app.logger.exception("Erro ao tentar conectar para buscar pontuações do usuário com id %s: %s", id_usuario, e)
-        return pontuacoes_usuario
-    
-    # Busca das pontuações do usuário
-    try:
-        cur.execute(
-            "SELECT tema, pontuacao FROM pontuacoes_usuarios WHERE id_usuario = %s",
-            (id_usuario,)
-        )
-        pontuacoes_usuario = {tema: pontuacao for tema, pontuacao in cur.fetchall()}
-    except Exception as e:
-        app.logger.exception("Erro ao tentar obter pontuações do usuário %s", id_usuario)
-    finally:
-        if cur: cur.close()
-        if conn: conn.close()
-
-    return pontuacoes_usuario
 
 @app.route("/register", methods=["POST"])
 def registrar():
