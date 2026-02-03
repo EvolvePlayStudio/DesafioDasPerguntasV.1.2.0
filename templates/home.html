@@ -332,7 +332,10 @@
       .cards-scroll-wrapper {
         flex: 0 0 auto;
         max-height: clamp(18rem, 55dvh, 30rem);
+        height: 100vh;
         align-content: space-between;
+        grid-auto-rows: 1fr;
+        gap: clamp(1rem, 3vh, rem);
       }
       .modal-actions {
         justify-content: center;
