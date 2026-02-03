@@ -22,24 +22,17 @@
     body {
       font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       width: 100%;
-      /*
-      overflow-x: hidden;
-      overflow-y: hidden;*/
       box-sizing: border-box;
       background: var(--cor-fundo-padrao);
       display: flex;
       flex-direction: column;
-      /*min-height: 100vh;*/
     }
-
-
+    /*
     .app {
       height: 100vh;
       display: flex;
       flex-direction: column;
-    }
-
-
+    }*/
     header {
       display: flex;
       align-items: center;
@@ -126,15 +119,12 @@
       color: white;
     }
     main {
+      flex: 1;
       display: flex;
-      /*flex: 1;*/
       flex-direction: column;
-
-
       height: 100%;
-
-
       text-align: center;
+      overflow: hidden;
     }
     .opcoes-container {
       display: flex;
@@ -166,18 +156,27 @@
     .cards-scroll-wrapper {
       flex: 1;
       overflow-y: auto;
-      max-height: 60vh;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      /*max-height: 60vh;*/
       padding: 0.2rem;
       margin-top: 0.4rem;
     }
     .cards-container {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
+
       row-gap: 3.5rem;
       column-gap: 1.5rem;
+
       justify-items: center;
-      padding: 1rem;
+      align-content: space-between;
+      padding-top: 0.4rem;
+      padding-bottom: 1.6rem;
     }
+
+
     .card {
       width: 200px;
       height: 168px;

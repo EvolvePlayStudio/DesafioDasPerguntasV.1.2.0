@@ -13,17 +13,32 @@
   <style>
     :root {
       --footer-h: 60px;
+      --fs-aux: 0.85rem;
+      --fs-base: 0.95rem;
+      --fs-emph: 1.10rem;
+      --fs-title: 1.25rem;
+      --fs-estrela: 1.85rem;
+      --size-checkbox-selecionar: 1.65;
+    }
+    @media (max-width: 900px) { 
+      :root {
+        --fs-aux: 0.75rem;
+        --fs-base: 0.85rem;
+        --fs-emph: 1.00rem;
+        --fs-title: 1.15rem;
+        --fs-estrela: 1.75rem;
+        --size-checkbox-selecionar: 1.50;
+      }
     }
     body {
-      width: 100%;
-      overflow-x: hidden;
-      box-sizing: border-box;
       font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      width: 100%;
+      overflow: hidden;
+      box-sizing: border-box;
       background: var(--cor-fundo-padrao);
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
-      overflow-y: hidden;
+      /*min-height: 100vh;*/
     }
     main {
       flex: 1;
@@ -45,17 +60,17 @@
       height: 2.2rem;
     }
     .header-titulo {
-      font-size: 1.5rem;
+      font-size: var(--fs-title);
       font-weight: bold;
       color: white;
     }
     .top-bar {
+      font-size: var(--fs-base);
+      font-weight: bold;
       display: grid;
       grid-template-columns: auto 2fr auto;
       align-items: start;
       gap: 2rem;
-      font-size: 1.25rem;
-      font-weight: bold;
       color:white;
       text-align: left;
     }
@@ -66,7 +81,7 @@
       gap: 2rem;
     }
     .filtro-esquerda, .filtro-direita {
-      font-size: 1.2rem;
+      font-size: var(--fs-base);
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -75,7 +90,7 @@
       color: white;
     }
     .filtro-centro {
-      font-size: 1.2rem;
+      font-size: var(--fs-base);
       display: flex;
       flex-wrap: wrap;
       align-items: center;
@@ -84,8 +99,8 @@
       gap: 0.8rem 1.2rem;
     }
     .filtro-centro label {
+      font-size: var(--fs-base);
       display: block;
-      font-size: 1.1rem;
       font-weight: normal;
       align-items: center;
       gap: 0.3rem;
@@ -97,9 +112,9 @@
       margin-right: 0.3rem;
     }
     select {
+      font-size: var(--fs-aux);
       padding: 0.3rem 0.5rem;
       border-radius: 6px;
-      font-size: 1rem;
       font-weight: var(--peso-fonte-botoes);
       border: 2px solid black;
       align-self: center;
@@ -134,7 +149,7 @@
       gap: 1rem;
     }
     .subtemas-label {
-      font-size: 1.25rem;
+      font-size: var(--fs-base);
       font-weight: var(--peso-fonte-botoes);
       white-space: nowrap;
       align-self: start;
@@ -148,7 +163,8 @@
       margin-top: 0.5rem;
     }
     .subtema-btn {
-      font-size: 0.85rem;
+      font-size: var(--fs-aux);
+      font-weight: var(--peso-fonte-botoes);
       padding: 0.4rem 0.8rem;
       margin-bottom: 0.3rem;
       border-radius: 6px;
@@ -157,7 +173,6 @@
       border: 2px solid black;
       background-color: #eee;
       cursor: pointer;
-      font-weight: bold;
     }
     .subtema-btn:hover {
       background-color: #eee;
@@ -186,20 +201,26 @@
       text-align: center;
     }
     th {
+      font-size: var(--fs-emph);
       background-color: var(--cor-fundo-escuro);
     }
     td {
+      font-size: var(--fs-base);
       color: black;
       background-color: var(--cor-fundo-claro);
       font-weight: bold;
     }
     .checkbox-selecionar {
+      /*
       transform: scale(1.6);
-      -webkit-transform: scale(1.6);
+      -webkit-transform: scale(1.6);*/
+      transform: scale(var(--size-checkbox-selecionar));
+      -webkit-transform: scale(var(--size-checkbox-selecionar));
+
     }
     .estrela {
       cursor: pointer;
-      font-size: 1.85rem;
+      font-size: var(--fs-estrela);
       transition: color 0.3s ease;
       color: black;
     }
@@ -233,10 +254,11 @@
       margin-top: 20px;
     }
     button {
+      font-size: var(--fs-aux);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-weight: bold;
       padding: 8px 16px;
       border: none;
-      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;;
-      font-weight: bold;
       background-color: var(--bg-botao-login);
       color: white;
       border-radius: 4px;
@@ -245,7 +267,7 @@
     button:hover {
       background-color: var(--bg-hover-botao-login);
     }
-    @media (max-width: 768px) {
+    @media (max-width: 900px) {
       .filtro-esquerda,
       .filtro-direita,
       .filtro-centro {
