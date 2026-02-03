@@ -31,11 +31,15 @@
       flex-direction: column;
       /*min-height: 100vh;*/
     }
+
+
     .app {
       height: 100vh;
       display: flex;
       flex-direction: column;
     }
+
+
     header {
       display: flex;
       align-items: center;
@@ -123,8 +127,13 @@
     }
     main {
       display: flex;
-      flex: 1;
+      /*flex: 1;*/
       flex-direction: column;
+
+
+      height: 100%;
+
+
       text-align: center;
     }
     .opcoes-container {
@@ -168,9 +177,6 @@
       column-gap: 1.5rem;
       justify-items: center;
       padding: 1rem;
-    }
-    .hidden {
-      display: none;
     }
     .card {
       width: 200px;
@@ -312,6 +318,9 @@
       font-size: 12px;
       margin-top: 4px;
     }
+    .hidden {
+      display: none;
+    }
     @media (max-width: 900px) {
       main {
         max-height: calc(100vh -64px -56px);
@@ -322,7 +331,8 @@
       }
       .cards-scroll-wrapper {
         flex: 0 0 auto;
-        max-height: clam(18rem, 55dvh, 30rem);
+        max-height: clamp(18rem, 55dvh, 30rem);
+        align-content: space-between;
       }
       .modal-actions {
         justify-content: center;
