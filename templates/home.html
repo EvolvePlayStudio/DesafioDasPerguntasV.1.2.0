@@ -153,8 +153,7 @@
     }
     .cards-container {
       display: grid;
-      grid-template-columns:repeat(4, 1fr);
-      /*grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); Para quando tiverem 8 temas*/
+      grid-template-columns: repeat(3, 1fr);
       row-gap: 3.5rem;
       column-gap: 1.5rem;
       justify-items: center;
@@ -162,16 +161,6 @@
     }
     .hidden {
       display: none;
-    }
-    @media (max-width: 600px) {
-      .modal-actions {
-        justify-content: center;
-      }
-    }
-    @media (max-width: 900px) {
-      .cards-container {
-        grid-template-columns: repeat(2, 1fr);
-      }
     }
     .card {
       width: 200px;
@@ -201,8 +190,6 @@
     }
     .footer {
       position: fixed;
-      bottom: 0;
-      left: 0;
       width: 100%;
     }
     .modal-overlay {
@@ -314,6 +301,21 @@
       display: block;
       font-size: 12px;
       margin-top: 4px;
+    }
+    @media (max-width: 1900px) {
+      main {
+        max-height: calc(100vh -64px -56px)
+      }
+      .cards-scroll-wrapper {
+        flex: 0 0 auto;
+        max-height: clam(18rem, 55dvh, 30rem);
+      }
+      .modal-actions {
+        justify-content: center;
+      }
+      footer {
+        position: relative;
+      }
     }
   </style>
 </head>
@@ -459,7 +461,6 @@
     </div>
   </div>
 
-  </div>
 </div>
 
   <body data-modo-visitante="{{ session.get('visitante', False) | tojson }}"></body>
