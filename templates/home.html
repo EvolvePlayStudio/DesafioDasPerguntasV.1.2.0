@@ -15,16 +15,26 @@
      crossorigin="anonymous"></script>
 
   <style>
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
     body {
-      width: 100%;
-      overflow-x: hidden;
-      box-sizing: border-box;
       font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      width: 100%;
+      /*
+      overflow-x: hidden;
+      overflow-y: hidden;*/
+      box-sizing: border-box;
       background: var(--cor-fundo-padrao);
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
-      overflow-y: hidden;
+      /*min-height: 100vh;*/
+    }
+    .app {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
     header {
       display: flex;
@@ -112,10 +122,10 @@
       color: white;
     }
     main {
-      flex: 1;
-      text-align: center;
       display: flex;
+      flex: 1;
       flex-direction: column;
+      text-align: center;
     }
     .opcoes-container {
       display: flex;
@@ -147,7 +157,7 @@
     .cards-scroll-wrapper {
       flex: 1;
       overflow-y: auto;
-      max-height: 58.5vh;
+      max-height: 60vh;
       padding: 0.2rem;
       margin-top: 0.4rem;
     }
@@ -189,7 +199,7 @@
       font-size: 16px;
     }
     .footer {
-      position: fixed;
+      flex-shrink: 0;
       width: 100%;
     }
     .modal-overlay {
@@ -304,7 +314,11 @@
     }
     @media (max-width: 900px) {
       main {
-        max-height: calc(100vh -64px -56px)
+        max-height: calc(100vh -64px -56px);
+      }
+      .cards-container {
+        row-gap: clamp(0.75rem, 4vh, 2rem);
+        column-gap: 0.75rem;
       }
       .cards-scroll-wrapper {
         flex: 0 0 auto;
@@ -313,7 +327,7 @@
       .modal-actions {
         justify-content: center;
       }
-      footer {
+      .footer {
         position: relative;
       }
     }
