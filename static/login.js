@@ -84,6 +84,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const msg = localStorage.getItem("auth_message");
   if (msg) {
+    lbl_mensagem_login.display = '';
     lbl_mensagem_login.style.visibility = 'visible';
     lbl_mensagem_login.style.color = 'red';
     lbl_mensagem_login.textContent = msg;
@@ -645,3 +646,4 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   localStorage.removeItem("ir_para_aba_registro");
 });
+

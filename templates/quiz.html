@@ -24,7 +24,6 @@
     --fs-base: 0.95rem;
     --fs-emph: 1.10rem;
     --fs-title: 1.25rem;
-    /*--fs-estrelas: 2.2rem;*/
     --fs-icon-pular: 1.35rem;
     --fs-estrelas: 2.2rem;
   }
@@ -40,11 +39,15 @@
       --fs-estrelas: 1.9rem;
     }
   }
+  html, body {
+    height: 100%
+  }
   body {
     font-size: var(--fs-base);
     background: var(--cor-fundo-padrao);
     display: block;
     min-height: 100vh;
+    overflow-y: scroll;
   }
   #resposta-input, #box-comentario, #comentario-texto {
     font-size: var(--fs-base);
@@ -54,28 +57,6 @@
     font-family: 'Segoe UI Emoji', 'Segoe UI Symbol', 'Arial';
     width: var(--fs-icon-pular);
     height: var(--fs-icon-pular);
-  }
-  #incremento-pontuacoes {
-    font-weight: bold;
-    transition: transform 0.8s ease-out;
-    display: none;
-    user-select: none;
-  }
-  .pontuacoes, .ranking-atual {
-    position: absolute;
-    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-weight: bold;
-    color: white;
-    top: 1.1rem;
-  }
-  .pontuacoes {
-    left: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-  .ranking-atual {
-    right: 1rem;
   }
   .ranking-container {
     position: relative;
@@ -109,7 +90,7 @@
     background: linear-gradient(to right, #f9a825, #fdd835);
     transition: width 1.1s linear; /* Isto também é alterado na função de atualizar baraar no js*/
   }
-  #ranking-anterior, #ranking-proximo {
+  #ranking-anterior, #proximo-ranking {
     position: absolute;
     white-space: nowrap;
     z-index: 2;
@@ -120,11 +101,87 @@
     text-align: right;
     margin-right: 0.4rem; /* distância da barra */
   }
-  #ranking-proximo {
+  #proximo-ranking {
     left: calc(52% + var(--largura-barra) / 2);
     transform: translateX(0); /* colado à borda direita da barra */
     text-align: left;
     margin-left: 0.4rem; /* distância da barra */
+  }
+  .status-wrapper-mobile {
+    display: none;
+    position: relative;
+    justify-content: center;
+    height: 2.2rem;
+    gap: 1.5rem;
+    margin-top: -0.83rem;
+    margin-bottom: 1rem;
+    width: 100%;
+  }
+  .pontuacoes, .ranking-atual {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-weight: bold;
+    color: white;
+    position: absolute;
+    top: 1.1rem;
+  }
+  .pontuacoes {
+    display: flex;
+    left: 1rem;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+  }
+  .ranking-atual {
+    right: 1rem;
+  }
+  .pontuacoes-mobile, .ranking-atual-mobile {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-weight: bold;
+    color: white;
+    display: flex;
+    position: absolute;
+    white-space: nowrap;
+    gap: 0.3rem;
+  }
+  .pontuacoes-mobile {
+    position: absolute;
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: flex-start;
+    left: calc(50% - 0.75 * var(--largura-barra));
+    transform: translateX(0);
+    text-align: left;
+  }
+  .ranking-atual-mobile {
+    left: calc(50% + 0.75 * var(--largura-barra));
+    transform: translateX(-100%);
+    align-items: center;
+    text-align: right;
+  }
+  #pontuacao-mobile {
+    position: relative;
+    display: inline-block;
+    text-align: left;
+  }
+  #pontuacao::after, pontuacao-mobile::after {
+    content: attr(data-inc);
+    position: absolute;
+    left: 100%;
+    margin-left: 0.4rem;
+    opacity: 0;
+    transform: translateY(0);
+    transition: opacity 0.3s ease, transform 0.6s ease;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  #pontuacao[data-inc-type="pos"]::after, pontuacao-mobile[data-inc-type="pos"]::after {
+    color: lime;
+  }
+  #pontuacao[data-inc-type="neg"]::after, pontuacao-mobile[data-inc-type="neg"]::after {
+    color: red;
+  }
+  #pontuacao.show-inc::after, #pontuacao-mobile.show-inc::after {
+    opacity: 1;
   }
   .quiz-container {
     background: var(--cor-fundo-claro);
@@ -397,13 +454,20 @@
     width: 100%;
     max-width: 38rem;
   }
-
   /* Responsivo */
   @media (max-width: 900px) {
+    .status-wrapper-mobile {
+      display: flex;
+    }
+    .pontuacoes,
+    .ranking-atual,
+    #incremento-pontuacao {
+      display: none;
+    }
     #ranking-anterior {
       left: calc(50% - var(--largura-barra) / 2 - 0.6rem);
     }
-    #ranking-proximo {
+    #proximo-ranking {
       left: calc(50% + var(--largura-barra) / 2 + 0.6rem);
     }
     .quiz-container {
@@ -417,9 +481,6 @@
     }
     .estrela {
       padding: 0 0.85rem;
-    }
-    .pontuacoes {
-      gap: 0.3rem;
     }
     #dica-icon img {
       width: 1rem;
@@ -435,16 +496,22 @@
 
     <div style="display: flex; flex-direction: column; align-items: center; padding: 2rem 0;">
 
-      <!-- Pontuação atual do jogador (à esquerda) -->
-      <header class="pontuacoes">
-        Pontuação: <span id="pontuacao"></span>
-        <!-- Pontuação ganha ou perdida pela pergunta (fica invisível a princípio) -->
-        <span id="incremento-pontuacao"></span>
-      </header>
+      <!-- Pontuação e ranking do jogador em mobile -->
+      <div class="status-wrapper-mobile">
+        <header class="pontuacoes-mobile">Pontuação: 
+          <span data-ui="pontuacao" id="pontuacao-mobile"></span>
+        </header>
+        <header class="ranking-atual-mobile">Ranking: 
+          <span data-ui="ranking" id="ranking-mobile"></span>
+        </header>
+      </div>
 
-      <!-- Ranking atual do jogador (à direita) -->
-      <header class="ranking-atual">
-        Ranking: <span id="ranking"></span>
+      <!-- Pontuação e ranking do jogador em desktop -->
+      <header class="pontuacoes">Pontuação: 
+        <span data-ui="pontuacao" id="pontuacao"></span>
+      </header>
+      <header class="ranking-atual">Ranking: 
+        <span data-ui="ranking" id="ranking"></span>
       </header>
 
       <div class="ranking-container">
@@ -457,7 +524,7 @@
         </div>
 
         <!-- Próximo ranking -->
-        <span id="ranking-proximo"></span>
+        <span id="proximo-ranking"></span>
       </div>
 
       <!-- Layout contendo o enunciado, ícone de dica, etc -->

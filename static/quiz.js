@@ -54,8 +54,8 @@ const exibir_instrucoes_quiz = opcoesUsuario?.exibir_instrucoes_quiz;
 
 // Elementos do HTML
 const contador_dicas_restantes = document.getElementById("contador-dicas");
-const lbl_pontuacao_usuario = document.getElementById('pontuacao');
-const lbl_pontos_ganhos = document.getElementById('incremento-pontuacao');
+const lblRankingAnterior = document.getElementById("ranking-anterior");
+const lblProximoRanking = document.getElementById("proximo-ranking")
 const alternativasContainer = document.getElementById("alternativas-container");
 const resultado = document.getElementById('resultado');
 const caixa_para_resposta = document.getElementById('resposta-input');
@@ -65,6 +65,7 @@ const barra = document.getElementById("barra-progresso");
 const hint_dica = document.getElementById("hint-dica");
 const hint_pular = document.getElementById("hint-pular");;
 const hint_avaliacao = document.getElementById("hint-avaliacao");
+const respostasAceitas = document.getElementById("respostas-aceitas-box");
 const estrelas_avaliacao = document.getElementById("avaliacao");
 const estrelas = document.querySelectorAll(".estrela");
 const box_comentario = document.getElementById("box-comentario");
@@ -111,13 +112,13 @@ const svg1 = `<svg class="icon-pular" xmlns="http://www.w3.org/2000/svg" viewBox
 // Tempos para as alternativas
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 const PAUSA_ANTES_DA_A              = 500;
-const GAP_ANTES_DA_LETRA            = 120;
-const GAP_LETRA_PARA_TEXTO          = 180;
+//const GAP_ANTES_DA_LETRA            = 120;
+//const GAP_LETRA_PARA_TEXTO          = 180;
 const GAP_ENTRE_ALTERNATIVAS        = 380;
 const VELOCIDADE_LETRA_ENUNCIADO    = 21;
 const VELOCIDADE_LETRA_ALTERNATIVAS = 16; // quanto menor, mais rápido
 
-if (tipo_pergunta === "objetiva" || !exibir_instrucoes_quiz) hint_avaliacao.style.marginTop = "0.8rem";
+if (tipo_pergunta === "objetiva" || !MODO_VISITANTE && !exibir_instrucoes_quiz) hint_avaliacao.style.marginTop = "0.8rem";
 
 let dicas;
 const contador_dicas = contador_dicas_restantes;
@@ -158,8 +159,9 @@ const ids_discursivas_prioridade = {
   'Variedades': [24, 25, 27, 67, 107, 120, 221, 376, 392, 658, 659, 662]
 }
 
-function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtualizarUI) {
-  const intervaloMin = 20; // ms entre frames no máximo, para smooth
+function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo) {
+  const incrementoTotal = pontuacao_alvo - pontuacao_atual;
+  const intervaloMin = 20;
   let ultimaExecucao = 0;
 
   function passo(timestamp) {
@@ -168,22 +170,20 @@ function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtuali
 
     if (delta > intervaloMin) {
       let diferenca = pontuacao_alvo - pontuacao_atual;
-      if (diferenca === 0) {
-        return;
-      }
+      if (diferenca === 0) return;
 
-      // Calcula passo proporcional (4% da distância, no mínimo 1)
-      // Usa Math.sign para saber se deve incrementar ou decrementar
-      let passo = Math.max(1, Math.floor(Math.abs(diferenca) * 0.04));
-      pontuacao_atual += passo * Math.sign(diferenca);
+      let passoValor = Math.max(1, Math.floor(Math.abs(diferenca) * 0.04));
+      pontuacao_atual += passoValor * Math.sign(diferenca);
 
-      // Corrige ultrapassagem (ex: passar do alvo)
-      if ((diferenca > 0 && pontuacao_atual > pontuacao_alvo) ||
-          (diferenca < 0 && pontuacao_atual < pontuacao_alvo)) {
+      if (
+        (incrementoTotal > 0 && pontuacao_atual > pontuacao_alvo) ||
+        (incrementoTotal < 0 && pontuacao_atual < pontuacao_alvo)
+      ) {
         pontuacao_atual = pontuacao_alvo;
       }
 
-      callbackAtualizarUI(pontuacao_atual);
+      renderizarPontuacaoAtual(pontuacao_atual, incrementoTotal)
+
       ultimaExecucao = timestamp;
     }
 
@@ -191,6 +191,25 @@ function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo, callbackAtuali
   }
 
   window.requestAnimationFrame(passo);
+}
+
+function renderizarPontuacaoAtual(pontuacaoAtual, incremento=0) {
+  document.querySelectorAll('[data-ui="pontuacao"]').forEach(el => {
+    el.textContent = pontuacaoAtual;
+    if (incremento !== 0) {
+      el.setAttribute(
+        "data-inc",
+        incremento > 0 ? `+${incremento}` : `${incremento}`
+      );
+
+      el.setAttribute(
+        "data-inc-type",
+        incremento > 0 ? "pos" : "neg"
+      );
+
+      el.classList.add("show-inc");
+    }
+  });
 }
 
 function ativarBotoes() {
@@ -225,7 +244,6 @@ function atualizarRankingVisual() {
       });
     });
   }
-
   // POSSÍVEL SIMPLIFICAÇÃO NO TRECHO ABAIXO
   async function animarBarra(tipoAnimacao, progressoFinal) {
     // Animação da barra na subida de ranking
@@ -251,15 +269,16 @@ function atualizarRankingVisual() {
     // Requisita a segunda parte da animação, após alteração do ranking
     await animarBarraAte(progressoFinal);
   }
-
   function atualizarTextosRanking() {
-    document.getElementById("ranking").textContent = info_ranking_atual.ranking;
-    document.getElementById("ranking-anterior").textContent = ranking_anterior;
-    document.getElementById("ranking-proximo").textContent = ranking_proximo ? ranking_proximo.ranking : "";
+    renderizarRanking(info_ranking_atual.ranking)
+    lblRankingAnterior.textContent = ranking_anterior;
+    lblProximoRanking.textContent = ranking_proximo ? ranking_proximo.ranking : "";
   }
-
   function forcarReflow(elemento) {
     elemento.offsetWidth; // Força o browser a aplicar o estado atual
+  }
+  function renderizarRanking(textoRankingAtual) {
+    document.querySelectorAll('[data-ui="ranking"]').forEach(el => el.textContent = textoRankingAtual);
   }
 
   // Identifica o ranking anterior alcançado pelo usuário
@@ -382,10 +401,6 @@ function calcularPontuacao(acertou) {
 
 function calcularTempoGasto() {
     return Math.floor((Date.now() - inicio_pergunta) / 1000);  // segundos
-}
-
-function callbackAtualizarUI (pontuacao) {
-  lbl_pontuacao_usuario.textContent = pontuacao
 }
 
 function configurarEstrelas() {
@@ -533,7 +548,7 @@ async function enviarResposta(pulando = false) {
 
   function mostrarRespostasAceitas(lista) {
     try {
-      const container = document.getElementById("respostas-aceitas-box");
+      const container = respostasAceitas;
       const lista_respostas_aceitas = document.getElementById("lista-respostas");
       lista_respostas_aceitas.textContent = lista.join(" / ");
       container.style.display = "block";
@@ -567,7 +582,7 @@ async function enviarResposta(pulando = false) {
       if (data.sucesso) {
         // Atualiza a pontuação do usuário para o tema no localStorage
         pontuacoes_usuario[tema_atual] = data.nova_pontuacao;
-        alterarPontuacaoUsuario(pontuacao_atual, pontuacoes_usuario[tema_atual], callbackAtualizarUI)
+        alterarPontuacaoUsuario(pontuacao_atual, pontuacoes_usuario[tema_atual])
         localStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_usuario));
 
         // Atualiza as perguntas restantes do usuário no localStorage
@@ -642,7 +657,7 @@ async function enviarResposta(pulando = false) {
     analisarMetaConversao();
 
     // Altera a pontuação do usuário após o envio da resposta
-    alterarPontuacaoUsuario(pontuacoes_usuario[tema_atual], pontuacoes_usuario[tema_atual] + pontos_ganhos, callbackAtualizarUI)
+    alterarPontuacaoUsuario(pontuacoes_usuario[tema_atual], pontuacoes_usuario[tema_atual] + pontos_ganhos)
     pontuacoes_usuario[tema_atual] = pontuacoes_usuario[tema_atual] + pontos_ganhos;
 
     // Pontuações de usuário são usadas temporariamente, enquanto a dde visitante é para registro permanente. Para usuários logados, registra-se apenas a de usuaários porque a gravação permanente é feita na base de dados
@@ -749,20 +764,6 @@ async function enviarResposta(pulando = false) {
     playSound("error");
   }
 
-  // Exibe os pontos ganhos ou perdidos
-  if (modo_jogo === 'desafio') {
-    if (pontos_ganhos > 0) {
-      lbl_pontos_ganhos.style.color = 'lime'
-      lbl_pontos_ganhos.style.display = 'flex'
-      lbl_pontos_ganhos.textContent = `+${pontos_ganhos}`
-    }
-    else if (pontos_ganhos < 0) {
-      lbl_pontos_ganhos.style.color = 'red'
-      lbl_pontos_ganhos.style.display = 'flex'
-      lbl_pontos_ganhos.textContent = `${pontos_ganhos}`
-    }
-  }
-
   // Registra a resposta enviada no SQL
   if (modo_jogo === 'desafio' && !MODO_VISITANTE) {
     const id_pergunta = pergunta_selecionada.id_pergunta;
@@ -846,88 +847,6 @@ function limparIdsPrioritariosInvalidos() {
   for (let i = lista.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [lista[i], lista[j]] = [lista[j], lista[i]];
-  }
-}
-
-async function mostrarAlternativasAntiga() {
-
-  
-  alternativas.forEach(btn => {
-
-    // estado inicial: vazio e invisível (reserva o espaço do botão)
-    fullText.textContent = '';
-    fullText.style.opacity = '0';
-    fullText.style.transform = 'translateY(6px)'; // começa "ligeiramente abaixo"
-
-    // letra (strong) invisível inicialmente
-    const letraEl = btn.querySelector('strong');
-    if (letraEl) {
-      letraEl.style.opacity = '0';
-      letraEl.style.display = 'inline-block';
-      letraEl.style.width = '2.2ch';
-      letraEl.style.textAlign = 'right';
-    }
-
-    // faz o botão ocupar o espaço mas invisível
-    btn.style.opacity = '0';
-  });
-
-  // pequena pausa entre fim do enunciado e início das alternativas
-  await sleep(PAUSA_ANTES_DA_A);
-
-  // anima alternativas uma a uma
-  for (let i = 0; i < alternativas.length; i++) {
-    const btn = alternativas[i];
-
-    // 1) fade-in do botão (layout aparece)
-    btn.style.opacity = '1';
-
-    // 2) mostrar letra (fade)
-    const letraEl = btn.querySelector('strong');
-    if (letraEl) {
-      // pequena pausa para entre a letra da alternativa e o
-      await sleep(GAP_ANTES_DA_LETRA);
-      letraEl.style.opacity = '1';
-    }
-
-    // pausa pequena antes de começar o texto
-    await sleep(GAP_LETRA_PARA_TEXTO);
-
-    // 3) animar o texto letra-a-letra
-    const fullText = btn.querySelector('.full-text');
-    const texto = btn.dataset.text || '';
-    // garante transição suave para o transform/opacidade
-    fullText.style.opacity = '1';
-    fullText.style.transform = 'translateY(0)';
-
-    // escreve letra a letra
-    fullText.textContent = '';
-    for (let k = 0; k < texto.length; k++) {
-      fullText.textContent += texto[k];
-      await sleep(VELOCIDADE_LETRA_ALTERNATIVAS); // velocidade da letra
-    }
-
-    // pausa antes da próxima alternativa (mais longa para dar ritmo)
-    await sleep(GAP_ENTRE_ALTERNATIVAS);
-  }
-
-  // animação completa
-  animacao_concluida = true;
-  inicio_pergunta = Date.now();
-
-  // Seleciona A por padrão apenas se nenhuma estiver selecionada
-  const algumaSelecionada = alternativas.some(b => b.classList.contains('selected'));
-  if (!algumaSelecionada) {
-    const btnA = alternativas.find(b => b.dataset.letter === 'A');
-    if (btnA) selecionarAlternativa(btnA);
-  }
-
-  // Exibe hint de avaliação e botão enviar após tudo
-  hint_avaliacao.style.display = "";
-  if (btn_enviar) {
-    botoes_enviar_div.style.display = "flex";
-    btn_enviar.style.display = "inline-flex";
-    btn_enviar.disabled = false;
   }
 }
 
@@ -1064,7 +983,7 @@ async function mostrarPergunta() {
   document.getElementById("nota-box").style.display = "none";
   resultado.style.display = "none";
   estrelas_avaliacao.style.display = "none";
-  document.getElementById("respostas-aceitas-box").style.display = "none";
+  respostasAceitas.style.display = "none";
   box_comentario.style.display = "none";
   dica_icon.style.display = "none";
 
@@ -1327,7 +1246,6 @@ async function proximaPergunta() {
 
   hint_dica.style.display = "none";
   hint_pular.style.display = "none";
-  lbl_pontos_ganhos.style.display = 'none'
   if (haPerguntasDisponiveis) {
     if (tipo_pergunta === 'objetiva') {
       resetarAlternativas();
@@ -1805,7 +1723,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Chama as funções que são necessárias na inicialização
-  callbackAtualizarUI (pontuacoes_usuario[tema_atual]);
+  renderizarPontuacaoAtual(pontuacoes_usuario[tema_atual]);
   limparIdsPrioritariosInvalidos();
   definirRankingAnterior(); // útil para quando for animar barra de progresso
   atualizarRankingVisual();
