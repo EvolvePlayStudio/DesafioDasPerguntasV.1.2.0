@@ -197,8 +197,7 @@
   }
   .quiz-header {
     display: grid;
-    /*grid-template-columns: 80px 1fr 80px;*/
-    grid-template-columns: minmax(0, auto) 1fr minmax(0, auto);
+    grid-template-columns: 80px 1fr 80px;
     align-items: center;
     gap: 12px;
     margin-top: -10px;
@@ -235,10 +234,6 @@
     align-items: center;
     cursor: pointer;
     justify-content: flex-end;
-
-
-    min-width: 0;
-    flex-shrink: 1;
   }
   .dica-icon img {
     width: 1.5rem;
@@ -462,30 +457,6 @@
     width: 100%;
     max-width: 38rem;
   }
-
-
-
-
-  .quiz-header {
-    display: flex;
-    align-items: center;
-  }
-
-  #perguntas-restantes-icon {
-    flex: 0 0 auto;
-  }
-
-  #tema-nivel-pergunta {
-    flex: 1 1 auto;
-    text-align: center;
-  }
-
-  #dica-icon {
-    flex: 0 0 auto;
-  }
-
-
-
   /* Responsivo */
   @media (max-width: 1000px) {
     .status-wrapper-mobile {
