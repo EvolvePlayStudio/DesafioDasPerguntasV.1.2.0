@@ -21,6 +21,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            min-height: 100vh;
             height: 100%;
             box-sizing: border-box;
             overflow: hidden;
@@ -29,10 +30,12 @@
             flex: 1;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center;
             overflow-y: auto;
+            padding: 1rem;
+            /*
             padding-top: 3vh;
-            padding-bottom: 3vh;
+            padding-bottom: 3vh;*/
         }
         .auth-container {
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -44,7 +47,8 @@
             /*
             width: 50%;
             max-width: 400px;*/
-            width: min(92vw, 22rem);
+            margin: 0 auto;
+            width: min(88vw, 22rem);
             display: flex;
             flex-direction: column;
             align-items: stretch;
@@ -204,6 +208,7 @@
             height: var(--footer-h);*/
             flex-shrink: 0; /*ASSIM É COMO ESTÁ NA TELA DE HOME E LÁ O PROBLEMA ESTÁ RESOLVIDO, MAS AGORA AQUI SE FAÇO ISTO ELE FICA FLUTUANDO*/
             width: 100%;
+            margin-top: auto;
         }
         @media (max-width: 1000px) {
             .auth-container {
