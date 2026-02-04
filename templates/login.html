@@ -21,9 +21,9 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding-top: 8vh;
-            height: calc(93vh - var(--footer-h));
+            height: 100%;
             box-sizing: border-box;
+            overflow: hidden;
         }
         main {
             flex: 1;
@@ -31,6 +31,8 @@
             justify-content: center;
             align-items: flex-start;
             overflow-y: auto;
+            padding-top: 3vh;
+            padding-bottom: 3vh;
         }
         .auth-container {
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -195,10 +197,13 @@
             justify-content: center;
         }
         footer {
+            /*
             position: fixed;
             width: 97.6%;
             bottom: 0;
-            height: var(--footer-h);
+            height: var(--footer-h);*/
+            flex-shrink: 0; /*ASSIM É COMO ESTÁ NA TELA DE HOME E LÁ O PROBLEMA ESTÁ RESOLVIDO, MAS AGORA AQUI SE FAÇO ISTO ELE FICA FLUTUANDO*/
+            width: 100%;
         }
         @media (max-width: 1000px) {
             .auth-container {
@@ -336,13 +341,13 @@
     </div>
   </main>
 
-    <!-- Rodapé da página -->
-    <footer>
+  <!-- Rodapé da página -->
+  <footer>
       <a href="{{ url_for('login') }}" style="color: var(--cor-pagina-selecionada)">Início</a> |
       <a href="{{ url_for('politica_privacidade_from_login') }}">Política de Privacidade</a> |
       <a href="{{ url_for('termos_uso_from_login') }}">Termos de Uso</a> |
       <a href="{{ url_for('sobre_app_from_login') }}">Sobre o App</a>
-    </footer>
+  </footer>
 
     <script>
     const destino = "{{ destino }}";
