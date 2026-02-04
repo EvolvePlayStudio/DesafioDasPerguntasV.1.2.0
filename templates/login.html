@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Login - Desafio das Perguntas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/Favicon.png') }}?v=1">
     <meta name="description" content="Experimente mais de 1000 perguntas em inúmeros temas científicos e populares, acumule pontos e suba de ranking">
@@ -14,10 +15,6 @@
         :root {
           --footer-h: 1.05rem;
         }
-        html, body {
-          height: 100%;
-          margin: 0;
-        }
         body {
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: var(--cor-fundo-padrao);
@@ -25,13 +22,15 @@
             flex-direction: column;
             justify-content: center;
             min-height: 100vh;
+            height: 100%;
             box-sizing: border-box;
             overflow: hidden;
+            margin: 0;
+            width: 100%;
         }
         main {
             flex: 1;
-            display: grid;
-            place-items: center;
+            display: flex;
             justify-content: center;
             align-items: center;
             overflow-y: auto;
