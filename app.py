@@ -177,9 +177,8 @@ def alterar_email_route():
 
 @app.route("/api/pontuacoes")
 @token_required
-def api_pontuacoes():
-    id_usuario = session["id_usuario"]
-    pontuacoes = buscar_pontuacoes_usuario(id_usuario)
+def api_pontuacoes(user_id):
+    pontuacoes = buscar_pontuacoes_usuario(user_id)
     return jsonify(pontuacoes)
 
 @app.route("/api/regras_pontuacao")
@@ -197,9 +196,8 @@ def api_regras_pontuacao():
 def buscar_pontuacoes_usuario(id_usuario):
     """Busca pontuações do usuário em cada tema de perguntas"""
     pontuacoes_usuario = {}
-    conn = cur = None
 
-    print(f"Buscarei pontuações do usuário com id: {id_usuario}")
+    conn = cur = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -208,8 +206,7 @@ def buscar_pontuacoes_usuario(id_usuario):
             (id_usuario,)
         )
         pontuacoes_usuario = {tema: pontuacao for tema, pontuacao in cur.fetchall()}
-        print(f"Pontuações do usuário: {pontuacoes_usuario}")
-    except Exception as e:
+    except Exception:
         app.logger.exception("Erro ao tentar obter pontuações do usuário %s", id_usuario)
     finally:
         if cur: cur.close()
