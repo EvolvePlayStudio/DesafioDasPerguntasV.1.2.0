@@ -334,9 +334,10 @@
         grid-template-columns: repeat(3, 1fr);
         column-gap: 0.9rem;
       }
+      /*
       .footer {
         position: relative;
-      }
+      }*/
     }
   </style>
 
@@ -375,7 +376,7 @@
             const freeSpace = availableHeight - totalCardsHeight;
 
             const minGap = cardHeight * 0.45;
-            const maxGap = cardHeight * 0.95;
+            const maxGap = cardHeight * 1.8;
 
             const calculatedGap = freeSpace / (numRows - 1);
             const finalGap = Math.max(minGap, Math.min(calculatedGap, maxGap));

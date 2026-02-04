@@ -7,6 +7,7 @@ import { playSound } from "./sound.js"
 const chkNotifImportantes = document.getElementById('notif-importantes');
 const chkNotifAdicionais = document.getElementById('notif-adicionais');
 const chkInstrucoes = document.getElementById('mostrar-instrucoes-quiz');
+const totChecks = document.querySelectorAll(`input[type="checkbox"]`);
 
 const btnSalvar = document.getElementById('btn-salvar-opcoes');
 const btnVoltarMenu = document.getElementById('btn-voltar-menu')
@@ -16,9 +17,15 @@ const inputNovoEmail = document.getElementById('novo-email');
 const btnAlterarEmail = document.getElementById('btn-alterar-email');
 const email_atual = document.getElementById('email-atual');
 
+// Áudio para clique em checkboxes
+totChecks.forEach(check => {
+  check.addEventListener("change", () => {
+    playSound("checkbox");
+  }); 
+});
+
 btnAlterarEmail.addEventListener('click', async () => {
   playSound("click");
-  return
   const novoEmail = inputNovoEmail.value.trim();
 
   if (!emailBasicoValido(novoEmail)) {
@@ -65,7 +72,7 @@ btnAlterarEmail.addEventListener('click', async () => {
 
 btnVoltarMenu.addEventListener("click", () => {
   playSound("click");
-  //window.location.href = '/home';
+  window.location.href = '/home';
 });
 
 // Checkboxes de temas (quando existirem no HTML)
@@ -173,7 +180,6 @@ function setTelaBloqueada(bloquear) {
 // Eventos
 // ===============================
 chkNotifImportantes.addEventListener('change', () => {
-  playSound("checkbox");
   atualizarEstadoNotificacoes();
   atualizarBotaoSalvar();
 });
@@ -191,8 +197,6 @@ chkNotifImportantes.addEventListener('change', () => {
 // ===============================
 btnSalvar.addEventListener('click', async () => {
   playSound("click");
-  return
-  
   const payload = obterEstadoAtual();
 
   mostrarStatus('Salvando alterações...', 'loading');

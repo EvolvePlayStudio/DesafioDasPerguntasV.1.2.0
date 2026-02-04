@@ -105,17 +105,14 @@ function aplicarPontuacoes(pontuacoes) {
 }
 
 async function buscarPontuacoesBackend() {
-  console.log("1.Cheguei aqui")
   try {
     const res = await fetch("/api/pontuacoes", {
       headers: { "Accept": "application/json" }
     });
-    console.log("Reposta é: ", {res})
-    console.log("2.Cheguei aqui")
+
     if (!res.ok) {
       throw new Error(`Erro HTTP ${res.status}`);
     }
-    console.log("3.Cheguei aqui")
 
     const dados = await res.json();
     return dados || {};
@@ -141,7 +138,6 @@ function ordenarTemas(modo, pontuacoes) {
   const lista = document.getElementById("lista-temas");
   const temas = Array.from(lista.children);
 
-  console.log("Pontuações: ", pontuacoes)
   temas.sort((a, b) => {
     const temaA = a.dataset.tema;
     const temaB = b.dataset.tema;

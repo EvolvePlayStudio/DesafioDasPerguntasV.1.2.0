@@ -1,4 +1,5 @@
 import { fetchAutenticado, exibirMensagem, temas_disponiveis } from "./utils.js";
+import { playSound } from "./sound.js"
 
 let tema_atual;
 let tipo_pergunta;
@@ -12,11 +13,19 @@ const btn_marcar_todas = document.getElementById("marcar-todas");
 const btn_pesquisar = document.getElementById("btn-pesquisar");
 const btn_salvar_favoritos = document.getElementById("btn-salvar-favoritos");
 const btn_revisar = document.getElementById("btn-revisar");
+const checksDificuldades = document.querySelectorAll(`#checks-dificuldades input[type="checkbox"]`);
 const box_tema = document.getElementById("tema");
 const box_tipo_pergunta = document.getElementById("tipo-pergunta");
 const mensagem = document.getElementById("mensagem");
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 const TTL_ESTADO_PESQUISA = 7 * 24 * 60 * 60 * 1000; // 7 dias
+
+// Áudio para clique em checkboxes
+checksDificuldades.forEach(check => {
+  check.addEventListener("change", () => {
+    playSound("checkbox");
+  }); 
+});
 
 // Implementas a função para exibir subtemas ao mudar o tema
 box_tema.addEventListener("change", async () => {
@@ -27,11 +36,13 @@ box_tema.addEventListener("change", async () => {
 
 // Implementa a função para retornar para a home
 btn_voltar.addEventListener("click", () => {
+  playSound("click");
   window.location.href = '/home';
 })
 
 // Implementa a função para selecionar ou desselecionar todas as perguntas
 btn_marcar_todas.addEventListener("click", () => {
+  playSound("click");
   const linhas = tabela.querySelectorAll("tr");
   
   if (btn_marcar_todas.textContent === 'Marcar Todas') {
@@ -62,11 +73,13 @@ btn_marcar_todas.addEventListener("click", () => {
 
 // Implementa a função para pesquisar as perguntas
 btn_pesquisar.addEventListener("click", () => {
+  playSound("click");
   pesquisar();
 });
 
 // Implementa a função para salvar as perguntas nos favoritos
 btn_salvar_favoritos.addEventListener("click", () => {
+  playSound("click");
   if (!MODO_VISITANTE) {
     salvarFavoritos();
   }
@@ -83,6 +96,7 @@ btn_salvar_favoritos.addEventListener("click", () => {
 
 // Implementa a função para iniciar uma revisão
 btn_revisar.addEventListener("click", () => {
+  playSound("click");
   const linhas = tabela.querySelectorAll("tr");
   const perguntas_totais = JSON.parse(localStorage.getItem("perguntas_para_revisar"));
   const perguntas_filtradas = {Fácil: [], Médio: [], Difícil: [], Extremo: []};
@@ -477,6 +491,7 @@ async function salvarFavoritos() {
 
 function identificarMudancaCheck (checkbox) {
   checkbox.addEventListener("change", () => {
+    playSound("checkbox");
     if (checkbox.checked) {
       contador_perguntas++;
       const totalCheckboxes = document.querySelectorAll(".checkbox-selecionar").length;

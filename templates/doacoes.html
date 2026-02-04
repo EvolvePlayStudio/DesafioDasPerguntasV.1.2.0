@@ -153,16 +153,18 @@
     </div>
 
     <div class="acoes">
-      <button onclick="voltarParaHome()" class="btn-voltar">Voltar</button>
+      <button id="btn-voltar" onclick="voltarParaHome()" class="btn-voltar">Voltar</button>
       <button onclick="copyPix()" class="btn-copiar">Copiar chave PIX</button>
     </div>
 
     <div class="success" id="successMsg">Chave PIX copiada com sucesso!</div>
     
   </div>
-
-  <script>
-    function copyPix() {
+    
+  <script type="module">
+    import { playSound } from "../static/sound.js"
+    window.copyPix = function () {
+      playSound("click");
       const pixKey = document.getElementById("pixKey").innerText;
       
       navigator.clipboard.writeText(pixKey).then(() => {
@@ -171,7 +173,8 @@
         setTimeout(() => msg.style.display = "none", 4000);
       });
     }
-    function voltarParaHome() {
+    window.voltarParaHome = function () {
+      playSound("click");
       window.location.href = '/home'
     }
   </script>
