@@ -1536,11 +1536,17 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
   return tot_respostas_aceitas.some(resposta => {
     const lenOriginal = resposta.length;
 
+    const textoUsuarioOriginal = normalizarLeve(resposta_usuario, false);
+    const textoCorretoOriginal = normalizarLeve(resposta, false);
     const textoCorretoLeve = normalizarLeve(resposta, false);
     const textoCorretoPesado = normalizarResposta(resposta, false);
 
+    /*
+    console.log("Texto original da resposta do usuário: ", resposta_usuario);
+    console.log("Texto original da resposta aceita: ", resposta);*/
+
     // 1. Igualdade forte
-    if (textoUsuarioPesado === textoCorretoPesado) return true;
+    if (textoUsuarioOriginal === textoCorretoOriginal || textoUsuarioPesado === textoCorretoPesado) return true;
 
     // 2. Comparação leve (prioritária)
     const distLeve = distanciaDamerauLevenshtein(
@@ -1551,25 +1557,20 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
     /*
     console.log("Texto leve do usuário: ", textoUsuarioLeve);
     console.log("Texto leve da resposta: ", textoCorretoLeve);
-    console.log("Distância leve: ", distLeve);
-    */
+    console.log("Distância leve: ", distLeve);*/
     
     if (aceitaPorDistancia(distLeve, lenOriginal, textoCorretoPesado)) {
       return true;
     }
 
     // 3. fallback pesado
-    const distPesado = distanciaDamerauLevenshtein(
-      textoUsuarioPesado,
-      textoCorretoPesado
-    );
+    const distPesado = distanciaDamerauLevenshtein(textoUsuarioPesado, textoCorretoPesado);
 
     /*
     console.log("Texto pesado do usuário: ", textoUsuarioPesado);
     console.log("Texto pesado da resposta: ", textoCorretoPesado);
-    console.log("Distância pesada: ", distPesado);
-    */
-   
+    console.log("Distância pesada: ", distPesado);*/
+    
     return aceitaPorDistancia(distPesado, lenOriginal, textoCorretoPesado);
   });
 }
