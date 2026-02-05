@@ -13,22 +13,28 @@
   <title>Sobre - Desafio das Perguntas</title>
 </head>
 <style>
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: center;
-        font-family: Arial, sans-serif;
+    .points-table {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      text-align: center;
+      width: 100%;
+      max-width: 100%;
     }
     th, td {
-        background-color: #e7e0e0;
-        border: 2px solid var(--cor-fundo-escuro);
-        padding: 10px;
-        font-weight: 600;
+      font-weight: 600;
+      background-color: #e7e0e0;
+      border: 2px solid var(--cor-fundo-escuro);
+      padding: 10px;
     }
     th {
         background-color: var(--cor-fundo-padrao);
         font-weight: bold;
         color: white;
+    }
+    @media (max-width: 1000px) {
+      table {
+        font-size: 0.85rem;
+      }
     }
 </style>
 <body class="body-politica-de-privacidade">
@@ -59,54 +65,54 @@
         <li class="li-politica-de-privacidade">Caso acerte uma pergunta em que utilizou dica, você será penalizado em cerca de 30% do valor da pontuação de acerto. Dicas só podem ser usadas em perguntas que valem mais do que 10 pontos.</li>
         <li class="li-politica-de-privacidade">Erros penalizam 80 pontos e perguntas puladas 60. Perguntas de nível Fácil no ranking Lenda e que já foram respondidas não valem pontos, tanto para acertos quanto para erros.</li>
         <li class="li-politica-de-privacidade">Seu ranking atual dependerá da sua pontuação. Cada novo ranking exige 1000 pontos, sendo 4000 o necessário para chegar no último e 5000 a pontuação máxima que se pode obter.</li>
-        <li class="li-politica-de-privacidade">Veja abaixo as regras para pontos ganhos em cada ranking e nível de pergunta:</li>
+        <li class="li-politica-de-privacidade">Veja abaixo a quantidade de pontos ganhos em cada ranking e nível de pergunta:</li>
       </ul>
-
-      <table>
+      
+      <table class="points-table">
         <thead>
         <tr>
             <th>Ranking</th>
-            <th>Acertos no Fácil</th>
-            <th>Acertos no Médio</th>
-            <th>Acertos no Difícil</th>
-            <th>Acertos no Extremo</th>
+            <th>Fácil</th>
+            <th>Médio</th>
+            <th>Difícil</th>
+            <th>Extremo</th>
         </tr>
         </thead>
         <tbody>
             <tr>
                 <td>Iniciante</td>
-                <td>110 pontos</td>
-                <td>150 pontos</td>
-                <td>Nível bloqueado</td>
-                <td>Nível bloqueado</td>
+                <td>+110</td>
+                <td>+150</td>
+                <td>---</td>
+                <td>---</td>
             </tr>
             <tr>
                 <td>Aprendiz</td>
-                <td>70 pontos</td>
-                <td>110 pontos</td>
-                <td>150 pontos</td>
-                <td>Nível bloqueado</td>
+                <td>+70</td>
+                <td>+110</td>
+                <td>+150</td>
+                <td>---</td>
             </tr>
             <tr>
                 <td>Estudante</td>
-                <td>30 pontos</td>
-                <td>70 pontos</td>
-                <td>110 pontos</td>
-                <td>150 pontos</td>
+                <td>+30</td>
+                <td>+70</td>
+                <td>+110</td>
+                <td>+150</td>
             </tr>
             <tr>
                 <td>Sábio</td>
-                <td>10 pontos</td>
-                <td>30 pontos</td>
-                <td>70 pontos</td>
-                <td>110 pontos</td>
+                <td>+10</td>
+                <td>+30</td>
+                <td>+70</td>
+                <td>+110</td>
             </tr>
             <tr>
                 <td>Lenda</td>
-                <td>Não valem pontos</td>
-                <td>10 pontos</td>
-                <td>30 pontos</td>
-                <td>70 pontos</td>
+                <td>0</td>
+                <td>+10</td>
+                <td>+30</td>
+                <td>+70</td>
             </tr>
         </tbody>
       </table>
