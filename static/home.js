@@ -193,6 +193,7 @@ async function iniciarQuiz(event) {
   
   if (tema_atual === 'Física') {
     exibirMensagem(mensagem, `O tema Física será liberado em breve`, 'orange');
+    desbloquearBotoes();
     return;
   };
 
