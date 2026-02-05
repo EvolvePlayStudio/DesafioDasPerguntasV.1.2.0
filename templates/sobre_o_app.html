@@ -21,19 +21,25 @@
       max-width: 100%;
     }
     th, td {
-      font-weight: 600;
-      background-color: #e7e0e0;
+      font-weight: bold;
       border: 2px solid var(--cor-fundo-escuro);
       padding: 10px;
     }
+    td {
+      background-color: #e7e0e0;
+      font-size: 0.95rem;
+    }
     th {
-        background-color: var(--cor-fundo-padrao);
-        font-weight: bold;
-        color: white;
+      font-size: 1.10rem;
+      background-color: var(--cor-fundo-padrao);
+      color: white;
     }
     @media (max-width: 1000px) {
-      table {
+      td {
         font-size: 0.85rem;
+      }
+      th {
+        font-size: 1rem;
       }
     }
 </style>

@@ -191,11 +191,12 @@ async function iniciarQuiz(event) {
     return;
   };
   
+  /*
   if (tema_atual === 'Física') {
     exibirMensagem(mensagem, `O tema Física será liberado em breve`, 'orange');
     desbloquearBotoes();
     return;
-  };
+  };*/
 
   // Mensagem avisando que as perguntas acabaram
   if (parseInt(perguntas_restantes.textContent) <= 0) {

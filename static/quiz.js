@@ -112,8 +112,6 @@ const svg1 = `<svg class="icon-pular" xmlns="http://www.w3.org/2000/svg" viewBox
 // Tempos para as alternativas
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 const PAUSA_ANTES_DA_A              = 500;
-//const GAP_ANTES_DA_LETRA            = 120;
-//const GAP_LETRA_PARA_TEXTO          = 180;
 const GAP_ENTRE_ALTERNATIVAS        = 380;
 const VELOCIDADE_LETRA_ENUNCIADO    = 21;
 const VELOCIDADE_LETRA_ALTERNATIVAS = 16; // quanto menor, mais rápido
@@ -135,6 +133,7 @@ const ids_objetivas_prioridade = {
   'Biologia':   [18, 22, 29, 361, 365, 371, 580, 581, 585],
   'Esportes':   [55, 63, 65, 66, 75, 462, 467, 471],
   'Filosofia':  [132, 142, 146, 149, 150, 302, 305],
+  'Física': [],
   'Geografia':  [80, 82, 84, 86, 90, 93, 206, 318],
   'História':   [35, 41, 42, 118, 127, 209, 262],
   'Mídia':      [99, 106, 381, 385, 391, 604],
@@ -150,6 +149,7 @@ const ids_discursivas_prioridade = {
   'Biologia': [8, 10, 43, 48, 50, 52, 55, 438, 620],
   'Esportes': [11, 12, 14, 79, 80, 82, 83, 513, 523],
   'Filosofia': [227, 237, 246, 408, 410, 554, 557, 558],
+  'Física': [],
   'Geografia': [134, 157, 158, 163, 169, 174],
   'História': [29, 30, 35, 59, 128, 129, 275],
   'Mídia': [184, 209, 451, 635, 637, 641, 642, 650],
@@ -163,6 +163,11 @@ function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo) {
   const incrementoTotal = pontuacao_alvo - pontuacao_atual;
   const intervaloMin = 20;
   let ultimaExecucao = 0;
+
+  // Zera o incremento para não renderizar o da pergunta anterior
+  document.querySelectorAll('[data-ui="pontuacao"]').forEach(el => {
+    el.setAttribute("data-inc", '');
+  });
 
   function passo(timestamp) {
     if (!ultimaExecucao) ultimaExecucao = timestamp;
@@ -192,24 +197,17 @@ function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo) {
 
   window.requestAnimationFrame(passo);
 }
-
+ 
 function renderizarPontuacaoAtual(pontuacaoAtual, incremento=0) {
   document.querySelectorAll('[data-ui="pontuacao"]').forEach(el => {
     el.textContent = pontuacaoAtual;
+    
     if (incremento !== 0) {
-      el.setAttribute(
-        "data-inc",
-        incremento > 0 ? `+${incremento}` : `${incremento}`
-      );
-
-      el.setAttribute(
-        "data-inc-type",
-        incremento > 0 ? "pos" : "neg"
-      );
-
+      el.setAttribute("data-inc", incremento > 0 ? `+${incremento}` : `${incremento}`);
+      el.setAttribute("data-inc-type", incremento > 0 ? "pos" : "neg");
       el.classList.remove("hide-inc");
       el.classList.add("show-inc");
-    }
+    };
   });
 }
 
