@@ -565,7 +565,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     perguntas_restantes.forEach(p => {
       p.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/60`;
     });
-    dicas_restantes.textContent.forEach(d => {
+    dicas_restantes.forEach(d => {
       d.textContent = `${localStorage.getItem("dicas_restantes_visitante")}/20`;
     });
 
