@@ -15,7 +15,7 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9650050810390735"
      crossorigin="anonymous"></script>
 
-  <!-- Para cálculo de rowgap entre os cards de temas mais à frente -->
+  <!-- Para cálculo de rowgap entre os cards de temas mais à frente --> 
   <script>
     (function () {
       const vh = window.innerHeight;
@@ -46,31 +46,30 @@
       flex-direction: column;
       overflow: hidden;
     }
-    header {
-      display: flex;
-      align-items: center;
+    .header-desktop {
       background-color: var(--cor-fundo-escuro);
       color: white;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      align-items: center;
       padding: 0.6rem 1rem;
     }
     .header-left,
     .header-right {
       display: flex;
       align-items: center;
-      gap: 0.8rem;
+      gap: 1rem;
       flex: 0 0 auto;
     }
     .header-left {
       justify-content: flex-start;
-      gap: 1rem;
     }
     .header-right {
       justify-content: flex-end;
-      gap: 1rem;
     }
     .header-center {
-      flex: 1;
       display: flex;
+      justify-self: center;
       justify-content: center;
     }
     .status-item {
@@ -95,14 +94,63 @@
         height: 100%;
         object-fit: cover;
     }
-    .user-name {
-        font-weight: 700;
-        font-size: 1rem;
-        color: #ffffff;
+    .header-left .user-name {
+      font-weight: 700;
+      font-size: 1rem;
+      color: white;
     }
     .header-right nav button {
       font-size: 0.85rem;
       padding: 0.3rem 0.6rem;
+    }
+    .header-mobile {
+      display: none;
+      flex-direction: column;
+      background-color: var(--cor-fundo-escuro);
+      color: white;
+    }
+    .header-mobile .header-up {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0.9rem;
+      gap: 0.6rem;
+    }
+    .header-mobile .header-up .avatar {
+      flex-shrink: 0;
+    }
+    .header-mobile .header-up .user-name {
+      min-width: 8rem;
+      font-weight: 700;
+      font-size: 1rem;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .header-mobile .header-up .status-item {
+      flex-shrink: 0;
+    }
+    .header-mobile .header-up .status-item:first-of-type {
+      margin-left: auto;
+    }
+    .header-mobile .header-down {
+      padding: 0.4rem 0.6rem 0.6rem;
+    }
+    .header-mobile nav {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .user-block {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .status-block {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-left: auto;
     }
     nav {
       display: flex;
@@ -330,7 +378,13 @@
     .hidden {
       display: none;
     }
-    @media (max-width: 1000px){
+    @media (max-width: 1000px) {
+      .header-desktop {
+        display: none;
+      }
+      .header-mobile {
+        display: flex;
+      }
       .cards-container {
         grid-template-columns: repeat(2, 1fr);
         column-gap: 0.9rem;
@@ -390,35 +444,73 @@
 
 </head>
 <body>
+
+
+  <!-- Header em mobile -->
+  <header class="header-mobile">
+    <div class="header-up">
+
+      <div class="user-block">
+        <div class="avatar">
+          <img src="{{ url_for('static', filename='img/Avatar.png') }}" alt="Avatar">
+        </div>
+        <div class="user-name"></div>
+      </div>
+
+      <div class="status-block">
+        <div class="status-item" title="Perguntas restantes">
+          ⚡ <span class="perguntas-count">0/0</span>
+        </div>
+        <div class="status-item" title="Dicas restantes">
+          💡 <span class="dicas-count">0/0</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="header-down">
+      <nav>
+        <button class="btn-criar-conta" style="display: none;">📝 Criar conta</button>
+        <button class="btn-perfil" style="display: none;">🧑 Perfil</button>
+        <button class="btn-pesquisa" style="display: none;">🔍 Pesquisa</button>
+        <button class="btn-opcoes" style="display: none;">⚙️ Opções</button>
+        <button class="btn-doacoes" style="display: none;">💖 Doações</button>
+        <button class="btn-logout" style="display: none;">🚪 Sair</button>
+      </nav>
+    </div>
+  </header>
   
-  <header>
+  <!-- Header em desktop -->
+  <header class="header-desktop">
     <div class="header-left">
       <div class="avatar">
         <img src="{{ url_for('static', filename='img/Avatar.png') }}" alt="Avatar">
       </div>
-      <div id="user-name" class="user-name"></div>
+      <div class="user-name"></div>
     </div>
 
     <div class="header-center">
       <nav>
-        <button id="btn-criar-conta" style="display: none;">📝 Criar conta</button>
-        <button id="btn-perfil" style="display: none;">🧑 Perfil</button>
-        <button id="btn-pesquisa" style="display: none;">🔍 Pesquisa</button>
-        <button id="btn-opcoes" style="display: none;">⚙️ Opções</button>
-        <button id="btn-doacoes" style="display: none;">💖 Doações</button>
-        <button id="btn-logout" style="display: none;">🚪 Sair</button>
+        <button class="btn-criar-conta" style="display: none;">📝 Criar conta</button>
+        <button class="btn-perfil" style="display: none;">🧑 Perfil</button>
+        <button class="btn-pesquisa" style="display: none;">🔍 Pesquisa</button>
+        <button class="btn-opcoes" style="display: none;">⚙️ Opções</button>
+        <button class="btn-doacoes" style="display: none;">💖 Doações</button>
+        <button class="btn-logout" style="display: none;">🚪 Sair</button>
       </nav>
     </div>
 
     <div class="header-right">
       <div class="status-item" title="Perguntas restantes">
-        ⚡ <span id="perguntas-count">0/0</span>
+        ⚡ <span id="perguntas-count" class="perguntas-count">0/0</span>
       </div>
       <div class="status-item" title="Dicas restantes">
-        💡 <span id="dicas-count">0/0</span>
+        💡 <span id="dicas-count" class="dicas-count">0/0</span>
       </div>
     </div>
   </header>
+
+  
 
   <main>
     

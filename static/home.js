@@ -10,7 +10,6 @@ sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 
 const mensagem = document.getElementById("mensagem");
-const perguntas_restantes = document.getElementById("perguntas-count");
 const radios_tipo_pergunta = document.querySelectorAll('.opcoes input[type="radio"]');
 
 // Widgets do modal
@@ -20,30 +19,36 @@ const btnModalPrimario = document.getElementById("btn-modal-primario");
 const btnModalSecundario = document.getElementById("btn-modal-secundario");
 const spanEmail = modal.querySelector("#email-usuario");
 
-// Botões no cabeçalho da página
-const btn_criar_conta = document.getElementById("btn-criar-conta");
-const btn_perfil = document.getElementById("btn-perfil");
-const btn_opcoes = document.getElementById("btn-opcoes");
-const btn_pesquisa = document.getElementById("btn-pesquisa");
-const btn_doacoes = document.getElementById("btn-doacoes");
-const btn_logout = document.getElementById("btn-logout");
+// Widgets do cabeçalho da página
+const userName = document.querySelectorAll(".user-name");
+const perguntas_restantes = document.querySelectorAll(".perguntas-count");
+const dicas_restantes = document.querySelectorAll(".dicas-count");
+const btn_criar_conta = document.querySelectorAll(".btn-criar-conta");
+const btn_perfil = document.querySelectorAll(".btn-perfil");
+const btn_opcoes = document.querySelectorAll(".btn-opcoes");
+const btn_pesquisa = document.querySelectorAll(".btn-pesquisa");
+const btn_doacoes = document.querySelectorAll(".btn-doacoes");
+const btn_logout = document.querySelectorAll(".btn-logout");
 
-// console.log("Id de visitante: ", localStorage.getItem("id_visitante"))
+
 
 if (MODO_VISITANTE) {
   permitir_escolher_tema = true;
-  btn_criar_conta.style.display = "";
-  btn_criar_conta.addEventListener("click", async () => {
-    localStorage.setItem("ir_para_aba_registro", true);
-    await fetch("/pagina_destino", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ destino: "registro" })
+  btn_criar_conta.forEach(btn => {
+    btn.style.display = "";
+    btn.addEventListener("click", async () => {
+      localStorage.setItem("ir_para_aba_registro", true);
+      await fetch("/pagina_destino", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ destino: "registro" })
+      });
+
+      window.location.href = "/";
     });
 
-    window.location.href = "/";
-  });
-  
+  })
+ 
   // Gera ID de visitante para o usuário caso não tenha
   let idVisitante = localStorage.getItem("id_visitante");
   if (!idVisitante) {
@@ -85,8 +90,12 @@ if (MODO_VISITANTE) {
   });
 }
 else {
-  btn_opcoes.style.display = "";
-  btn_doacoes.style.display = "";
+  btn_opcoes.forEach(btn => {
+    btn.style.display = "";
+  })
+  btn_doacoes.forEach(btn => {
+    btn.style.display = "";
+  })
 
   if (sessionStorage.getItem("modal_confirmacao_email_exibido") === "false") {
     exibirModalConfirmacaoEmail();
@@ -96,9 +105,15 @@ else {
   }
 }
 
-btn_perfil.style.display = "";
-btn_pesquisa.style.display = "";
-btn_logout.style.display = "";
+btn_perfil.forEach(btn => {
+  btn.style.display = "";
+})
+btn_pesquisa.forEach(btn => {
+  btn.style.display = "";
+})
+btn_logout.forEach(btn => {
+  btn.style.display = "";
+})
 
 function abrirModal({titulo = "", corpoHTML = "", textoPrimario = null, textoSecundario = null, onPrimario = null, onSecundario = null, modalReenvioEmail = false}) {
 
@@ -473,53 +488,63 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Implementa a função de clique no botão de perfil
   if (btn_perfil) {
-    btn_perfil.addEventListener("click", async () => {
-      playSound("click");
-      window.location.href = "/perfil";
-    })
-  }
+    btn_perfil.forEach(btn => {
+      btn.addEventListener("click", async () => {
+        playSound("click");
+        window.location.href = "/perfil";
+      });
+    });
+  };
 
   // Implementa a função de clique no botão de opções
   if (btn_opcoes) {
-    btn_opcoes.addEventListener("click", async () => {
-      playSound("click");
-      window.location.href = "/opcoes"
-    })
-  }
+    btn_opcoes.forEach(btn => {
+      btn.addEventListener("click", async () => {
+        playSound("click");
+        window.location.href = "/opcoes";
+      });
+    });
+  };
 
   // Implementa a função de clique no botão de pesquisa
   if (btn_pesquisa) {
-    btn_pesquisa.addEventListener("click", async () => {
-      playSound("click");
-      const response = await fetchAutenticado("/pesquisa");
-      if (response.ok) window.location.href = "/pesquisa";
-    })
-  }
+    btn_pesquisa.forEach(btn => {
+      btn.addEventListener("click", async () => {
+        playSound("click");
+        const response = await fetchAutenticado("/pesquisa");
+        if (response.ok) window.location.href = "/pesquisa";
+      });
+    });
+  };
 
   // Implementa a função de clique no botão de doações
   if (btn_doacoes) {
-    btn_doacoes.addEventListener("click", async () => {
-      playSound("click");
-      if (!MODO_VISITANTE) {
-        const response = await fetchAutenticado("/doações");
-        if (response.ok) window.location.href = "/doações";
-      }
-      else window.location.href = "/doações";
-    })
-  }
+    btn_doacoes.forEach(btn => {
+      btn.addEventListener("click", async () => {
+        playSound("click");
+        if (!MODO_VISITANTE) {
+          const response = await fetchAutenticado("/doações");
+          if (response.ok) window.location.href = "/doações";
+        }
+        else window.location.href = "/doações";
+      });
+    });
+  };
 
   // Implementa a função de clique no botão de logout
   if (btn_logout) {
-    btn_logout.addEventListener("click", async () => {
-      playSound("click")
-      await fetch("/pagina_destino", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ destino: "login_de_home" })
+    btn_logout.forEach(btn => {
+      btn.addEventListener("click", async () => {
+        playSound("click");
+        await fetch("/pagina_destino", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ destino: "login_de_home" })
+        });
+        window.location.href = "/";
       });
-      window.location.href = "/"
-    })
-  }
+    });
+  };
 
   // Implementa a função de ir para a página home
   document.getElementById("link-home").addEventListener("click", async (e) => {
@@ -532,15 +557,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     card.addEventListener("click", iniciarQuiz);
   });
 
-  // Define as variáveis do cabeçalho
-  const nome_usuario = document.getElementById("user-name");
-  const dicas_restantes = document.getElementById("dicas-count");
-
   // Define o nome de usuário, as perguntas e dicas disponíveis e máximas
   if (MODO_VISITANTE) {
-    nome_usuario.textContent = "Visitante";
-    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/60`;
-    dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes_visitante")}/20`;
+    userName.forEach(n => {
+      n.textContent = "Visitante";
+    });
+    perguntas_restantes.forEach(p => {
+      p.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/60`;
+    });
+    dicas_restantes.textContent.forEach(d => {
+      d.textContent = `${localStorage.getItem("dicas_restantes_visitante")}/20`;
+    });
 
     // Decide se deve exibir modal para convidar a fazer registro
     const respondidas = JSON.parse(localStorage.getItem("visitante_respondidas"));
@@ -555,9 +582,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
   }
   else {
-    nome_usuario.textContent = localStorage.getItem("nome_usuario")
-    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}/80`
-    dicas_restantes.textContent = `${localStorage.getItem("dicas_restantes")}/20`
+    userName.forEach(n => {
+      n.textContent = localStorage.getItem("nome_usuario");
+    });
+    perguntas_restantes.forEach(p => {
+      p.textContent = `${localStorage.getItem("perguntas_restantes")}/80`;
+    });
+    dicas_restantes.forEach(d => {
+      d.textContent = `${localStorage.getItem("dicas_restantes")}/20`;
+    });
   }
   
   // Carrega as preferências de tipo de pergunta
