@@ -193,6 +193,7 @@ async function iniciarQuiz(event) {
   
   if (tema_atual === 'Física') {
     exibirMensagem(mensagem, `O tema Física será liberado em breve`, 'orange');
+    return;
   };
 
   // Mensagem avisando que as perguntas acabaram
@@ -202,7 +203,7 @@ async function iniciarQuiz(event) {
     }
     else {
       exibirMensagem(
-        mensagem, `É necessário criar uma conta para ter aceso ao conteúdo completo do jogo`, 'orange'
+        mensagem, `É necessário criar uma conta para ter acesso ao conteúdo completo do jogo`, 'orange'
       );
     }
     desbloquearBotoes();

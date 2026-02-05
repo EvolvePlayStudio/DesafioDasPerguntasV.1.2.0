@@ -4,7 +4,7 @@ const keySoundState = {last: 0, interval: 35};
 const html = `
   <audio id="checkbox-marked-sound" src="/static/sounds/checkbox.wav" preload="auto"></audio>
   <audio id="button-click-sound" src="/static/sounds/button_click.wav" preload="auto"></audio>
-  <audio id="error-sound" src="/static/sounds/error.aac" preload="auto"></audio>
+  <audio id="error-sound" src="/static/sounds/error.wav" preload="auto"></audio>
   <audio id="correct-sound" src="/static/sounds/correct.wav" preload="auto"></audio>
   <audio id="key-sound" src="/static/sounds/key.wav" preload="auto"></audio>
 `;
