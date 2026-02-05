@@ -378,7 +378,7 @@
     .hidden {
       display: none;
     }
-    @media (max-width: 1000px) {
+    @media (max-width: 2000px) {
       .header-desktop {
         display: none;
       }
@@ -387,7 +387,22 @@
       }
       .cards-container {
         grid-template-columns: repeat(2, 1fr);
-        column-gap: 0.9rem;
+        column-gap: 0.5rem;
+      }
+      .card {
+        width: 185px;
+        height: 155px;
+      }
+      /*
+      .card img {
+        margin-top: -0.21rem;
+        width: 100%;
+        height: (0.71 * 185)px;
+        object-fit: contain;
+        flex-shrink: 0;
+      }*/
+      .card span {
+        font-size: 14px;
       }
     }
   </style>
