@@ -12,7 +12,7 @@ senha_app = os.getenv("SENHA_APP")
 porta_email = os.getenv("EMAIL_PORT")
 base_url = os.getenv("APP_BASE_URL")
 
-temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Geografia", "História", "Mídia", "Música", "Química", "Tecnologia", "Variedades"]
+temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"]
 
 tz_sp = pytz.timezone("America/Sao_Paulo")
 email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"

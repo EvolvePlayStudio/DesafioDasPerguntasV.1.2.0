@@ -189,17 +189,21 @@ async function iniciarQuiz(event) {
     console.error("Tema não definidos na URL");
     desbloquearBotoes();
     return;
-  }
+  };
+  
+  if (tema_atual === 'Física') {
+    exibirMensagem(mensagem, `O tema Física será liberado em breve`, 'orange');
+  };
 
   // Mensagem avisando que as perguntas acabaram
   if (parseInt(perguntas_restantes.textContent) <= 0) {
     if (!MODO_VISITANTE) {
-      exibirMensagem(mensagem, `Aguarde a recarga diária de energia para responder mais perguntas`, 'orange')
+      exibirMensagem(mensagem, `Aguarde a recarga diária de energia para responder mais perguntas`, 'orange');
     }
     else {
       exibirMensagem(
         mensagem, `É necessário criar uma conta para ter aceso ao conteúdo completo do jogo`, 'orange'
-      ) 
+      );
     }
     desbloquearBotoes();
     return;
