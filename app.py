@@ -1774,6 +1774,7 @@ def registrar():
         cur.execute("""
           INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao)
           SELECT %s, t.nome, 0
+          WHERE ativo=true
           FROM temas t
           ON CONFLICT (id_usuario, tema) DO NOTHING
         """, (id_usuario,))
