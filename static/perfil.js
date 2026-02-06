@@ -1,4 +1,5 @@
 import { playSound } from "./sound.js"
+import { pontuacaoTemaPadraoVisitantes, sincronizarPontuacoesVisitante} from "./utils.js";
 
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 let pontuacoes = {};
@@ -10,10 +11,13 @@ document.addEventListener("DOMContentLoaded", iniciarPerfil);
 async function iniciarPerfil() {
   try {
     if (MODO_VISITANTE) {
+      sincronizarPontuacoesVisitante(pontuacaoTemaPadraoVisitantes);
       pontuacoes = JSON.parse(localStorage.getItem("pontuacoes_visitante")) || {};
     } else {
       pontuacoes = await buscarPontuacoesBackend();
     }
+
+
 
     // Ordem padrão: maior pontuação
     ordenarTemas("pontuacao-desc", pontuacoes);

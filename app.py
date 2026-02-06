@@ -192,20 +192,35 @@ def api_regras_pontuacao():
             message="Erro ao carregar regras de pontuação"
         ), 500
 
-
 def buscar_pontuacoes_usuario(id_usuario):
-    """Busca pontuações do usuário em cada tema de perguntas"""
+    """
+    Busca pontuações do usuário para todos os temas ativos.
+    Caso o usuário ainda não tenha pontuação em um tema, retorna 0.
+    """
     pontuacoes_usuario = {}
 
     conn = cur = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute(
-            "SELECT tema, pontuacao FROM pontuacoes_usuarios WHERE id_usuario = %s",
-            (id_usuario,)
-        )
-        pontuacoes_usuario = {tema: pontuacao for tema, pontuacao in cur.fetchall()}
+
+        cur.execute("""
+            SELECT
+                t.nome AS tema,
+                COALESCE(p.pontuacao, 0) AS pontuacao
+            FROM temas t
+            LEFT JOIN pontuacoes_usuarios p
+                ON p.tema = t.nome
+               AND p.id_usuario = %s
+            WHERE t.ativo = true
+            ORDER BY t.ordem_exibicao NULLS LAST, t.nome
+        """, (id_usuario,))
+
+        pontuacoes_usuario = {
+            tema: pontuacao
+            for tema, pontuacao in cur.fetchall()
+        }
+
     except Exception:
         app.logger.exception("Erro ao tentar obter pontuações do usuário %s", id_usuario)
     finally:
@@ -213,7 +228,6 @@ def buscar_pontuacoes_usuario(id_usuario):
         if conn: conn.close()
 
     return pontuacoes_usuario
-
 
 def carregar_regras_pontuacao():
     conn = cur = None

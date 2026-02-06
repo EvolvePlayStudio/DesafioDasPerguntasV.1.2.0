@@ -1,4 +1,4 @@
-import { fetchAutenticado, exibirMensagem, temas_disponiveis } from "./utils.js";
+import { fetchAutenticado, exibirMensagem, sincronizarPontuacoesVisitante, temas_disponiveis } from "./utils.js";
 import { playSound } from "./sound.js"
 
 let tema_atual;
@@ -365,11 +365,17 @@ async function pesquisar() {
     let perguntasPorDificuldade = null;
     if (MODO_VISITANTE) {
       // Define as pontuações do usuário caso não haja
+      sincronizarPontuacoesVisitante(2500);
+      /*
       if (!localStorage.getItem("pontuacoes_visitante")) {
         const pontuacoes = {};
         temas_disponiveis.forEach(tema => {pontuacoes[tema] = 2500});
       localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes));
-      };
+      };*/
+
+
+
+
       perguntasPorDificuldade = filtrarPerguntasVisitante(data.perguntas);
     }
     else {

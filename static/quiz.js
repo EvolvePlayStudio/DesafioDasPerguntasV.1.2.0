@@ -17,23 +17,26 @@ window.onerror = function (message) {
   }
 };
 
+let pontuacoes_usuario = {};
 let perguntas_respondidas = [];
-let inicio_pergunta;  // Horário inicial da pergunta
-let pontuacoes_usuario;
+let inicio_pergunta;  // horário inicial da pergunta
 let pergunta_selecionada;
 let regras_usuario;
 let ranking_usuario;
 let ranking_visual_anterior;
 let estrelas_iniciais;
 let comentario_inicial;
-let alternativaSelecionada; // Guarda a letra selecionada (A, B, C, D)
-let respostasDesdeUltimaForcagem = 0; // Para pegar a pergunta do nível que tem mais a cada x respondidas
+let alternativaSelecionada; // guarda a letra selecionada (A, B, C, D)
+let respostasDesdeUltimaForcagem = 0; // para pegar a pergunta do nível que tem mais a cada x respondidas
 
 // Elementos de localStorage e sessionStorage
 const tema_atual = decodeURIComponent(localStorage.getItem("tema_atual"));
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 const id_visitante = localStorage.getItem("id_visitante");
 const id_visitante_admin = "b6c5d32c-c5d8-41aa-811e-aa45c328b372";
+const STORAGE_KEY = MODO_VISITANTE ? "pontuacoes_visitante" : "pontuacoes_usuario";
+
+/*
 if (MODO_VISITANTE) {
   pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_visitante"));
   localStorage.setItem("pontuacao_anterior", pontuacoes_usuario[tema_atual]);
@@ -41,7 +44,22 @@ if (MODO_VISITANTE) {
 else {
   pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario"));
 }
+localStorage.setItem("pontuacao_anterior", pontuacoes_usuario[tema_atual]);*/
+
+try {
+  pontuacoes_usuario = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+}
+catch {
+  pontuacoes_usuario = {};
+}
+
+// Fallback dpara caso não encontre a pontuação do usuário no tema escolhido
+if (typeof pontuacoes_usuario[tema_atual] !== "number") {
+  pontuacoes_usuario[tema_atual] = 0;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(pontuacoes_usuario));
+}
 localStorage.setItem("pontuacao_anterior", pontuacoes_usuario[tema_atual]);
+
 let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"));
 let regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"));
 let info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1];

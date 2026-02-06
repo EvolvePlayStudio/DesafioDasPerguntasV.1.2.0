@@ -1,4 +1,4 @@
-import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual, temas_disponiveis } from "./utils.js";
+import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, sincronizarPontuacoesVisitante, temas_disponiveis } from "./utils.js";
 import { playSound } from "./sound.js";
 
 let permitir_escolher_tema = false;
@@ -29,10 +29,10 @@ const btn_opcoes = document.querySelectorAll(".btn-opcoes");
 const btn_pesquisa = document.querySelectorAll(".btn-pesquisa");
 const btn_doacoes = document.querySelectorAll(".btn-doacoes");
 const btn_logout = document.querySelectorAll(".btn-logout");
-
-
+let btnsHeader;
 
 if (MODO_VISITANTE) {
+  btnsHeader = [btn_perfil, btn_pesquisa, btn_logout];
   permitir_escolher_tema = true;
   btn_criar_conta.forEach(btn => {
     btn.style.display = "";
@@ -62,12 +62,8 @@ if (MODO_VISITANTE) {
     localStorage.setItem("dicas_restantes_visitante", 20);
   }
   
-  // Cria pontuações de usuário como visitante (obs: esta função está repetida na tela de pesquisa)
-  if (!localStorage.getItem("pontuacoes_visitante")) {
-    const pontuacoes = {};
-    temas_disponiveis.forEach(tema => {pontuacoes[tema] = 1800});
-    localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes));
-  }
+  // Cria pontuações de usuário como visitante
+  sincronizarPontuacoesVisitante(pontuacaoTemaPadraoVisitantes);
 
   // Cria armazenamento de ids de perguntas já respondidas no localStorage
   if (!localStorage.getItem("visitante_respondidas")) {
@@ -90,12 +86,14 @@ if (MODO_VISITANTE) {
   });
 }
 else {
+  btnsHeader = [btn_opcoes, btn_doacoes, btn_perfil, btn_pesquisa, btn_logout];
+  /*
   btn_opcoes.forEach(btn => {
     btn.style.display = "";
   })
   btn_doacoes.forEach(btn => {
     btn.style.display = "";
-  })
+  })*/
 
   if (sessionStorage.getItem("modal_confirmacao_email_exibido") === "false") {
     exibirModalConfirmacaoEmail();
@@ -105,15 +103,8 @@ else {
   }
 }
 
-btn_perfil.forEach(btn => {
-  btn.style.display = "";
-})
-btn_pesquisa.forEach(btn => {
-  btn.style.display = "";
-})
-btn_logout.forEach(btn => {
-  btn.style.display = "";
-})
+// Renderiza os botões do header
+btnsHeader.forEach(conjuntoBtn => {conjuntoBtn.forEach(btn => {btn.style.display = ""})});
 
 function abrirModal({titulo = "", corpoHTML = "", textoPrimario = null, textoSecundario = null, onPrimario = null, onSecundario = null, modalReenvioEmail = false}) {
 
@@ -191,11 +182,12 @@ async function iniciarQuiz(event) {
     return;
   };
   
-
-  if (tema_atual === 'Física') {
-    exibirMensagem(mensagem, `O tema Física será liberado em breve`, 'orange');
-    desbloquearBotoes();
-    return;
+  if (tema_atual === 'Física' && tipo_pergunta.toLowerCase() === 'discursiva') {
+    if (MODO_VISITANTE || !sessionStorage.getItem("id_usuario") === 16) {
+      exibirMensagem(mensagem, `O tema Física só está disponível em perguntas de múltiplas alternativas no momento`, 'orange');
+      desbloquearBotoes();
+      return;
+    };
   };
 
   // Mensagem avisando que as perguntas acabaram
@@ -233,8 +225,8 @@ async function iniciarQuiz(event) {
         const rankings_usuario = {};
         Object.keys(data["pontuacoes_usuario"]).forEach(tema => {
           const ranking_no_tema = obterInfoRankingAtual(tema).ranking
-          rankings_usuario[tema] = ranking_no_tema
-        })
+          rankings_usuario[tema] = ranking_no_tema;
+        });
         localStorage.setItem("rankings_usuario", JSON.stringify(rankings_usuario))
       
         // Chama a tela de quiz ou exibe mensagem caso não haja perguntas disponíveis
@@ -273,7 +265,7 @@ async function iniciarQuiz(event) {
         if (!haPerguntas || encerrar_quiz) {
           exibirMensagem(
             mensagem,
-            `É necessário criar uma conta para ter aceso a mais perguntas ${tipo_pergunta}s no tema ${tema_atual}`,
+            `É necessário criar uma conta para ter aceso a mais perguntas ${tipo_pergunta.toLowerCase()}s no tema ${tema_atual}`,
             'orange'
           )
           desbloquearBotoes();

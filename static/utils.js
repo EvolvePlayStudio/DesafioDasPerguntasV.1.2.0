@@ -1,3 +1,4 @@
+export const pontuacaoTemaPadraoVisitantes = 1800;
 export const dificuldadesOrdenadas = ['Fácil', 'Médio', 'Difícil', 'Extremo'];
 export const temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"];
 
@@ -142,4 +143,29 @@ export function exibirMensagem(label, texto, cor, temporaria=true, remover_displ
         }
       }, 10000)
   }
+}
+
+export function sincronizarPontuacoesVisitante(PONTUACAO_INICIAL) {
+  const STORAGE_KEY = "pontuacoes_visitante";
+  let pontuacoes = {};
+
+  try {
+    pontuacoes = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+  }
+  catch {
+    pontuacoes = {};
+  }
+
+  const pontuacoesAtualizadas = {};
+
+  // Adiciona temas válidos (mantendo pontuação existente)
+  temas_disponiveis.forEach(tema => {
+    pontuacoesAtualizadas[tema] =
+      typeof pontuacoes[tema] === "number"
+        ? pontuacoes[tema]
+        : PONTUACAO_INICIAL;
+  });
+
+  // Sobrescreve removendo temas antigos automaticamente
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(pontuacoesAtualizadas));
 }
