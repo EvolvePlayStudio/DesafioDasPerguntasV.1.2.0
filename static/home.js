@@ -7,7 +7,11 @@ let tipo_pergunta = null;
 
 const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
 sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
-localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
+
+if (!MODO_VISITANTE && (!sessionStorage.getItem("id_usuario"))) { // VEJA QUE TRATAMOS ISTO AGORA
+  localStorage.setItem("auth_message", "Sessão expirada");
+  window.location.href = "/login";
+}
 
 const mensagem = document.getElementById("mensagem");
 const radios_tipo_pergunta = document.querySelectorAll('.opcoes input[type="radio"]');
@@ -87,13 +91,6 @@ if (MODO_VISITANTE) {
 }
 else {
   btnsHeader = [btn_opcoes, btn_doacoes, btn_perfil, btn_pesquisa, btn_logout];
-  /*
-  btn_opcoes.forEach(btn => {
-    btn.style.display = "";
-  })
-  btn_doacoes.forEach(btn => {
-    btn.style.display = "";
-  })*/
 
   if (sessionStorage.getItem("modal_confirmacao_email_exibido") === "false") {
     exibirModalConfirmacaoEmail();
@@ -172,9 +169,9 @@ async function iniciarQuiz(event) {
     exibirMensagem(mensagem, "Escolha um tipo de pergunta", 'orange', true)
     return
   }
-  localStorage.setItem("tema_atual", tema_atual);
-  localStorage.setItem("modo_jogo", 'desafio');
-  localStorage.setItem("tipo_pergunta", tipo_pergunta);
+  sessionStorage.setItem("tema_atual", tema_atual);
+  sessionStorage.setItem("modo_jogo", 'desafio');
+  sessionStorage.setItem("tipo_pergunta", tipo_pergunta);
 
   if (!tema_atual) {
     console.error("Tema não definidos na URL");
@@ -183,7 +180,8 @@ async function iniciarQuiz(event) {
   };
   
   if (tema_atual === 'Física' && tipo_pergunta.toLowerCase() === 'discursiva') {
-    if (MODO_VISITANTE || !sessionStorage.getItem("id_usuario") === 16) {
+    const idUsuario = Number(sessionStorage.getItem("id_usuario"));
+    if (MODO_VISITANTE || idUsuario !== 16) {
       exibirMensagem(mensagem, `O tema Física só está disponível em perguntas de múltiplas alternativas no momento`, 'orange');
       desbloquearBotoes();
       return;
@@ -191,14 +189,13 @@ async function iniciarQuiz(event) {
   };
 
   // Mensagem avisando que as perguntas acabaram
-  if (parseInt(perguntas_restantes.textContent) <= 0) {
+  const perguntas_restantes_atuais = parseInt(perguntas_restantes[0]?.textContent.split("/")[0] ?? "0", 10);
+  if (perguntas_restantes_atuais <= 0) {
     if (!MODO_VISITANTE) {
       exibirMensagem(mensagem, `Aguarde a recarga diária de energia para responder mais perguntas`, 'orange');
     }
     else {
-      exibirMensagem(
-        mensagem, `É necessário criar uma conta para ter acesso ao conteúdo completo do jogo`, 'orange'
-      );
+      exibirMensagem(mensagem, `É necessário criar uma conta para ter acesso ao conteúdo completo do jogo`, 'orange');
     }
     desbloquearBotoes();
     return;
@@ -213,21 +210,21 @@ async function iniciarQuiz(event) {
       if (response.ok) {
         const data = await response.json();
 
-        // Atualiza as pontuações do usuário no tema e as perguntas no localStorage
-        localStorage.setItem("pontuacoes_usuario", JSON.stringify(data["pontuacoes_usuario"]));
-        localStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
+        // Atualiza as pontuações do usuário no tema e as perguntas no sessionStorage
+        sessionStorage.setItem("pontuacoes_usuario", JSON.stringify(data["pontuacoes_usuario"]));
+        sessionStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
 
         // Analisar se pode prosseguir com o quiz de acordo com o estoque de perguntas
-        const perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"));
+        const perguntas_por_dificuldade = JSON.parse(sessionStorage.getItem("perguntas"));
         const encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE)
         
         // Analisa o ranking atual do usuário (ATENÇÃO, já procura ranking na função deveEncerrarQuiz, o que pode ser uma perda de eficiência aqui)
-        const rankings_usuario = {};
+        const rankings_jogador = {};
         Object.keys(data["pontuacoes_usuario"]).forEach(tema => {
           const ranking_no_tema = obterInfoRankingAtual(tema).ranking
-          rankings_usuario[tema] = ranking_no_tema;
+          rankings_jogador[tema] = ranking_no_tema;
         });
-        localStorage.setItem("rankings_usuario", JSON.stringify(rankings_usuario))
+        sessionStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador))
       
         // Chama a tela de quiz ou exibe mensagem caso não haja perguntas disponíveis
         const perguntas_filtradas = obterPerguntasDisponiveis(data["perguntas"])
@@ -272,17 +269,17 @@ async function iniciarQuiz(event) {
           return
         }
         
-        // Grava pontuações do usuário e perguntas no localStorage
-        localStorage.setItem("pontuacoes_usuario", localStorage.getItem("pontuacoes_visitante"));
-        localStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
+        // Grava pontuações do usuário e perguntas no sessionStorage
+        sessionStorage.setItem("pontuacoes_usuario", localStorage.getItem("pontuacoes_visitante"));
+        sessionStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
 
         // Analisa os rankings atuais do usuário
-        const rankings_usuario = {};
+        const rankings_jogador = {};
         temas_disponiveis.forEach( tema => {
           const ranking_no_tema = obterInfoRankingAtual().ranking;
-          rankings_usuario[tema] = ranking_no_tema;
+          rankings_jogador[tema] = ranking_no_tema;
         })
-        localStorage.setItem("rankings_usuario", JSON.stringify(rankings_usuario))
+        sessionStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador))
 
         mensagem.style.opacity = 0
         window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;
@@ -370,7 +367,9 @@ async function exibirModalConfirmacaoEmail() {
 function exibirModalEscolhaTipoPergunta() {
   
   function salvarTipoPergunta(tipo) {
-    localStorage.setItem("tipo_pergunta", tipo);
+    /*
+    localStorage.setItem("tipo_pergunta", tipo);*/
+    sessionStorage.setItem("tipo_pergunta", tipo);
     localStorage.setItem("preferencia_tipo_pergunta", "true");
 
     const radio = document.querySelector(
@@ -439,12 +438,13 @@ function exibirModalRegistroVisitante(marco) {
     textoPrimario: "Continuar como visitante",
     textoSecundario: "Criar uma conta",
     onPrimario: () => {
-      localStorage.setItem(`modal_registro_fechado_${marco}`, "true");
+      sessionStorage.setItem(`modal_registro_fechado_${marco}`, "true");
       modal.classList.add("hidden");
       permitir_escolher_tema = true;
     },
     onSecundario: async () => {
-      localStorage.setItem("ir_para_aba_registro", true);
+      //localStorage.setItem("ir_para_aba_registro", true);
+      sessionStorage.setItem("ir_para_aba_registro", true);
       await fetch("/pagina_destino", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -478,7 +478,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const data = await response.json();
 
     if (data.success) {
-      localStorage.setItem("regras_pontuacao", JSON.stringify(data.regras_pontuacao));
+      sessionStorage.setItem("regras_pontuacao", JSON.stringify(data.regras_pontuacao));
     }
   }
   catch(e) {
@@ -576,28 +576,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     const marcoAtual = Math.floor(totalRespondidas / MARCO) * MARCO;
     const chaveRecusa = `modal_registro_fechado_${marcoAtual}`;
 
-    if (totalRespondidas >= 15 && totalRespondidas % 15 === 0 && !localStorage.getItem(chaveRecusa)) {
+    if (totalRespondidas >= 15 && totalRespondidas % 15 === 0 && !sessionStorage.getItem(chaveRecusa)) {
       exibirModalRegistroVisitante(marcoAtual);
     };
   }
   else {
     userName.forEach(n => {
-      n.textContent = localStorage.getItem("nome_usuario");
+      n.textContent = sessionStorage.getItem("nome_usuario");
     });
     perguntas_restantes.forEach(p => {
-      p.textContent = `${localStorage.getItem("perguntas_restantes")}/80`;
+      p.textContent = `${sessionStorage.getItem("perguntas_restantes")}/80`;
     });
     dicas_restantes.forEach(d => {
-      d.textContent = `${localStorage.getItem("dicas_restantes")}/20`;
+      d.textContent = `${sessionStorage.getItem("dicas_restantes")}/20`;
     });
   }
   
   // Carrega as preferências de tipo de pergunta
-  tipo_pergunta = localStorage.getItem("tipo_pergunta");
+  tipo_pergunta = sessionStorage.getItem("tipo_pergunta");
   if (!tipo_pergunta) {
     tipo_pergunta = "Objetiva"; // Padrão caso não haja preferência
     document.getElementById("radio-objetiva").checked = true;
-    localStorage.setItem("tipo_pergunta", tipo_pergunta);
+    sessionStorage.setItem("tipo_pergunta", tipo_pergunta);
   }
   const tipoRadio = document.querySelector(`input[name="tipo-de-pergunta"][value="${tipo_pergunta}"]`);
   if (tipoRadio) tipoRadio.checked = true;

@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const btnEntrarSemLogin = document.getElementById("entrar-visitante")
   btnEntrarSemLogin.addEventListener("click", () => {
     playSound("click");
-    localStorage.setItem("modoVisitante", "true");
+    sessionStorage.setItem("modoVisitante", "true");
     sessionStorage.setItem("modoVisitante", "true");
     window.location.href = "/entrar_visitante";
   })
@@ -374,25 +374,22 @@ document.addEventListener('DOMContentLoaded', function () {
       const data = await response.json();
 
       if (data.success) {
-        // Grava localStorage só se login OK
-        localStorage.setItem("id_usuario", data.id_usuario);
-        localStorage.setItem("dicas_restantes", JSON.stringify(data.dicas_restantes || 0));
-        localStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes || 0));
-        localStorage.setItem("nome_usuario", data.nome_usuario || '');
-
         // Grava informações no sessionStorage
+        sessionStorage.setItem("id_usuario", data.id_usuario);
+        sessionStorage.setItem("dicas_restantes", JSON.stringify(data.dicas_restantes || 0));
+        sessionStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes || 0));
+        sessionStorage.setItem("nome_usuario", data.nome_usuario || '');
+
         if (data.opcoes_usuario) {
-          sessionStorage.setItem(
-            'opcoes_usuario',
-            JSON.stringify(data.opcoes_usuario)
-          );
-        }
+          sessionStorage.setItem('opcoes_usuario', JSON.stringify(data.opcoes_usuario));
+        };
         sessionStorage.setItem("modal_confirmacao_email_exibido", false);
         sessionStorage.setItem("email_usuario", data.email);
 
+        /*
         if (data.onboarding_concluido === false) {
           localStorage.setItem("onboarding_concluido", "false");
-        }
+        }*/
 
         sessionStorage.setItem("token_sessao", data.token);
         sessionStorage.setItem("modoVisitante", "false");

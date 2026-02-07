@@ -213,7 +213,7 @@ def buscar_pontuacoes_usuario(id_usuario):
                 ON p.tema = t.nome
                AND p.id_usuario = %s
             WHERE t.ativo = true
-            ORDER BY t.ordem_exibicao NULLS LAST, t.nome
+            ORDER BY t.nome
         """, (id_usuario,))
 
         pontuacoes_usuario = {
@@ -1786,11 +1786,11 @@ def registrar():
 
         # Cria os registros de pontuações do usuário em cada tema
         cur.execute("""
-          INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao)
-          SELECT %s, t.nome, 0
-          WHERE ativo=true
-          FROM temas t
-          ON CONFLICT (id_usuario, tema) DO NOTHING
+            INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao)
+            SELECT %s, t.nome, 0
+            FROM temas t
+            WHERE t.ativo = true
+            ON CONFLICT (id_usuario, tema) DO NOTHING
         """, (id_usuario,))
 
         # Migra dados do modo visitante para a nova conta caso o usuário tenha marcado esta opção
@@ -1799,11 +1799,11 @@ def registrar():
         if id_visitante:
             if usar_dados_visitante:
                 cur.execute("""
-                    SELECT DISTINCT ON (id_pergunta, id_visitante, tipo_pergunta)
+                    SELECT DISTINCT ON (id_pergunta, tipo_pergunta)
                         id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario
                     FROM acesso_modo_visitante
-                    WHERE id_visitante = %s AND data_resposta >= NOW() - INTERVAL '1 month'
-                    ORDER BY id_pergunta, data_resposta ASC
+                    WHERE id_visitante = %s AND criado_em >= NOW() - INTERVAL '1 month'
+                    ORDER BY id_pergunta, tipo_pergunta, criado_em ASC
                 """, (id_visitante,))
                 
                 respostas = cur.fetchall()
@@ -1823,7 +1823,7 @@ def registrar():
 
                 # Limpeza das respostas do usuario no modo visitante
                 cur.execute("""
-                    DELETE FROM acesso_modo_visitante WHERE id_visitante = %s AND data_resposta >= NOW() - INTERVAL '1 month'
+                    DELETE FROM acesso_modo_visitante WHERE id_visitante = %s AND criado_em >= NOW() - INTERVAL '1 month'
                 """, (id_visitante,))
 
             # Atualiza os feedbacks para as perguntas que o usuário fez como visitante

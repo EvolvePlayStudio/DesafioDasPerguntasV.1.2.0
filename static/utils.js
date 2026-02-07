@@ -1,6 +1,7 @@
 export const pontuacaoTemaPadraoVisitantes = 1800;
 export const dificuldadesOrdenadas = ['Fácil', 'Médio', 'Difícil', 'Extremo'];
 export const temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"];
+export const idsReservados = [4, 6, 16];
 
 export function detectarModoTela() {
   // Identifica se o usuário us modo site para computador
@@ -14,8 +15,8 @@ export function detectarModoTela() {
 
 export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIGO=null) {
   // ATENÇÃO, APAGAR PARÂMETRO ACIMA QUE NÃO É UTILIZADO DEPOIS QUE REMOVER DE TODAS AS FUNÇÕES EM QUIZ.JS E HOME.JS
-  const tema = localStorage.getItem("tema_atual");
-  const MODO_VISITANTE = localStorage.getItem("modoVisitante");
+  const tema = sessionStorage.getItem("tema_atual");
+  const MODO_VISITANTE = sessionStorage.getItem("modoVisitante");
   const ranking = obterInfoRankingAtual(tema, MODO_VISITANTE).ranking;
 
   const qtdFacil = perguntas_por_dificuldade["Fácil"]?.length ?? 0;
@@ -66,20 +67,14 @@ export async function fetchAutenticado(url, options = {}) {
 
   // 🔐 Sessão expirada
   if (response.status === 401) {
-    localStorage.setItem(
-      "auth_message",
-      "Sessão expirada"
-    );
+    localStorage.setItem("auth_message", "Sessão expirada");
     window.location.href = "/login";
     return;
   }
 
   // 🚧 Site em manutenção
   if (response.status === 503) {
-    localStorage.setItem(
-      "auth_message",
-      "Site em manutenção"
-    );
+    localStorage.setItem("auth_message", "Site em manutenção");
     window.location.href = "/login";
     return;
   }
@@ -90,10 +85,10 @@ export async function fetchAutenticado(url, options = {}) {
 
 // ATENÇÃO: PARAMÊTRO NÃO UTILIZADO AQUI
 export function obterInfoRankingAtual(tema=null, MODO_VISITANTE=null) {
-  const pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario")) || {};
-  const tema_atual = localStorage.getItem("tema_atual");
+  const pontuacoes_usuario = JSON.parse(sessionStorage.getItem("pontuacoes_usuario")) || {};
+  const tema_atual = sessionStorage.getItem("tema_atual");
   const pontuacao_no_tema = pontuacoes_usuario[tema_atual] || 0;
-  const regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao")) || [];
+  const regras_pontuacao = JSON.parse(sessionStorage.getItem("regras_pontuacao")) || [];
 
   const info_ranking_atual = regras_pontuacao.find(regra =>
     pontuacao_no_tema >= regra.pontos_minimos && pontuacao_no_tema <= regra.pontos_maximos
@@ -146,11 +141,10 @@ export function exibirMensagem(label, texto, cor, temporaria=true, remover_displ
 }
 
 export function sincronizarPontuacoesVisitante(PONTUACAO_INICIAL) {
-  const STORAGE_KEY = "pontuacoes_visitante";
   let pontuacoes = {};
 
   try {
-    pontuacoes = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    pontuacoes = JSON.parse(localStorage.getItem("pontuacoes_visitante")) || {};
   }
   catch {
     pontuacoes = {};
@@ -161,11 +155,9 @@ export function sincronizarPontuacoesVisitante(PONTUACAO_INICIAL) {
   // Adiciona temas válidos (mantendo pontuação existente)
   temas_disponiveis.forEach(tema => {
     pontuacoesAtualizadas[tema] =
-      typeof pontuacoes[tema] === "number"
-        ? pontuacoes[tema]
-        : PONTUACAO_INICIAL;
+      typeof pontuacoes[tema] === "number" ? pontuacoes[tema] : PONTUACAO_INICIAL;
   });
 
   // Sobrescreve removendo temas antigos automaticamente
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(pontuacoesAtualizadas));
+  localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoesAtualizadas));
 }

@@ -1,9 +1,12 @@
-import { dificuldadesOrdenadas, detectarModoTela, deveEncerrarQuiz, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado } from "./utils.js"
+import { dificuldadesOrdenadas, detectarModoTela, deveEncerrarQuiz, idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado } from "./utils.js"
 import { playSound, playKeySound } from "./sound.js"
 
-// Envia erros para a base de dados caso ocorram (necessário enviar a linha onde ocorre o erro para melhor depuração)
+// Envia erros para a base de dados caso ocorram
+const id_visitante = localStorage.getItem("id_visitante");
+const id_visitante_admin = "b6c5d32c-c5d8-41aa-811e-aa45c328b372";
+const idUsuario = Number(getWithMigration("id_usuario"));
 window.onerror = function (message) {
-  if (!id_visitante === id_visitante_admin && !localStorage.getItem("id_usuario") in (4, 6, 16)) {
+  if (id_visitante !== id_visitante_admin && !idsReservados.includes(idUsuario)) {
     fetch("/api/debug/frontend", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -17,58 +20,28 @@ window.onerror = function (message) {
   }
 };
 
-let pontuacoes_usuario = {};
-let perguntas_respondidas = [];
-let inicio_pergunta;  // horário inicial da pergunta
-let pergunta_selecionada;
-let regras_usuario;
-let ranking_usuario;
-let ranking_visual_anterior;
-let estrelas_iniciais;
-let comentario_inicial;
-let alternativaSelecionada; // guarda a letra selecionada (A, B, C, D)
-let respostasDesdeUltimaForcagem = 0; // para pegar a pergunta do nível que tem mais a cada x respondidas
-
-// Elementos de localStorage e sessionStorage
-const tema_atual = decodeURIComponent(localStorage.getItem("tema_atual"));
-const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
-const id_visitante = localStorage.getItem("id_visitante");
-const id_visitante_admin = "b6c5d32c-c5d8-41aa-811e-aa45c328b372";
+// Variáveis do localStorage e sessionStorage
+const MODO_VISITANTE = getWithMigration("modoVisitante") === "true";
 const STORAGE_KEY = MODO_VISITANTE ? "pontuacoes_visitante" : "pontuacoes_usuario";
-
-/*
+const storagePontuacao = MODO_VISITANTE ? localStorage : sessionStorage;
+const tema_atual = getWithMigration("tema_atual");
+const pontuacoes_jogador = JSON.parse(getWithMigration(STORAGE_KEY) ?? "{}"); // Aqui seria assim mesmo?
+if (typeof pontuacoes_jogador[tema_atual] !== "number") {
+  pontuacoes_jogador[tema_atual] = 0;
+  storagePontuacao.setItem(STORAGE_KEY, JSON.stringify(pontuacoes_jogador))
+};
+sessionStorage.setItem("pontuacao_anterior", pontuacoes_jogador[tema_atual]);
+const perguntas_por_dificuldade = JSON.parse(getWithMigration("perguntas") ?? "null");
+const regras_pontuacao = JSON.parse(getWithMigration("regras_pontuacao") ?? "[]");
+const rankings_jogador = JSON.parse(getWithMigration("rankings_jogador") ?? "{}");
+const modo_jogo = (getWithMigration("modo_jogo") ?? "").toLocaleLowerCase();
+const tipo_pergunta = (getWithMigration("tipo_pergunta") ?? "").toLocaleLowerCase();
+const opcoesUsuario = JSON.parse(sessionStorage.getItem("opcoes_usuario") ?? "null");
+let dicas;
 if (MODO_VISITANTE) {
-  pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_visitante"));
-  localStorage.setItem("pontuacao_anterior", pontuacoes_usuario[tema_atual]);
-}
+  dicas = JSON.parse(localStorage.getItem("dicas_restantes_visitante") ?? "20")}
 else {
-  pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario"));
-}
-localStorage.setItem("pontuacao_anterior", pontuacoes_usuario[tema_atual]);*/
-
-try {
-  pontuacoes_usuario = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-}
-catch {
-  pontuacoes_usuario = {};
-}
-
-// Fallback dpara caso não encontre a pontuação do usuário no tema escolhido
-if (typeof pontuacoes_usuario[tema_atual] !== "number") {
-  pontuacoes_usuario[tema_atual] = 0;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(pontuacoes_usuario));
-}
-localStorage.setItem("pontuacao_anterior", pontuacoes_usuario[tema_atual]);
-
-let perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"));
-let regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao"));
-let info_ultimo_ranking = regras_pontuacao[regras_pontuacao.length - 1];
-const rankings_usuario = JSON.parse(localStorage.getItem("rankings_usuario"));
-const modo_jogo = localStorage.getItem("modo_jogo").toLocaleLowerCase();
-const tipo_pergunta = localStorage.getItem("tipo_pergunta").toLocaleLowerCase();
-const opcoesUsuarioRaw = sessionStorage.getItem("opcoes_usuario");
-const opcoesUsuario = opcoesUsuarioRaw? JSON.parse(opcoesUsuarioRaw): null;
-const exibir_instrucoes_quiz = opcoesUsuario?.exibir_instrucoes_quiz;
+  dicas = JSON.parse(getWithMigration("dicas_restantes") ?? "20")};
 
 // Elementos do HTML
 const contador_dicas_restantes = document.getElementById("contador-dicas");
@@ -89,12 +62,26 @@ const estrelas = document.querySelectorAll(".estrela");
 const box_comentario = document.getElementById("box-comentario");
 const textarea_comentario = document.getElementById("comentario-texto");
 const contador_perguntas_restantes = document.getElementById("perguntas-count");
+const icone_perguntas_restantes = document.getElementById("perguntas-restantes-icon");
 
-// Booleanas
+// Outras variáveis
 let dica_gasta = false;
 let animacao_concluida = false;
 let haPerguntasDisponiveis = false;
-let aguardando_proxima = false; // Quando estiver aguardando a próximo pergunta
+let aguardando_proxima = false; // quando estiver aguardando a próximo pergunta
+let perguntas_respondidas = [];
+let inicio_pergunta;  // horário inicial da pergunta
+let pergunta_selecionada;
+let regras_jogador; // Nome de variável alterado
+let ranking_jogador; // Nome de variável alterado
+let ranking_visual_anterior;
+let estrelas_iniciais;
+let comentario_inicial;
+let alternativaSelecionada; // guarda a letra selecionada (A, B, C, D)
+let respostasDesdeUltimaForcagem = 0; // para pegar a pergunta do nível que tem mais a cada x respondidas
+let info_ultimo_ranking = regras_pontuacao.at(-1) ?? null;
+const exibir_instrucoes_quiz = opcoesUsuario?.exibir_instrucoes_quiz ?? false;
+const contador_dicas = contador_dicas_restantes;
 
 // Botões
 const btn_enviar = document.getElementById("btn-enviar");
@@ -134,15 +121,7 @@ const GAP_ENTRE_ALTERNATIVAS        = 380;
 const VELOCIDADE_LETRA_ENUNCIADO    = 21;
 const VELOCIDADE_LETRA_ALTERNATIVAS = 16; // quanto menor, mais rápido
 
-if (tipo_pergunta === "objetiva" || !MODO_VISITANTE && !exibir_instrucoes_quiz) hint_avaliacao.style.marginTop = "0.8rem";
-
-let dicas;
-const contador_dicas = contador_dicas_restantes;
-const icone_perguntas_restantes = document.getElementById("perguntas-restantes-icon");
-if (MODO_VISITANTE) {
-  dicas = JSON.parse(localStorage.getItem("dicas_restantes_visitante"))}
-else {
-  dicas = JSON.parse(localStorage.getItem("dicas_restantes"))}
+if (tipo_pergunta === "objetiva" || !MODO_VISITANTE && !exibir_instrucoes_quiz) hint_avaliacao.style.marginTop = "0.8rem"; // ajuste no hint de avaliação caso os outros não estejam presentes (o de dica e o de pular pergunta)
 
 // Ids de perguntas que são selecionados primeiro
 const ids_objetivas_prioridade = {
@@ -175,6 +154,21 @@ const ids_discursivas_prioridade = {
   'Química': [291, 301, 303, 308, 577, 582],
   'Tecnologia': [152, 342, 345, 351, 352, 358, 392, 462, 470],
   'Variedades': [24, 25, 27, 67, 107, 120, 221, 376, 392, 658, 659, 662]
+}
+
+function getWithMigration(key) {
+  // Pega dado do sessionStorage, se não encontrar pega do localStorage
+  const sessionValue = sessionStorage.getItem(key);
+  if (sessionValue !== null) return sessionValue;
+
+  const localValue = localStorage.getItem(key);
+  if (localValue !== null) {
+    console.log(`Variável com chave ${key} foi pega do localStorage`)
+    sessionStorage.setItem(key, localValue);
+    return localValue;
+  }
+  console.log(`Variável com chave ${key} não encontrada`)
+  return null;
 }
 
 function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo) {
@@ -237,8 +231,8 @@ function ativarBotoes() {
 function atualizarRankingVisual() {
   // Declara as variáveis que serão úteis (ranking e pontos já estão atualizados aqui após cáculo dos pontos ganhos ou perdidos)
   const info_ranking_atual = obterInfoRankingAtual(tema_atual, MODO_VISITANTE);
-  rankings_usuario[tema_atual] = info_ranking_atual.ranking
-  const pontuacao = pontuacoes_usuario[tema_atual] || 0;
+  rankings_jogador[tema_atual] = info_ranking_atual.ranking
+  const pontuacao = pontuacoes_jogador[tema_atual] || 0;
   let ranking_anterior = "";
   let ranking_proximo;
   let progressoFinal = 100;
@@ -354,24 +348,24 @@ function calcularPontuacao(acertou) {
     let pontos_ganhos = 0;
     const resposta_usuario = caixa_para_resposta.value.trim()
     // Caso em que a pergunta não vale pontos nem para acertos nem para erros
-    if (dificuldade === "Fácil" && regras_usuario.pontos_acerto_facil === 0 || dificuldade === "Médio" && regras_usuario.pontos_acerto_medio === 0) {
+    if (dificuldade === "Fácil" && regras_jogador.pontos_acerto_facil === 0 || dificuldade === "Médio" && regras_jogador.pontos_acerto_medio === 0) {
       pontos_ganhos = 0
     }
     else {
       if (tipo_pergunta === 'discursiva') {
         if (resposta_usuario === "") { // Caso de resposta vazia
-          pontos_ganhos = regras_usuario.pontos_pular_pergunta;
+          pontos_ganhos = regras_jogador.pontos_pular_pergunta;
         }
         else {
-          pontos_ganhos = regras_usuario.pontos_erro
+          pontos_ganhos = regras_jogador.pontos_erro
         }
       }
       else {
-        pontos_ganhos = regras_usuario.pontos_erro
+        pontos_ganhos = regras_jogador.pontos_erro
       }
       // Trata casos em que a pontuação do usuário ficaria negativa
-      if (pontuacoes_usuario[tema_atual] + pontos_ganhos < 0) {
-        pontos_ganhos = -pontuacoes_usuario[tema_atual]
+      if (pontuacoes_jogador[tema_atual] + pontos_ganhos < 0) {
+        pontos_ganhos = -pontuacoes_jogador[tema_atual]
       }
     }
     return pontos_ganhos;
@@ -380,16 +374,16 @@ function calcularPontuacao(acertou) {
   let pontosBase = 0;
   switch (dificuldade) {
     case "Fácil":
-      pontosBase = regras_usuario.pontos_acerto_facil;
+      pontosBase = regras_jogador.pontos_acerto_facil;
       break;
     case "Médio":
-      pontosBase = regras_usuario.pontos_acerto_medio;
+      pontosBase = regras_jogador.pontos_acerto_medio;
       break;
     case "Difícil":
-      pontosBase = regras_usuario.pontos_acerto_dificil;
+      pontosBase = regras_jogador.pontos_acerto_dificil;
       break;
     case "Extremo":
-      pontosBase = regras_usuario.pontos_acerto_extremo;
+      pontosBase = regras_jogador.pontos_acerto_extremo;
       break;
     default:
       console.warn("Dificuldade desconhecida:", dificuldade);
@@ -398,7 +392,7 @@ function calcularPontuacao(acertou) {
   let pontos_ganhos = pontosBase;
 
   if (dica_gasta && tipo_pergunta === 'discursiva') {
-      const percentualPenalidade = regras_usuario.percentual_penalidade_dica / 100;
+      const percentualPenalidade = regras_jogador.percentual_penalidade_dica / 100;
       const inteiroPenalidade = Math.round((pontosBase * percentualPenalidade) / 10) * 10;
       pontos_ganhos = pontosBase - inteiroPenalidade;
       
@@ -409,9 +403,9 @@ function calcularPontuacao(acertou) {
       }
   }
   
-  // Trata casos em que a pontução do usuário ficaria acima do máximo permitido
-  if (ranking_usuario === info_ultimo_ranking.ranking && pontuacoes_usuario[tema_atual] + pontos_ganhos > info_ultimo_ranking.pontos_maximos) {
-      pontos_ganhos = info_ultimo_ranking.pontos_maximos - pontuacoes_usuario[tema_atual]
+  // Trata casos em que a pontuação do usuário ficaria acima do máximo permitido
+  if (ranking_jogador === info_ultimo_ranking.ranking && pontuacoes_jogador[tema_atual] + pontos_ganhos > info_ultimo_ranking.pontos_maximos) {
+      pontos_ganhos = info_ultimo_ranking.pontos_maximos - pontuacoes_jogador[tema_atual]
   }
   return pontos_ganhos;
 }
@@ -442,7 +436,7 @@ async function enviarResposta(pulando = false) {
   hint_avaliacao.style.display = "none";
 
   if (pulando) caixa_para_resposta.value = "";
-  const pontuacao_atual = pontuacoes_usuario[tema_atual];
+  const pontuacao_atual = pontuacoes_jogador[tema_atual];
 
   function carregarComentarioAnterior() {
     // Estado inicial: desativado
@@ -597,19 +591,19 @@ async function enviarResposta(pulando = false) {
 
       const data = await response.json();
       if (data.sucesso) {
-        // Atualiza a pontuação do usuário para o tema no localStorage
-        pontuacoes_usuario[tema_atual] = data.nova_pontuacao;
-        alterarPontuacaoUsuario(pontuacao_atual, pontuacoes_usuario[tema_atual])
-        localStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_usuario));
+        // Atualiza a pontuação do usuário para o tema no sessionStorage
+        pontuacoes_jogador[tema_atual] = data.nova_pontuacao;
+        sessionStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_jogador));
+        alterarPontuacaoUsuario(pontuacao_atual, pontuacoes_jogador[tema_atual]);
 
-        // Atualiza as perguntas restantes do usuário no localStorage
-        localStorage.setItem("perguntas_restantes", data.perguntas_restantes)
+        // Atualiza as perguntas restantes do usuário no sessionStorage
+        sessionStorage.setItem("perguntas_restantes", data.perguntas_restantes)
         contador_perguntas_restantes.textContent = data.perguntas_restantes
 
-        // Atualiza o número de dicas restantes do usuário no localStorage e no contador de dicas
+        // Atualiza o número de dicas restantes do usuário no sessionStorage e no contador de dicas
         if (tipo_pergunta === 'discursiva') {
           contador_dicas_restantes.textContent = data.dicas_restantes;
-          localStorage.setItem("dicas_restantes", data.dicas_restantes);
+          sessionStorage.setItem("dicas_restantes", data.dicas_restantes);
         }
 
         atualizarRankingVisual();
@@ -628,9 +622,7 @@ async function enviarResposta(pulando = false) {
   }
 
   function registrarRespostaVisitante(resposta_usuario, acertou, dica_gasta, pontos_ganhos, tempo_gasto) {
-    console.log("Dificuldade da pergunta: ", pergunta_selecionada.dificuldade)
-    let respondidas = JSON.parse(localStorage.getItem("visitante_respondidas")) || {
-    objetiva: [], discursiva: []};
+    let respondidas = JSON.parse(localStorage.getItem("visitante_respondidas") ?? '{"objetiva": [], "discursiva": []}');
 
     // --- Lógica de Conversão Google Ads ---
     function analisarMetaConversao() {
@@ -662,7 +654,9 @@ async function enviarResposta(pulando = false) {
         pontos_usuario: pontuacao_atual,
         dificuldade: pergunta_selecionada.dificuldade
       })
-      }).catch(() => {});
+      }).catch(() => {
+        console.warn("Falha ao registrar resposta de visitante")
+      });
 
     // Registra localmente a pergunta respondida pelo usuário para evitar repetição
     if (!respondidas[tipo_pergunta].includes(pergunta_selecionada.id_pergunta)) {
@@ -674,27 +668,25 @@ async function enviarResposta(pulando = false) {
     analisarMetaConversao();
 
     // Altera a pontuação do usuário após o envio da resposta
-    alterarPontuacaoUsuario(pontuacoes_usuario[tema_atual], pontuacoes_usuario[tema_atual] + pontos_ganhos)
-    pontuacoes_usuario[tema_atual] = pontuacoes_usuario[tema_atual] + pontos_ganhos;
+    alterarPontuacaoUsuario(pontuacoes_jogador[tema_atual], pontuacoes_jogador[tema_atual] + pontos_ganhos)
+    pontuacoes_jogador[tema_atual] = pontuacoes_jogador[tema_atual] + pontos_ganhos;
 
-    // Pontuações de usuário são usadas temporariamente, enquanto a dde visitante é para registro permanente. Para usuários logados, registra-se apenas a de usuaários porque a gravação permanente é feita na base de dados
-    localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes_usuario));
-    localStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_usuario));
+    // Pontuações de usuário são usadas temporariamente (na prática é de visitante apesar do nome), enquanto a de visitante é para registro permanente
+    // sessionStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_usuario));
+    localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes_jogador));
     atualizarRankingVisual();
 
     // Atualiza as perguntas restantes do usuário no localStorage
-    const perguntas_restantes_anterior = localStorage.getItem("perguntas_restantes_visitante") || 100;
+    const perguntas_restantes_anterior = Number(localStorage.getItem("perguntas_restantes_visitante") ?? 100);
     const novas_perguntas_restantes = perguntas_restantes_anterior - 1;
-    localStorage.setItem("perguntas_restantes_visitante", novas_perguntas_restantes)
-    contador_perguntas_restantes.textContent = novas_perguntas_restantes
+    localStorage.setItem("perguntas_restantes_visitante", novas_perguntas_restantes);
+    contador_perguntas_restantes.textContent = novas_perguntas_restantes;
 
     // Atualiza o número de dicas restantes do usuário no localStorage e no contador de dicas
     if (tipo_pergunta === 'discursiva') {
-      let dicas_restantes = localStorage.getItem("dicas_restantes_visitante") || 20
+      let dicas_restantes = localStorage.getItem("dicas_restantes_visitante") ?? 20;
 
-      const dadosRespondidas = JSON.parse(
-        localStorage.getItem("visitante_respondidas")
-      ) || { objetiva: [], discursiva: [] };
+      const dadosRespondidas = JSON.parse(localStorage.getItem("visitante_respondidas") ?? "{objetiva: [], discursiva: []}");
       const totalDiscursivas = dadosRespondidas.discursiva.length;
       if (totalDiscursivas % 10 === 0 && dicas_restantes < 20) {
         dicas_restantes ++;
@@ -723,6 +715,10 @@ async function enviarResposta(pulando = false) {
 
   if (tipo_pergunta === 'objetiva') {
     const widgetAlternativaSelecionada = document.querySelector('.alternativa-btn.selected');
+    if (!alternativaSelecionada) {
+      console.warn("Nenhuma alterantiva selecionada")
+      return;
+    }
     resposta_usuario = alternativaSelecionada;
     
     // Marca a alternativa correta pelo data-letter
@@ -777,7 +773,7 @@ async function enviarResposta(pulando = false) {
   if (acertou) {
     playSound("correct")
   }
-  else if (pontos_ganhos === regras_usuario.pontos_erro) {
+  else if (pontos_ganhos === regras_jogador.pontos_erro) {
     playSound("error");
   }
 
@@ -816,7 +812,7 @@ async function enviarResposta(pulando = false) {
     }
     
     // Mostra se acertou a resposta e os botões "próxima" e "finalizar"
-    mostrarResultadoResposta(acertou, pontos_ganhos);
+    mostrarResultadoResposta(acertou);
     mostrarBotoesAcao();
   } 
   else {
@@ -830,8 +826,8 @@ async function enviarResposta(pulando = false) {
 async function finalizarQuiz() {
   await registrarFeedback();
   if (modo_jogo === 'desafio') {
-    localStorage.setItem("perguntas_respondidas", JSON.stringify(perguntas_respondidas));
-    localStorage.setItem("rankings_usuario", JSON.stringify(rankings_usuario));
+    sessionStorage.setItem("perguntas_respondidas", JSON.stringify(perguntas_respondidas))
+    sessionStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador ?? {}))
     window.location.href = "/resultado";
   }
   else {
@@ -1198,7 +1194,7 @@ async function mostrarPergunta() {
 
   // Remove a pergunta do array para não repetir
   perguntas_disponiveis.splice(indicePergunta, 1);
-  localStorage.setItem("perguntas", JSON.stringify(perguntas_por_dificuldade));
+  sessionStorage.setItem("perguntas", JSON.stringify(perguntas_por_dificuldade));
   
   dica_gasta = false;
   window.avaliacaoAtual = 0;
@@ -1214,8 +1210,8 @@ async function mostrarPergunta() {
   // Define a cor com base na dificuldade
   titulo.style.color = coresDificuldade[dificuldade.toLowerCase()] ?? "#3b2f2f";
 
-  let ranking_usuario = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking
-  regras_usuario = regras_pontuacao.find(r => r.ranking === ranking_usuario);
+  let ranking_jogador = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking
+  regras_jogador = regras_pontuacao.find(r => r.ranking === ranking_jogador);
 
   await mostrarEnunciado(pergunta_selecionada.enunciado, enunciadoElemento);
   if (tipo_pergunta.toLowerCase() === 'discursiva') {
@@ -1225,11 +1221,11 @@ async function mostrarPergunta() {
   
     // Decide se deve mostrar o ícone de dica
     let dica_permitida = true
-    if (!regras_usuario) {
+    if (!regras_jogador) {
       console.error("Ranking do usuário não encontrado nas regras de pontuação.");
       return 0;
     }
-    if (pergunta_selecionada.dificuldade === 'Fácil' && regras_usuario.pontos_acerto_facil <= 10 || pergunta_selecionada.dificuldade === 'Médio' && regras_usuario.pontos_acerto_medio <= 10 || !pergunta_selecionada.dica) {
+    if (pergunta_selecionada.dificuldade === 'Fácil' && regras_jogador.pontos_acerto_facil <= 10 || pergunta_selecionada.dificuldade === 'Médio' && regras_jogador.pontos_acerto_medio <= 10 || !pergunta_selecionada.dica) {
       dica_permitida = false
     }
 
@@ -1280,7 +1276,7 @@ async function proximaPergunta() {
     document.getElementById('botoes-acao').style.display = "none";
     estrelas_avaliacao.style.display = "none";
     resultado.style.display = "none";
-    box_comentario.display = "none";
+    box_comentario.style.display = "none";
     document.getElementById("nota-box").style.display = "none";
     mostrarPergunta();
     // document.getElementById('comentarios').style.display = 'none';
@@ -1299,20 +1295,25 @@ async function registrarFeedback() {
     return;
   }
 
-  await fetch("/enviar_feedback", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id_pergunta: pergunta_selecionada.id_pergunta,
-      tema: tema_atual,
-      tipo_pergunta: tipo_pergunta,
-      enunciado: pergunta_selecionada.enunciado,
-      versao_pergunta: pergunta_selecionada.versao_pergunta,
-      estrelas: estrelas_atual,
-      comentario: comentario_atual,
-      dificuldade: pergunta_selecionada.dificuldade
-    })
-  });
+  try {
+    await fetch("/enviar_feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_pergunta: pergunta_selecionada.id_pergunta,
+        tema: tema_atual,
+        tipo_pergunta: tipo_pergunta,
+        enunciado: pergunta_selecionada.enunciado,
+        versao_pergunta: pergunta_selecionada.versao_pergunta,
+        estrelas: estrelas_atual,
+        comentario: comentario_atual,
+        dificuldade: pergunta_selecionada.dificuldade
+      })
+    });
+  }
+  catch (e) {
+    console.warn("Falha ao enviar feedback");
+  }
 }
 
 function renderizarEstrelas(valor) {
@@ -1593,9 +1594,11 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
 
 function respostaObjetivaCorreta() {
   if (!alternativaSelecionada) return false;
+  return alternativaSelecionada === pergunta_selecionada.resposta_correta;
+  /*
   if (pergunta_selecionada.resposta_correta) {
     return alternativaSelecionada === pergunta_selecionada.resposta_correta;
-  }
+  }*/
 }
 
 function selecionarAlternativa(btn) {
@@ -1613,20 +1616,20 @@ async function usarDica() {
   if (modo_jogo == 'desafio') {
     let dicas_restantes;
     if (!MODO_VISITANTE) {
-      dicas_restantes = parseInt(localStorage.getItem("dicas_restantes") || "0");
+      dicas_restantes = parseInt(getWithMigration("dicas_restantes") ?? "0");
       if (dicas_restantes <= 0) {
         return;
       }
       const response = await fetchAutenticado("/usar_dica")
       if (response.ok) {
         dicas_restantes -= 1;
-        localStorage.setItem("dicas_restantes", dicas_restantes);
+        sessionStorage.setItem("dicas_restantes", dicas_restantes);
         contador_dicas_restantes.textContent = dicas_restantes;
         mostrarDica();
       }
     }
     else {
-      dicas_restantes = parseInt(localStorage.getItem("dicas_restantes_visitante") || "0")
+      dicas_restantes = parseInt(getWithMigration("dicas_restantes_visitante") ?? "0")
       if (dicas_restantes <= 0) {
         return;
       }
@@ -1663,7 +1666,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (modo_jogo === 'desafio') {
     const num_perguntas_restantes = contador_perguntas_restantes
     if (!MODO_VISITANTE) {
-      num_perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}`
+      num_perguntas_restantes.textContent = `${getWithMigration("perguntas_restantes")}`
     }
     else {
       num_perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}`
@@ -1747,7 +1750,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Chama as funções que são necessárias na inicialização
-  renderizarPontuacaoAtual(pontuacoes_usuario[tema_atual]);
+  renderizarPontuacaoAtual(pontuacoes_jogador[tema_atual]);
   limparIdsPrioritariosInvalidos();
   definirRankingAnterior(); // útil para quando for animar barra de progresso
   atualizarRankingVisual();

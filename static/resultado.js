@@ -1,23 +1,28 @@
 import { playSound, playKeySound } from "./sound.js";
-const perguntas_respondidas = JSON.parse(localStorage.getItem("perguntas_respondidas"))
-const tema_atual = localStorage.getItem("tema_atual");
-const tipo_pergunta = localStorage.getItem("tipo_pergunta").toLowerCase();
-const pontuacoes_usuario = JSON.parse(localStorage.getItem("pontuacoes_usuario"));
-const rankings_usuario = JSON.parse(localStorage.getItem("rankings_usuario"));
-const pontuacao_anterior = localStorage.getItem("pontuacao_anterior");
-const nova_pontuacao = pontuacoes_usuario[tema_atual];
+
+const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === "true";
+const perguntas_respondidas = JSON.parse(sessionStorage.getItem("perguntas_respondidas"));
+const tema_atual = sessionStorage.getItem("tema_atual");
+const tipo_pergunta = sessionStorage.getItem("tipo_pergunta").toLowerCase();
+let pontuacoes_jogador;
+if (MODO_VISITANTE) {
+    pontuacoes_jogador = JSON.parse(sessionStorage.getItem("pontuacoes_visitante"));
+}
+else {
+    pontuacoes_jogador = JSON.parse(sessionStorage.getItem("pontuacoes_usuario"));
+}
+const rankings_jogador = JSON.parse(sessionStorage.getItem("rankings_jogador"));
+const pontuacao_anterior = sessionStorage.getItem("pontuacao_anterior");
+const nova_pontuacao = pontuacoes_jogador[tema_atual];
 const valor_saldo = Number(nova_pontuacao) - Number(pontuacao_anterior);
 
 let str_saldo;
 let cor_saldo;
 let peso_fonte_saldo;
 
-// Variáveis de som
-const keySoundState = {last: 0, interval: 35};
-
 // Variáveis para envio de feedback
 const FEEDBACK_DRAFT_KEY = "feedback_comentario_rascunho";
-localStorage.removeItem(FEEDBACK_DRAFT_KEY);
+sessionStorage.removeItem(FEEDBACK_DRAFT_KEY); // remove rascunho de feedback anterior
 const caixaTextoFeedback = document.getElementById("caixa-texto-feedback");
 const btnFeedback = document.getElementById("btn-feedback");
 const modal = document.getElementById("modal-feedback");
@@ -53,7 +58,7 @@ const resultado = {
     pontuacaoAnterior: pontuacao_anterior,
     pontuacaoFinal: nova_pontuacao,
     saldo: str_saldo,
-    ranking_atual: rankings_usuario[tema_atual],
+    ranking_atual: rankings_jogador[tema_atual],
     perguntas_respondidas: perguntas_respondidas
 };
 
@@ -73,12 +78,12 @@ resultado.perguntas_respondidas.forEach((p, i) => {
     let correta;
     let str_pontos_ganhos;
     if (Number(p.pontos_ganhos) > 0) {
-    str_pontos_ganhos = `+${p.pontos_ganhos}`;
-    correta = true;
+        str_pontos_ganhos = `+${p.pontos_ganhos}`;
+        correta = true;
     }
     else {
-    str_pontos_ganhos = p.pontos_ganhos;
-    correta = false;
+        str_pontos_ganhos = p.pontos_ganhos;
+        correta = false;
     }
 
     const cor_pontuacao = correta? 'lime': 'red'
@@ -169,7 +174,7 @@ function exibirMensagem(label, texto, cor) {
 function fecharModalFeedback() {
     modal.classList.add("hidden");
     document.body.style.overflow = "";
-    localStorage.setItem(FEEDBACK_DRAFT_KEY, caixaTextoFeedback.value);
+    sessionStorage.setItem(FEEDBACK_DRAFT_KEY, caixaTextoFeedback.value);
 }
 
 function feedbackErro() {
@@ -265,7 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Abrir modal
   btnFeedback.addEventListener("click", () => {
     playSound("click");
-    const draft = localStorage.getItem(FEEDBACK_DRAFT_KEY);
+    const draft = sessionStorage.getItem(FEEDBACK_DRAFT_KEY);
     if (draft && feedbackIdAtual === null) caixaTextoFeedback.value = draft;
 
     modal.classList.remove("hidden");
