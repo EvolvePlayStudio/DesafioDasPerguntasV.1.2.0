@@ -17,7 +17,7 @@ const checksDificuldades = document.querySelectorAll(`#checks-dificuldades input
 const box_tema = document.getElementById("tema");
 const box_tipo_pergunta = document.getElementById("tipo-pergunta");
 const mensagem = document.getElementById("mensagem");
-const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
+const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === "true";
 const TTL_ESTADO_PESQUISA = 7 * 24 * 60 * 60 * 1000; // 7 dias
 
 // Áudio para clique em checkboxes
@@ -98,7 +98,7 @@ btn_salvar_favoritos.addEventListener("click", () => {
 btn_revisar.addEventListener("click", () => {
   playSound("click");
   const linhas = tabela.querySelectorAll("tr");
-  const perguntas_totais = JSON.parse(localStorage.getItem("perguntas_para_revisar"));
+  const perguntas_totais = JSON.parse(sessionStorage.getItem("perguntas_para_revisar"));
   const perguntas_filtradas = {Fácil: [], Médio: [], Difícil: [], Extremo: []};
   tema_atual = box_tema.value;
   tipo_pergunta = box_tipo_pergunta.value;
@@ -116,10 +116,10 @@ btn_revisar.addEventListener("click", () => {
   })
 
   if (perguntas_filtradas["Fácil"].length > 0 || perguntas_filtradas["Médio"].length > 0 || perguntas_filtradas["Difícil"].length > 0 || perguntas_filtradas["Extremo"].length > 0) {
-    localStorage.setItem("perguntas", JSON.stringify(perguntas_filtradas));
-    localStorage.setItem("modo_jogo", "revisao")
-    localStorage.setItem("tipo_pergunta", tipo_pergunta)
-    localStorage.setItem("tema_atual", tema_atual)
+    sessionStorage.setItem("perguntas", JSON.stringify(perguntas_filtradas));
+    sessionStorage.setItem("modo_jogo", "revisao")
+    sessionStorage.setItem("tipo_pergunta", tipo_pergunta)
+    sessionStorage.setItem("tema_atual", tema_atual)
     window.location.href = `/quiz?tema=${tema_atual}&modo=revisao&tipo-de-pergunta=${tipo_pergunta}`;
   }
 })
@@ -178,7 +178,7 @@ async function carregarFavoritos() {
 function getOwnerKey() {
   let owner_key;
   if (!MODO_VISITANTE) {
-    owner_key = localStorage.getItem("id_usuario")
+    owner_key = sessionStorage.getItem("id_usuario")
   }
   else {
     owner_key = "visitante"
@@ -366,25 +366,15 @@ async function pesquisar() {
     if (MODO_VISITANTE) {
       // Define as pontuações do usuário caso não haja
       sincronizarPontuacoesVisitante(2500);
-      /*
-      if (!localStorage.getItem("pontuacoes_visitante")) {
-        const pontuacoes = {};
-        temas_disponiveis.forEach(tema => {pontuacoes[tema] = 2500});
-      localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes));
-      };*/
-
-
-
-
       perguntasPorDificuldade = filtrarPerguntasVisitante(data.perguntas);
     }
     else {
-      localStorage.setItem("pontuacoes_usuario", JSON.stringify(data.pontuacoes_usuario));
+      sessionStorage.setItem("pontuacoes_usuario", JSON.stringify(data.pontuacoes_usuario));
       perguntasPorDificuldade = data.perguntas;
     }
     
     salvarEstadoPesquisa(tema_atual, tipo_pergunta, dificuldadesSelecionadas, subtemasSelecionados);
-    localStorage.setItem("perguntas_para_revisar", JSON.stringify(perguntasPorDificuldade));
+    sessionStorage.setItem("perguntas_para_revisar", JSON.stringify(perguntasPorDificuldade));
 
     // Renderiza tabela respeitando filtros
     renderizarPerguntas(perguntasPorDificuldade);

@@ -1,6 +1,8 @@
 import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, sincronizarPontuacoesVisitante, temas_disponiveis } from "./utils.js";
 import { playSound } from "./sound.js";
 
+// console.log("ID de visitante: ", localStorage.getItem("id_visitante"));
+
 let permitir_escolher_tema = false;
 let tema_atual = null;
 let tipo_pergunta = null;
@@ -270,7 +272,6 @@ async function iniciarQuiz(event) {
         }
         
         // Grava pontuações do usuário e perguntas no sessionStorage
-        sessionStorage.setItem("pontuacoes_usuario", localStorage.getItem("pontuacoes_visitante"));
         sessionStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
 
         // Analisa os rankings atuais do usuário
@@ -279,8 +280,10 @@ async function iniciarQuiz(event) {
           const ranking_no_tema = obterInfoRankingAtual().ranking;
           rankings_jogador[tema] = ranking_no_tema;
         })
-        sessionStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador))
-
+        sessionStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador));
+        console.log("Rankings do jogador: ", rankings_jogador);
+        //return;
+        
         mensagem.style.opacity = 0
         window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;
       }

@@ -3,7 +3,7 @@ import { playSound, playKeySound } from "./sound.js"
 
 // Envia erros para a base de dados caso ocorram
 const id_visitante = localStorage.getItem("id_visitante");
-const id_visitante_admin = "b6c5d32c-c5d8-41aa-811e-aa45c328b372";
+const id_visitante_admin = "1815ce63-ac09-4951-a76c-e7847b3b2e67";
 const idUsuario = Number(getWithMigration("id_usuario"));
 window.onerror = function (message) {
   if (id_visitante !== id_visitante_admin && !idsReservados.includes(idUsuario)) {
@@ -25,10 +25,10 @@ const MODO_VISITANTE = getWithMigration("modoVisitante") === "true";
 const STORAGE_KEY = MODO_VISITANTE ? "pontuacoes_visitante" : "pontuacoes_usuario";
 const storagePontuacao = MODO_VISITANTE ? localStorage : sessionStorage;
 const tema_atual = getWithMigration("tema_atual");
-const pontuacoes_jogador = JSON.parse(getWithMigration(STORAGE_KEY) ?? "{}"); // Aqui seria assim mesmo?
-if (typeof pontuacoes_jogador[tema_atual] !== "number") {
-  pontuacoes_jogador[tema_atual] = 0;
-  storagePontuacao.setItem(STORAGE_KEY, JSON.stringify(pontuacoes_jogador))
+const pontuacoes_jogador = JSON.parse(storagePontuacao.getItem(STORAGE_KEY) ?? "{}");
+if (typeof pontuacoes_jogador[tema_atual] !== "number") { 
+    pontuacoes_jogador[tema_atual] = 0;
+    storagePontuacao.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes_jogador))
 };
 sessionStorage.setItem("pontuacao_anterior", pontuacoes_jogador[tema_atual]);
 const perguntas_por_dificuldade = JSON.parse(getWithMigration("perguntas") ?? "null");
@@ -628,6 +628,7 @@ async function enviarResposta(pulando = false) {
     function analisarMetaConversao() {
       const totalRespondidas = respondidas.objetiva.length + respondidas.discursiva.length; 
       if (totalRespondidas >= 5) {
+        console.log("Farei conversão")
         gtag('event', 'conversion', {
           'send_to': 'AW-17529321916/JTBvCKKkoeEbELzz0KZB'
         });

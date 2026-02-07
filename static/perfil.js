@@ -1,7 +1,7 @@
 import { playSound } from "./sound.js"
 import { pontuacaoTemaPadraoVisitantes, sincronizarPontuacoesVisitante} from "./utils.js";
 
-const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
+const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === "true";
 let pontuacoes = {};
 let animando = false;
 const select = document.getElementById("ordenacao");

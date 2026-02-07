@@ -31,8 +31,8 @@ invite_token = os.getenv("TOKEN_CONVITE")
 
 SITE_EM_MANUTENCAO = False
 TESTANDO_PERGUNTAS = False
-TESTANDO_VISITANTE = False
-id_visitante_admin = "b6c5d32c-c5d8-41aa-811e-aa45c328b372"
+TESTANDO_VISITANTE = false
+id_visitante_admin = "1815ce63-ac09-4951-a76c-e7847b3b2e67"
 
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
 

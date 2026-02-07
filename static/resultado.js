@@ -6,7 +6,7 @@ const tema_atual = sessionStorage.getItem("tema_atual");
 const tipo_pergunta = sessionStorage.getItem("tipo_pergunta").toLowerCase();
 let pontuacoes_jogador;
 if (MODO_VISITANTE) {
-    pontuacoes_jogador = JSON.parse(sessionStorage.getItem("pontuacoes_visitante"));
+    pontuacoes_jogador = JSON.parse(localStorage.getItem("pontuacoes_visitante"));
 }
 else {
     pontuacoes_jogador = JSON.parse(sessionStorage.getItem("pontuacoes_usuario"));
@@ -15,7 +15,6 @@ const rankings_jogador = JSON.parse(sessionStorage.getItem("rankings_jogador"));
 const pontuacao_anterior = sessionStorage.getItem("pontuacao_anterior");
 const nova_pontuacao = pontuacoes_jogador[tema_atual];
 const valor_saldo = Number(nova_pontuacao) - Number(pontuacao_anterior);
-
 let str_saldo;
 let cor_saldo;
 let peso_fonte_saldo;
