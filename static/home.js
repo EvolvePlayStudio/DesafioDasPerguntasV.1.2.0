@@ -10,7 +10,7 @@ let tipo_pergunta = null;
 const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
 sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 
-if (!MODO_VISITANTE && (!sessionStorage.getItem("id_usuario"))) { // VEJA QUE TRATAMOS ISTO AGORA
+if (!MODO_VISITANTE && (!sessionStorage.getItem("id_usuario"))) {
   localStorage.setItem("auth_message", "Sessão expirada");
   window.location.href = "/login";
 }
@@ -180,7 +180,8 @@ async function iniciarQuiz(event) {
     desbloquearBotoes();
     return;
   };
-  
+
+  /*
   if (tema_atual === 'Física' && tipo_pergunta.toLowerCase() === 'discursiva') {
     const idUsuario = Number(sessionStorage.getItem("id_usuario"));
     if (MODO_VISITANTE || idUsuario !== 16) {
@@ -188,7 +189,7 @@ async function iniciarQuiz(event) {
       desbloquearBotoes();
       return;
     };
-  };
+  };*/
 
   // Mensagem avisando que as perguntas acabaram
   const perguntas_restantes_atuais = parseInt(perguntas_restantes[0]?.textContent.split("/")[0] ?? "0", 10);
@@ -429,9 +430,9 @@ function exibirModalRegistroVisitante(marco) {
   abrirModal({
     titulo: `Você atingiu o marco de ${marco} perguntas 🎯`,
     corpoHTML: `
-    Obtenha as seguintes vantagens se registrando:
+    Considere se registrar para obter as seguintes vantagens:
       <ul>
-        <li>📚 Acesso a mais de 1000 perguntas</li>
+        <li>📚 Acesso a mais de 1500 perguntas</li>
         <li>🏆 Pontuações e rankings salvos</li>
         <li>⭐ Revisão inteligente com perguntas favoritadas</li>
       </ul>
@@ -577,7 +578,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const marcoAtual = Math.floor(totalRespondidas / MARCO) * MARCO;
     const chaveRecusa = `modal_registro_fechado_${marcoAtual}`;
 
-    if (totalRespondidas >= 15 && totalRespondidas % 15 === 0 && !sessionStorage.getItem(chaveRecusa)) {
+    if (totalRespondidas >= 15 && !sessionStorage.getItem(chaveRecusa)) {
       exibirModalRegistroVisitante(marcoAtual);
     };
   }
