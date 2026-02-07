@@ -22,8 +22,19 @@ window.onerror = function (message) {
 
 // Variáveis do localStorage e sessionStorage
 const MODO_VISITANTE = getWithMigration("modoVisitante") === "true";
-const STORAGE_KEY = MODO_VISITANTE ? "pontuacoes_visitante" : "pontuacoes_usuario";
-const storagePontuacao = MODO_VISITANTE ? localStorage : sessionStorage;
+let storagePontuacao;
+let STORAGE_KEY;
+let dicas;
+if (MODO_VISITANTE === true) {
+  STORAGE_KEY = "pontuacoes_visitante";
+  storagePontuacao = localStorage;
+  dicas =  JSON.parse(localStorage.getItem("dicas_restantes_visitante") ?? "20")
+}
+else {
+  STORAGE_KEY = "pontuacoes_usuario";
+  storagePontuacao = sessionStorage;
+  dicas = JSON.parse(getWithMigration("dicas_restantes") ?? "20");
+}
 const tema_atual = getWithMigration("tema_atual");
 const pontuacoes_jogador = JSON.parse(storagePontuacao.getItem(STORAGE_KEY) ?? "{}");
 if (typeof pontuacoes_jogador[tema_atual] !== "number") { 
@@ -37,11 +48,6 @@ const rankings_jogador = JSON.parse(getWithMigration("rankings_jogador") ?? "{}"
 const modo_jogo = (getWithMigration("modo_jogo") ?? "").toLocaleLowerCase();
 const tipo_pergunta = (getWithMigration("tipo_pergunta") ?? "").toLocaleLowerCase();
 const opcoesUsuario = JSON.parse(sessionStorage.getItem("opcoes_usuario") ?? "null");
-let dicas;
-if (MODO_VISITANTE) {
-  dicas = JSON.parse(localStorage.getItem("dicas_restantes_visitante") ?? "20")}
-else {
-  dicas = JSON.parse(getWithMigration("dicas_restantes") ?? "20")};
 
 // Elementos do HTML
 const contador_dicas_restantes = document.getElementById("contador-dicas");
@@ -231,7 +237,8 @@ function ativarBotoes() {
 function atualizarRankingVisual() {
   // Declara as variáveis que serão úteis (ranking e pontos já estão atualizados aqui após cáculo dos pontos ganhos ou perdidos)
   const info_ranking_atual = obterInfoRankingAtual(tema_atual, MODO_VISITANTE);
-  rankings_jogador[tema_atual] = info_ranking_atual.ranking
+  rankings_jogador[tema_atual] = info_ranking_atual.ranking;
+
   const pontuacao = pontuacoes_jogador[tema_atual] || 0;
   let ranking_anterior = "";
   let ranking_proximo;
@@ -628,7 +635,6 @@ async function enviarResposta(pulando = false) {
     function analisarMetaConversao() {
       const totalRespondidas = respondidas.objetiva.length + respondidas.discursiva.length; 
       if (totalRespondidas >= 5) {
-        console.log("Farei conversão")
         gtag('event', 'conversion', {
           'send_to': 'AW-17529321916/JTBvCKKkoeEbELzz0KZB'
         });
@@ -847,10 +853,7 @@ function limparIdsPrioritariosInvalidos() {
   }
 
   // 2. Escolhe o objeto certo (objetiva / discursiva)
-  const objPrioridades =
-    tipo_pergunta === "objetiva"
-      ? ids_objetivas_prioridade
-      : ids_discursivas_prioridade;
+  const objPrioridades = tipo_pergunta === "objetiva" ? ids_objetivas_prioridade: ids_discursivas_prioridade;
 
   const lista = objPrioridades[tema_atual];
 
@@ -1057,7 +1060,7 @@ async function mostrarPergunta() {
     for (const d of disponiveis) {
       acumulado += probsBase[d] ?? 0;
       if (sorteio <= acumulado) {
-        console.log("Dificuldade escolhida: ", d)
+        // console.log("Dificuldade escolhida: ", d)
         respostasDesdeUltimaForcagem++;
         return resolverFallback(d, estoque, probsBase, disponiveis);
       }

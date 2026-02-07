@@ -4,13 +4,7 @@ const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === "true";
 const perguntas_respondidas = JSON.parse(sessionStorage.getItem("perguntas_respondidas"));
 const tema_atual = sessionStorage.getItem("tema_atual");
 const tipo_pergunta = sessionStorage.getItem("tipo_pergunta").toLowerCase();
-let pontuacoes_jogador;
-if (MODO_VISITANTE) {
-    pontuacoes_jogador = JSON.parse(localStorage.getItem("pontuacoes_visitante"));
-}
-else {
-    pontuacoes_jogador = JSON.parse(sessionStorage.getItem("pontuacoes_usuario"));
-}
+const pontuacoes_jogador = MODO_VISITANTE ? JSON.parse(localStorage.getItem("pontuacoes_visitante")) : JSON.parse(sessionStorage.getItem("pontuacoes_usuario"));
 const rankings_jogador = JSON.parse(sessionStorage.getItem("rankings_jogador"));
 const pontuacao_anterior = sessionStorage.getItem("pontuacao_anterior");
 const nova_pontuacao = pontuacoes_jogador[tema_atual];

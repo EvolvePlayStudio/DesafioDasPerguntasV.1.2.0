@@ -274,15 +274,13 @@ async function iniciarQuiz(event) {
         // Grava pontuações do usuário e perguntas no sessionStorage
         sessionStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
 
-        // Analisa os rankings atuais do usuário
+        // Analisa os rankings atuais do usuário (AQUI NÃO É NECESSÁRIO OBTER INFORMAÇÃO DE RANKING PARA TODOS OS TEMAS, MAS SÓ PARA O DO QUIZ QUE SERÁ FEITO, MUDANÇA NO FUTURO SERÁ FEITA)
         const rankings_jogador = {};
         temas_disponiveis.forEach( tema => {
-          const ranking_no_tema = obterInfoRankingAtual().ranking;
+          const ranking_no_tema = obterInfoRankingAtual(tema).ranking;
           rankings_jogador[tema] = ranking_no_tema;
         })
         sessionStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador));
-        console.log("Rankings do jogador: ", rankings_jogador);
-        //return;
         
         mensagem.style.opacity = 0
         window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;

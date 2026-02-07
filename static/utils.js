@@ -85,17 +85,12 @@ export async function fetchAutenticado(url, options = {}) {
 
 // ATENÇÃO: PARAMÊTRO NÃO UTILIZADO AQUI
 export function obterInfoRankingAtual(tema=null, MODO_VISITANTE_ANTIGO=null) {
-  const MODO_VISITANTE = sessionStorage.getItem("modoVisitante");
-  let pontuacoes_jogador;
-  if (MODO_VISITANTE) {
-    pontuacoes_jogador = JSON.parse(localStorage.getItem("pontuacoes_visitante")) || {};
-  }
-  else {
-    pontuacoes_jogador = JSON.parse(sessionStorage.getItem("pontuacoes_usuario")) || {};
-  }
+  // Obtém informação de ranking de acordo com pontuação no tema indicado
+  const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === "true";
+  const pontuacoes_jogador = MODO_VISITANTE ? JSON.parse(localStorage.getItem("pontuacoes_visitante")) : JSON.parse(sessionStorage.getItem("pontuacoes_usuario"));
+  if (!tema) { tema = sessionStorage.getItem("tema_atual")};
   
-  const tema_atual = sessionStorage.getItem("tema_atual");
-  const pontuacao_no_tema = pontuacoes_jogador[tema_atual] || 0;
+  const pontuacao_no_tema = pontuacoes_jogador[tema] || 0;
   const regras_pontuacao = JSON.parse(sessionStorage.getItem("regras_pontuacao")) || [];
 
   const info_ranking_atual = regras_pontuacao.find(regra =>
