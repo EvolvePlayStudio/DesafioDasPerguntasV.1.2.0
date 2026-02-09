@@ -1800,7 +1800,7 @@ def registrar():
             if usar_dados_visitante:
                 cur.execute("""
                     SELECT DISTINCT ON (id_pergunta, tipo_pergunta)
-                        id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario
+                        id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, auto_chute
                     FROM acesso_modo_visitante
                     WHERE id_visitante = %s AND criado_em >= NOW() - INTERVAL '1 month'
                     ORDER BY id_pergunta, tipo_pergunta, criado_em ASC
@@ -1809,15 +1809,15 @@ def registrar():
                 respostas = cur.fetchall()
 
                 # Obs: A data da resposta registrada é a data em que ocorreu a migração dos dados
-                for id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario in respostas:
+                for id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, auto_chute in respostas:
                     tipo_pergunta = tipo_pergunta.capitalize()
                     cur.execute("""
                         INSERT INTO respostas_usuarios (
-                            id_usuario, id_pergunta, tipo_pergunta, tema, resposta_usuario, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, data_resposta, dados_migrados
+                            id_usuario, id_pergunta, tipo_pergunta, tema, resposta_usuario, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, data_resposta, dados_migrados, auto_chute
                         )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON CONFLICT (id_usuario, id_pergunta, tipo_pergunta) DO NOTHING
-                    """, (id_usuario, id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, agora_sp, True))
+                    """, (id_usuario, id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, agora_sp, True, auto_chute))
 
                 app.logger.info(f"{len(respostas)} respostas migradas do visitante {id_visitante}")
 
@@ -1904,10 +1904,9 @@ def registrar_resposta_usuario(user_id):
             # Registra a resposta do usuário
             cur.execute("""
                 INSERT INTO respostas_usuarios (
-                    id_usuario, id_pergunta, tipo_pergunta, versao_pergunta, resposta_usuario,
-                    acertou, usou_dica, pontos_ganhos, tempo_gasto, pontos_usuario, tema, dados_migrados, dificuldade
+                    id_usuario, id_pergunta, tipo_pergunta, versao_pergunta, resposta_usuario, acertou, usou_dica, pontos_ganhos, tempo_gasto, pontos_usuario, tema, dados_migrados, dificuldade, auto_chute
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 id_usuario,
                 dados["id_pergunta"],
@@ -1921,7 +1920,8 @@ def registrar_resposta_usuario(user_id):
                 dados["pontos_usuario"],
                 dados["tema"],
                 False,
-                dados["dificuldade"].lower().capitalize()
+                dados["dificuldade"].lower().capitalize(),
+                dados["auto_chute"]
             ))
             # Atualiza a pontuação do usuário
             cur.execute("""
@@ -2007,8 +2007,9 @@ def registrar_resposta_visitante():
                 pontos_ganhos,
                 pontos_usuario,
                 modo_tela,
-                dificuldade
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                dificuldade,
+                auto_chute
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             dados.get("tema"),
             dados.get("tipo_pergunta").lower().capitalize(),
@@ -2022,7 +2023,8 @@ def registrar_resposta_visitante():
             dados.get("pontos_ganhos"),
             dados.get("pontos_usuario"),
             dados.get("modo_tela"),
-            dados.get("dificuldade").lower().capitalize()
+            dados.get("dificuldade").lower().capitalize(),
+            dados.get("auto_chute")
         ))
         conn.commit()
     except Exception:

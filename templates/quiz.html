@@ -438,7 +438,10 @@
   #btn-enviar, #btn-pular {
     justify-content: center;
   }
-  #botoes-acao,  #botoes-envio{
+  .btn-enviar.chutar {
+    background: var(--bg-botao-login);
+  }
+  #botoes-acao, #botoes-envio{
     margin-top: 0.8rem;
     justify-content: space-between;
     gap: 12px
@@ -462,30 +465,6 @@
     width: 100%;
     max-width: 38rem;
   }
-
-
-
-  /*
-  .quiz-header {
-    display: flex;
-    align-items: center;
-  }
-
-  #perguntas-restantes-icon {
-    flex: 0 0 auto;
-  }
-
-  #tema-nivel-pergunta {
-    flex: 1 1 auto;
-    text-align: center;
-  }
-
-  #dica-icon {
-    flex: 0 0 auto;
-  }*/
-
-
-
   /* Responsivo */
   @media (max-width: 1000px) {
     .status-wrapper-mobile {

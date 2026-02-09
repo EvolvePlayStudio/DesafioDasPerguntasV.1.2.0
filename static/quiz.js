@@ -84,10 +84,13 @@ let ranking_visual_anterior;
 let estrelas_iniciais;
 let comentario_inicial;
 let alternativaSelecionada; // guarda a letra selecionada (A, B, C, D)
-let respostasDesdeUltimaForcagem = 0; // para pegar a pergunta do nível que tem mais a cada x respondidas
+let respostasDesdeUltimaForcagem = 0; // para pegar a pergunta do nível que tem mais a cada 
+// x respondidas
 let info_ultimo_ranking = regras_pontuacao.at(-1) ?? null;
 const exibir_instrucoes_quiz = opcoesUsuario?.exibir_instrucoes_quiz ?? false;
 const contador_dicas = contador_dicas_restantes;
+const letrasAlternativas = ['A', 'B', 'C', 'D'];
+let autoChute = false;
 
 // Botões
 const btn_enviar = document.getElementById("btn-enviar");
@@ -188,8 +191,19 @@ function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo) {
   });
 
   function passo(timestamp) {
+    if (!aguardando_proxima) { // interrompe o fluxo caso o usuário chame a próxima pergunta antes de a animação terminar
+      pontuacao_atual = pontuacao_alvo;
+      document.querySelectorAll('[data-ui="pontuacao"]').forEach(el => {
+        el.classList.remove("show-inc");
+        el.classList.add("hide-inc");
+        el.textContent = pontuacao_alvo
+      });
+      return;
+    }// AQUI É QUE ESTÁ O ERRO, NÃO DEIXA NA PONTUAÇÃO ALVO MESMO COM ISTO QUE COLOQUEI
+
     if (!ultimaExecucao) ultimaExecucao = timestamp;
     const delta = timestamp - ultimaExecucao;
+    
 
     if (delta > intervaloMin) {
       let diferenca = pontuacao_alvo - pontuacao_atual;
@@ -205,7 +219,7 @@ function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo) {
         pontuacao_atual = pontuacao_alvo;
       }
 
-      renderizarPontuacaoAtual(pontuacao_atual, incrementoTotal)
+      renderizarPontuacaoAtual(pontuacao_atual, incrementoTotal);
 
       ultimaExecucao = timestamp;
     }
@@ -578,6 +592,7 @@ async function enviarResposta(pulando = false) {
 
   async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ganhos, tempo_gasto, id_pergunta, versao_pergunta) {
     try {
+      console.log("Auto chute: ", autoChute)
       const response = await fetch('/registrar_resposta', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -592,7 +607,8 @@ async function enviarResposta(pulando = false) {
           versao_pergunta: versao_pergunta,
           tema: tema_atual,
           pontos_usuario: pontuacao_atual,
-          dificuldade: pergunta_selecionada.dificuldade
+          dificuldade: pergunta_selecionada.dificuldade,
+          auto_chute: autoChute
         })
       });
 
@@ -659,7 +675,8 @@ async function enviarResposta(pulando = false) {
         modo_tela_usuario: detectarModoTela(),
         pontos_ganhos: pontos_ganhos,
         pontos_usuario: pontuacao_atual,
-        dificuldade: pergunta_selecionada.dificuldade
+        dificuldade: pergunta_selecionada.dificuldade,
+        auto_chute: autoChute
       })
       }).catch(() => {
         console.warn("Falha ao registrar resposta de visitante")
@@ -721,10 +738,20 @@ async function enviarResposta(pulando = false) {
   const tempo_gasto = calcularTempoGasto();
 
   if (tipo_pergunta === 'objetiva') {
-    const widgetAlternativaSelecionada = document.querySelector('.alternativa-btn.selected');
+    
+    let btnAlternativaSelecionada;
+    // Se o usuário optrou por chutar, escolhe uma aleatoriamente
     if (!alternativaSelecionada) {
-      console.warn("Nenhuma alterantiva selecionada")
-      return;
+      alternativaSelecionada = letrasAlternativas[Math.floor(Math.random() * 4)];
+      btnAlternativaSelecionada = document.querySelector(
+        `.alternativa-btn[data-letter="${alternativaSelecionada}"]`
+      );
+      autoChute = true;
+      selecionarAlternativa(btnAlternativaSelecionada);
+    }
+    else {
+      autoChute = false;
+      btnAlternativaSelecionada = document.querySelector('.alternativa-btn.selected');
     }
     resposta_usuario = alternativaSelecionada;
     
@@ -751,8 +778,8 @@ async function enviarResposta(pulando = false) {
     }
 
     // Se errou, marca a selecionada como errada
-    if (!acertou && widgetAlternativaSelecionada && widgetAlternativaSelecionada !== correta) {
-        widgetAlternativaSelecionada.classList.add('wrong');
+    if (!acertou && btnAlternativaSelecionada && btnAlternativaSelecionada !== correta) {
+        btnAlternativaSelecionada.classList.add('wrong');
     }
   }
   else {
@@ -829,6 +856,7 @@ async function enviarResposta(pulando = false) {
     caixa_para_resposta.disabled = false;
   }
 }
+
 
 async function finalizarQuiz() {
   await registrarFeedback();
@@ -932,10 +960,11 @@ async function mostrarAlternativas() {
   animacao_concluida = true;
   inicio_pergunta = Date.now();
 
+  /*
   if (!alternativas.some(b => b.classList.contains('selected'))) {
     const btnA = alternativas.find(b => b.dataset.letter === 'A');
     if (btnA) selecionarAlternativa(btnA);
-  }
+  }*/
 
   hint_avaliacao.style.display = "";
   botoes_enviar_div.style.display = "flex";
@@ -1038,7 +1067,6 @@ async function mostrarPergunta() {
     // 🔥 1. FORÇAGEM PELA DIFICULDADE COM MAIOR ESTOQUE
     if (respostasDesdeUltimaForcagem === 5) {
       console.log("Pegando a dificuldade com maior estoque...")
-      // Põe as dificuldades em ordem descrescente de estoque
       const ordenadas = [...disponiveis].sort(
         (a, b) => estoque[b] - estoque[a]
       );
@@ -1060,7 +1088,6 @@ async function mostrarPergunta() {
     for (const d of disponiveis) {
       acumulado += probsBase[d] ?? 0;
       if (sorteio <= acumulado) {
-        // console.log("Dificuldade escolhida: ", d)
         respostasDesdeUltimaForcagem++;
         return resolverFallback(d, estoque, probsBase, disponiveis);
       }
@@ -1267,6 +1294,11 @@ async function proximaPergunta() {
     el.classList.add("hide-inc");
   })
 
+  if (tipo_pergunta === 'objetiva') {
+    btn_enviar.textContent = 'Chutar';
+    btn_enviar.classList.add("chutar");
+    autoChute = false;
+  }
   hint_dica.style.display = "none";
   hint_pular.style.display = "none";
   if (haPerguntasDisponiveis) {
@@ -1606,7 +1638,12 @@ function respostaObjetivaCorreta() {
 }
 
 function selecionarAlternativa(btn) {
-  if (aguardando_proxima) return;
+  if (!btn || aguardando_proxima || btn_enviar.disabled) return;
+  if (!autoChute) {
+    btn_enviar.textContent = 'Enviar';
+    btn_enviar.classList.remove("chutar");
+  };
+
   // Visual
   alternativaBtns.forEach(b => b.classList.remove("selected"));
   btn.classList.add("selected");
@@ -1703,6 +1740,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (botoes_finalizar_div) {botoes_finalizar_div.style.marginTop = '1.5rem'};
   }
   else {
+    btn_enviar.classList.add("chutar");
+    btn_enviar.textContent = 'Chutar';
     // Implementa a função de marcar alternativas
     alternativaBtns.forEach(btn => {
       btn.addEventListener('click', () => selecionarAlternativa(btn));
