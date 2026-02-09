@@ -133,6 +133,7 @@ const VELOCIDADE_LETRA_ALTERNATIVAS = 16; // quanto menor, mais rápido
 if (tipo_pergunta === "objetiva" || !MODO_VISITANTE && !exibir_instrucoes_quiz) hint_avaliacao.style.marginTop = "0.8rem"; // ajuste no hint de avaliação caso os outros não estejam presentes (o de dica e o de pular pergunta)
 
 // Ids de perguntas que são selecionados primeiro
+/*
 const ids_objetivas_prioridade = {
   'Artes':      [163, 167, 172, 336, 338, 353],
   'Astronomia': [6, 11, 12, 479, 492, 500],
@@ -163,6 +164,38 @@ const ids_discursivas_prioridade = {
   'Química': [291, 301, 303, 308, 577, 582],
   'Tecnologia': [152, 342, 345, 351, 352, 358, 392, 462, 470],
   'Variedades': [24, 25, 27, 67, 107, 120, 221, 376, 392, 658, 659, 662]
+}*/
+
+const ids_objetivas_prioridade = {
+  'Artes':      [],
+  'Astronomia': [],
+  'Biologia':   [],
+  'Esportes':   [],
+  'Filosofia':  [],
+  'Física':     [],
+  'Geografia':  [],
+  'História':   [],
+  'Mídia':      [],
+  'Música':     [],
+  'Química':    [],
+  'Tecnologia': [],
+  'Variedades': []
+}
+
+const ids_discursivas_prioridade = {
+  'Artes': [],
+  'Astronomia': [],
+  'Biologia': [],
+  'Esportes': [],
+  'Filosofia': [],
+  'Física': [],
+  'Geografia': [],
+  'História': [],
+  'Mídia': [],
+  'Música': [],
+  'Química': [],
+  'Tecnologia': [],
+  'Variedades': []
 }
 
 function getWithMigration(key) {

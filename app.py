@@ -523,29 +523,12 @@ def iniciar_agendamento():
 
 @app.route("/", methods=["GET"])
 def index():
-    """
-    destino = session.pop("pagina_destino", None)
-    if destino == "login_de_home":
-        registrar_pagina_visitada("Home -> Login")
-    else:
-        registrar_pagina_visitada("Login")"""
-    """return render_template("login.html", abrir_registro=(destino == "registro"))"""
     return render_template("login.html")
 
 @app.route("/pagina_destino", methods=["POST"])
 def pagina_destino():
     data = request.get_json(silent=True) or {}
-    print(f"Data é: {data}")
     session["pagina_destino"] = data.get("pagina_destino", None)
-    print('Marcador')
-    print(session.get("pagina_destino"))
-    """
-    if data.get("destino") == "registro":
-        session["pagina_destino"] = "registro"
-    elif data.get("destino") == "login_de_home":
-        session["pagina_destino"] = "login_de_home"
-    elif data.get("destino") == "Modal de Registro -> Registro":"""
-        
     return jsonify(ok=True)
 
 @app.route('/favicon.ico')
@@ -680,7 +663,6 @@ def formatar_hora_servidor(timestamp):
 @app.route('/acesso/registro', methods=['POST'])
 def registrar_acesso_aba_registro():
     pagina = session.get("pagina_destino", None) 
-    print(f"55.Página é {pagina}")
     registrar_pagina_visitada(pagina)
     return jsonify({ "ok": True })
 
@@ -706,7 +688,6 @@ def registra_falha_sessao():
     info = session.get('bloqueio_captcha', {'tentativas_registro': 0, 'bloqueado_ate': 0})
     info['tentativas_registro'] += 1
 
-    print(f"Tentativas: {info['tentativas_registro']}")
     if info['tentativas_registro'] >= 6:
         info['bloqueado_ate'] = agora + 15 * 60  # bloqueio 15 minutos
 
@@ -850,8 +831,7 @@ def get_favoritos_usuario():
         """
         cur.execute(query, (id_usuario, tema, tipo_pergunta))
         favoritos = [row[0] for row in cur.fetchall()]
-    except Exception as e:
-        print("Erro ao carregar favoritos")
+    except Exception:
         app.logger.exception("Erro ao carregar favoritos do usuário com id %s", id_usuario)
     finally:
         if cur: cur.close()
@@ -864,7 +844,7 @@ def esqueci_senha():
     data = request.get_json()
     email = data.get("email", "").strip()
 
-    # mensagem padrão
+    # Mensagem padrão
     mensagem_padrao = "Se o e-mail estiver cadastrado, enviaremos instruções."
 
     if not email:
@@ -890,10 +870,10 @@ def esqueci_senha():
             """, (token, expira, usuario[0]))
             conn.commit()
             
-            # construir link de recuperação
+            # Construir link de recuperação
             link_recuperacao = url_for('reset_senha', token=token, _external=True)
 
-            # montar mensagem
+            # Montar mensagem
             conteudo_email = f"""
             Olá {usuario[1]},
 
@@ -905,11 +885,11 @@ def esqueci_senha():
             Se você não solicitou a recuperação de senha, ignore esta mensagem.
             """
 
-            # enviar email
+            # Enviar email
             try:
                 enviar_email_recuperacao(email, "Recuperação de Senha - Desafio das Perguntas", conteudo_email)
-            except Exception as e:
-                print("Erro ao enviar email:", e)
+            except Exception:
+                app.logger.error("Erro ao enviar email")
                 return jsonify(success=False, message=mensagem_padrao)
     except Exception:
         if conn:
@@ -1005,7 +985,7 @@ def listar_perguntas(user_id):
 
     # Validações
     if not tema or modo not in ('desafio', 'revisao') or tipo_pergunta not in ('objetiva', 'discursiva'):
-        print("Parâmetros inválidos ou ausentes")
+        app.logger.error("Parâmetros inválidos ou ausentes")
         return jsonify({'erro': 'Parâmetros inválidos ou ausentes'}), 400
     if not id_usuario and not modo_visitante:
         app.logger.error("Usuário não autenticado")
