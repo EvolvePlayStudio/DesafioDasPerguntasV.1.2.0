@@ -1,4 +1,4 @@
-import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, sincronizarPontuacoesVisitante, temas_disponiveis } from "./utils.js";
+import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, idsReservados, exibirMensagem, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, sincronizarPontuacoesVisitante, temas_disponiveis } from "./utils.js";
 import { playSound } from "./sound.js";
 
 // console.log("ID de visitante: ", localStorage.getItem("id_visitante"));
@@ -6,14 +6,41 @@ import { playSound } from "./sound.js";
 let permitir_escolher_tema = false;
 let tema_atual = null;
 let tipo_pergunta = null;
-
 const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
 sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
+const modoTesteWrapper = document.getElementById("modo-teste-wrapper");
+const checkModoTeste = document.getElementById("modo-teste-toggle");
+const idUsuario = sessionStorage.getItem("id_usuario");
+let registrandoModoTeste = false;
 
-if (!MODO_VISITANTE && (!sessionStorage.getItem("id_usuario"))) {
-  localStorage.setItem("auth_message", "Sessão expirada");
-  window.location.href = "/login";
+async function registrarModoTeste() {
+  registrandoModoTeste = true;
+  sessionStorage.setItem("modo_teste", checkModoTeste.checked);
+  await fetch("/api/modo_teste", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ modo_teste: checkModoTeste.checked})
+  }).catch(() => console.warn("Falha ao registrar modo teste"));
+  registrandoModoTeste = false;
 }
+
+if (!MODO_VISITANTE) {
+  const idsReservadosTeste = [4, 16];
+  if (!idUsuario) {
+    localStorage.setItem("auth_message", "Sessão expirada");
+    window.location.href = "/login";
+  }
+  else if (idsReservadosTeste.includes(parseInt(idUsuario ?? "0"))) {
+    modoTesteWrapper.style.display = 'flex';
+    const modoTeste = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
+    if (modoTeste) checkModoTeste.checked = modoTeste;
+    
+    if (checkModoTeste) {
+      registrarModoTeste();
+      checkModoTeste.addEventListener("change", () => {registrarModoTeste()});
+    };
+  };
+};
 
 const mensagem = document.getElementById("mensagem");
 const radios_tipo_pergunta = document.querySelectorAll('.opcoes input[type="radio"]');
@@ -43,11 +70,11 @@ if (MODO_VISITANTE) {
   btn_criar_conta.forEach(btn => {
     btn.style.display = "";
     btn.addEventListener("click", async () => {
-      localStorage.setItem("ir_para_aba_registro", true);
+      sessionStorage.setItem("ir_para_aba_registro", true);
       await fetch("/pagina_destino", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ destino: "registro" })
+        body: JSON.stringify({ pagina_destino: "Home -> Registro" })
       });
 
       window.location.href = "/";
@@ -89,7 +116,7 @@ if (MODO_VISITANTE) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id_visitante: idVisitante })
-  });
+  }).catch(() => console.warn("Falha ao registrar modo visitante"));
 }
 else {
   btnsHeader = [btn_opcoes, btn_doacoes, btn_perfil, btn_pesquisa, btn_logout];
@@ -101,6 +128,15 @@ else {
     permitir_escolher_tema = true;
   }
 }
+
+/*
+Ícones para rankings
+🌱 Iniciante
+🧩 Aprendiz
+🎓 Estudante
+🧙‍♂️ Sábio
+🌟 Lenda
+*/
 
 // Renderiza os botões do header
 btnsHeader.forEach(conjuntoBtn => {conjuntoBtn.forEach(btn => {btn.style.display = ""})});
@@ -150,10 +186,10 @@ function abrirModal({titulo = "", corpoHTML = "", textoPrimario = null, textoSec
 async function iniciarQuiz(event) {
   function desbloquearBotoes() {
     permitir_escolher_tema = true;
-    radios_tipo_pergunta.forEach(radio => {
-      radio.onclick = null;
-  })};
+    radios_tipo_pergunta.forEach(radio => {radio.onclick = null})
+  };
 
+  if (registrandoModoTeste) return;
   if (!permitir_escolher_tema) return;
   playSound("click");
 
@@ -180,16 +216,6 @@ async function iniciarQuiz(event) {
     desbloquearBotoes();
     return;
   };
-
-  /*
-  if (tema_atual === 'Física' && tipo_pergunta.toLowerCase() === 'discursiva') {
-    const idUsuario = Number(sessionStorage.getItem("id_usuario"));
-    if (MODO_VISITANTE || idUsuario !== 16) {
-      exibirMensagem(mensagem, `O tema Física só está disponível em perguntas de múltiplas alternativas no momento`, 'orange');
-      desbloquearBotoes();
-      return;
-    };
-  };*/
 
   // Mensagem avisando que as perguntas acabaram
   const perguntas_restantes_atuais = parseInt(perguntas_restantes[0]?.textContent.split("/")[0] ?? "0", 10);
@@ -445,12 +471,11 @@ function exibirModalRegistroVisitante(marco) {
       permitir_escolher_tema = true;
     },
     onSecundario: async () => {
-      //localStorage.setItem("ir_para_aba_registro", true);
       sessionStorage.setItem("ir_para_aba_registro", true);
       await fetch("/pagina_destino", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ destino: "registro_de_modal" })
+        body: JSON.stringify({ pagina_destino: "Modal de Registro -> Registro" })
       });
       window.location.href = "/";
     }
@@ -540,7 +565,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         await fetch("/pagina_destino", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ destino: "login_de_home" })
+          body: JSON.stringify({ pagina_destino: "Home -> Login" })
         });
         window.location.href = "/";
       });

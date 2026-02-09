@@ -17,12 +17,17 @@ document.addEventListener('DOMContentLoaded', function () {
       playSound("checkbox")})
   })
 
-  // Trecho abaixo se repete em home.js
+  // Trecho abaixo se repete em home.js, talvez vire função do utils.js
   let idVisitante = localStorage.getItem("id_visitante");
   if (!idVisitante) {
     idVisitante = crypto.randomUUID();
     localStorage.setItem("id_visitante", idVisitante);
   }
+  fetch("/api/registrar_visitante", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id_visitante: idVisitante })
+  }).catch(() => console.warn("Falha ao registrar modo visitante"));
 
   // Implementa a função de click no botão de entrar sem login
   const btnEntrarSemLogin = document.getElementById("entrar-visitante")
@@ -42,6 +47,18 @@ document.addEventListener('DOMContentLoaded', function () {
   const login_tab = document.getElementById('login-tab');
   const register_tab = document.getElementById('register-tab');
   const forgot_tab = document.getElementById('forgot-tab');
+
+  login_tab.addEventListener("click", () => {
+    showForm('login');
+  });
+  register_tab.addEventListener("click", async() => {
+    await fetch("/pagina_destino", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pagina_destino: "Login -> Registro" })
+    });
+    showForm('register');
+  });
 
   // Formulários
   const login_form = document.getElementById('login-form');
@@ -385,12 +402,6 @@ document.addEventListener('DOMContentLoaded', function () {
         };
         sessionStorage.setItem("modal_confirmacao_email_exibido", false);
         sessionStorage.setItem("email_usuario", data.email);
-
-        /*
-        if (data.onboarding_concluido === false) {
-          localStorage.setItem("onboarding_concluido", "false");
-        }*/
-
         sessionStorage.setItem("token_sessao", data.token);
         sessionStorage.setItem("modoVisitante", "false");
         window.location.href = "/home";
@@ -463,7 +474,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
           if (forgot_message) {
             forgot_message.style.color = 'red';
-            forgot_message.textContent = 'Não foi possível enviar o e-mail para redefinir senha.';
+            forgot_message.textContent = 'Não foi possível enviar o e-mail para redefinir senha';
           }
         }
       } catch (err) {
@@ -503,16 +514,25 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     else if (type === 'register') {
       try {
-        const response = await fetch("/verificar_bloqueio", {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
-        const info_bloqueio = await response.json();
-
-        if ((info_bloqueio.tentativas_registro > 0 && info_bloqueio.bloqueado_ate > 0)) {
-          bloquearRegistro(info_bloqueio)
+        fetch("/acesso/registro", { method: "POST" }).catch(err => console.warn("Não foi possível gravar o acesso à aba de registro", err)); /* Registra acesso na base de dados*/
+        let response;
+        try {
+          response = await fetch("/verificar_bloqueio");
+        }
+        catch (err) {
+          console.error("Não foi possível fazer a verificação de bloqueio", err);
+          return;
+        };
+        if (!response.ok) {
+          console.error("Erro HTTP ao verificar bloqueio", response.status)
           return;
         }
+        const info_bloqueio = await response.json();
+        
+        if (info_bloqueio.bloqueado) {
+          bloquearRegistro(info_bloqueio);
+          return;
+        };
         btnEntrarSemLogin.style.display = "none"
       } 
       catch (error) {
@@ -635,12 +655,12 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   window.showForm = showForm;
-  if (localStorage.getItem("ir_para_aba_registro")) {
-    showForm('register');
+  if (sessionStorage.getItem("ir_para_aba_registro")) {
+    showForm('register', false, false);
   }
   else {
     showForm('login');
   }
-  localStorage.removeItem("ir_para_aba_registro");
+  sessionStorage.removeItem("ir_para_aba_registro");
 });
 

@@ -592,7 +592,6 @@ async function enviarResposta(pulando = false) {
 
   async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ganhos, tempo_gasto, id_pergunta, versao_pergunta) {
     try {
-      console.log("Auto chute: ", autoChute)
       const response = await fetch('/registrar_resposta', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

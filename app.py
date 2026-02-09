@@ -30,7 +30,6 @@ app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 
 SITE_EM_MANUTENCAO = False
-TESTANDO_PERGUNTAS = False
 TESTANDO_VISITANTE = False
 id_visitante_admin = "1815ce63-ac09-4951-a76c-e7847b3b2e67"
 
@@ -524,26 +523,29 @@ def iniciar_agendamento():
 
 @app.route("/", methods=["GET"])
 def index():
+    """
     destino = session.pop("pagina_destino", None)
-    
-    if destino == "registro":
-        registrar_pagina_visitada("Home -> Registro")
-    elif destino == "login_de_home":
+    if destino == "login_de_home":
         registrar_pagina_visitada("Home -> Login")
-    elif destino == "login_de_modal":
-        registrar_pagina_visitada("ModalHome -> Login")
     else:
-        registrar_pagina_visitada("Login")
-
-    return render_template("login.html", abrir_registro=(destino == "registro"))
+        registrar_pagina_visitada("Login")"""
+    """return render_template("login.html", abrir_registro=(destino == "registro"))"""
+    return render_template("login.html")
 
 @app.route("/pagina_destino", methods=["POST"])
 def pagina_destino():
     data = request.get_json(silent=True) or {}
+    print(f"Data é: {data}")
+    session["pagina_destino"] = data.get("pagina_destino", None)
+    print('Marcador')
+    print(session.get("pagina_destino"))
+    """
     if data.get("destino") == "registro":
         session["pagina_destino"] = "registro"
     elif data.get("destino") == "login_de_home":
         session["pagina_destino"] = "login_de_home"
+    elif data.get("destino") == "Modal de Registro -> Registro":"""
+        
     return jsonify(ok=True)
 
 @app.route('/favicon.ico')
@@ -675,9 +677,15 @@ def formatar_hora_servidor(timestamp):
     dt = datetime.fromtimestamp(timestamp, FUSO_SERVIDOR)
     return dt.strftime("%H:%M")
 
+@app.route('/acesso/registro', methods=['POST'])
+def registrar_acesso_aba_registro():
+    pagina = session.get("pagina_destino", None) 
+    print(f"55.Página é {pagina}")
+    registrar_pagina_visitada(pagina)
+    return jsonify({ "ok": True })
+
 @app.route('/verificar_bloqueio')
 def verificar_bloqueio():
-    registrar_pagina_visitada("Registro")
     info = session.get('bloqueio_captcha', {'tentativas_registro': 0, 'bloqueado_ate': 0})
     agora = time.time()
 
@@ -1000,15 +1008,15 @@ def listar_perguntas(user_id):
         print("Parâmetros inválidos ou ausentes")
         return jsonify({'erro': 'Parâmetros inválidos ou ausentes'}), 400
     if not id_usuario and not modo_visitante:
-        print("Usuário não autenticado")
+        app.logger.error("Usuário não autenticado")
         return jsonify({'erro': 'Usuário não autenticado'}), 401
     if not id_visitante and modo_visitante:
-        print("Visitante não autenticado")
+        app.logger.error("Visitante não autenticado")
         return jsonify({'erro': 'Visitante não autenticado'}), 401
     
     cfg = QUESTION_CONFIG.get(tipo_pergunta)
     if not cfg:
-        print("Tipo de pergunta inválido")
+        app.logger.error("Tipo de pergunta inválido")
         return jsonify({'erro': 'Tipo de pergunta inválido'}), 400
     
     # Conexão com servidor
@@ -1022,19 +1030,16 @@ def listar_perguntas(user_id):
 
     # Busca das perguntas
     try:
-        if modo_visitante:
-            is_privileged = False
-        else:
-            is_privileged = int(id_usuario) in privileged_ids
-
         select_clause = ",\n".join(cfg['select_cols'])
         select_cols_visitante = ",\n".join(cfg['select_cols_visitante'])
         tipo_str = cfg['tipo_str']   # Usado para filtrar feedbacks/respostas
         table = cfg['table']         # Nome da tabela — vindo do cfg interno (seguro)
 
+        is_privileged = False if modo_visitante else int(id_usuario) in privileged_ids
+        modo_teste = session.get("modo_teste", False)
         if modo_visitante:
-            where_status = "p.status = 'Ativa' OR p.status = 'Em teste'"
-        elif not TESTANDO_PERGUNTAS:
+            where_status = "p.status IN ('Ativa', 'Em teste')"
+        elif not modo_teste:
             where_status = "p.status = 'Ativa'"
         else:
             where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
@@ -1081,12 +1086,8 @@ def listar_perguntas(user_id):
         linhas = cur.fetchall()
 
         perguntas_por_dificuldade = {'Fácil': [], 'Médio': [], 'Difícil': [], 'Extremo': []}
-
         for row in linhas:
-            if modo_visitante:
-                respondida = False
-            else:
-                respondida = bool(row.get('respondida'))
+            respondida = False if modo_visitante else bool(row.get('respondida'))
             dificuldade = row.get('dificuldade') or 'Médio'
             if tipo_pergunta == 'discursiva':
                 rc = row.get('respostas_corretas') or []
@@ -1493,13 +1494,13 @@ def tela_perfil():
 @app.route("/politica-de-privacidade")
 def politica_privacidade():
     session['from_login'] = False
-    registrar_pagina_visitada("Política de Privacidade")
+    registrar_pagina_visitada("Home -> Política de Privacidade")
     return render_template("privacy_policy.html")
 
 @app.route("/termos-de-uso")
 def termos_uso():
     session['from_login'] = False
-    registrar_pagina_visitada("Termos de Uso")
+    registrar_pagina_visitada("Home -> Termos de Uso")
     return render_template("termos_de_uso.html")
 
 @app.route("/api/favoritos", methods=["POST"])
@@ -1552,7 +1553,7 @@ def salvar_favoritos(user_id):
 @app.route("/sobre-o-app")
 def sobre_app():
     session['from_login'] = False
-    registrar_pagina_visitada("Sobre o App")
+    registrar_pagina_visitada("Home -> Sobre")
     return render_template("sobre_o_app.html")
 
 @app.route("/pesquisa-avançada")
@@ -1659,7 +1660,7 @@ def pesquisar_perguntas():
 @app.route('/politica-de-privacidade-from-login')
 def politica_privacidade_from_login():
     session['from_login'] = True
-    registrar_pagina_visitada("Política de Privacidade (login)")
+    registrar_pagina_visitada("Login -> Política de Privacidade")
     return render_template('privacy_policy.html')
 
 @app.route("/resultado")
@@ -1673,13 +1674,13 @@ def resultado():
 @app.route('/termos-de-uso-from-login')
 def termos_uso_from_login():
     session['from_login'] = True
-    registrar_pagina_visitada("Termos de Uso (login)")
+    registrar_pagina_visitada("Login -> Termos de Uso")
     return render_template('termos_de_uso.html')
 
 @app.route('/sobre-o-app-from-login')
 def sobre_app_from_login():
     session['from_login'] = True
-    registrar_pagina_visitada("Sobre o App (login)")
+    registrar_pagina_visitada("Login -> Sobre")
     return render_template('sobre_o_app.html')
 
 @app.route("/quiz")
@@ -1861,6 +1862,12 @@ def registrar():
     enviar_email_confirmacao(email, nome, link_confirmacao)
     return jsonify(success=True, message="Registro realizado! Verifique seu e-mail para confirmar")
 
+@app.route("/api/modo_teste", methods=["POST"])
+def registrar_modo_teste():
+    data = request.get_json() or {}
+    session["modo_teste"] = bool(data.get("modo_teste", False))
+    return jsonify({"ok": True})
+
 def registrar_pagina_visitada(pagina):
     conn = cur = None
     id_usuario = session.get('id_usuario')
@@ -1879,11 +1886,9 @@ def registrar_pagina_visitada(pagina):
             VALUES (%s, %s, %s, %s)
         """, (pagina, id_usuario, dispositivo, id_visitante))
         conn.commit()
-
     except Exception as e:
         if conn: conn.rollback()
         app.logger.error(f"Erro ao registrar página: {e}")
-
     finally:
         if cur: cur.close()
         if conn: conn.close()  
@@ -2044,7 +2049,6 @@ def registrar_visitante():
 
     if id_visitante:
         session["id_visitante"] = id_visitante
-
     return jsonify({"ok": True})
 
 @app.route("/register_validate", methods=["POST"])

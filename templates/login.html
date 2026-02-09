@@ -217,8 +217,8 @@
 
         <!-- Abas de login e registro (a de recuperação de senha fica oculta)-->
         <div class="auth-tabs">
-            <button id="login-tab" class="active" onclick="showForm('login')">Login</button>
-            <button id="register-tab" onclick="showForm('register')">Registrar</button>
+            <button id="login-tab" class="active">Login</button>
+            <button id="register-tab">Registrar</button>
             <button id="forgot-tab" style="display:none;">Recuperação de Senha</button>
         </div>
 
@@ -346,16 +346,6 @@
       <a href="{{ url_for('termos_uso_from_login') }}">Termos de Uso</a> |
       <a href="{{ url_for('sobre_app_from_login') }}">Sobre</a>
   </footer>
-
-    <script>
-    const destino = "{{ destino }}";
-
-    document.addEventListener("DOMContentLoaded", () => {
-        if (destino === "registro") {
-            showForm('registro')
-        }
-    });
-    </script>
 
     <script type="module" src="{{ url_for('static', filename='login.js') }}"></script>
 </body>
