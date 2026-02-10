@@ -205,11 +205,9 @@ function getWithMigration(key) {
 
   const localValue = localStorage.getItem(key);
   if (localValue !== null) {
-    console.log(`Variável com chave ${key} foi pega do localStorage`)
     sessionStorage.setItem(key, localValue);
     return localValue;
   }
-  console.log(`Variável com chave ${key} não encontrada`)
   return null;
 }
 
@@ -888,7 +886,6 @@ async function enviarResposta(pulando = false) {
     caixa_para_resposta.disabled = false;
   }
 }
-
 
 async function finalizarQuiz() {
   await registrarFeedback();
@@ -1625,7 +1622,7 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
     const textoCorretoOriginal = normalizarLeve(resposta, false);
     const textoCorretoLeve = normalizarLeve(resposta, false);
     const textoCorretoPesado = normalizarResposta(resposta, false);
-
+    
     /*
     console.log("Texto original da resposta do usuário: ", resposta_usuario);
     console.log("Texto original da resposta aceita: ", resposta);*/
@@ -1633,29 +1630,24 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
     // 1. Igualdade forte
     if (textoUsuarioOriginal === textoCorretoOriginal || textoUsuarioPesado === textoCorretoPesado) return true;
 
-    // 2. Comparação leve (prioritária)
-    const distLeve = distanciaDamerauLevenshtein(
-      textoUsuarioLeve,
-      textoCorretoLeve
-    );
+    // 2. Comparação entre textos originais
+    const distOriginal = distanciaDamerauLevenshtein(textoUsuarioOriginal, textoCorretoOriginal);
+    if (aceitaPorDistancia(distOriginal, lenOriginal, textoCorretoOriginal)) return true;
 
+    // 3. Comparação entre textos com modificações leves
+    const distLeve = distanciaDamerauLevenshtein(textoUsuarioLeve, textoCorretoLeve);
     /*
     console.log("Texto leve do usuário: ", textoUsuarioLeve);
     console.log("Texto leve da resposta: ", textoCorretoLeve);
     console.log("Distância leve: ", distLeve);*/
-    
-    if (aceitaPorDistancia(distLeve, lenOriginal, textoCorretoPesado)) {
-      return true;
-    }
+    if (aceitaPorDistancia(distLeve, lenOriginal, textoCorretoPesado)) return true;
 
-    // 3. fallback pesado
+    // 4. Comparação entre textos com modificações pesadas
     const distPesado = distanciaDamerauLevenshtein(textoUsuarioPesado, textoCorretoPesado);
-
     /*
     console.log("Texto pesado do usuário: ", textoUsuarioPesado);
     console.log("Texto pesado da resposta: ", textoCorretoPesado);
     console.log("Distância pesada: ", distPesado);*/
-    
     return aceitaPorDistancia(distPesado, lenOriginal, textoCorretoPesado);
   });
 }

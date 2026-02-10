@@ -173,12 +173,6 @@
     nav button:hover {
       background: rgba(255, 255, 255, 0.12);
     }
-    .titulo {
-      font-size: 1.25rem;
-      font-weight: bold;
-      margin-bottom: 1rem;
-      color: white;
-    }
     main {
       visibility: hidden;
       flex: 1 1 auto;
@@ -375,10 +369,9 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      width: 100%;
-      row-gap: 0.6rem;
+      width: 98%;
       margin-top: 0.6rem;
-      margin-bottom: -1.2rem;
+      margin-bottom: 0.6rem;
     }
     .mensagens-jogo {
       display: block;
@@ -422,6 +415,11 @@
       font-weight: 700;
       font-size: 0.95rem;
       user-select: none;
+    }
+    #tipo-de-resposta {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: white;
     }
     .switch {
       position: relative;
@@ -592,8 +590,14 @@
       <span class="modo-teste-texto">Modo Teste</span>
     </div>
 
+    
+
     <!-- Bloco de escolha do tipo de pergunta -->
     <div class="opcoes-container">
+      <div class="tipo-de-resposta">
+        <div id="tipo-de-resposta">Tipo de resposta
+        </div>
+      </div>
       <div class="bloco-opcao">
         <div id="box-tipo-pergunta" class="opcoes">
           <label><input id="radio-objetiva" type="radio" name="tipo-de-pergunta" value="Objetiva" disabled> Alternativas</label>
@@ -663,10 +667,8 @@
     </div>
     
     <div class="mensagens-container">
-      <div id="instrucoes-jogo" class="mensagens-jogo">📖 Perguntas com alternativas testam análise e digitadas memorização
+      <div id="instrucoes-jogo" class="mensagens-jogo">📖 Perguntas com alternativas são mais numerosas e focadas em análise, enquanto as digitadas exigem memorização
       </div>
-      <div id="mensagem-doacao" class="mensagens-jogo">🤝 Considere apoiar este projeto com uma contribuição financeira
-      </div> ​
     </div>
   </main>
 
