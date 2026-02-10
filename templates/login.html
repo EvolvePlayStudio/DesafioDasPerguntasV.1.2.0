@@ -291,10 +291,10 @@
             </div>
 
             <!-- Campos para registro -->
-            <input type="text" id="nome-registro" name="nome" placeholder="Nome de usuário" maxlength="50" required>
+            <input type="text" id="nome-registro" name="nome" placeholder="Nome de usuário" maxlength="30" required>
             <input type="email" id="email-registro" name="email" placeholder="Email" maxlength="50" required>
-            <input type="password" id="senha-registro" name="senha" placeholder="Senha" maxlength="50" required>
-            <input type="password" id="confirmar-senha-registro" name="confirmar_senha" placeholder="Confirmar senha" maxlength="50" required>
+            <input type="password" id="senha-registro" name="senha" placeholder="Senha" maxlength="30" required>
+            <input type="password" id="confirmar-senha-registro" name="confirmar_senha" placeholder="Confirmar senha" maxlength="30" required>
 
             <!-- Opção de migração de dados do modo visitante -->
             <div id="container-migrar-dados-visitante" class="visitor-migration">
@@ -321,11 +321,26 @@
                         id="receber-notificacoes-email"
                         checked
                     >
-                    Receber notificações por e-mail
+                    Notificar energia cheia
                 </label>
 
                 <div class="visitor-migration-info">
-                    Avisaremos quando houver novas perguntas disponíveis para responder
+                    Seja avisado quando houver perguntas novas disponíveis
+                </div>
+            </div>
+
+            <div id="container-notificacoes-email" class="visitor-migration" style="display: none;">
+                <label class="visitor-migration-label">
+                    <input 
+                        type="checkbox" 
+                        name="receber-outras-notificacoes" 
+                        id="receber-outras-notificacoes"
+                    >
+                    Outras notificações
+                </label>
+
+                <div class="visitor-migration-info">
+                    Avisos ligados a temas de interesse, alterações nas pontuações, etc
                 </div>
             </div>
 
