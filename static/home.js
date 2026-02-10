@@ -431,11 +431,6 @@ function exibirModalEscolhaTipoPergunta() {
             <td class="centro">❌</td>
             <td class="centro">✅</td>
           </tr>
-          <tr>
-            <td>Foco</td>
-            <td class="centro">Interpretação</td>
-            <td class="centro">Memorização</td>
-          </tr>
         </tbody>
       </table>
 

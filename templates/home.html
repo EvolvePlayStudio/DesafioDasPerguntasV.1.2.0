@@ -206,10 +206,6 @@
       color: white;
       font-weight: bold;
     }
-    .bloco-opcao h2 {
-      margin-top: 0.9rem;
-      margin-bottom: 0.7rem;
-    }
     .bloco-opcao .opcoes {
       display: flex;
       gap: 1.5rem;
@@ -261,10 +257,6 @@
       padding: 0.3rem 0;
       background-color: var(--cor-fundo-claro);
       font-size: 16px;
-    }
-    .footer {
-      flex-shrink: 0;
-      width: 100%;
     }
     .modal-overlay {
       position: fixed;
@@ -379,21 +371,28 @@
     .hidden {
       display: none;
     }
-    .instrucoes-jogo {
+    .mensagens-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      row-gap: 0.6rem;
+      margin-top: 0.6rem;
+      margin-bottom: -1.2rem;
+    }
+    .mensagens-jogo {
+      display: block;
+      color: #ddd;
+      text-align: left;
+      width: fit-content;
+      line-height: 1.4;
       font-size: 0.9rem;
-      max-width: 60%;
-      color: white;
-      margin-top: -0.7rem;
-      margin-bottom: 0.9rem;
     }
     #mensagem {
       margin-top: 0.2rem;
-      margin-bottom: -1.3rem;
+      margin-bottom: 0.2rem;
     }
     @media (max-width: 1000px) {
-      .instrucoes-jogo {
-        max-width: 98%;
-      }
       .header-desktop {
         display: none;
       }
@@ -416,7 +415,9 @@
       display: none;
       align-items: center;
       gap: 0.6rem;
-      margin: 0.4rem 2rem 0.2rem;
+      margin-top: 1.4rem;
+      margin-left: 1rem;
+      margin-bottom: -2.8rem;
       color: white;
       font-weight: 700;
       font-size: 0.95rem;
@@ -457,6 +458,10 @@
     }
     .switch input:checked + .slider::before {
       transform: translateX(20px);
+    }
+    .footer {
+      flex-shrink: 0;
+      width: 100%;
     }
   </style>
 
@@ -578,7 +583,16 @@
   </header>
 
   <main>
-    <!-- Bloco de informações e instruções -->
+    <!-- Modo Testando Perguntas -->
+    <div id="modo-teste-wrapper" class="modo-teste-wrapper">
+      <label class="switch">
+        <input type="checkbox" id="modo-teste-toggle">
+        <span class="slider"></span>
+      </label>
+      <span class="modo-teste-texto">Modo Teste</span>
+    </div>
+
+    <!-- Bloco de escolha do tipo de pergunta -->
     <div class="opcoes-container">
       <div class="bloco-opcao">
         <div id="box-tipo-pergunta" class="opcoes">
@@ -590,15 +604,6 @@
 
     <!-- Mensagem na tela -->
     <div id="mensagem" class="mensagem" style="cursor: default;"> Mensagem
-    </div>
-
-    <!-- Modo Testando Perguntas -->
-    <div id="modo-teste-wrapper" class="modo-teste-wrapper">
-      <label class="switch">
-        <input type="checkbox" id="modo-teste-toggle">
-        <span class="slider"></span>
-      </label>
-      <span class="modo-teste-texto">Modo Teste</span>
     </div>
 
     <!-- Scroll com os cards de temas -->
@@ -656,10 +661,12 @@
         
       </div>
     </div>
-
-    <div class="opcoes-container" style="flex-direction: column; gap: 1rem; align-items: center;">
-      <div id="instrucoes-jogo" class="instrucoes-jogo">📖 Perguntas com alternativas testam sua capacidade de análise, enquanto as digitadas são ideais para focar na memorização e fixação do conteúdo. Se travar em uma questão digitada, use uma dica ou pule para a próxima.
-      </div> <!-- O ideal seria usar max-lines = 2 -->
+    
+    <div class="mensagens-container">
+      <div id="instrucoes-jogo" class="mensagens-jogo">📖 Perguntas com alternativas testam análise e digitadas memorização
+      </div>
+      <div id="mensagem-doacao" class="mensagens-jogo">🤝 Considere apoiar este projeto com uma contribuição financeira
+      </div> ​
     </div>
   </main>
 
