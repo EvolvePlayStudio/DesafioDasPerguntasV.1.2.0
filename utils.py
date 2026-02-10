@@ -39,7 +39,8 @@ QUESTION_CONFIG = {
             "COALESCE(f.comentario, NULL) AS comentario",
             "r.id_resposta IS NOT NULL AS respondida",
             "p.dificuldade",
-            "p.versao"
+            "p.versao",
+            "p.disponivel_visitantes"
         ],
         'select_cols_visitante': [
             'p.id_pergunta',
@@ -51,7 +52,8 @@ QUESTION_CONFIG = {
             "COALESCE(f.estrelas, NULL) AS estrelas",
             "COALESCE(f.comentario, NULL) AS comentario",
             "p.dificuldade",
-            "p.versao"
+            "p.versao",
+            "p.disponivel_visitantes"
         ],
         'tipo_str': 'Discursiva'
     },
@@ -71,7 +73,8 @@ QUESTION_CONFIG = {
             "COALESCE(f.comentario, NULL) AS comentario",
             "r.id_resposta IS NOT NULL AS respondida",
             "p.dificuldade",
-            "p.versao"
+            "p.versao",
+            "p.disponivel_visitantes"
         ],
         'select_cols_visitante': [
             'p.id_pergunta',
@@ -86,7 +89,8 @@ QUESTION_CONFIG = {
             "COALESCE(f.estrelas, NULL) AS estrelas",
             "COALESCE(f.comentario, NULL) AS comentario",
             "p.dificuldade",
-            "p.versao"
+            "p.versao",
+            "p.disponivel_visitantes"
         ],
         'tipo_str': 'Objetiva'
     }

@@ -1018,34 +1018,24 @@ def listar_perguntas(user_id):
         is_privileged = False if modo_visitante else int(id_usuario) in privileged_ids
         modo_teste = session.get("modo_teste", False)
         if modo_visitante:
-            where_status = "p.status IN ('Ativa', 'Em teste')"
+            where_filter = "p.status IN ('Ativa', 'Em teste') AND p.disponivel_visitantes = TRUE"
         elif not modo_teste:
-            where_status = "p.status = 'Ativa'"
+            where_filter = "p.status = 'Ativa'"
         else:
-            where_status = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
+            where_filter = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
 
         if modo_visitante:
-            caminho_json = (
-                "c.ids_perguntas -> 'visitantes' -> 'discursivas'"
-                if tipo_pergunta == "discursiva"
-                else "c.ids_perguntas -> 'visitantes' -> 'objetivas'"
-            )
 
             sql = f"""
                 SELECT {select_cols_visitante}
                 FROM {table} p
-                JOIN configuracoes_tema c
-                ON c.tema = p.tema
                 LEFT JOIN feedbacks f
                 ON p.id_pergunta = f.id_pergunta
                 AND f.id_visitante = %s
                 AND f.tipo_pergunta = %s
                 AND p.versao = f.versao_pergunta
                 WHERE p.tema = %s
-                AND ({where_status})
-                AND p.id_pergunta = ANY (
-                    SELECT jsonb_array_elements_text({caminho_json})::int
-                )
+                AND ({where_filter})
                 LIMIT %s
             """
             params = (id_visitante, tipo_str, tema, limit)
@@ -1057,7 +1047,7 @@ def listar_perguntas(user_id):
                     ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s AND r.tipo_pergunta = %s
                 LEFT JOIN feedbacks f
                     ON p.id_pergunta = f.id_pergunta AND f.id_usuario = %s AND f.tipo_pergunta = %s AND p.versao = f.versao_pergunta
-                WHERE p.tema = %s AND {where_status}
+                WHERE p.tema = %s AND {where_filter}
                 LIMIT %s
             """
             params = (id_usuario, tipo_str, id_usuario, tipo_str, tema, limit)

@@ -25,7 +25,7 @@ async function registrarModoTeste() {
 }
 
 if (!MODO_VISITANTE) {
-  const idsReservadosTeste = [4, 16];
+  const idsReservadosTeste = [6, 16];
   if (!idUsuario) {
     localStorage.setItem("auth_message", "Sessão expirada");
     window.location.href = "/login";
@@ -81,6 +81,12 @@ if (MODO_VISITANTE) {
     });
 
   })
+
+  /*
+  localStorage.removeItem("pontuacoes_visitante");
+  localStorage.removeItem("perguntas_restantes_visitante");
+  localStorage.removeItem("dicas_restantes_visitante");
+  localStorage.removeItem("visitante_respondidas");*/
  
   // Gera ID de visitante para o usuário caso não tenha
   let idVisitante = localStorage.getItem("id_visitante");
@@ -94,7 +100,7 @@ if (MODO_VISITANTE) {
     localStorage.setItem("perguntas_restantes_visitante", 60);
     localStorage.setItem("dicas_restantes_visitante", 20);
   }
-  
+
   // Cria pontuações de usuário como visitante
   sincronizarPontuacoesVisitante(pontuacaoTemaPadraoVisitantes);
 
