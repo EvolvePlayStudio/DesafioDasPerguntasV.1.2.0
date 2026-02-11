@@ -653,7 +653,12 @@ async function enviarResposta(pulando = false) {
         gtag('event', 'conversion', {
           'send_to': 'AW-17529321916/JTBvCKKkoeEbELzz0KZB'
         });
-      }
+      };
+      if (totalRespondidas >= 15) {
+        gtag('event', 'conversion', {
+          'send_to': 'AW-17529321916/Ydq3CL_hhfcbELzz0KZB'
+        });
+      };
     }
 
     // Registra o envio da resposta no SQL

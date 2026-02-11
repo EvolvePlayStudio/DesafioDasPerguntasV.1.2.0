@@ -30,7 +30,6 @@ app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 
 SITE_EM_MANUTENCAO = False
-TESTANDO_VISITANTE = False
 id_visitante_admin = "1815ce63-ac09-4951-a76c-e7847b3b2e67"
 
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
@@ -1961,10 +1960,7 @@ def registrar_resposta_usuario(user_id):
 
 @app.route("/registrar-resposta-visitante", methods=["POST"])
 def registrar_resposta_visitante():
-    if TESTANDO_VISITANTE or session["id_visitante"] == id_visitante_admin:
-        return jsonify({"status": "ok"}), 200
     dados = request.get_json()
-
     id_visitante = session["id_visitante"]
 
     conn = cur = None
