@@ -7,7 +7,7 @@ def atualizar_perguntas_dicas():
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             # Valores fixos definidos
-            incremento_perguntas = 15
+            incremento_perguntas = 20
             limite_maximo_perguntas = 80
 
             query = f"""
