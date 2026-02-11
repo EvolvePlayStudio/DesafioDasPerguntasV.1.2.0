@@ -1009,12 +1009,13 @@ def listar_perguntas(user_id):
         return jsonify({'erro': 'Erro ao tentar conectar para buscar novas perguntas'}), 500
 
     # Busca das perguntas
+    ids_prioritarios = []
     try:
         select_clause = ",\n".join(cfg['select_cols'])
         select_cols_visitante = ",\n".join(cfg['select_cols_visitante'])
         tipo_str = cfg['tipo_str']   # Usado para filtrar feedbacks/respostas
         table = cfg['table']         # Nome da tabela — vindo do cfg interno (seguro)
-
+    
         is_privileged = False if modo_visitante else int(id_usuario) in privileged_ids
         modo_teste = session.get("modo_teste", False)
         if modo_visitante:
@@ -1053,10 +1054,10 @@ def listar_perguntas(user_id):
             params = (id_usuario, tipo_str, id_usuario, tipo_str, tema, limit)
 
         cur.execute(sql, params)
-        linhas = cur.fetchall()
+        perguntas = cur.fetchall()
 
         perguntas_por_dificuldade = {'Fácil': [], 'Médio': [], 'Difícil': [], 'Extremo': []}
-        for row in linhas:
+        for row in perguntas:
             respondida = False if modo_visitante else bool(row.get('respondida'))
             dificuldade = row.get('dificuldade') or 'Médio'
             if tipo_pergunta == 'discursiva':
@@ -1108,6 +1109,8 @@ def listar_perguntas(user_id):
             if modo_visitante:
                 perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
             elif modo == 'desafio' and not respondida:
+                if row.get('prioridade_usuarios') is True:
+                    ids_prioritarios.append(row.get('id_pergunta'))
                 perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
             elif modo == 'revisao' and respondida:
                 perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
@@ -1124,7 +1127,8 @@ def listar_perguntas(user_id):
 
     return jsonify({
         'perguntas': perguntas_por_dificuldade,
-        'pontuacoes_usuario': pontuacoes_usuario
+        'pontuacoes_usuario': pontuacoes_usuario,
+        'ids_prioritarios': ids_prioritarios
     })
 
 @app.route("/api/subtemas")

@@ -133,38 +133,7 @@ const VELOCIDADE_LETRA_ALTERNATIVAS = 16; // quanto menor, mais rápido
 if (tipo_pergunta === "objetiva" || !MODO_VISITANTE && !exibir_instrucoes_quiz) hint_avaliacao.style.marginTop = "0.8rem"; // ajuste no hint de avaliação caso os outros não estejam presentes (o de dica e o de pular pergunta)
 
 // Ids de perguntas que são selecionados primeiro
-/*
-const ids_objetivas_prioridade = {
-  'Artes':      [163, 167, 172, 336, 338, 353],
-  'Astronomia': [6, 11, 12, 479, 492, 500],
-  'Biologia':   [18, 22, 29, 361, 365, 371, 580, 581, 585],
-  'Esportes':   [55, 63, 65, 66, 75, 462, 467, 471],
-  'Filosofia':  [132, 142, 146, 149, 150, 302, 305],
-  'Física': [],
-  'Geografia':  [80, 82, 84, 86, 90, 93, 206, 318],
-  'História':   [35, 41, 42, 118, 127, 209, 262],
-  'Mídia':      [99, 106, 381, 385, 391, 604],
-  'Música':     [222, 226, 229, 231, 238, 424, 439],
-  'Química':    [184, 188, 189, 202, 538],
-  'Tecnologia': [243, 245, 246, 251, 273, 411, 415],
-  'Variedades': [136, 192, 270, 451, 453, 621, 627]
-}
-
-const ids_discursivas_prioridade = {
-  'Artes': [251, 261, 269, 270, 524, 612],
-  'Astronomia': [96, 97, 103, 104, 108, 111, 531, 539],
-  'Biologia': [8, 10, 43, 48, 50, 52, 55, 438, 620],
-  'Esportes': [11, 12, 14, 79, 80, 82, 83, 513, 523],
-  'Filosofia': [227, 237, 246, 408, 410, 554, 557, 558],
-  'Física': [],
-  'Geografia': [134, 157, 158, 163, 169, 174],
-  'História': [29, 30, 35, 59, 128, 129, 275],
-  'Mídia': [184, 209, 451, 635, 637, 641, 642, 650],
-  'Música': [313, 317, 327, 479, 500],
-  'Química': [291, 301, 303, 308, 577, 582],
-  'Tecnologia': [152, 342, 345, 351, 352, 358, 392, 462, 470],
-  'Variedades': [24, 25, 27, 67, 107, 120, 221, 376, 392, 658, 659, 662]
-}*/
+let idsPrioritarios = JSON.parse(sessionStorage.getItem('ids_prioritarios') ?? "[]").map(Number);
 
 const ids_objetivas_prioridade = {
   'Artes':      [],
@@ -899,29 +868,25 @@ async function finalizarQuiz() {
   }
 }
 
+// Remove dos ids prioritários perguntas que não estão na lista de perguntas
 function limparIdsPrioritariosInvalidos() {
   // 1. IDs válidos (todas as dificuldades)
   const idsValidos = new Set();
 
-  for (const nivel of ["Fácil", "Médio", "Difícil"]) {
+  for (const nivel of dificuldadesOrdenadas) {
     for (const p of perguntas_por_dificuldade[nivel] || []) {
       idsValidos.add(p.id_pergunta);
-    }
-  }
-
-  // 2. Escolhe o objeto certo (objetiva / discursiva)
-  const objPrioridades = tipo_pergunta === "objetiva" ? ids_objetivas_prioridade: ids_discursivas_prioridade;
-
-  const lista = objPrioridades[tema_atual];
-
+    };
+  };
+  
   // 3. Limpa IDs inválidos
-  objPrioridades[tema_atual] = lista.filter(id => idsValidos.has(id));
+  idsPrioritarios = idsPrioritarios.filter(id => idsValidos.has(id));
 
   // 4. Embaralha (Fisher–Yates)
-  for (let i = lista.length - 1; i > 0; i--) {
+  for (let i = idsPrioritarios.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [lista[i], lista[j]] = [lista[j], lista[i]];
-  }
+    [idsPrioritarios[i], idsPrioritarios[j]] = [idsPrioritarios[j], idsPrioritarios[i]];
+  };
 }
 
 async function mostrarAlternativas() {
@@ -1095,7 +1060,9 @@ async function mostrarPergunta() {
 
     // 🔥 1. FORÇAGEM PELA DIFICULDADE COM MAIOR ESTOQUE
     if (respostasDesdeUltimaForcagem === 5) {
-      console.log("Pegando a dificuldade com maior estoque...")
+      if (idsReservados.includes(idUsuario)) {
+        console.log("Pegando a dificuldade com maior estoque...")
+      }
       const ordenadas = [...disponiveis].sort(
         (a, b) => estoque[b] - estoque[a]
       );
@@ -1210,16 +1177,17 @@ async function mostrarPergunta() {
       return -1;
     }
     
-    let idsPrioridadeTema =
+    /*
+    let idsPrioritarios =
       tipo_pergunta === "objetiva"
         ? ids_objetivas_prioridade[tema_atual]
-        : ids_discursivas_prioridade[tema_atual];
+        : ids_discursivas_prioridade[tema_atual];*/
 
     // ===============================
     // 1. Seleciona um id dos prioritários
     // ===============================
-    for (let i = 0; i < idsPrioridadeTema.length; i++) {
-      const idPrioritario = idsPrioridadeTema[i];
+    for (let i = 0; i < idsPrioritarios.length; i++) {
+      const idPrioritario = idsPrioritarios[i];
 
       const indicePergunta = perguntasDisponiveis.findIndex(
         p => p.id_pergunta === idPrioritario
@@ -1227,7 +1195,7 @@ async function mostrarPergunta() {
       
       // Caso encontre um id de pergunta prioritária na lista de perguntas da dificuldade escolhida
       if (indicePergunta !== -1) {
-        idsPrioridadeTema.splice(i, 1);
+        idsPrioritarios.splice(i, 1);
         pergunta_selecionada = perguntasDisponiveis[indicePergunta];
         return indicePergunta;
       }

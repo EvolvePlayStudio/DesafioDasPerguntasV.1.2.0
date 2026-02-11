@@ -245,6 +245,9 @@ async function iniciarQuiz(event) {
       if (response.ok) {
         const data = await response.json();
 
+        // Ids de perguntas que devem ser respondidas primeiro pelos usuários
+        sessionStorage.setItem("ids_prioritarios", JSON.stringify(data["ids_prioritarios"] ?? []));
+
         // Atualiza as pontuações do usuário no tema e as perguntas no sessionStorage
         sessionStorage.setItem("pontuacoes_usuario", JSON.stringify(data["pontuacoes_usuario"]));
         sessionStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));

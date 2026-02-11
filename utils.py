@@ -40,7 +40,8 @@ QUESTION_CONFIG = {
             "r.id_resposta IS NOT NULL AS respondida",
             "p.dificuldade",
             "p.versao",
-            "p.disponivel_visitantes"
+            "p.disponivel_visitantes",
+            "p.prioridade_usuarios"
         ],
         'select_cols_visitante': [
             'p.id_pergunta',
@@ -74,7 +75,8 @@ QUESTION_CONFIG = {
             "r.id_resposta IS NOT NULL AS respondida",
             "p.dificuldade",
             "p.versao",
-            "p.disponivel_visitantes"
+            "p.disponivel_visitantes",
+            "p.prioridade_usuarios"
         ],
         'select_cols_visitante': [
             'p.id_pergunta',
