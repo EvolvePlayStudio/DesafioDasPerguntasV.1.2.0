@@ -461,32 +461,6 @@
     width: 100%;
     max-width: 38rem;
   }
-
-
-
-  /* Configuração das laterais fixas */
-  .ad-sidebar {
-      position: fixed;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 160px;
-      height: 600px;
-      z-index: 10;
-      display: block; /* Visível por padrão no desktop */
-  }
-  .ad-left {
-      left: 20px;
-  }
-  .ad-right {
-      right: 20px;
-  }
-  /* ESCONDER ANÚNCIOS EM TELAS MENORES */
-  @media (max-width: 1200px) {
-    .ad-sidebar {
-        display: none !important;
-    }
-  }
-
   /* Responsivo */
   @media (max-width: 1000px) {
     .status-wrapper-mobile {
@@ -526,16 +500,19 @@
   </style>
 </head>
 
+
+
+
+
+
+
+
+
+
   <body style="margin: 0; font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1E1E14, #1E1E14);">
 
-    <!-- Boxes dos anúncios -->
-    <div class="ad-sidebar ad-left">
-    </div>
-
-    <div class="ad-sidebar ad-right">
-    </div>
-
     <div style="display: flex; flex-direction: column; align-items: center; padding: 2rem 0;">
+
       <!-- Pontuação e ranking do jogador em mobile -->
       <div class="status-wrapper-mobile">
         <header class="pontuacoes-mobile">Pontuação: 
