@@ -95,6 +95,10 @@ def ads_txt():
     conteudo = "google.com, pub-9650050810390735, DIRECT, f08c47fec0942fa0"
     return conteudo, 200, {'Content-Type': 'text/plain'}
 
+@app.route('/sw.js')
+def serve_monetag_js():
+    return send_from_directory('static', 'sw.js', mimetype='application/javascript')
+
 @app.route("/alterar-email", methods=["POST"])
 def alterar_email_route():
     conn = cur = None
