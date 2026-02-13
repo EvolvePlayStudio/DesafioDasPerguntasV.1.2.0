@@ -135,38 +135,6 @@ if (tipo_pergunta === "objetiva" || !MODO_VISITANTE && !exibir_instrucoes_quiz) 
 // Ids de perguntas que são selecionados primeiro
 let idsPrioritarios = JSON.parse(sessionStorage.getItem('ids_prioritarios') ?? "[]").map(Number);
 
-const ids_objetivas_prioridade = {
-  'Artes':      [],
-  'Astronomia': [],
-  'Biologia':   [],
-  'Esportes':   [],
-  'Filosofia':  [],
-  'Física':     [],
-  'Geografia':  [],
-  'História':   [],
-  'Mídia':      [],
-  'Música':     [],
-  'Química':    [],
-  'Tecnologia': [],
-  'Variedades': []
-}
-
-const ids_discursivas_prioridade = {
-  'Artes': [],
-  'Astronomia': [],
-  'Biologia': [],
-  'Esportes': [],
-  'Filosofia': [],
-  'Física': [],
-  'Geografia': [],
-  'História': [],
-  'Mídia': [],
-  'Música': [],
-  'Química': [],
-  'Tecnologia': [],
-  'Variedades': []
-}
-
 function getWithMigration(key) {
   // Pega dado do sessionStorage, se não encontrar pega do localStorage
   const sessionValue = sessionStorage.getItem(key);
@@ -378,7 +346,7 @@ function calcularPontuacao(acertou) {
           pontos_ganhos = regras_jogador.pontos_pular_pergunta;
         }
         else {
-          pontos_ganhos = regras_jogador.pontos_erro
+          pontos_ganhos = regras_jogador.pontos_erro_discursiva ?? -80;
         }
       }
       else {

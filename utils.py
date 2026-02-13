@@ -1,6 +1,6 @@
 import os
 from datetime import timezone, timedelta
-import pytz
+from zoneinfo import ZoneInfo
 
 # Só carrega o .env se estiver rodando localmente
 if os.environ.get("FLASK_ENV") != "production":
@@ -14,7 +14,7 @@ base_url = os.getenv("APP_BASE_URL")
 
 temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"]
 
-tz_sp = pytz.timezone("America/Sao_Paulo")
+tz_sp = ZoneInfo("America/Sao_Paulo")
 email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 dominios_permitidos = {
     "gmail.com", "outlook.com", "hotmail.com", "yahoo.com",
@@ -24,7 +24,7 @@ dominios_descartaveis = {
     "mailinator.com", "10minutemail.com", "guerrillamail.com", "tempmail.com"
 }
 CAPTCHA_BASE_DIR = "static/captcha_imgs"
-FUSO_SERVIDOR = timezone(timedelta(hours=-3)) # Depois ver se não dá para tirar este variável
+FUSO_SERVIDOR = timezone(timedelta(hours=-3)) # Depois ver se não dá para tirar esta variável
 QUESTION_CONFIG = {
     'discursiva': {
         'table': 'perguntas_discursivas',

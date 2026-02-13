@@ -1733,10 +1733,8 @@ def registrar():
     token = gerar_token_confirmacao()
 
     # Agora atual (truncado para segundos)
-    agora_sp = datetime.now(tz_sp).replace(microsecond=0)
-
-    # Exemplo: expiração em 24 horas (obs: horário de São Paulo é 3 horas atrasado em relação ao horário padrão do sistema, por isso o número 21 passado no timedelta)
-    expiracao = agora_sp + timedelta(hours=21)
+    agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
+    expiracao = agora_sp + timedelta(hours=24)
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -1778,7 +1776,7 @@ def registrar():
             if usar_dados_visitante:
                 cur.execute("""
                     SELECT DISTINCT ON (id_pergunta, tipo_pergunta)
-                        id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, auto_chute
+                        id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, auto_chute, dificuldade
                     FROM acesso_modo_visitante
                     WHERE id_visitante = %s AND criado_em >= NOW() - INTERVAL '1 month'
                     ORDER BY id_pergunta, tipo_pergunta, criado_em ASC
@@ -1787,15 +1785,15 @@ def registrar():
                 respostas = cur.fetchall()
 
                 # Obs: A data da resposta registrada é a data em que ocorreu a migração dos dados
-                for id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, auto_chute in respostas:
+                for id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, auto_chute, dificuldade in respostas:
                     tipo_pergunta = tipo_pergunta.capitalize()
                     cur.execute("""
                         INSERT INTO respostas_usuarios (
-                            id_usuario, id_pergunta, tipo_pergunta, tema, resposta_usuario, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, data_resposta, dados_migrados, auto_chute
+                            id_usuario, id_pergunta, tipo_pergunta, tema, resposta_usuario, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, data_resposta, dados_migrados, auto_chute, dificuldade
                         )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON CONFLICT (id_usuario, id_pergunta, tipo_pergunta) DO NOTHING
-                    """, (id_usuario, id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, agora_sp, True, auto_chute))
+                    """, (id_usuario, id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, agora_sp, True, auto_chute, dificuldade))
 
                 app.logger.info(f"{len(respostas)} respostas migradas do visitante {id_visitante}")
 

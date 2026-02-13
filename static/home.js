@@ -504,17 +504,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   })
   
   // Carrega as regras de pontuações do jogo
+  let data;
   try {
     const response = await fetch("/api/regras_pontuacao");
-    const data = await response.json();
+    data = await response.json();
 
     if (data.success) {
       sessionStorage.setItem("regras_pontuacao", JSON.stringify(data.regras_pontuacao));
-    }
+    };
   }
   catch(e) {
     console.error("Erro ao carregar regras de pontuação", e);
-  }
+  };
 
   // Implementa a função de clique no botão de perfil
   if (btn_perfil) {
