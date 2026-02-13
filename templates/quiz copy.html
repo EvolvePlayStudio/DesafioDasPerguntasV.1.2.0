@@ -461,6 +461,74 @@
     width: 100%;
     max-width: 38rem;
   }
+
+
+  /* Estilo das Laterais */
+  .ad-sidebar {
+    position: relative;
+    top: 13vh;         /* Posiciona a 13% da altura da tela */
+    width: 180px;      /* Largura do banner */
+    z-index: 100;
+    display: block;
+  }
+
+  .ad-left { left: 20px; }
+  .ad-right { right: 20px; }
+
+  /* O Card do Produto */
+  .amazon-card {
+    background: white; 
+    padding: 1rem 1rem; 
+    border-radius: 12px; 
+    text-align: center; 
+    border: 1px solid #ddd; 
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      
+    /* Ajuste de Altura */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Distribui o conteúdo no espaço */
+    min-height: 70vh;              /* Define uma altura mínima maior */
+    height: 65vh;                   /* Tenta ocupar 65% da altura da tela */
+      
+    transition: transform 0.3s ease;
+  }
+
+  .amazon-card img {
+    width: 100%;
+    height: auto;
+    max-height: 250px; /* Aumentei o limite da imagem */
+    object-fit: contain;
+    margin-bottom: 15px;
+  }
+
+  .amazon-card p {
+    font-size: 15px; 
+    font-weight: bold; 
+    color: #333; 
+    margin: 10px 0; 
+    line-height: 1.4;
+    /* Removemos o min-height aqui pois o flex-between já resolve */
+  }
+
+  .amazon-btn {
+      background: #FFD814; 
+      border: 1px solid #FCD200; 
+      border-radius: 20px; 
+      padding: 12px 0; 
+      cursor: pointer; 
+      font-weight: bold;
+      width: 100%; 
+      color: black;
+      font-size: 14px;
+      margin-top: auto; /* Empurra o botão sempre para o fim do card */
+  }
+  .amazon-btn:hover { background: #f7ca00; }
+
+  @media (max-width: 1250px) {
+    .ad-sidebar { display: none !important; }
+  }
+
   /* Responsivo */
   @media (max-width: 1000px) {
     .status-wrapper-mobile {
@@ -498,21 +566,52 @@
     }
   }
   </style>
+
+  <script>
+  const produtosAmazon = {
+    'História': [
+      {
+        nome: 'Historiografia brasileira:: uma breve história da história no Brasil',
+        link: 'https://amzn.to/4633fPg',
+        imagem: 'https://m.media-amazon.com/images/I/71qVk4OcBjL._SY425_.jpg'
+      },
+    ]
+  };
+</script>
+
 </head>
-
-
-
-
-
-
-
-
-
 
   <body style="margin: 0; font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1E1E14, #1E1E14);">
 
-    <div style="display: flex; flex-direction: column; align-items: center; padding: 2rem 0;">
+    <!-- Boxes dos anúncios -->
+      <div class="ad-sidebar ad-left" id="banner-lateral-esquerda">
+      <a href="https://amzn.to/4csea8W" target="_blank" style="text-decoration: none;">
+        <div class="amazon-card">
+            <img src="https://m.media-amazon.com/images/I/71qVk4OcBjL._SY425_.jpg" alt="Livro História">
+            <p>Confira este livro sobre a História do Brasil</p>
+            <div class="amazon-btn">Ver na Amazon</div>
+        </div>
+      </a>
+    </div>
 
+    <div class="ad-sidebar ad-right" id="banner-lateral-direita">
+      <a href="https://amzn.to/3vI8J4G" target="_blank" style="text-decoration: none;">
+        <div class="amazon-card">
+            <img src="https://m.media-amazon.com/images/I/61S9A676QfL._AC_SL1000_.jpg" alt="Kindle">
+            <p>Kindle 11ª Geração: Milhares de livros na mão</p>
+            <div class="amazon-btn">Ver na Amazon</div>
+        </div>
+      </a>
+    </div>
+
+
+
+
+    
+
+
+
+    <div style="display: flex; flex-direction: column; align-items: center; padding: 2rem 0;">
       <!-- Pontuação e ranking do jogador em mobile -->
       <div class="status-wrapper-mobile">
         <header class="pontuacoes-mobile">Pontuação: 

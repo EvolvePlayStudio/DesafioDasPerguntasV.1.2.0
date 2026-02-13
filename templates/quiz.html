@@ -182,6 +182,84 @@
   #pontuacao.hide-inc::after, #pontuacao-mobile.hide-inc::after {
     opacity: 0;
   }
+
+
+
+  /* Container que organiza os 3 elementos em colunas */
+  .quiz-grid-layout {
+    display: grid;
+    grid-template-columns: 180px 1fr 180px; 
+    gap: 25px;
+    width: 100%;
+    max-width: 1200px; /* Limita a largura total para não espalhar demais */
+    margin: 0 auto;    /* Centraliza o grid na tela */
+    align-items: start; /* Alinha os anúncios pelo topo do grid */
+    justify-items: center;
+  }
+
+  /* Ajuste das Sidebars para o fluxo do Grid */
+  .ad-sidebar {
+    position: relative;
+    display: block;
+    width: 195px;
+    z-index: 100;
+  }
+
+  /* O Card do Produto com altura robusta */
+  .amazon-card {
+    background: white; 
+    padding: 1rem;
+    border-radius: 12px; 
+    text-align: center; 
+    border: 1px solid #ddd; 
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Distribui o conteúdo no espaço */
+    min-height: 70vh;              /* Define uma altura mínima maior */
+    height: 65vh;
+    transition: transform 0.3s ease;
+  }
+
+  .amazon-card img {
+    width: 100%;
+    height: auto;
+    max-height: 250px; /* Aumentei o limite da imagem */
+    object-fit: contain;
+    margin-bottom: 15px;
+  }
+  .amazon-card p {
+    font-size: 15px; 
+    font-weight: bold; 
+    color: #333; 
+    margin: 10px 0; 
+    line-height: 1.4;
+  }
+
+  .amazon-btn {
+      background: #FFD814; 
+      border: 1px solid #FCD200; 
+      border-radius: 20px; 
+      padding: 12px 0; 
+      cursor: pointer; 
+      font-weight: bold;
+      width: 100%; 
+      color: black;
+      font-size: 14px;
+      margin-top: auto; /* Empurra o botão sempre para o fim do card */
+  }
+  .amazon-btn:hover { background: #f7ca00; }
+
+  /* Responsividade: Esconde anúncios se a tela for pequena demais para os 3 */
+  @media (max-width: 1150px) {
+    .quiz-grid-layout {
+      grid-template-columns: 1fr; /* Quiz ocupa tudo */
+    }
+    .ad-sidebar {
+      display: none !important;
+    }
+  }
+
   .quiz-container {
     background: var(--cor-fundo-claro);
     padding: 2rem;
@@ -462,31 +540,6 @@
     max-width: 38rem;
   }
 
-
-
-  /* Configuração das laterais fixas */
-  .ad-sidebar {
-      position: fixed;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 160px;
-      height: 600px;
-      z-index: 10;
-      display: block; /* Visível por padrão no desktop */
-  }
-  .ad-left {
-      left: 20px;
-  }
-  .ad-right {
-      right: 20px;
-  }
-  /* ESCONDER ANÚNCIOS EM TELAS MENORES */
-  @media (max-width: 1200px) {
-    .ad-sidebar {
-        display: none !important;
-    }
-  }
-
   /* Responsivo */
   @media (max-width: 1000px) {
     .status-wrapper-mobile {
@@ -524,17 +577,14 @@
     }
   }
   </style>
+
+  <script>
+    const AMAZON_TRACKING_ID = "{{ AMAZON_TRACKING_ID }}";
+  </script>
+
 </head>
 
   <body style="margin: 0; font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1E1E14, #1E1E14);">
-
-    <!-- Boxes dos anúncios -->
-    <div class="ad-sidebar ad-left">
-    </div>
-
-    <div class="ad-sidebar ad-right">
-    </div>
-
     <div style="display: flex; flex-direction: column; align-items: center; padding: 2rem 0;">
       <!-- Pontuação e ranking do jogador em mobile -->
       <div class="status-wrapper-mobile">
@@ -567,101 +617,137 @@
         <span id="proximo-ranking"></span>
       </div>
 
-      <!-- Layout contendo o enunciado, ícone de dica, etc -->
-      <div class="quiz-container">
-        <div class="quiz-header">
-          <!-- Ícone do raio (Perguntas restantes) à esquerda -->
-          <div id="perguntas-restantes-icon" class="dica-icon" title="Perguntas restantes" style="display: flex;">
-            <span>⚡</span>
-            <span id="perguntas-count">0</span>
+      <div class="quiz-grid-layout">
+
+        <!-- Anúncio do lado esquerdo -->
+          <div class="ad-sidebar" id="banner-lateral-esquerda" style="visibility: hidden; pointer-events: none;">
+              <a href="" target="_blank" style="text-decoration: none;">
+                  <div class="amazon-card">
+                      <img src="" alt="Livro">
+                      <p id="descricao-banner-esquerda"></p>
+                      <div class="amazon-btn">Ver na Amazon</div>
+                  </div>
+              </a>
           </div>
 
-          <!-- Tema e nível da pergunta no centro -->
-          <h2 id="tema-nivel-pergunta"></h2>
+        <!-- Layout contendo o enunciado, ícone de dica, etc -->
+        <div class="quiz-container">
+          <div class="quiz-header">
+            <!-- Ícone do raio (Perguntas restantes) à esquerda -->
+            <div id="perguntas-restantes-icon" class="dica-icon" title="Perguntas restantes" style="display: flex;">
+              <span>⚡</span>
+              <span id="perguntas-count">0</span>
+            </div>
 
-          <!-- Ícone de dica à direita -->
-          <div id="dica-icon" class="dica-icon" title="Usar dica">
-            <span>💡</span>
-            <span id="contador-dicas">0</span>
+            <!-- Tema e nível da pergunta no centro -->
+            <h2 id="tema-nivel-pergunta"></h2>
+
+            <!-- Ícone de dica à direita -->
+            <div id="dica-icon" class="dica-icon" title="Usar dica">
+              <span>💡</span>
+              <span id="contador-dicas">0</span>
+            </div>
+        </div>
+        <div id="quiz-box">
+          <!-- Enunciado da pergunta -->
+          <p id="pergunta-enunciado"></p>
+
+          <!-- Caixa para digitar a resposta (para discursivas) -->
+          <input type="text" id="resposta-input" style="display: none;" maxlength="50" placeholder="Digite sua resposta" autocomplete="off"/>
+
+          <!-- Container das alternativas (para objetivas) -->
+          <div id="alternativas-container" style="display: none; margin-top: 12px;">
+            <button class="alternativa-btn" data-letter="A" tabindex="-1"></button>
+            <button class="alternativa-btn" data-letter="B" tabindex="-1"></button>
+            <button class="alternativa-btn" data-letter="C" tabindex="-1"></button>
+            <button class="alternativa-btn" data-letter="D" tabindex="-1"></button>
           </div>
-      </div>
-      <div id="quiz-box">
-        <!-- Enunciado da pergunta -->
-        <p id="pergunta-enunciado"></p>
 
-        <!-- Caixa para digitar a resposta (para discursivas) -->
-        <input type="text" id="resposta-input" style="display: none;" maxlength="50" placeholder="Digite sua resposta" autocomplete="off"/>
+          <!-- Botões para enviar a resposta e pular perguntas (apenas nas discursivas) -->
+          <div id="botoes-envio" style="display: flex">
+            <button id="btn-enviar" class="btn-enviar" disabled>Enviar</button>
+            <button id="btn-pular" class="btn-pular">Pular</button>
+          </div>
 
-        <!-- Container das alternativas (para objetivas) -->
-        <div id="alternativas-container" style="display: none; margin-top: 12px;">
-          <button class="alternativa-btn" data-letter="A" tabindex="-1"></button>
-          <button class="alternativa-btn" data-letter="B" tabindex="-1"></button>
-          <button class="alternativa-btn" data-letter="C" tabindex="-1"></button>
-          <button class="alternativa-btn" data-letter="D" tabindex="-1"></button>
+          <!-- Botões de finalizar o quiz e chamar próxima pergunta -->
+          <div id="botoes-acao" style="display: none">
+            <button id="btn-proxima" class="btn-proxima">Próxima</button>
+            <button id="btn-finalizar" class="btn-finalizar">Finalizar</button>
+          </div>
+          
+          <!-- Resultado que indica se a resposta foi correta -->
+          <div id="resultado"></div>
+
+          <!-- Box das respostas aceitas -->
+          <div id="respostas-aceitas-box">
+            <strong>Respostas aceitas:</strong> <span id="lista-respostas"></span>
+          </div>
+
+          <!-- Botões de hints para instruir o usuário -->
+          <div id="hint-dica" style="display: none">
+            💡 Algumas perguntas oferecem dica ao clicar no ícone de lâmpada
+          </div>
+          <div id="hint-pular" style="display: none">
+            ⏭ Pressione "Pular" caso não saiba a resposta para reduzir a penalidade
+          </div>
+          <div id="hint-avaliacao" style="display: none">
+            ⭐ Apoie a melhoria do conteúdo avaliando a pergunta no final
+          </div>
+
+          <!-- Box da dica -->
+          <div id="dica-box">
+            <strong>Dica:</strong> <span id="dica-texto"></span>
+          </div>
+
+          <!-- Box da nota -->
+          <div id="nota-box">
+            <strong>Nota:</strong> <span id="nota-texto"></span>
+          </div>
+
+          <!-- Estrelas para avaliação -->
+          <div id="avaliacao">
+            <span class="estrela" data-valor="1">☆</span>
+            <span class="estrela" data-valor="2">☆</span>
+            <span class="estrela" data-valor="3">☆</span>
+            <span class="estrela" data-valor="4">☆</span>
+            <span class="estrela" data-valor="5">☆</span>
+          </div>
+
+          <!-- Caixa de texto para envio de comentário de feedback -->
+          <div id="box-comentario" class="box-comentario hidden">
+            <textarea
+              id="comentario-texto"
+              placeholder="Campo opcional para críticas, sugestões e avaliações"
+              maxlength="400"
+              disabled
+            ></textarea>
+          </div>
+
+        </div>
         </div>
 
-        <!-- Botões para enviar a resposta e pular perguntas (apenas nas discursivas) -->
-        <div id="botoes-envio" style="display: flex">
-          <button id="btn-enviar" class="btn-enviar" disabled>Enviar</button>
-          <button id="btn-pular" class="btn-pular">Pular</button>
+        <!-- Anúncio do lado direito -->
+        <div class="ad-sidebar" id="banner-lateral-direita" style="visibility: hidden; pointer-events: none;">
+            <a href="" target="_blank">
+                <div class="amazon-card">
+                    <img src="" alt="Livro">
+                    <p id="descricao-banner-direita"></p>
+                    <div class="amazon-btn">Ver na Amazon</div>
+                </div>
+            </a>
         </div>
 
-        <!-- Botões de finalizar o quiz e chamar próxima pergunta -->
-        <div id="botoes-acao" style="display: none">
-          <button id="btn-proxima" class="btn-proxima">Próxima</button>
-          <button id="btn-finalizar" class="btn-finalizar">Finalizar</button>
-        </div>
-        
-        <!-- Resultado que indica se a resposta foi correta -->
-        <div id="resultado"></div>
 
-        <!-- Box das respostas aceitas -->
-        <div id="respostas-aceitas-box">
-          <strong>Respostas aceitas:</strong> <span id="lista-respostas"></span>
-        </div>
-
-        <!-- Botões de hints para instruir o usuário -->
-        <div id="hint-dica" style="display: none">
-          💡 Algumas perguntas oferecem dica ao clicar no ícone de lâmpada
-        </div>
-        <div id="hint-pular" style="display: none">
-          ⏭ Pressione "Pular" caso não saiba a resposta para reduzir a penalidade
-        </div>
-        <div id="hint-avaliacao" style="display: none">
-          ⭐ Apoie a melhoria do conteúdo avaliando a pergunta no final
-        </div>
-
-        <!-- Box da dica -->
-        <div id="dica-box">
-          <strong>Dica:</strong> <span id="dica-texto"></span>
-        </div>
-
-        <!-- Box da nota -->
-        <div id="nota-box">
-          <strong>Nota:</strong> <span id="nota-texto"></span>
-        </div>
-
-        <!-- Estrelas para avaliação -->
-        <div id="avaliacao">
-          <span class="estrela" data-valor="1">☆</span>
-          <span class="estrela" data-valor="2">☆</span>
-          <span class="estrela" data-valor="3">☆</span>
-          <span class="estrela" data-valor="4">☆</span>
-          <span class="estrela" data-valor="5">☆</span>
-        </div>
-
-        <!-- Caixa de texto para envio de comentário de feedback -->
-        <div id="box-comentario" class="box-comentario hidden">
-          <textarea
-            id="comentario-texto"
-            placeholder="Campo opcional para críticas, sugestões e avaliações"
-            maxlength="400"
-            disabled
-          ></textarea>
-        </div>
-
-      </div>
     </div>
+
+
+
+
+
+
+
+
+
     <!-- Comentários dos usuários para a pergunta -->
     <div id="comentarios">
       <h3>Comentários (não disponíveis na versão atual):</h3>

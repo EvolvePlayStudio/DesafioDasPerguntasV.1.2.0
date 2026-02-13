@@ -1665,7 +1665,7 @@ def sobre_app_from_login():
 def quiz(user_id):
     tema = request.args.get("tema", "Geral")
     nivel = request.args.get("nivel", "Médio")
-    return render_template("quiz.html", tema=tema, nivel=nivel)
+    return render_template("quiz.html", tema=tema, nivel=nivel, AMAZON_TRACKING_ID=AMAZON_TRACKING_ID)
 
 @app.route("/usar_dica", methods=["GET","POST"])
 @token_required

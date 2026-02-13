@@ -16,7 +16,7 @@ export function detectarModoTela() {
 export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIGO=null) {
   // ATENÇÃO, APAGAR PARÂMETRO ACIMA QUE NÃO É UTILIZADO DEPOIS QUE REMOVER DE TODAS AS FUNÇÕES EM QUIZ.JS E HOME.JS
   const tema = sessionStorage.getItem("tema_atual");
-  const MODO_VISITANTE = sessionStorage.getItem("modoVisitante");
+  const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === 'true';
   const ranking = obterInfoRankingAtual(tema, MODO_VISITANTE).ranking;
 
   const qtdFacil = perguntas_por_dificuldade["Fácil"]?.length ?? 0;
@@ -30,7 +30,6 @@ export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIG
   const apenasExtremas = qtdFacil === 0 && qtdMedio === 0 && qtdDificil === 0;
   const apenasDificeisOuExtremas = qtdFacil === 0 && qtdMedio === 0;
   const apenas_1_nivel = apenasFaceis || apenasMedias || apenasDificeis || apenasExtremas;
-
   if (!MODO_VISITANTE) {
     // Não permite prosseguir se houver apenas 1 nível de dificuldade
     if (apenas_1_nivel) {

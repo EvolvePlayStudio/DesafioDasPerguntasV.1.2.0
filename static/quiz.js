@@ -135,6 +135,105 @@ if (tipo_pergunta === "objetiva" || !MODO_VISITANTE && !exibir_instrucoes_quiz) 
 // Ids de perguntas que são selecionados primeiro
 let idsPrioritarios = JSON.parse(sessionStorage.getItem('ids_prioritarios') ?? "[]").map(Number);
 
+// Anúncios da Amazon
+let qPerguntasRespondidas = 0;
+const produtosAmazon = {
+  'História': [
+    {
+      nome: 'Historiografia brasileira:: uma breve história da história no Brasil',
+      descricao: 'Uma análise crítica sobre os fatos mais marcantes na história do Brasil',
+      link: `https://www.amazon.com.br/Historiografia-brasileira-breve-hist%C3%B3ria-Brasil/dp/8522708010?tag=${AMAZON_TRACKING_ID}`,
+      imagem: 'https://m.media-amazon.com/images/I/71qVk4OcBjL._SY425_.jpg'
+    },
+    {
+      nome: 'Revolução Francesa – Vol. 1 – o Povo e o rei',
+      descricao: 'Descubra os detalhes fascinantes da queda da monarquia e a ascensão do povo francês',
+      link: `https://www.amazon.com.br/Revolu%C3%A7%C3%A3o-francesa-vol-povo-rei/dp/8525419567?tag=${AMAZON_TRACKING_ID}`,
+      imagem: 'https://m.media-amazon.com/images/I/910AKPOrUjL._SY425_.jpg'
+    },
+    {
+      nome: '1177 A.C. - O ano em que a civilização entrou em colapso',
+      descricao: 'Por que grandes impérios caíram? Entenda o colapso que mudou o rumo da história antiga',
+      link: `https://www.amazon.com.br/1177-C-civiliza%C3%A7%C3%A3o-entrou-colapso/dp/6559573567?tag=${AMAZON_TRACKING_ID}`,
+      imagem: 'https://m.media-amazon.com/images/I/81d1pFdFPhL._SY385_.jpg'
+    },
+    {
+      nome: 'A ARTE DA GUERRA: Edição de Luxo Capa Dura',
+      descricao: 'Sabedoria milenar para vencer desafios. O guia definitivo de estratégia e liderança',
+      link: `https://www.amazon.com.br/dp/6556600490?tag=${AMAZON_TRACKING_ID}`,
+      imagem: 'https://m.media-amazon.com/images/I/71FoXd6rVCL._SY385_.jpg'
+    }
+  ]
+};
+
+// Um produto padrão caso o tema não tenha um item específico
+const produtoPadrao = [
+  {
+    nome: 'Ofertas do Dia Amazon',
+    descricao: 'Confira as melhores ofertas em tecnologia, livros e muito mais na loja da Amazon',
+    link: '',
+    imagem: ''
+  }
+];
+
+// const listaProdutos = produtosAmazon[tema_atual];
+
+function atualizarAnuncios() {
+  try {
+    // 1. Define a fonte dos dados
+    let fonteOriginal;
+    const containerEsq = document.getElementById('banner-lateral-esquerda');
+    const containerDir = document.getElementById('banner-lateral-direita');
+    
+    // Caso tenha anúncios no tema para exibir
+    if (produtosAmazon[tema_atual]) {
+      [containerEsq, containerDir].forEach(container => {
+        if (container) {
+          container.style.visibility = 'visible';
+          container.style.pointerEvents = 'auto';
+        }
+      })
+      fonteOriginal = produtosAmazon[tema_atual];
+    }
+    else return;
+    
+    // 2. Cria uma cópia para podermos manipular nesta rodada
+    let opcoesRodada = [...fonteOriginal];
+    
+    // 3. Função auxiliar para pegar um item aleatório e remover da lista da rodada
+    function sortearEExtrair() {
+      if (opcoesRodada.length === 0) return produtoPadrao;
+      const index = Math.floor(Math.random() * opcoesRodada.length);
+      const item = opcoesRodada[index];
+      opcoesRodada.splice(index, 1); // Remove para não ser sorteado de novo para o outro lado
+      return item;
+    }
+
+    // 4. Sorteia um para a esquerda e outro para a direita
+    const produtoEsq = sortearEExtrair();
+    const produtoDir = (opcoesRodada.length > 0) ? sortearEExtrair() : produtoEsq; 
+    // Se só houver 1 produto no tema, ele repete (única exceção)
+
+    // 5. Aplica ao Banner Esquerdo
+    
+    if (containerEsq) {
+      containerEsq.querySelector('a').href = produtoEsq.link;
+      containerEsq.querySelector('img').src = produtoEsq.imagem;
+      containerEsq.querySelector('p').textContent = produtoEsq.descricao;
+    }
+
+    // 6. Aplica ao Banner Direito
+    if (containerDir) {
+      containerDir.querySelector('a').href = produtoDir.link;
+      containerDir.querySelector('img').src = produtoDir.imagem;
+      containerDir.querySelector('p').textContent = produtoDir.descricao;
+    }
+  }
+  catch(error) {
+    console.error("Erro ao verificar disponibilidade de anúncios: ", error)
+  }
+}
+
 function getWithMigration(key) {
   // Pega dado do sessionStorage, se não encontrar pega do localStorage
   const sessionValue = sessionStorage.getItem(key);
@@ -373,6 +472,7 @@ function calcularPontuacao(acertou) {
       break;
     case "Extremo":
       pontosBase = regras_jogador.pontos_acerto_extremo;
+      console.log("POntos base no extremo: ", regras_jogador.pontos_acerto_extremo)
       break;
     default:
       console.warn("Dificuldade desconhecida:", dificuldade);
@@ -382,8 +482,12 @@ function calcularPontuacao(acertou) {
 
   if (dica_gasta && tipo_pergunta === 'discursiva') {
       const percentualPenalidade = regras_jogador.percentual_penalidade_dica / 100;
+      console.log("Percentual penalidade: ", percentualPenalidade)
       const inteiroPenalidade = Math.round((pontosBase * percentualPenalidade) / 10) * 10;
+      console.log("Inteiro penalidade: ", inteiroPenalidade)
       pontos_ganhos = pontosBase - inteiroPenalidade;
+
+      console.log("Pontos ganhos recalculado: ", pontos_ganhos)
       
       // Fallback defensivo
       if (pontos_ganhos < 0) {
@@ -990,7 +1094,7 @@ function mostrarEnunciado(texto, elemento) {
   });
 }
 
-async function mostrarPergunta() {
+async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   // Remove widgets anteriores
   aguardando_proxima = false;
   document.getElementById("nota-box").style.display = "none";
@@ -999,6 +1103,11 @@ async function mostrarPergunta() {
   respostasAceitas.style.display = "none";
   box_comentario.style.display = "none";
   dica_icon.style.display = "none";
+
+  // Atualiza anúncios exibidos
+  if (chamarAtualizarAnuncios) {
+    atualizarAnuncios();
+  };
 
   // Reseta estrelas
   document.querySelectorAll(".estrela").forEach(e => {
@@ -1243,6 +1352,7 @@ async function mostrarPergunta() {
 }
 
 async function proximaPergunta() {
+  qPerguntasRespondidas ++;
   function resetarAlternativas() {
     alternativaBtns.forEach(btn => {
       // Remove estados visuais
@@ -1762,6 +1872,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   limparIdsPrioritariosInvalidos();
   definirRankingAnterior(); // útil para quando for animar barra de progresso
   atualizarRankingVisual();
-  await mostrarPergunta();
+  await mostrarPergunta(true);
   configurarEstrelas();
 })

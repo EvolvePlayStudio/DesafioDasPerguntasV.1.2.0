@@ -11,6 +11,7 @@ email_remetente = os.getenv("EMAIL_REMETENTE")
 senha_app = os.getenv("SENHA_APP")
 porta_email = os.getenv("EMAIL_PORT")
 base_url = os.getenv("APP_BASE_URL")
+AMAZON_TRACKING_ID = os.getenv('AMAZON_TRACKING_ID')
 
 temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"]
 
