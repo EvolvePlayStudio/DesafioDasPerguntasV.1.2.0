@@ -1,7 +1,7 @@
 export const pontuacaoTemaPadraoVisitantes = 1800;
 export const dificuldadesOrdenadas = ['Fácil', 'Médio', 'Difícil', 'Extremo'];
 export const temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"];
-export const idsReservados = [];
+export const idsReservados = [4, 6, 16];
 
 export function detectarModoTela() {
   // Identifica se o usuário us modo site para computador
