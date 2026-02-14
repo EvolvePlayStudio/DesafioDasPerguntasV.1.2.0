@@ -182,9 +182,6 @@
   #pontuacao.hide-inc::after, #pontuacao-mobile.hide-inc::after {
     opacity: 0;
   }
-
-
-
   /* Container que organiza os 3 elementos em colunas */
   .quiz-grid-layout {
     display: grid;
@@ -196,7 +193,6 @@
     align-items: start; /* Alinha os anúncios pelo topo do grid */
     justify-items: center;
   }
-
   /* Ajuste das Sidebars para o fluxo do Grid */
   .ad-sidebar {
     position: relative;
@@ -213,14 +209,11 @@
     max-height: 15rem;
     object-fit: contain;
   }
-
-  /* O Card do Produto com altura robusta */
   .amazon-card {
-    background: white; 
+    background: var(--cor-fundo-claro);
     padding: 1rem;
     border-radius: 12px; 
     text-align: center; 
-    border: 1px solid #ddd; 
     box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     display: flex;
     flex-direction: column;
@@ -238,13 +231,12 @@
     margin-bottom: 15px;
   }
   .amazon-card p {
-    font-size: 15px; 
+    font-size: var(--fs-base); 
     font-weight: bold; 
-    color: #333; 
+    color: black; 
     margin: 10px 0; 
     line-height: 1.4;
   }
-
   .amazon-btn {
       background: #FFD814; 
       border: 1px solid #FCD200; 
@@ -268,7 +260,6 @@
       display: none !important;
     }
   }
-
   .quiz-container {
     background: var(--cor-fundo-claro);
     padding: 2rem;
@@ -731,7 +722,7 @@
 
         <!-- Anúncio do lado direito -->
         <div class="ad-sidebar" id="banner-lateral-direita" style="visibility: hidden; pointer-events: none;">
-            <a href="" target="_blank">
+            <a href="" target="_blank" style="text-decoration: none;">
                 <div class="amazon-card">
                     <img src="" alt="Livro">
                     <p id="descricao-banner-direita"></p>

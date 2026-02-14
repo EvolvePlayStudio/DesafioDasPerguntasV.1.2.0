@@ -151,8 +151,6 @@ const produtoPadrao = [
   }
 ];
 
-console.log()
-
 function atualizarAnuncios() {
   try {
     const containerEsq = document.getElementById('banner-lateral-esquerda');
@@ -1016,12 +1014,6 @@ async function mostrarAlternativas() {
   // 3) Finalização
   animacao_concluida = true;
   inicio_pergunta = Date.now();
-
-  /*
-  if (!alternativas.some(b => b.classList.contains('selected'))) {
-    const btnA = alternativas.find(b => b.dataset.letter === 'A');
-    if (btnA) selecionarAlternativa(btnA);
-  }*/
 
   hint_avaliacao.style.display = "";
   botoes_enviar_div.style.display = "flex";
