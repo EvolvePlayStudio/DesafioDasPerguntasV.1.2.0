@@ -258,7 +258,6 @@ function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo) {
     if (!ultimaExecucao) ultimaExecucao = timestamp;
     const delta = timestamp - ultimaExecucao;
     
-
     if (delta > intervaloMin) {
       let diferenca = pontuacao_alvo - pontuacao_atual;
       if (diferenca === 0) return;
@@ -469,12 +468,8 @@ function calcularPontuacao(acertou) {
 
   if (dica_gasta && tipo_pergunta === 'discursiva') {
       const percentualPenalidade = regras_jogador.percentual_penalidade_dica / 100;
-      console.log("Percentual penalidade: ", percentualPenalidade)
       const inteiroPenalidade = Math.round((pontosBase * percentualPenalidade) / 10) * 10;
-      console.log("Inteiro penalidade: ", inteiroPenalidade)
       pontos_ganhos = pontosBase - inteiroPenalidade;
-
-      console.log("Pontos ganhos recalculado: ", pontos_ganhos)
       
       // Fallback defensivo
       if (pontos_ganhos < 0) {
