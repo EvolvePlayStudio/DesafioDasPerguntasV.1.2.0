@@ -135,9 +135,8 @@ if (tipo_pergunta === "objetiva" || !MODO_VISITANTE && !exibir_instrucoes_quiz) 
 // Ids de perguntas que são selecionados primeiro
 let idsPrioritarios = JSON.parse(sessionStorage.getItem('ids_prioritarios') ?? "[]").map(Number);
 
-let qPerguntasRespondidas = 0;
-
 // Recupera a string ou uma string de objeto vazio se não existir
+let qPerguntasRespondidas = 0; // para fazer rotação de anúncio
 const cacheAnuncios = sessionStorage.getItem('anuncios') || '{}';
 const produtosAmazon = JSON.parse(cacheAnuncios);
 
@@ -202,18 +201,32 @@ function atualizarAnuncios() {
       // 5. Sorteio e Aplicação
       const produtoEsq = sortearEExtrair();
       const produtoDir = (opcoesRodada.length > 0) ? sortearEExtrair() : produtoEsq;
-
+      if (containerEsq) {
+        const linkEsq = containerEsq.querySelector('a');
+        linkEsq.href = produtoEsq.link;
+        linkEsq.setAttribute('data-id-anuncio', produtoEsq.id); 
+        containerEsq.querySelector('img').src = produtoEsq.imagem;
+        containerEsq.querySelector('p').textContent = produtoEsq.descricao;
+      }
+      if (containerDir) {
+        const linkDir = containerDir.querySelector('a');
+        linkDir.href = produtoDir.link;
+        linkDir.setAttribute('data-id-anuncio', produtoDir.id);
+        containerDir.querySelector('img').src = produtoDir.imagem;
+        containerDir.querySelector('p').textContent = produtoDir.descricao;
+      }
+        
+      /*
       if (containerEsq) {
         containerEsq.querySelector('a').href = produtoEsq.link;
         containerEsq.querySelector('img').src = produtoEsq.imagem;
         containerEsq.querySelector('p').textContent = produtoEsq.descricao;
       }
-
       if (containerDir) {
         containerDir.querySelector('a').href = produtoDir.link;
         containerDir.querySelector('img').src = produtoDir.imagem;
         containerDir.querySelector('p').textContent = produtoDir.descricao;
-      }
+      }*/
     }
   } catch (error) {
     console.error("Erro ao processar anúncios dinâmicos: ", error);
@@ -1738,6 +1751,32 @@ async function definirRankingAnterior() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+
+  // Seleciona todos os links de anúncio
+  const banners = document.querySelectorAll('.ad-sidebar');
+  banners.forEach(banner => {
+    banner.addEventListener('click', function() {
+      if (idsReservados.includes(idUsuario) || id_visitante === id_visitante_admin) return;
+      const linkElement = this.querySelector('a');
+      const idAnuncioSorteado = linkElement.getAttribute('data-id-anuncio');
+
+      const dados = {
+        id_anuncio: idAnuncioSorteado,
+        id_usuario: idUsuario,
+        id_visitante: id_visitante,
+        tema_quiz: tema_atual,
+        provedor: 'Amazon',
+        tipo_midia: 'Livro'
+      };
+
+      // Envia para o Flask sem travar a navegação
+      fetch('/registrar_clique_anuncio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dados)
+      }).catch(err => console.error('Erro ao registrar clique em anúncio:', err));
+    });
+  });
 
   // Adiciona som de tecla digitada nas caixas de texto
   if (caixa_para_resposta) {

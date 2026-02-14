@@ -19,7 +19,6 @@ import qrcode
 from functools import wraps
 import pytz # Também importado no utils
 import threading
-print("A bibliotecxa threading está funcionando")
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.logger.setLevel(logging.DEBUG)
@@ -1306,7 +1305,7 @@ def obter_todos_anuncios():
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            SELECT tema, nome, descricao, link_asin, imagem_url, somente_admin
+            SELECT id, tema, nome, descricao, link_asin, imagem_url, somente_admin
             FROM anuncios
             WHERE is_ativo = TRUE
         """) # Devemos desenvolver este execute aqui
@@ -1314,19 +1313,20 @@ def obter_todos_anuncios():
         anuncios = cur.fetchall()
 
         for a in anuncios:
-            tema = a[0]
+            tema = a[1]
             if tema not in dicionario_anuncios:
                 dicionario_anuncios[tema] = []
             
             dicionario_anuncios[tema].append({
-                'nome': a[1],
-                'descricao': a[2],
-                'link': f"https://www.amazon.com.br/dp/{a[3]}?tag={AMAZON_TRACKING_ID}",
-                'imagem': a[4],
-                'somente_admin': a[5]
+                'id': a[0],
+                'nome': a[2],
+                'descricao': a[3],
+                'link': f"https://www.amazon.com.br/dp/{a[4]}?tag={AMAZON_TRACKING_ID}",
+                'imagem': a[5],
+                'somente_admin': a[6]
             })
     except Exception:
-        app.logger.error("Erro ao tentar obter anúncios" + traceback.format_exc())
+        app.logger.exception("Erro ao tentar obter anúncios")
     finally:
         if cur: cur.close()
         if conn: conn.close()
@@ -1874,6 +1874,39 @@ def registrar():
     enviar_email_confirmacao(email, nome, link_confirmacao)
     return jsonify(success=True, message="Registro realizado! Verifique seu e-mail para confirmar")
 
+@app.route('/registrar_clique_anuncio', methods=['POST'])
+def registrar_clique_anuncio():
+    dados = request.get_json()
+    if not dados:
+        return jsonify({"erro": "Dados inválidos"}), 400
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        dispositivo = identificar_dispositivo()
+        query = """INSERT INTO cliques_anuncios (id_usuario, id_visitante, id_anuncio, tema_quiz, provedor, tipo_midia, dispositivo) VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+        valores = (
+            dados["id_usuario"],
+            dados["id_visitante"],
+            dados["id_anuncio"],
+            dados["tema_quiz"],
+            dados["provedor"],
+            dados["tipo_midia"],
+            dispositivo
+        )
+        cur.execute(query, valores)
+        conn.commit()
+
+        return jsonify({"status": "sucesso", "mensagem": "Clique em anúncio registrado"}), 201
+    except Exception:
+        app.logger.exception("Erro ao tentar registrar clique em anúncio")
+        return jsonify({"erro": "Erro ao tentar registrar clique em anúncio"}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
 @app.route("/api/modo_teste", methods=["POST"])
 def registrar_modo_teste():
     data = request.get_json() or {}
@@ -2094,13 +2127,6 @@ def marcar_feedback_lido():
     except Exception:
         app.logger.exception("Erro ao marcar feedback como lido")
         return "Erro interno", 500
-
-"""
-iniciar_agendamento()
-
-if not database_url:
-    if __name__ == '__main__':
-        app.run(debug=True)"""
 
 # Isso inicia o agendador em "background"
 t = threading.Thread(target=iniciar_agendamento, daemon=True)
