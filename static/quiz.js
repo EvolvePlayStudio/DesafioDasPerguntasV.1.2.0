@@ -215,18 +215,6 @@ function atualizarAnuncios() {
         containerDir.querySelector('img').src = produtoDir.imagem;
         containerDir.querySelector('p').textContent = produtoDir.descricao;
       }
-        
-      /*
-      if (containerEsq) {
-        containerEsq.querySelector('a').href = produtoEsq.link;
-        containerEsq.querySelector('img').src = produtoEsq.imagem;
-        containerEsq.querySelector('p').textContent = produtoEsq.descricao;
-      }
-      if (containerDir) {
-        containerDir.querySelector('a').href = produtoDir.link;
-        containerDir.querySelector('img').src = produtoDir.imagem;
-        containerDir.querySelector('p').textContent = produtoDir.descricao;
-      }*/
     }
   } catch (error) {
     console.error("Erro ao processar anúncios dinâmicos: ", error);
