@@ -204,6 +204,15 @@
     width: 195px;
     z-index: 100;
   }
+  #banner-lateral-esquerda img,
+  #banner-lateral-direita img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    max-height: 15rem;
+    object-fit: contain;
+  }
 
   /* O Card do Produto com altura robusta */
   .amazon-card {
@@ -309,8 +318,6 @@
     align-items: center;
     cursor: pointer;
     justify-content: flex-end;
-
-
     min-width: 0;
     flex-shrink: 1;
   }
@@ -578,10 +585,6 @@
   }
   </style>
 
-  <script>
-    const AMAZON_TRACKING_ID = "{{ AMAZON_TRACKING_ID }}";
-  </script>
-
 </head>
 
   <body style="margin: 0; font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1E1E14, #1E1E14);">
@@ -620,15 +623,15 @@
       <div class="quiz-grid-layout">
 
         <!-- Anúncio do lado esquerdo -->
-          <div class="ad-sidebar" id="banner-lateral-esquerda" style="visibility: hidden; pointer-events: none;">
-              <a href="" target="_blank" style="text-decoration: none;">
-                  <div class="amazon-card">
-                      <img src="" alt="Livro">
-                      <p id="descricao-banner-esquerda"></p>
-                      <div class="amazon-btn">Ver na Amazon</div>
-                  </div>
-              </a>
-          </div>
+        <div class="ad-sidebar" id="banner-lateral-esquerda" style="visibility: hidden; pointer-events: none;">
+          <a href="" target="_blank" style="text-decoration: none;">
+            <div class="amazon-card">
+                <img src="" alt="Livro">
+                <p id="descricao-banner-esquerda"></p>
+                <div class="amazon-btn">Ver na Amazon</div>
+            </div>
+          </a>
+        </div>
 
         <!-- Layout contendo o enunciado, ícone de dica, etc -->
         <div class="quiz-container">
@@ -643,7 +646,7 @@
             <h2 id="tema-nivel-pergunta"></h2>
 
             <!-- Ícone de dica à direita -->
-            <div id="dica-icon" class="dica-icon" title="Usar dica">
+            <div id="dica-icon" class="dica-icon" title="Usar dica" style="display: flex; visibility: hidden; pointer-events: none;">
               <span>💡</span>
               <span id="contador-dicas">0</span>
             </div>
@@ -736,17 +739,7 @@
                 </div>
             </a>
         </div>
-
-
     </div>
-
-
-
-
-
-
-
-
 
     <!-- Comentários dos usuários para a pergunta -->
     <div id="comentarios">

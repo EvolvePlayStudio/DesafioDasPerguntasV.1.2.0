@@ -1295,6 +1295,41 @@ def login():
         if cur: cur.close()
         if conn: conn.close()
    
+@app.route('/api/obter_todos_anuncios')
+def obter_todos_anuncios():
+    conn = cur = None
+    dicionario_anuncios = {}
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT tema, nome, descricao, link_asin, imagem_url, somente_admin
+            FROM anuncios
+            WHERE is_ativo = TRUE
+        """) # Devemos desenvolver este execute aqui
+
+        anuncios = cur.fetchall()
+
+        for a in anuncios:
+            tema = a[0]
+            if tema not in dicionario_anuncios:
+                dicionario_anuncios[tema] = []
+            
+            dicionario_anuncios[tema].append({
+                'nome': a[1],
+                'descricao': a[2],
+                'link': f"https://www.amazon.com.br/dp/{a[3]}?tag={AMAZON_TRACKING_ID}",
+                'imagem': a[4],
+                'somente_admin': a[5]
+            })
+    except Exception:
+        app.logger.error("Erro ao tentar obter anúncios" + traceback.format_exc())
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+    return jsonify(dicionario_anuncios)
+
 @app.route("/api/salvar-opcoes", methods=["POST"])
 @token_required
 def salvar_opcoes(user_id):

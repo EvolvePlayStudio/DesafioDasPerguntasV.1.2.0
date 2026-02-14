@@ -269,7 +269,20 @@ async function iniciarQuiz(event) {
         const ha_perguntas_disponiveis = Object.values(perguntas_filtradas).some(arr => Array.isArray(arr) && arr.length > 0)
 
         if (ha_perguntas_disponiveis && !encerrar_quiz) {
-          mensagem.style.opacity = 0
+          mensagem.style.opacity = 0;
+          try {
+              // 1. Faz a requisição
+              const resposta = await fetch("/api/obter_todos_anuncios");
+              // 2. Transforma em objeto JSON
+              const dados = await resposta.json();
+              // 3. Salva como STRING (o sessionStorage só aceita strings)
+              sessionStorage.setItem("anuncios", JSON.stringify(dados));
+          }
+          catch (erro) {
+              console.error("Falha ao carregar anúncios:", erro);
+              // Opcional: define um objeto vazio para não quebrar o quiz
+              sessionStorage.setItem("anuncios", JSON.stringify({}));
+          }
           window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;
         }
         else {

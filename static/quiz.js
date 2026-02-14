@@ -135,36 +135,11 @@ if (tipo_pergunta === "objetiva" || !MODO_VISITANTE && !exibir_instrucoes_quiz) 
 // Ids de perguntas que são selecionados primeiro
 let idsPrioritarios = JSON.parse(sessionStorage.getItem('ids_prioritarios') ?? "[]").map(Number);
 
-// Anúncios da Amazon
 let qPerguntasRespondidas = 0;
-const produtosAmazon = {
-  'História': [
-    {
-      nome: 'Historiografia brasileira:: uma breve história da história no Brasil',
-      descricao: 'Uma análise crítica sobre os fatos mais marcantes na história do Brasil',
-      link: `https://www.amazon.com.br/Historiografia-brasileira-breve-hist%C3%B3ria-Brasil/dp/8522708010?tag=${AMAZON_TRACKING_ID}`,
-      imagem: 'https://m.media-amazon.com/images/I/71qVk4OcBjL._SY425_.jpg'
-    },
-    {
-      nome: 'Revolução Francesa – Vol. 1 – o Povo e o rei',
-      descricao: 'Descubra os detalhes fascinantes da queda da monarquia e a ascensão do povo francês',
-      link: `https://www.amazon.com.br/Revolu%C3%A7%C3%A3o-francesa-vol-povo-rei/dp/8525419567?tag=${AMAZON_TRACKING_ID}`,
-      imagem: 'https://m.media-amazon.com/images/I/910AKPOrUjL._SY425_.jpg'
-    },
-    {
-      nome: '1177 A.C. - O ano em que a civilização entrou em colapso',
-      descricao: 'Por que grandes impérios caíram? Entenda o colapso que mudou o rumo da história antiga',
-      link: `https://www.amazon.com.br/1177-C-civiliza%C3%A7%C3%A3o-entrou-colapso/dp/6559573567?tag=${AMAZON_TRACKING_ID}`,
-      imagem: 'https://m.media-amazon.com/images/I/81d1pFdFPhL._SY385_.jpg'
-    },
-    {
-      nome: 'A ARTE DA GUERRA: Edição de Luxo Capa Dura',
-      descricao: 'Sabedoria milenar para vencer desafios. O guia definitivo de estratégia e liderança',
-      link: `https://www.amazon.com.br/dp/6556600490?tag=${AMAZON_TRACKING_ID}`,
-      imagem: 'https://m.media-amazon.com/images/I/71FoXd6rVCL._SY385_.jpg'
-    }
-  ]
-};
+
+// Recupera a string ou uma string de objeto vazio se não existir
+const cacheAnuncios = sessionStorage.getItem('anuncios') || '{}';
+const produtosAmazon = JSON.parse(cacheAnuncios);
 
 // Um produto padrão caso o tema não tenha um item específico
 const produtoPadrao = [
@@ -176,61 +151,74 @@ const produtoPadrao = [
   }
 ];
 
-// const listaProdutos = produtosAmazon[tema_atual];
+console.log()
 
 function atualizarAnuncios() {
   try {
-    // 1. Define a fonte dos dados
-    let fonteOriginal;
     const containerEsq = document.getElementById('banner-lateral-esquerda');
     const containerDir = document.getElementById('banner-lateral-direita');
-    
-    // Caso tenha anúncios no tema para exibir
+
     if (produtosAmazon[tema_atual]) {
-      [containerEsq, containerDir].forEach(container => {
-        if (container) {
-          container.style.visibility = 'visible';
-          container.style.pointerEvents = 'auto';
-        }
+      // 2. Lógica de Filtro Admin (idsReservados vem do seu utils.js)
+      
+      let isUserAdmin;
+      if (MODO_VISITANTE) isUserAdmin = false
+      else isUserAdmin = idsReservados.includes(parseInt(idUsuario));
+
+      // Filtra a lista: se for admin, vê tudo. Se não, remove os 'somente_admin'
+      let fonteFiltrada = produtosAmazon[tema_atual].filter(anuncio => {
+        if (anuncio.somente_admin) return isUserAdmin;
+        return true;
       })
-      fonteOriginal = produtosAmazon[tema_atual];
-    }
-    else return;
-    
-    // 2. Cria uma cópia para podermos manipular nesta rodada
-    let opcoesRodada = [...fonteOriginal];
-    
-    // 3. Função auxiliar para pegar um item aleatório e remover da lista da rodada
-    function sortearEExtrair() {
-      if (opcoesRodada.length === 0) return produtoPadrao;
-      const index = Math.floor(Math.random() * opcoesRodada.length);
-      const item = opcoesRodada[index];
-      opcoesRodada.splice(index, 1); // Remove para não ser sorteado de novo para o outro lado
-      return item;
-    }
 
-    // 4. Sorteia um para a esquerda e outro para a direita
-    const produtoEsq = sortearEExtrair();
-    const produtoDir = (opcoesRodada.length > 0) ? sortearEExtrair() : produtoEsq; 
-    // Se só houver 1 produto no tema, ele repete (única exceção)
+      // Se após o filtro não sobrar anúncios para o tema, esconde os banners e encerra
+      if (fonteFiltrada.length > 0) {
+        // Ativa a visibilidade dos banners
+        if (fonteFiltrada.length === 1) {
+          containerEsq.style.visibility = 'visible';
+          containerEsq.style.pointerEvents = 'auto';
+        }
+        else {
+          [containerEsq, containerDir].forEach(container => {
+            if (container) {
+              container.style.visibility = 'visible';
+              container.style.pointerEvents = 'auto';
+            }
+          })
+        }
+      }
+      else return;
 
-    // 5. Aplica ao Banner Esquerdo
-    
-    if (containerEsq) {
-      containerEsq.querySelector('a').href = produtoEsq.link;
-      containerEsq.querySelector('img').src = produtoEsq.imagem;
-      containerEsq.querySelector('p').textContent = produtoEsq.descricao;
-    }
+      // 3. Cria a cópia para manipulação (opcoesRodada)
+      let opcoesRodada = [...fonteFiltrada];
+      
+      // 4. Função auxiliar de sorteio (mantida com sua lógica original)
+      function sortearEExtrair() {
+        if (opcoesRodada.length === 0) return produtoPadrao[0]; // Retorna o primeiro item do array padrão
+        const index = Math.floor(Math.random() * opcoesRodada.length);
+        const item = opcoesRodada[index];
+        opcoesRodada.splice(index, 1);
+        return item;
+      }
 
-    // 6. Aplica ao Banner Direito
-    if (containerDir) {
-      containerDir.querySelector('a').href = produtoDir.link;
-      containerDir.querySelector('img').src = produtoDir.imagem;
-      containerDir.querySelector('p').textContent = produtoDir.descricao;
+      // 5. Sorteio e Aplicação
+      const produtoEsq = sortearEExtrair();
+      const produtoDir = (opcoesRodada.length > 0) ? sortearEExtrair() : produtoEsq;
+
+      if (containerEsq) {
+        containerEsq.querySelector('a').href = produtoEsq.link;
+        containerEsq.querySelector('img').src = produtoEsq.imagem;
+        containerEsq.querySelector('p').textContent = produtoEsq.descricao;
+      }
+
+      if (containerDir) {
+        containerDir.querySelector('a').href = produtoDir.link;
+        containerDir.querySelector('img').src = produtoDir.imagem;
+        containerDir.querySelector('p').textContent = produtoDir.descricao;
+      }
     }
-  }
-  catch(error) {
-    console.error("Erro ao verificar disponibilidade de anúncios: ", error)
+  } catch (error) {
+    console.error("Erro ao processar anúncios dinâmicos: ", error);
   }
 }
 
@@ -602,8 +590,6 @@ async function enviarResposta(pulando = false) {
     
     // Carrega comentário de feedback anterior do usuário caso exista
     carregarComentarioAnterior();
-
-    
 
     // Exibe os comentários dos outros usuários
     // document.getElementById('comentarios').style.display = 'block';
@@ -1102,12 +1088,12 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   estrelas_avaliacao.style.display = "none";
   respostasAceitas.style.display = "none";
   box_comentario.style.display = "none";
-  dica_icon.style.display = "none";
+  //dica_icon.style.display = "none";
+  dica_icon.style.visibility = 'hidden';
+  dica_icon.style.pointerEvents = 'none';
 
   // Atualiza anúncios exibidos
-  if (chamarAtualizarAnuncios) {
-    atualizarAnuncios();
-  };
+  if (chamarAtualizarAnuncios || qPerguntasRespondidas % 3 === 0) atualizarAnuncios();
 
   // Reseta estrelas
   document.querySelectorAll(".estrela").forEach(e => {
@@ -1258,12 +1244,6 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
     if (!perguntasDisponiveis || perguntasDisponiveis.length === 0) {
       return -1;
     }
-    
-    /*
-    let idsPrioritarios =
-      tipo_pergunta === "objetiva"
-        ? ids_objetivas_prioridade[tema_atual]
-        : ids_discursivas_prioridade[tema_atual];*/
 
     // ===============================
     // 1. Seleciona um id dos prioritários
@@ -1341,7 +1321,8 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
 
     // Exibe o ícone de dica
     if (dica_permitida) {
-      dica_icon.style.display = "flex";
+      dica_icon.style.visibility = 'visible';
+      dica_icon.style.pointerEvents = 'auto';
     } 
     
     // No modo revisão não exibe contador de dicas
