@@ -18,6 +18,8 @@ import urllib.parse
 import qrcode
 from functools import wraps
 import pytz # Também importado no utils
+import threading
+print("A bibliotecxa threading está funcionando")
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.logger.setLevel(logging.DEBUG)
@@ -2093,8 +2095,17 @@ def marcar_feedback_lido():
         app.logger.exception("Erro ao marcar feedback como lido")
         return "Erro interno", 500
 
+"""
 iniciar_agendamento()
 
 if not database_url:
     if __name__ == '__main__':
-        app.run(debug=True)
+        app.run(debug=True)"""
+
+# Isso inicia o agendador em "background"
+t = threading.Thread(target=iniciar_agendamento, daemon=True)
+t.start()
+
+# 1. Rode o agendamento em uma Thread para não bloquear o Flask
+if __name__ == '__main__':
+    app.run(debug=not database_url)
