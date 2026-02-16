@@ -69,6 +69,8 @@ const box_comentario = document.getElementById("box-comentario");
 const textarea_comentario = document.getElementById("comentario-texto");
 const contador_perguntas_restantes = document.getElementById("perguntas-count");
 const icone_perguntas_restantes = document.getElementById("perguntas-restantes-icon");
+const botaoLikeNota = document.getElementById("avaliacao-positiva");
+const botaoDislikeNota = document.getElementById("avaliacao-negativa");
 
 // Outras variáveis
 let dica_gasta = false;
@@ -83,6 +85,7 @@ let ranking_jogador; // Nome de variável alterado
 let ranking_visual_anterior;
 let estrelas_iniciais;
 let comentario_inicial;
+let aprovacao_nota_inicial = null;
 let alternativaSelecionada; // guarda a letra selecionada (A, B, C, D)
 let respostasDesdeUltimaForcagem = 0; // para pegar a pergunta do nível que tem mais a cada 
 // x respondidas
@@ -139,6 +142,21 @@ let idsPrioritarios = JSON.parse(sessionStorage.getItem('ids_prioritarios') ?? "
 let qPerguntasRespondidas = 0; // para fazer rotação de anúncio
 const cacheAnuncios = sessionStorage.getItem('anuncios') || '{}';
 const produtosAmazon = JSON.parse(cacheAnuncios);
+
+// Seleciona os botões
+botaoLikeNota.addEventListener("click", () => {
+  const jaAtivo = botaoLikeNota.classList.contains("ativo");
+
+  botaoLikeNota.classList.toggle("ativo", !jaAtivo);
+  botaoDislikeNota.classList.remove("ativo");
+});
+
+botaoDislikeNota.addEventListener("click", () => {
+  const jaAtivo = botaoDislikeNota.classList.contains("ativo");
+
+  botaoDislikeNota.classList.toggle("ativo", !jaAtivo);
+  botaoLikeNota.classList.remove("ativo");
+});
 
 // Um produto padrão caso o tema não tenha um item específico
 const produtoPadrao = [
@@ -576,6 +594,17 @@ async function enviarResposta(pulando = false) {
     aguardando_proxima = true;
     botoes_enviar_div.style.display = "none";
 
+    // Carrega a aprovaçãod e nota anterior enviada pelo usuário
+    aprovacao_nota_inicial = pergunta_selecionada.aprovacao_nota;
+    botaoLikeNota.classList.remove("ativo");
+    botaoDislikeNota.classList.remove("ativo");
+    if (aprovacao_nota_inicial === true) {
+      botaoLikeNota.classList.add("ativo");
+    }
+    else if (aprovacao_nota_inicial === false) {
+      botaoDislikeNota.classList.add("ativo");
+    }
+
     // Chama as estrelas de feedback e carrega as anteriores enviadas pelo usuário
     const avaliacao_anterior = pergunta_selecionada.estrelas || 0;
     renderizarEstrelas(avaliacao_anterior);
@@ -914,7 +943,8 @@ async function enviarResposta(pulando = false) {
 }
 
 async function finalizarQuiz() {
-  await registrarFeedback();
+  // await registrarFeedback();
+  registrarFeedback()
   if (modo_jogo === 'desafio') {
     sessionStorage.setItem("perguntas_respondidas", JSON.stringify(perguntas_respondidas))
     sessionStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador ?? {}))
@@ -1321,6 +1351,9 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
 }
 
 async function proximaPergunta() {
+  //await registrarFeedback();
+  registrarFeedback()
+
   qPerguntasRespondidas ++;
   function resetarAlternativas() {
     alternativaBtns.forEach(btn => {
@@ -1370,13 +1403,21 @@ async function proximaPergunta() {
 }
 
 async function registrarFeedback() {
+  function obterAprovacaoNotaAtual() {
+    if (botaoLikeNota.classList.contains("ativo")) return true;
+    if (botaoDislikeNota.classList.contains("ativo")) return false;
+    return null;
+  }
+
   const estrelas_atual = document.querySelectorAll(".estrela.dourada").length;
   const comentario_atual = textarea_comentario?.value?.trim() || "";
+  const aprovacao_nota_atual = obterAprovacaoNotaAtual();
 
   const mudouEstrelas = estrelas_atual !== estrelas_iniciais;
   const mudouComentario = comentario_atual !== comentario_inicial;
+  const mudouAprovacaoNota = aprovacao_nota_atual !== aprovacao_nota_inicial;
 
-  if (!mudouEstrelas && !mudouComentario) {
+  if (!mudouEstrelas && !mudouComentario && !mudouAprovacaoNota) {
     return;
   }
 
@@ -1385,11 +1426,14 @@ async function registrarFeedback() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        atualizar_feedback_nota: mudouAprovacaoNota,
+        atualizar_feedback_estrelas: mudouEstrelas || mudouComentario,
         id_pergunta: pergunta_selecionada.id_pergunta,
         tema: tema_atual,
         tipo_pergunta: tipo_pergunta,
         enunciado: pergunta_selecionada.enunciado,
         versao_pergunta: pergunta_selecionada.versao_pergunta,
+        aprovacao_nota: aprovacao_nota_atual,
         estrelas: estrelas_atual,
         comentario: comentario_atual,
         dificuldade: pergunta_selecionada.dificuldade

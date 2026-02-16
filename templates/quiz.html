@@ -222,7 +222,6 @@
     height: 65vh;
     transition: transform 0.3s ease;
   }
-
   .amazon-card img {
     width: 100%;
     height: auto;
@@ -250,7 +249,6 @@
       margin-top: auto; /* Empurra o botão sempre para o fim do card */
   }
   .amazon-btn:hover { background: #f7ca00; }
-
   /* Responsividade: Esconde anúncios se a tela for pequena demais para os 3 */
   @media (max-width: 1150px) {
     .quiz-grid-layout {
@@ -450,7 +448,7 @@
     outline: none;
     box-shadow: none;
   }
-  #dica-box, #nota-box, #respostas-aceitas-box {
+  #dica-box,  #nota-box, #respostas-aceitas-box {
     font-size: var(--fs-aux);
     display: none;
     margin-top: 1rem;
@@ -459,6 +457,43 @@
     border-radius: 8px;
     font-weight: var(--peso-fonte-padrao);
   }
+  .avaliacao-inline {
+    display: inline-flex;
+    gap: 0.3rem;
+    margin-left: 0.5rem;
+    vertical-align: text-top; /* garante que fique alinhado ao topo da linha */
+  }
+  .avaliacao-inline button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #555;
+    transition: color 0.15s ease, transform 0.15s ease;
+  }
+  .avaliacao button .icon {
+    fill: #555;
+  }
+  .avaliacao-inline button .icon {
+    transition: all 0.2s ease;
+    transform-origin: center;
+  }
+  .avaliacao-inline button:hover .icon {
+    transform: scale(1.15);
+  }
+  .icon {
+    width: 20px;
+    height: 20px;
+    stroke: black;
+    stroke-width: 1.4;
+    fill: #555;               /* cinza neutro */
+    transition: all 0.15s ease;
+  }
+  .btn-like.ativo .icon { fill: #2e7d32; }
+  .btn-dislike.ativo .icon { fill: #c62828; }
+  .btn-like:hover .icon { fill: #2e7d32; transform: scale(1.1); }
+  .btn-dislike:hover .icon { fill: #c62828; transform: scale(1.1); }
   #avaliacao {
     display: none;
     justify-content: center;
@@ -692,12 +727,30 @@
           <div id="dica-box">
             <strong>Dica:</strong> <span id="dica-texto"></span>
           </div>
-
+          
           <!-- Box da nota -->
           <div id="nota-box">
-            <strong>Nota:</strong> <span id="nota-texto"></span>
+            <strong>Nota:</strong>
+            <span id="nota-texto"></span>
+            <span class="avaliacao-inline">
+              <button id="avaliacao-positiva" class="btn-like" aria-label="Avaliação positiva">
+                <svg viewBox="0 0 24 24" class="icon">
+                  <path d="M14 9V5a3 3 0 0 0-6 0v4H4v11h12l4-8V9h-6z"/>
+                </svg>
+              </button>
+              <button id="avaliacao-negativa" class="btn-dislike" aria-label="Avaliação negativa">
+                <svg viewBox="0 0 24 24" class="icon">
+                  <path d="M10 15v4a3 3 0 0 0 6 0v-4h4V4H8L4 12v3h6z"/>
+                </svg>
+              </button>
+            </span>
           </div>
 
+
+
+
+
+      
           <!-- Estrelas para avaliação -->
           <div id="avaliacao">
             <span class="estrela" data-valor="1">☆</span>

@@ -36,6 +36,92 @@ QUESTION_CONFIG = {
             'p.respostas_corretas',   
             'p.dica',
             'p.nota',
+            'r.id_resposta IS NOT NULL AS respondida',
+            'p.dificuldade',
+            'p.versao',
+            'p.disponivel_visitantes',
+            'p.prioridade_usuarios',
+            'COALESCE(f.estrelas, NULL) AS estrelas',
+            'COALESCE(f.comentario, NULL) AS comentario',
+            'COALESCE(fn.positivo, NULL) AS aprovacao_nota'
+        ],
+        'select_cols_visitante': [
+            'p.id_pergunta',
+            'p.subtemas',
+            'p.enunciado',
+            'p.respostas_corretas',   
+            'p.dica',
+            'p.nota',
+            'p.dificuldade',
+            'p.versao',
+            'p.disponivel_visitantes',
+            'COALESCE(f.estrelas, NULL) AS estrelas',
+            'COALESCE(f.comentario, NULL) AS comentario',
+            'COALESCE(fn.positivo, NULL) AS aprovacao_nota'
+        ],
+        'tipo_str': 'Discursiva'
+    },
+    'objetiva': {
+        'table': 'perguntas_objetivas',
+        'select_cols': [
+            'p.id_pergunta',
+            'p.subtemas',
+            'p.enunciado',
+            'p.alternativa_a',
+            'p.alternativa_b',
+            'p.alternativa_c',
+            'p.alternativa_d',
+            'p.resposta_correta',
+            'p.nota',
+            'r.id_resposta IS NOT NULL AS respondida',
+            'p.dificuldade',
+            'p.versao',
+            'p.disponivel_visitantes',
+            'p.prioridade_usuarios',
+            'COALESCE(f.estrelas, NULL) AS estrelas',
+            'COALESCE(f.comentario, NULL) AS comentario',
+            'COALESCE(fn.positivo, NULL) AS aprovacao_nota'
+        ],
+        'select_cols_visitante': [
+            'p.id_pergunta',
+            'p.subtemas',
+            'p.enunciado',
+            'p.alternativa_a',
+            'p.alternativa_b',
+            'p.alternativa_c',
+            'p.alternativa_d',
+            'p.resposta_correta',
+            'p.nota',
+            'p.dificuldade',
+            'p.versao',
+            'p.disponivel_visitantes',
+            'COALESCE(f.estrelas, NULL) AS estrelas',
+            'COALESCE(f.comentario, NULL) AS comentario',
+            'COALESCE(fn.positivo, NULL) AS aprovacao_nota'
+        ],
+        'tipo_str': 'Objetiva'
+    }
+}
+EMAILS_PROIBIDOS = ['admin@gmail.com', 'teste@gmail.com']
+privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
+
+
+
+
+
+
+
+
+QUESTION_CONFIG_ANTIGO = {
+    'discursiva': {
+        'table': 'perguntas_discursivas',
+        'select_cols': [
+            'p.id_pergunta',
+            'p.subtemas',
+            'p.enunciado',
+            'p.respostas_corretas',   
+            'p.dica',
+            'p.nota',
             "COALESCE(f.estrelas, NULL) AS estrelas",
             "COALESCE(f.comentario, NULL) AS comentario",
             "r.id_resposta IS NOT NULL AS respondida",
@@ -98,5 +184,3 @@ QUESTION_CONFIG = {
         'tipo_str': 'Objetiva'
     }
 }
-EMAILS_PROIBIDOS = ['admin@gmail.com', 'teste@gmail.com']
-privileged_ids = (4, 6, 16)  # ids com permissão para ver perguntas inativas
