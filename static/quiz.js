@@ -181,7 +181,8 @@ function atualizarAnuncios() {
         textoProvedor = 'na Amazon'
       }
       else if (provedorForm === 'mercado livre') {
-        textoProvedor = 'Mercado Livre'
+        textoProvedor = 'Mercado Livre';
+        return 'Mercado Livre';
       }
       else {
         return "Ofertas de produtos";
@@ -234,20 +235,24 @@ function atualizarAnuncios() {
 
     //console.log("Lista do mercado live: ", listaML)
     if (listaAmazon.length > 0 && listaML.length > 0) {
+      //console.log("Tem anúncio da Amazon e do Mercado Livre")
       produtoEsq = listaAmazon[0];
       produtoDir = listaML[0];
       //console.log('Lista da Amazon na 0: ', listaAmazon[0])
       //console.log('Lista do ML na 0: ', listaML[0])
     } 
     else if (listaAmazon.length > 0) {
+      //console.log("Só tem anúncio da Amazon")
       produtoEsq = listaAmazon[0];
       produtoDir = (listaAmazon.length > 1) ? listaAmazon[1] : listaAmazon[0];
     } 
     else if (listaML.length > 0) {
+      //console.log("Só tem anúncio do Mercado Livre")
       produtoEsq = listaML[0];
       produtoDir = (listaML.length > 1) ? listaML[1] : listaML[0];
     }
     else {
+      //console.log("Não tem anúncio da Amazon e nem do Mercado Livre")
       // Se caiu aqui, não há NADA para mostrar (nem Amazon, nem ML)
       [containerEsq, containerDir].forEach(c => { if(c) c.style.visibility = 'hidden'; c.style.pointerEvents = 'none'});
       return; 

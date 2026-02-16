@@ -1383,7 +1383,7 @@ def obter_todos_anuncios():
     finally:
         if cur: cur.close()
         if conn: conn.close()
-    print(f"Dicionários anúncios: {dicionario_anuncios}")
+
     return jsonify(dicionario_anuncios)
 
 @app.route("/api/salvar-opcoes", methods=["POST"])
