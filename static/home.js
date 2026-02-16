@@ -331,6 +331,18 @@ async function iniciarQuiz(event) {
         })
         sessionStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador));
         
+        // Analisa os anúncios que tem apara exibir
+        try {
+          const resposta = await fetch("/api/obter_todos_anuncios");
+          const dados = await resposta.json();
+          sessionStorage.setItem("anuncios", JSON.stringify(dados));
+        }
+        catch (erro) {
+          console.error("Falha ao carregar anúncios:", erro);
+          sessionStorage.setItem("anuncios", JSON.stringify({}));
+        }
+
+        // Chama a tela de quiz
         mensagem.style.opacity = 0
         window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;
       }
