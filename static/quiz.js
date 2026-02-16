@@ -180,8 +180,8 @@ function atualizarAnuncios() {
       if (provedorForm === 'amazon') {
         textoProvedor = 'na Amazon'
       }
-      else if (provedorForm === 'mercadolivre') {
-        textoProvedor = 'no ML'
+      else if (provedorForm === 'mercado livre') {
+        textoProvedor = 'Mercado Livre'
       }
       else {
         return "Ofertas de produtos";

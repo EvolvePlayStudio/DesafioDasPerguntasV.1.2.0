@@ -1365,8 +1365,7 @@ def obter_todos_anuncios():
             if provedor == 'Amazon':
                 link_final = f"https://www.amazon.com.br/dp/{link_referencia}?tag={AMAZON_TRACKING_ID}"
             else:
-                # Para ML ou outros, consideramos que o link curto/completo já está na coluna
-                link_final = link_referencia
+                link_final = f"https://mercadolivre.com/sec/{link_referencia}"
 
             dicionario_anuncios[tema][provedor].append({
                 'id': id_banco,
@@ -1384,7 +1383,7 @@ def obter_todos_anuncios():
     finally:
         if cur: cur.close()
         if conn: conn.close()
-        
+    print(f"Dicionários anúncios: {dicionario_anuncios}")
     return jsonify(dicionario_anuncios)
 
 @app.route("/api/salvar-opcoes", methods=["POST"])
