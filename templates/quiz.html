@@ -209,7 +209,7 @@
     max-height: 15rem;
     object-fit: contain;
   }
-  .amazon-card {
+  .anuncio-banner {
     background: var(--cor-fundo-claro);
     padding: 1rem;
     border-radius: 12px; 
@@ -218,37 +218,44 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between; /* Distribui o conteúdo no espaço */
-    min-height: 70vh;              /* Define uma altura mínima maior */
-    height: 65vh;
+    min-height: 73vh;              /* Define uma altura mínima maior */
+    min-width: 12rem;
     transition: transform 0.3s ease;
   }
-  .amazon-card img {
-    width: 100%;
+  .titulo-banner {
+    color: black;
+    font-size: var(--fs-emph);
+    font-weight: bold;
+    margin-bottom: 0.95rem;
+  }
+  .anuncio-banner img {
+    width: 92%;
     height: auto;
     max-height: 250px;
     object-fit: contain;
-    margin-bottom: 15px;
+    margin-bottom: 0.95rem;
   }
-  .amazon-card p {
+  .anuncio-banner p {
     font-size: var(--fs-base); 
     font-weight: bold; 
     color: black; 
     margin: 10px 0; 
     line-height: 1.4;
   }
-  .amazon-btn {
+  .btn-ver-oferta {
       background: #FFD814; 
       border: 1px solid #FCD200; 
-      border-radius: 20px; 
+      border-radius: 1rem; 
       padding: 12px 0; 
-      cursor: pointer; 
+      cursor: pointer;
+      font-size: var(--fs-base);
       font-weight: bold;
       width: 100%; 
+      height: 10%;
       color: black;
-      font-size: 14px;
       margin-top: auto; /* Empurra o botão sempre para o fim do card */
   }
-  .amazon-btn:hover { background: #f7ca00; }
+  .btn-ver-oferta:hover { background: #f7ca00; }
   /* Responsividade: Esconde anúncios se a tela for pequena demais para os 3 */
   @media (max-width: 1150px) {
     .quiz-grid-layout {
@@ -651,10 +658,11 @@
         <!-- Anúncio do lado esquerdo -->
         <div class="ad-sidebar" id="banner-lateral-esquerda" style="visibility: hidden; pointer-events: none;">
           <a href="" target="_blank" style="text-decoration: none;">
-            <div class="amazon-card">
-                <img src="" alt="Livro">
+            <div class="anuncio-banner">
+                <label id="label-anuncio-esquerda" class="titulo-banner"></label>
+                <img src="" alt="Produto">
                 <p id="descricao-banner-esquerda"></p>
-                <div class="amazon-btn">Ver na Amazon</div>
+                <div class="btn-ver-oferta">Ver Oferta</div>
             </div>
           </a>
         </div>
@@ -771,10 +779,11 @@
         <!-- Anúncio do lado direito -->
         <div class="ad-sidebar" id="banner-lateral-direita" style="visibility: hidden; pointer-events: none;">
           <a href="" target="_blank" style="text-decoration: none;">
-            <div class="amazon-card">
-              <img src="" alt="Livro">
+            <div class="anuncio-banner">
+              <label id="label-anuncio-direita" class="titulo-banner"></label>
+              <img src="" alt="Produto">
               <p id="descricao-banner-direita"></p>
-              <div class="amazon-btn">Ver na Amazon</div>
+              <div class="btn-ver-oferta">Ver Oferta</div>
             </div>
           </a>
         </div>

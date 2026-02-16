@@ -138,11 +138,6 @@ if (tipo_pergunta === "objetiva" || !MODO_VISITANTE && !exibir_instrucoes_quiz) 
 // Ids de perguntas que são selecionados primeiro
 let idsPrioritarios = JSON.parse(sessionStorage.getItem('ids_prioritarios') ?? "[]").map(Number);
 
-// Recupera a string ou uma string de objeto vazio se não existir
-let qPerguntasRespondidas = 0; // para fazer rotação de anúncio
-const cacheAnuncios = sessionStorage.getItem('anuncios') || '{}';
-const produtosAmazon = JSON.parse(cacheAnuncios);
-
 // Seleciona os botões
 botaoLikeNota.addEventListener("click", () => {
   const jaAtivo = botaoLikeNota.classList.contains("ativo");
@@ -158,86 +153,149 @@ botaoDislikeNota.addEventListener("click", () => {
   botaoLikeNota.classList.remove("ativo");
 });
 
-// Um produto padrão caso o tema não tenha um item específico
-const produtoPadrao = [
-  {
-    nome: 'Ofertas do Dia Amazon',
-    descricao: 'Confira as melhores ofertas em tecnologia, livros e muito mais na loja da Amazon',
-    link: '',
-    imagem: ''
-  }
-];
+// Variáveis de controle de exibição
+let qPerguntasRespondidas = 0; // perguntas que o usuário respondeu desde o início do quiz
+const cacheAnuncios = sessionStorage.getItem('anuncios') || '{}';
+const anunciosPorTema = JSON.parse(cacheAnuncios);
+const labelAnuncioEsq = document.getElementById('label-anuncio-esquerda');
+const labelAnuncioDir = document.getElementById('label-anuncio-direita');
+const containerEsq = document.getElementById('banner-lateral-esquerda');
+const containerDir = document.getElementById('banner-lateral-direita');
+
+// Objeto para rastrear quantas vezes cada anúncio foi exibido nesta sessão
+const historicoExibicao = {}; 
+
+//console.log("Cache anúncios: ", cacheAnuncios)
 
 function atualizarAnuncios() {
+  const gerarLabel = (tipo, provedor) => {
+      const provedorForm = provedor ? provedor.toLowerCase().trim() : provedor;
+      //console.log("Provedor formatado: ", provedorForm)
+      // Ajusta o plural e o termo conforme o tipo
+      let termoMidia = "Produtos";
+      if (tipo === 'Livro') termoMidia = "Livros";
+      if (tipo === 'Artigo') termoMidia = "Artigos";
+      //console.log("Provedor é: ", provedor)
+      let textoProvedor;
+      if (provedorForm === 'amazon') {
+        textoProvedor = 'na Amazon'
+      }
+      else if (provedorForm === 'mercadolivre') {
+        textoProvedor = 'no ML'
+      }
+      else {
+        return "Ofertas de produtos";
+      }
+      return `${termoMidia} ${textoProvedor}`;
+  };
   try {
-    const containerEsq = document.getElementById('banner-lateral-esquerda');
-    const containerDir = document.getElementById('banner-lateral-direita');
-
-    if (produtosAmazon[tema_atual]) {
-      // 2. Lógica de Filtro Admin (idsReservados vem do seu utils.js)
-      
-      let isUserAdmin;
-      if (MODO_VISITANTE) isUserAdmin = false
-      else isUserAdmin = idsReservados.includes(parseInt(idUsuario));
-
-      // Filtra a lista: se for admin, vê tudo. Se não, remove os 'somente_admin'
-      let fonteFiltrada = produtosAmazon[tema_atual].filter(anuncio => {
-        if (anuncio.somente_admin) return isUserAdmin;
-        return true;
-      })
-
-      // Se após o filtro não sobrar anúncios para o tema, esconde os banners e encerra
-      if (fonteFiltrada.length > 0) {
-        // Ativa a visibilidade dos banners
-        if (fonteFiltrada.length === 1) {
-          containerEsq.style.visibility = 'visible';
-          containerEsq.style.pointerEvents = 'auto';
-        }
-        else {
-          [containerEsq, containerDir].forEach(container => {
-            if (container) {
-              container.style.visibility = 'visible';
-              container.style.pointerEvents = 'auto';
-            }
-          })
-        }
-      }
-      else return;
-
-      // 3. Cria a cópia para manipulação (opcoesRodada)
-      let opcoesRodada = [...fonteFiltrada];
-      
-      // 4. Função auxiliar de sorteio (mantida com sua lógica original)
-      function sortearEExtrair() {
-        if (opcoesRodada.length === 0) return produtoPadrao[0]; // Retorna o primeiro item do array padrão
-        const index = Math.floor(Math.random() * opcoesRodada.length);
-        const item = opcoesRodada[index];
-        opcoesRodada.splice(index, 1);
-        return item;
-      }
-
-      // 5. Sorteio e Aplicação
-      const produtoEsq = sortearEExtrair();
-      const produtoDir = (opcoesRodada.length > 0) ? sortearEExtrair() : produtoEsq;
-      if (containerEsq) {
-        const linkEsq = containerEsq.querySelector('a');
-        linkEsq.href = produtoEsq.link;
-        linkEsq.setAttribute('data-id-anuncio', produtoEsq.id); 
-        containerEsq.querySelector('img').src = produtoEsq.imagem;
-        containerEsq.querySelector('p').textContent = produtoEsq.descricao;
-      }
-      if (containerDir) {
-        const linkDir = containerDir.querySelector('a');
-        linkDir.href = produtoDir.link;
-        linkDir.setAttribute('data-id-anuncio', produtoDir.id);
-        containerDir.querySelector('img').src = produtoDir.imagem;
-        containerDir.querySelector('p').textContent = produtoDir.descricao;
-      }
+    labelAnuncioEsq.textContent = '';
+    labelAnuncioDir.textContent = '';
+    
+    if (!anunciosPorTema[tema_atual]) {
+      [containerEsq, containerDir].forEach(c => { if(c) c.style.visibility = 'hidden'; c.style.pointerEvents = 'none'});
+      return;
     }
+
+    const dadosTema = anunciosPorTema[tema_atual];
+    const isUserAdmin = MODO_VISITANTE ? false : idsReservados.includes(parseInt(idUsuario));
+
+    // Função para preparar a lista com pesos de prioridade
+    const prepararListaPriorizada = (listaRaw) => {
+      if (!listaRaw) return [];
+      
+      return listaRaw
+        .filter(a => a.somente_admin ? isUserAdmin : true)
+        .map(a => {
+          // Inicializa o contador de histórico se não existir
+          if (!historicoExibicao[a.id]) historicoExibicao[a.id] = 0;
+          
+          // CÁLCULO DE PRIORIDADE:
+          // 1. Quanto menos vezes exibido, maior a prioridade.
+          // 2. Se for admin e o anúncio for 'somente_admin', ganha um bônus imenso para subir no topo.
+          let prioridade = 1000 - (historicoExibicao[a.id] * 10);
+          if (isUserAdmin && a.somente_admin) prioridade += 5000; 
+
+          return { ...a, _score: prioridade };
+        })
+        .sort((a, b) => b._score - a._score); // Ordena do maior score para o menor
+    };
+
+    let listaAmazon = prepararListaPriorizada(dadosTema['Amazon']);
+    let listaML = prepararListaPriorizada(dadosTema['Mercado Livre']);
+
+    if (listaAmazon.length === 0 && listaML.length === 0) {
+      [containerEsq, containerDir].forEach(c => { if(c) c.style.visibility = 'hidden'; c.style.pointerEvents = 'none'});
+      return;
+    }
+
+    // Seleção dos produtos (Pega sempre o topo da lista priorizada)
+    let produtoEsq, produtoDir;
+
+    //console.log("Lista do mercado live: ", listaML)
+    if (listaAmazon.length > 0 && listaML.length > 0) {
+      produtoEsq = listaAmazon[0];
+      produtoDir = listaML[0];
+      //console.log('Lista da Amazon na 0: ', listaAmazon[0])
+      //console.log('Lista do ML na 0: ', listaML[0])
+    } 
+    else if (listaAmazon.length > 0) {
+      produtoEsq = listaAmazon[0];
+      produtoDir = (listaAmazon.length > 1) ? listaAmazon[1] : listaAmazon[0];
+    } 
+    else if (listaML.length > 0) {
+      produtoEsq = listaML[0];
+      produtoDir = (listaML.length > 1) ? listaML[1] : listaML[0];
+    }
+    else {
+      // Se caiu aqui, não há NADA para mostrar (nem Amazon, nem ML)
+      [containerEsq, containerDir].forEach(c => { if(c) c.style.visibility = 'hidden'; c.style.pointerEvents = 'none'});
+      return; 
+    }
+
+    if (produtoEsq) {
+      // Define label do anúncio
+      if (labelAnuncioEsq) {
+        //console.log("Provedor na esquerda: ", produtoEsq.provedor)
+        labelAnuncioEsq.textContent = gerarLabel(produtoEsq.tipo_midia, produtoEsq.provedor);
+      }
+      // Registra no histórico que eles foram vistos (com verificação de existência)
+      historicoExibicao[produtoEsq.id] = (historicoExibicao[produtoEsq.id] || 0) + 1;
+    }
+    if (produtoDir && produtoDir.id !== produtoEsq.id) {
+      
+      if (labelAnuncioDir) {
+        //console.log("Provedor na direita: ", produtoDir.provedor)
+        labelAnuncioDir.textContent = gerarLabel(produtoDir.tipo_midia, produtoDir.provedor);
+      }
+      historicoExibicao[produtoDir.id] = (historicoExibicao[produtoDir.id] || 0) + 1;
+    }
+
+    // Aplicação no DOM
+    const aplicarAnuncio = (container, produto) => {
+      if (!container || !produto) return;
+      container.style.visibility = 'visible';
+      container.style.pointerEvents = 'auto';
+      
+      const link = container.querySelector('a');
+      link.href = produto.link;
+      link.setAttribute('data-id-anuncio', produto.id); 
+      link.setAttribute('data-provedor-anuncio', produto.provedor);
+      link.setAttribute('data-tipo-midia-anuncio', produto.tipo_midia);
+      
+      container.querySelector('img').src = produto.imagem;
+      container.querySelector('p').textContent = produto.descricao || produto.nome;
+    };
+
+    aplicarAnuncio(containerEsq, produtoEsq);
+    aplicarAnuncio(containerDir, produtoDir);
+
   } catch (error) {
-    console.error("Erro ao processar anúncios dinâmicos: ", error);
+    console.error("Erro na rotação inteligente de anúncios: ", error);
   }
 }
+
+
 
 function getWithMigration(key) {
   // Pega dado do sessionStorage, se não encontrar pega do localStorage
@@ -1111,7 +1169,12 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   dica_icon.style.pointerEvents = 'none';
 
   // Atualiza anúncios exibidos
-  if (chamarAtualizarAnuncios || qPerguntasRespondidas % 3 === 0) atualizarAnuncios();
+  if (idsReservados.includes(idUsuario)) {
+    if (chamarAtualizarAnuncios || qPerguntasRespondidas % 1 === 0) atualizarAnuncios();
+  }
+  else {
+    if (chamarAtualizarAnuncios || qPerguntasRespondidas % 2 === 0) atualizarAnuncios();
+  }
 
   // Reseta estrelas
   document.querySelectorAll(".estrela").forEach(e => {
@@ -1786,14 +1849,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (idsReservados.includes(idUsuario) || id_visitante === id_visitante_admin) return;
       const linkElement = this.querySelector('a');
       const idAnuncioSorteado = linkElement.getAttribute('data-id-anuncio');
+      const provedorAnuncioSorteado = linkElement.getAttribute('data-provedor-anuncio');
+      const tipoMidiaAnuncioSorteado = linkElement.getAttribute('data-tipo-midia-anuncio');
 
       const dados = {
         id_anuncio: idAnuncioSorteado,
         id_usuario: idUsuario,
         id_visitante: id_visitante,
         tema_quiz: tema_atual,
-        provedor: 'Amazon',
-        tipo_midia: 'Livro'
+        provedor: provedorAnuncioSorteado,
+        tipo_midia: tipoMidiaAnuncioSorteado
       };
 
       // Envia para o Flask sem travar a navegação

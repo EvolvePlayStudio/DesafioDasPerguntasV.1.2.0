@@ -1332,41 +1332,59 @@ def login():
     finally:
         if cur: cur.close()
         if conn: conn.close()
-   
+
+
 @app.route('/api/obter_todos_anuncios')
 def obter_todos_anuncios():
     conn = cur = None
+    # Estrutura final: {"História": {"amazon": [...], "mercadolivre": [...]}}
     dicionario_anuncios = {}
     
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            SELECT id, tema, nome, descricao, link_asin, imagem_url, somente_admin
+            SELECT id, tema, nome, descricao, link_asin, imagem_url, somente_admin, provedor, tipo_midia
             FROM anuncios
             WHERE is_ativo = TRUE
-        """) # Devemos desenvolver este execute aqui
+        """)
 
         anuncios = cur.fetchall()
 
         for a in anuncios:
-            tema = a[1]
-            if tema not in dicionario_anuncios:
-                dicionario_anuncios[tema] = []
+            id_banco, tema, nome, desc, link_referencia, img, so_admin, provedor, tipo_midia = a
             
-            dicionario_anuncios[tema].append({
-                'id': a[0],
-                'nome': a[2],
-                'descricao': a[3],
-                'link': f"https://www.amazon.com.br/dp/{a[4]}?tag={AMAZON_TRACKING_ID}",
-                'imagem': a[5],
-                'somente_admin': a[6]
+            # Garante a criação do Tema e do Provedor no dicionário
+            if tema not in dicionario_anuncios:
+                dicionario_anuncios[tema] = {}
+            
+            if provedor not in dicionario_anuncios[tema]:
+                dicionario_anuncios[tema][provedor] = []
+            
+            # Montagem do Link
+            if provedor == 'Amazon':
+                link_final = f"https://www.amazon.com.br/dp/{link_referencia}?tag={AMAZON_TRACKING_ID}"
+            else:
+                # Para ML ou outros, consideramos que o link curto/completo já está na coluna
+                link_final = link_referencia
+
+            dicionario_anuncios[tema][provedor].append({
+                'id': id_banco,
+                'nome': nome,
+                'descricao': desc,
+                'link': link_final,
+                'imagem': img,
+                'somente_admin': so_admin,
+                'tipo_midia': tipo_midia,
+                'provedor': provedor
             })
+
     except Exception:
         app.logger.exception("Erro ao tentar obter anúncios")
     finally:
         if cur: cur.close()
         if conn: conn.close()
+        
     return jsonify(dicionario_anuncios)
 
 @app.route("/api/salvar-opcoes", methods=["POST"])
