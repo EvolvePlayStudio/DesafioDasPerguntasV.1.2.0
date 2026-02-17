@@ -227,7 +227,7 @@ async function iniciarQuiz(event) {
   const perguntas_restantes_atuais = parseInt(perguntas_restantes[0]?.textContent.split("/")[0] ?? "0", 10);
   if (perguntas_restantes_atuais <= 0) {
     if (!MODO_VISITANTE) {
-      exibirMensagem(mensagem, `Aguarde a recarga diária de energia para responder mais perguntas`, 'orange');
+      exibirMensagem(mensagem, `Energia esgotada, retorne amanhã para poder responder novas perguntas`, 'orange');
     }
     else {
       exibirMensagem(mensagem, `É necessário criar uma conta para ter acesso ao conteúdo completo do jogo`, 'orange');

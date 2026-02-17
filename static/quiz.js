@@ -518,11 +518,11 @@ function calcularPontuacao(acertou) {
           pontos_ganhos = regras_jogador.pontos_pular_pergunta;
         }
         else {
-          pontos_ganhos = regras_jogador.pontos_erro_discursiva ?? -80;
+          pontos_ganhos = regras_jogador.pontos_erro_discursiva ?? -100;
         }
       }
       else {
-        pontos_ganhos = regras_jogador.pontos_erro
+        pontos_ganhos = regras_jogador.pontos_erro ?? -100;
       }
       // Trata casos em que a pontuação do usuário ficaria negativa
       if (pontuacoes_jogador[tema_atual] + pontos_ganhos < 0) {
@@ -1857,7 +1857,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const banners = document.querySelectorAll('.ad-sidebar');
   banners.forEach(banner => {
     banner.addEventListener('click', function() {
-      if (idsReservados.includes(idUsuario) || id_visitante === id_visitante_admin) return;
+      if (MODO_VISITANTE && id_visitante === id_visitante_admin) return;
       const linkElement = this.querySelector('a');
       const idAnuncioSorteado = linkElement.getAttribute('data-id-anuncio');
       const provedorAnuncioSorteado = linkElement.getAttribute('data-provedor-anuncio');
