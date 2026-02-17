@@ -10,7 +10,6 @@ import logging
 import sys
 import traceback
 from apscheduler.schedulers.background import BackgroundScheduler
-from atualizar_perguntas_dicas import *
 import random, string, time
 from PIL import Image, ImageEnhance, ImageFilter
 from io import BytesIO
@@ -18,27 +17,8 @@ import urllib.parse
 import qrcode
 from functools import wraps
 import pytz # Também importado no utils
-import threading
-
-def iniciar_agendamento():
-    # Analisa 4 vezes por dia se o incremento no número de dicas e perguntas dos usuários foi feita
-    scheduler.add_job(
-    atualizar_perguntas_dicas, 'cron', hour=2, minute=0, id='atualizacao_02h', replace_existing=True
-    )
-    scheduler.add_job(
-    atualizar_perguntas_dicas, 'cron', hour=8, minute=0, id='atualizacao_08h', replace_existing=True
-    )
-    scheduler.add_job(
-    atualizar_perguntas_dicas, 'cron', hour=14, minute=0, id='atualizacao_14h', replace_existing=True
-    )
-    scheduler.add_job(
-    atualizar_perguntas_dicas, 'cron', hour=20, minute=0, id='atualizacao_20h', replace_existing=True
-    )
-    scheduler.start()
-
-# Isso inicia o agendador em "background"
-t = threading.Thread(target=iniciar_agendamento, daemon=True)
-t.start()
+from psycopg2.extras import RealDictCursor
+from db import *
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.logger.setLevel(logging.DEBUG)
@@ -51,7 +31,7 @@ app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 
 SITE_EM_MANUTENCAO = False
-id_visitante_admin = "1815ce63-ac09-4951-a76c-e7847b3b2e67"
+id_visitante_admin = "605720b7-c72f-4b18-9b73-c3615bfce897"
 
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
 
@@ -1224,7 +1204,7 @@ def login():
 
             # Verifica usuário
             cur.execute("""
-                SELECT id_usuario, senha_hash, nome, email_confirmado, dicas_restantes, perguntas_restantes
+                SELECT id_usuario, senha_hash, nome, email_confirmado, dicas_restantes, perguntas_restantes, ultima_sessao, bonus_energia, expiracao_bonus
                 FROM usuarios_registrados WHERE email = %s
             """, (email,))
             usuario = cur.fetchone()
@@ -1232,7 +1212,7 @@ def login():
             if not usuario:
                 return jsonify(success=False, message="E-mail não registrado")
 
-            id_usuario, senha_hash, nome_usuario, email_confirmado, dicas_restantes, perguntas_restantes = usuario
+            id_usuario, senha_hash, nome_usuario, email_confirmado, dicas_restantes, p_restantes, u_sessao, b_energia, exp_bonus = usuario
             session["id_usuario"] = id_usuario
             session["email"] = email
             session["email_confirmado"] = email_confirmado
@@ -1241,6 +1221,30 @@ def login():
             if not check_password_hash(senha_hash, senha):
                 return jsonify(success=False, message="Senha incorreta")
 
+            # --- LÓGICA DE RECARGA DIÁRIA E BÔNUS (REVISADA) ---
+            agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
+            nova_energia = p_restantes
+
+            # 1. Recarga Diária Normal (+20 se for um novo dia)
+            if u_sessao and u_sessao.date() < agora_sp.date():
+                nova_energia = min(nova_energia + 20, 80)
+
+            # 2. Processamento do Bônus (soma ao total, respeitando o teto de 80)
+            if b_energia > 0 and (exp_bonus is None or agora_sp < exp_bonus):
+                nova_energia = min(nova_energia + b_energia, 80)
+
+            # 3. Atualiza o banco com a nova energia e o novo horário de sessão
+            cur.execute("""
+            UPDATE usuarios_registrados
+                SET ultima_sessao = date_trunc('second', NOW() AT TIME ZONE 'America/Sao_Paulo'),
+                perguntas_restantes = %s,
+                bonus_energia = 0,
+                expiracao_bonus = NULL
+            WHERE id_usuario = %s
+            """, (nova_energia, id_usuario))
+            
+            # Atualiza para o retorno do JSON
+            p_restantes = nova_energia
 
             # Pega as informações de opções do usuário
             cur.execute("""
@@ -1268,11 +1272,6 @@ def login():
                 notificacoes_importantes = True
                 notificacoes_adicionais = False
                 temas_interesse = []
-
-            # Atualiza o horário da última sessão do usuário
-            cur.execute("""
-              UPDATE usuarios_registrados
-              SET ultima_sessao = date_trunc('second', NOW() AT TIME ZONE 'America/Sao_Paulo') WHERE id_usuario = %s""", (id_usuario,))
 
             # 🔒 Invalida sessões antigas
             cur.execute("UPDATE sessoes SET ativo = FALSE WHERE id_usuario = %s", (id_usuario,))
@@ -1313,7 +1312,7 @@ def login():
                 email=email,
                 nome_usuario=nome_usuario,
                 dicas_restantes=dicas_restantes,
-                perguntas_restantes=perguntas_restantes,
+                perguntas_restantes=p_restantes,
                 opcoes_usuario=opcoes_usuario
             ), 200)
 
@@ -1336,7 +1335,6 @@ def login():
     finally:
         if cur: cur.close()
         if conn: conn.close()
-
 
 @app.route('/api/obter_todos_anuncios')
 def obter_todos_anuncios():
@@ -1940,7 +1938,7 @@ def registrar_clique_anuncio():
 
     conn = cur = None
     try:
-        id_usuario = None if dados["modo_visitante"] else dados["idi_usuario"]
+        id_usuario = None if dados["modo_visitante"] else dados["id_usuario"]
         id_visitante = None if not dados["modo_visitante"] else dados["id_visitante"]
 
         conn = get_db_connection()

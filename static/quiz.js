@@ -3,7 +3,8 @@ import { playSound, playKeySound } from "./sound.js"
 
 // Envia erros para a base de dados caso ocorram
 const id_visitante = localStorage.getItem("id_visitante");
-const id_visitante_admin = "1815ce63-ac09-4951-a76c-e7847b3b2e67";
+//const id_visitante_admin = "1815ce63-ac09-4951-a76c-e7847b3b2e67";
+const id_visitante_admin = "605720b7-c72f-4b18-9b73-c3615bfce897";
 const idUsuario = Number(getWithMigration("id_usuario"));
 window.onerror = function (message) {
   if (id_visitante !== id_visitante_admin && !idsReservados.includes(idUsuario)) {
@@ -1862,7 +1863,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       const provedorAnuncioSorteado = linkElement.getAttribute('data-provedor-anuncio');
       const tipoMidiaAnuncioSorteado = linkElement.getAttribute('data-tipo-midia-anuncio');
       
-
       const dados = {
         modo_visitante: MODO_VISITANTE,
         id_anuncio: idAnuncioSorteado,
