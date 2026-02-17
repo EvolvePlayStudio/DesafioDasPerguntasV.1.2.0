@@ -1936,14 +1936,17 @@ def registrar_clique_anuncio():
 
     conn = cur = None
     try:
+        id_usuario = None if dados["modo_visitante"] else dados["idi_usuario"]
+        id_visitante = None if not dados["modo_visitante"] else dados["id_visitante"]
+
         conn = get_db_connection()
         cur = conn.cursor()
 
         dispositivo = identificar_dispositivo()
         query = """INSERT INTO cliques_anuncios (id_usuario, id_visitante, id_anuncio, tema_quiz, provedor, tipo_midia, dispositivo) VALUES (%s, %s, %s, %s, %s, %s, %s)"""
         valores = (
-            dados["id_usuario"],
-            dados["id_visitante"],
+            id_usuario,
+            id_visitante,
             dados["id_anuncio"],
             dados["tema_quiz"],
             dados["provedor"],

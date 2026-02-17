@@ -170,15 +170,20 @@ const historicoExibicao = {};
 function atualizarAnuncios() {
   const gerarLabel = (tipo, provedor) => {
       const provedorForm = provedor ? provedor.toLowerCase().trim() : provedor;
-      //console.log("Provedor formatado: ", provedorForm)
       // Ajusta o plural e o termo conforme o tipo
       let termoMidia = "Produtos";
       if (tipo === 'Livro') termoMidia = "Livros";
       if (tipo === 'Artigo') termoMidia = "Artigos";
-      //console.log("Provedor é: ", provedor)
+      
       let textoProvedor;
+      /*
+      console.log("Provedor é: ", provedor);
+      console.log("Provedor formatado:", provedorForm);
+      console.log("É Mercado Livre? ", provedorForm === 'mercado livre');*/
+
       if (provedorForm === 'amazon') {
         textoProvedor = 'na Amazon'
+        return 'Amazon'
       }
       else if (provedorForm === 'mercado livre') {
         textoProvedor = 'Mercado Livre';
@@ -187,7 +192,7 @@ function atualizarAnuncios() {
       else {
         return "Ofertas de produtos";
       }
-      return `${termoMidia} ${textoProvedor}`;
+      // return `${termoMidia} ${textoProvedor}`;
   };
   try {
     labelAnuncioEsq.textContent = '';
@@ -1856,8 +1861,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       const idAnuncioSorteado = linkElement.getAttribute('data-id-anuncio');
       const provedorAnuncioSorteado = linkElement.getAttribute('data-provedor-anuncio');
       const tipoMidiaAnuncioSorteado = linkElement.getAttribute('data-tipo-midia-anuncio');
+      
 
       const dados = {
+        modo_visitante: MODO_VISITANTE,
         id_anuncio: idAnuncioSorteado,
         id_usuario: idUsuario,
         id_visitante: id_visitante,
