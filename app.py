@@ -20,6 +20,26 @@ from functools import wraps
 import pytz # Também importado no utils
 import threading
 
+def iniciar_agendamento():
+    # Analisa 4 vezes por dia se o incremento no número de dicas e perguntas dos usuários foi feita
+    scheduler.add_job(
+    atualizar_perguntas_dicas, 'cron', hour=2, minute=0, id='atualizacao_02h', replace_existing=True
+    )
+    scheduler.add_job(
+    atualizar_perguntas_dicas, 'cron', hour=8, minute=0, id='atualizacao_08h', replace_existing=True
+    )
+    scheduler.add_job(
+    atualizar_perguntas_dicas, 'cron', hour=14, minute=0, id='atualizacao_14h', replace_existing=True
+    )
+    scheduler.add_job(
+    atualizar_perguntas_dicas, 'cron', hour=20, minute=0, id='atualizacao_20h', replace_existing=True
+    )
+    scheduler.start()
+
+# Isso inicia o agendador em "background"
+t = threading.Thread(target=iniciar_agendamento, daemon=True)
+t.start()
+
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(sys.stdout)
@@ -533,22 +553,6 @@ def pagina_visitada():
         return {"error": "Página não informada"}, 400
 
     return {"sucess": True}, 200
-
-def iniciar_agendamento():
-    # Analisa 4 vezes por dia se o incremento no número de dicas e perguntas dos usuários foi feita
-    scheduler.add_job(
-    atualizar_perguntas_dicas, 'cron', hour=2, minute=0, id='atualizacao_02h', replace_existing=True
-    )
-    scheduler.add_job(
-    atualizar_perguntas_dicas, 'cron', hour=8, minute=0, id='atualizacao_08h', replace_existing=True
-    )
-    scheduler.add_job(
-    atualizar_perguntas_dicas, 'cron', hour=14, minute=0, id='atualizacao_14h', replace_existing=True
-    )
-    scheduler.add_job(
-    atualizar_perguntas_dicas, 'cron', hour=20, minute=0, id='atualizacao_20h', replace_existing=True
-    )
-    scheduler.start()
 
 @app.route("/", methods=["GET"])
 def index():
@@ -2184,10 +2188,6 @@ def marcar_feedback_lido():
     except Exception:
         app.logger.exception("Erro ao marcar feedback como lido")
         return "Erro interno", 500
-
-# Isso inicia o agendador em "background"
-t = threading.Thread(target=iniciar_agendamento, daemon=True)
-t.start()
 
 # 1. Rode o agendamento em uma Thread para não bloquear o Flask
 if __name__ == '__main__':
