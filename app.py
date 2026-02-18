@@ -1927,14 +1927,15 @@ def registrar():
     enviar_email_confirmacao(email, nome, link_confirmacao)
     return jsonify(success=True, message="Registro realizado! Verifique seu e-mail para confirmar")
 
-@app.route('/registrar_clique_anuncio', methods=['POST'])
-def registrar_clique_anuncio():
+@app.route('/registrar_interacao_anuncio', methods=['POST'])
+def registrar_interacao_anuncio():
     dados = request.get_json()
     if not dados:
         return jsonify({"erro": "Dados inválidos"}), 400
 
     conn = cur = None
     try:
+        tipo_interacao = dados.get("tipo_interacao", None)
         id_usuario = None if dados["modo_visitante"] else dados["id_usuario"]
         id_visitante = None if not dados["modo_visitante"] else dados["id_visitante"]
 
@@ -1942,7 +1943,9 @@ def registrar_clique_anuncio():
         cur = conn.cursor()
 
         dispositivo = identificar_dispositivo()
-        query = """INSERT INTO cliques_anuncios (id_usuario, id_visitante, id_anuncio, tema_quiz, provedor, tipo_midia, dispositivo) VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+        query = """
+        INSERT INTO cliques_anuncios (id_usuario, id_visitante, id_anuncio, tema_quiz, provedor, tipo_midia, dispositivo, tipo_interacao)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
         valores = (
             id_usuario,
             id_visitante,
@@ -1950,15 +1953,16 @@ def registrar_clique_anuncio():
             dados["tema_quiz"],
             dados["provedor"],
             dados["tipo_midia"],
-            dispositivo
+            dispositivo,
+            tipo_interacao
         )
         cur.execute(query, valores)
         conn.commit()
 
-        return jsonify({"status": "sucesso", "mensagem": "Clique em anúncio registrado"}), 201
+        return jsonify({"status": "sucesso", "mensagem": "Interação em anúncio registrada"}), 201
     except Exception:
-        app.logger.exception("Erro ao tentar registrar clique em anúncio")
-        return jsonify({"erro": "Erro ao tentar registrar clique em anúncio"}), 500
+        app.logger.exception("Erro ao tentar registrar interação em anúncio")
+        return jsonify({"erro": "Erro ao tentar registrar interação em anúncio"}), 500
     finally:
         if cur: cur.close()
         if conn: conn.close()
