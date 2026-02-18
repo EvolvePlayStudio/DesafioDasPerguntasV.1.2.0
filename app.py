@@ -1246,8 +1246,10 @@ def login():
             cur.execute("""
                 SELECT
                 exibir_instrucoes_quiz,
-                notificacoes_importantes,
-                notificacoes_adicionais,
+                notificacoes_bonus_energia,
+                notificacoes_alteracoes_pontos,
+                notificacoes_atualizacoes_site,
+                outras_notificacoes,
                 temas_interesse
                 FROM opcoes_usuarios
                 WHERE id_usuario = %s
@@ -1258,15 +1260,19 @@ def login():
             if opcoes:
                 (   
                     exibir_instrucoes_quiz,
-                    notificacoes_importantes,
-                    notificacoes_adicionais,
+                    notificacoes_bonus_energia,
+                    notificacoes_alteracoes_pontos,
+                    notificacoes_atualizacoes_site,
+                    outras_notificacoes,
                     temas_interesse
                 ) = opcoes
             else:
                 # fallback defensivo (não deveria ocorrer)
                 exibir_instrucoes_quiz = True
-                notificacoes_importantes = True
-                notificacoes_adicionais = False
+                notificacoes_bonus_energia = True
+                notificacoes_alteracoes_pontos = True
+                notificacoes_atualizacoes_site = True
+                outras_notificacoes = False
                 temas_interesse = []
 
             # 🔒 Invalida sessões antigas
@@ -1281,7 +1287,7 @@ def login():
                 VALUES (%s, %s, %s, TRUE)
             """, (id_usuario, token, expira_em))
 
-            # Continua sua lógica de ranking/pontuação
+            # Lógica de ranking/pontuação
             cur.execute("SELECT tema FROM pontuacoes_usuarios WHERE id_usuario = %s", (id_usuario,))
             temas_ja_registrados = {row[0].strip().lower() for row in cur.fetchall()}
             temas_normalizados = {tema.strip().lower(): tema for tema in temas_disponiveis}
@@ -1294,10 +1300,14 @@ def login():
 
             opcoes_usuario = {
                 "exibir_instrucoes_quiz": exibir_instrucoes_quiz,
-                "notificacoes_importantes": notificacoes_importantes,
-                "notificacoes_adicionais": notificacoes_adicionais,
+                "notificacoes_bonus_energia": notificacoes_bonus_energia,
+                "notificacoes_alteracoes_pontos": notificacoes_alteracoes_pontos,
+                "notificacoes_atualizacoes_site": notificacoes_atualizacoes_site,
+                "outras_notificacoes": outras_notificacoes,
                 "temas_interesse": temas_interesse or []
             }
+
+            print(f"Opções de usuário {opcoes_usuario}")
 
             # 🔑 Retorna JSON e define cookie HttpOnly
             resp = make_response(jsonify(
@@ -1383,53 +1393,6 @@ def obter_todos_anuncios():
         if conn: conn.close()
 
     return jsonify(dicionario_anuncios)
-
-@app.route("/api/salvar-opcoes", methods=["POST"])
-@token_required
-def salvar_opcoes(user_id):
-    cur = conn = None
-    try:
-        data = request.get_json(silent=True) or {}
-        notificacoes_importantes = bool(data.get("notificacoes_importantes", True))
-        notificacoes_adicionais = bool(data.get("notificacoes_adicionais", False))
-        exibir_instrucoes_quiz = bool(data.get("exibir_instrucoes_quiz", True))
-        temas_interesse = data.get("temas_interesse", [])
-
-        # Garantia defensiva
-        if not isinstance(temas_interesse, list):
-            temas_interesse = []
-
-        conn = get_db_connection()
-        cur = conn.cursor()
-
-        cur.execute("""
-            UPDATE opcoes_usuarios
-            SET
-                exibir_instrucoes_quiz = %s,
-                notificacoes_importantes = %s,
-                notificacoes_adicionais = %s,
-                temas_interesse = %s,
-                ultima_atualizacao = date_trunc('seconds', NOW() AT TIME ZONE 'America/Sao_Paulo')
-            WHERE id_usuario = %s
-        """, (
-            exibir_instrucoes_quiz,
-            notificacoes_importantes,
-            notificacoes_adicionais,
-            temas_interesse,
-            user_id
-        ))
-
-        conn.commit()
-        return jsonify({"success": True})
-
-    except Exception:
-        if conn: conn.rollback()
-        app.logger.exception("Erro ao tentar salvar opções do usuário")
-        return jsonify({"success": False}), 500
-
-    finally:
-        if cur: cur.close()
-        if conn: conn.close()
 
 @app.route("/reenviar-email-confirmacao", methods=["POST"])
 def reenviar_email_confirmacao_route():
@@ -1792,7 +1755,10 @@ def usar_dica(user_id):
 @app.route("/register", methods=["POST"])
 def registrar():
     data = request.get_json()
-    notificacoes_importantes = bool(data.get("notificacoes_importantes", True))
+    notificacoes_bonus_energia = bool(data.get("notificacoes_bonus_energia", True))
+    notificacoes_alteracoes_pontos = bool(data.get("notificacoes_alteracoes_pontos", True))
+    notificacoes_atualizacoes_site = bool(data.get("notificacoes_atualizacoes_site", True))
+
     nome = data.get("nome")
     email_raw = data.get("email")
     senha = data.get("senha")
@@ -1845,10 +1811,12 @@ def registrar():
         cur.execute("""
             INSERT INTO opcoes_usuarios (
               id_usuario,
-              notificacoes_importantes
+              notificacoes_bonus_energia,
+              notificacoes_alteracoes_pontos,
+              notificacoes_atualizacoes_site
             )
-            VALUES (%s, %s)
-        """, (id_usuario, notificacoes_importantes))
+            VALUES (%s, %s, %s, %s)
+        """, (id_usuario, notificacoes_bonus_energia, notificacoes_alteracoes_pontos, notificacoes_atualizacoes_site))
 
         # Cria os registros de pontuações do usuário em cada tema
         cur.execute("""
@@ -2152,6 +2120,56 @@ def registrar_visitante():
     if id_visitante:
         session["id_visitante"] = id_visitante
     return jsonify({"ok": True})
+
+@app.route("/api/salvar-opcoes", methods=["POST"])
+@token_required
+def salvar_opcoes(user_id):
+    cur = conn = None
+    try:
+        data = request.get_json(silent=True) or {}
+        exibir_instrucoes_quiz = bool(data.get("exibir_instrucoes_quiz", True))
+        notificacoes_bonus_energia = bool(data.get("notificacoes_bonus_energia", True))
+        notificacoes_alteracoes_pontos = bool(data.get("notificacoes_alteracoes_pontos", True))
+        notificacoes_atualizacoes_site = bool(data.get("notificacoes_atualizacoes_site", True))
+        outras_notificacoes = bool(data.get("outras_notificacoes", False))
+        temas_interesse = data.get("temas_interesse", [])
+
+        # Garantia defensiva
+        if not isinstance(temas_interesse, list): temas_interesse = []
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            UPDATE opcoes_usuarios
+            SET
+                exibir_instrucoes_quiz = %s,
+                notificacoes_bonus_energia = %s,
+                notificacoes_alteracoes_pontos = %s,
+                notificacoes_atualizacoes_site = %s,
+                outras_notificacoes = %s,
+                temas_interesse = %s,
+                ultima_atualizacao = date_trunc('seconds', NOW() AT TIME ZONE 'America/Sao_Paulo')
+            WHERE id_usuario = %s
+        """, (
+            exibir_instrucoes_quiz,
+            notificacoes_bonus_energia,
+            notificacoes_alteracoes_pontos,
+            notificacoes_atualizacoes_site,
+            outras_notificacoes,
+            temas_interesse,
+            user_id
+        ))
+
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.exception("Erro ao tentar salvar opções do usuário")
+        return jsonify({"success": False}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
 
 @app.route("/register_validate", methods=["POST"])
 def validar_registro():

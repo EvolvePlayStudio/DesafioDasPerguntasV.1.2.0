@@ -4,13 +4,15 @@ import { playSound } from "./sound.js"
 // ===============================
 // Elementos principais
 // ===============================
-const chkNotifImportantes = document.getElementById('notif-importantes');
-const chkNotifAdicionais = document.getElementById('notif-adicionais');
-const chkInstrucoes = document.getElementById('mostrar-instrucoes-quiz');
+const checkNotificacoesBonusEnergia = document.getElementById('check-notificacoes-bonus-energia');
+const checkNotificacoesAlteracoesPontos = document.getElementById('check-notificacoes-alteracoes-pontos');
+const checkNotificacoesAtualizacoesSite = document.getElementById('check-notificacoes-atualizacoes-site');
+const checkOutrasNotificacoes = document.getElementById('check-outras-notificacoes');
+const checkInstrucoes = document.getElementById('check-mostrar-instrucoes-quiz');
 const totChecks = document.querySelectorAll(`input[type="checkbox"]`);
 
 const btnSalvar = document.getElementById('btn-salvar-opcoes');
-const btnVoltarMenu = document.getElementById('btn-voltar-menu')
+const btnVoltarMenu = document.getElementById('btn-voltar-menu');
 const statusLabel = document.getElementById('opcoes-status');
 
 const inputNovoEmail = document.getElementById('novo-email');
@@ -88,13 +90,12 @@ let estadoInicial = null;
 // ===============================
 function obterEstadoAtual() {
   return {
-    exibir_instrucoes_quiz: chkInstrucoes.checked,
-    notificacoes_importantes: chkNotifImportantes.checked,
-    notificacoes_adicionais: chkNotifAdicionais.checked,
-    temas_interesse: Array.from(temasCheckboxes)
-      .filter(chk => chk.checked)
-      .map(chk => chk.value)
-      .sort()
+    exibir_instrucoes_quiz: checkInstrucoes.checked,
+    notificacoes_bonus_energia: checkNotificacoesBonusEnergia.checked,
+    notificacoes_alteracoes_pontos: checkNotificacoesAlteracoesPontos.checked,
+    notificacoes_atualizacoes_site: checkNotificacoesAtualizacoesSite.checked,
+    outras_notificacoes: checkOutrasNotificacoes.checked,
+    temas_interesse: Array.from(temasCheckboxes).filter(chk => chk.checked).map(chk => chk.value).sort()
   };
 }
 
@@ -110,18 +111,6 @@ function atualizarBotaoSalvar() {
 }
 
 // ===============================
-// Regras de dependência
-// ===============================
-function atualizarEstadoNotificacoes() {
-  if (!chkNotifImportantes.checked) {
-    chkNotifAdicionais.checked = false;
-    chkNotifAdicionais.disabled = true;
-  } else {
-    chkNotifAdicionais.disabled = false;
-  }
-}
-
-// ===============================
 // Carregar estado inicial
 // ===============================
 function carregarEstadoInicial() {
@@ -131,15 +120,13 @@ function carregarEstadoInicial() {
   if (dados) {
     const opcoes = JSON.parse(dados);
 
-    chkInstrucoes.checked = opcoes.exibir_instrucoes_quiz;
-    chkNotifImportantes.checked = opcoes.notificacoes_importantes;
-    chkNotifAdicionais.checked = opcoes.notificacoes_adicionais;
+    checkInstrucoes.checked = opcoes.exibir_instrucoes_quiz;
+    checkNotificacoesBonusEnergia.checked = opcoes.notificacoes_bonus_energia;
+    checkNotificacoesAlteracoesPontos.checked = opcoes.notificacoes_alteracoes_pontos;
+    checkNotificacoesAtualizacoesSite.checked = opcoes.notificacoes_atualizacoes_site;
+    checkOutrasNotificacoes.checked = opcoes.outras_notificacoes;
     
-    temasCheckboxes.forEach(chk => {
-      chk.checked = opcoes.temas_interesse.includes(chk.value);
-    });
-
-    atualizarEstadoNotificacoes();
+    temasCheckboxes.forEach(chk => chk.checked = opcoes.temas_interesse.includes(chk.value));
 
     estadoInicial = obterEstadoAtual();
     atualizarBotaoSalvar();
@@ -163,34 +150,21 @@ function mostrarStatus(mensagem, tipo) {
 
 function setTelaBloqueada(bloquear) {
   document.body.classList.toggle('tela-bloqueada', bloquear);
-
   btnSalvar.disabled = bloquear;
   btnAlterarEmail.disabled = bloquear;
-
-  chkNotifImportantes.disabled = bloquear;
-  chkNotifAdicionais.disabled = bloquear;
-  chkInstrucoes.disabled = bloquear;
-
-  temasCheckboxes.forEach(chk => {
-    chk.disabled = bloquear;
-  });
+  checkInstrucoes.disabled = bloquear;
+  checkNotificacoesBonusEnergia.disabled = bloquear;
+  checkNotificacoesAlteracoesPontos.disabled = bloquear;
+  checkNotificacoesAtualizacoesSite.disabled = bloquear;
+  checkOutrasNotificacoes.disabled = bloquear;
+  temasCheckboxes.forEach(chk => chk.disabled = bloquear);
 }
 
 // ===============================
 // Eventos
 // ===============================
-chkNotifImportantes.addEventListener('change', () => {
-  atualizarEstadoNotificacoes();
-  atualizarBotaoSalvar();
-});
-
-[
-  chkNotifAdicionais,
-  chkInstrucoes,
-  ...temasCheckboxes
-].forEach(el => {
-  el.addEventListener('change', atualizarBotaoSalvar);
-});
+checkNotificacoesBonusEnergia.addEventListener('change', () => atualizarBotaoSalvar());
+[checkInstrucoes, checkNotificacoesBonusEnergia, checkNotificacoesAlteracoesPontos, checkNotificacoesAtualizacoesSite, checkOutrasNotificacoes, ...temasCheckboxes].forEach(el => el.addEventListener('change', atualizarBotaoSalvar));
 
 // ===============================
 // Salvar opções

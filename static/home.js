@@ -3,7 +3,7 @@ import { playSound } from "./sound.js";
 
 // console.log("ID de visitante: ", localStorage.getItem("id_visitante"));
 
-let permitir_escolher_tema = false;
+let permitir_escolher_tema = false
 let tema_atual = null;
 let tipo_pergunta = null;
 const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";

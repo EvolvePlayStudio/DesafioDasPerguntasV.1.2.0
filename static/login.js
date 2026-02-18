@@ -48,9 +48,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const register_tab = document.getElementById('register-tab');
   const forgot_tab = document.getElementById('forgot-tab');
 
-  login_tab.addEventListener("click", () => {
-    showForm('login');
-  });
+  login_tab.addEventListener("click", () => showForm('login'));
   register_tab.addEventListener("click", async() => {
     await fetch("/pagina_destino", {
       method: "POST",
@@ -74,23 +72,28 @@ document.addEventListener('DOMContentLoaded', function () {
   const info_section = document.querySelector('.info-section');
   const btnRegister = register_form?.querySelector('button[type="submit"]');
 
-  // Variáveis relacionadas aos checkboxes da aba de registro
-  const VISITOR_CHOICE_KEY = 'usar_dados_visitante_registro';
-  const SEND_NOTIFICATION_KEY = 'enviar_notificacoes_registro';
+  // Check para migrar dados
   const container_migrar_dados_visitante = document.getElementById("container-migrar-dados-visitante");
-  const container_enviar_notificacoes = document.getElementById("container-notificacoes-email");
-  const checkbox_migrar_dados = document.getElementById("usar-dados-visitante");
-  const checkbox_enviar_notificacoes = document.getElementById("receber-notificacoes-email"); 
+  const check_migrar_dados = document.getElementById("usar-dados-visitante");
+
+  // Check para notificar bônus de energia
+  const container_notificacoes_bonus_energia = document.getElementById("container-notificacoes-bonus-energia");
+  const check_notificacoes_bonus_energia = document.getElementById("check-notificacoes-bonus-energia");
+
+  // Check para notificar alterações nas pontuações
+  const container_notificacoes_alteracoes_pontos = document.getElementById("container-notificacoes-alteracoes-pontos");
+  const check_notificacoes_alteracoes_pontos = document.getElementById("check-notificacoes-alteracoes-pontos");
+
+
+  // Check para notificar atualizações do site
+  const container_notificacoes_atualizacoes_site = document.getElementById("container-notificacoes-atualizacoes-site");
+  const check_notificacoes_atualizacoes_site = document.getElementById("check-notificacoes-atualizacoes-site");
+
+  const containersChecks = [container_migrar_dados_visitante, container_notificacoes_bonus_energia, container_notificacoes_alteracoes_pontos, container_notificacoes_atualizacoes_site];
+
+  // const checksRegistro = [check_migrar_dados, check_notificacoes_bonus_energia, check_notificacoes_alteracoes_pontos, check_notificacoes_atualizacoes_site];
 
   const hasVisitorData = localStorage.getItem('visitante_respondidas') || localStorage.getItem('visitante_avaliacoes');
-
-  // Função para marcar no sessionStorage estado de marcação dos checkboxes da aba registro
-  checkbox_migrar_dados.addEventListener('change', () => {
-    sessionStorage.setItem(VISITOR_CHOICE_KEY, checkbox_migrar_dados.checked.toString());
-  });
-  checkbox_enviar_notificacoes.addEventListener('change', () => {
-    sessionStorage.setItem(SEND_NOTIFICATION_KEY, checkbox_enviar_notificacoes.checked.toString());
-  });
 
   // CAPTCHA elementos (pode ser undefined se o HTML não tiver)
   const captchaContainer = document.getElementById('captcha-container');
@@ -264,8 +267,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
           // Se passou na validação, exibe o CAPTCHA
           if (captchaContainer) {
-            container_migrar_dados_visitante.style.display = "none";
-            container_enviar_notificacoes.style.display = "none";
+            //container_migrar_dados_visitante.style.display = "none";
+            //container_notificacoes_bonus_energia.style.display = "none";
+            containersChecks.forEach(c => c.style.display = "none");
             captchaContainer.hidden = false;
 
             register_form.querySelectorAll('input, label, .form-group').forEach(el => {
@@ -309,8 +313,10 @@ document.addEventListener('DOMContentLoaded', function () {
             captcha_token: captchaToken,
             captcha_selecoes: selecoes,
             id_visitante: localStorage.getItem("id_visitante"),
-            usar_dados_visitante: checkbox_migrar_dados.checked,
-            notificacoes_importantes: checkbox_enviar_notificacoes.checked
+            usar_dados_visitante: check_migrar_dados.checked,
+            notificacoes_bonus_energia: check_notificacoes_bonus_energia.checked,
+            notificacoes_alteracoes_pontos: check_notificacoes_alteracoes_pontos.checked,
+            notificacoes_atualizacoes_site: check_notificacoes_atualizacoes_site.checked
           })
         });
 
@@ -397,9 +403,7 @@ document.addEventListener('DOMContentLoaded', function () {
         sessionStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes || 0));
         sessionStorage.setItem("nome_usuario", data.nome_usuario || '');
 
-        if (data.opcoes_usuario) {
-          sessionStorage.setItem('opcoes_usuario', JSON.stringify(data.opcoes_usuario));
-        };
+        if (data.opcoes_usuario) sessionStorage.setItem('opcoes_usuario', JSON.stringify(data.opcoes_usuario));
         sessionStorage.setItem("modal_confirmacao_email_exibido", false);
         sessionStorage.setItem("email_usuario", data.email);
         sessionStorage.setItem("token_sessao", data.token);
@@ -542,13 +546,8 @@ document.addEventListener('DOMContentLoaded', function () {
       if (register_form) {
 
         // Exibe os containers dos checkboxes da aba registro
-        if (hasVisitorData) {
-          container_migrar_dados_visitante.style.display = "";
-        }
-        else {
-          container_migrar_dados_visitante.style.display = "none";
-        }
-        container_enviar_notificacoes.style.display = ""
+        hasVisitorData ? container_migrar_dados_visitante.style.display = "none" :  container_migrar_dados_visitante.style.display = "none";
+        containersChecks.forEach(c => c.style.display = '');
 
         register_form.classList.add('active');
         login_form.classList.remove('active');
@@ -568,7 +567,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (btnRegister) btnRegister.disabled = false;
 
         register_form.reset();
-        sincronizarCheckboxMigracao();
 
         if (lbl_mensagem_registro) {
           lbl_mensagem_registro.textContent = '';
@@ -613,28 +611,6 @@ document.addEventListener('DOMContentLoaded', function () {
         forgot_message.textContent = '';
       }
     }
-  }
-
-  function sincronizarCheckboxMigracao() {
-    if (!checkbox_migrar_dados || !checkbox_enviar_notificacoes) return;
-
-    // Carrega estado do check para migrar dados
-    const savedChoiceDadosMigrados = sessionStorage.getItem(VISITOR_CHOICE_KEY);
-    const normalizedDadosMigrados = savedChoiceDadosMigrados === null ? null : savedChoiceDadosMigrados.trim().toLowerCase();
-
-    // Reset defensivo
-    checkbox_migrar_dados.checked = false;
-
-    // Regra de negócio
-    checkbox_migrar_dados.checked = normalizedDadosMigrados === null ? true : normalizedDadosMigrados === 'true';
-
-    // Carrega estado do check apra envio de notificações
-    const savedChoiceEnviarNotificacoes = sessionStorage.getItem(SEND_NOTIFICATION_KEY);
-    const normalizedEnviarNotificacoes = savedChoiceEnviarNotificacoes === null ? null : savedChoiceEnviarNotificacoes.trim().toLowerCase();
-
-    checkbox_enviar_notificacoes.checked = false;
-
-    checkbox_enviar_notificacoes.checked = normalizedEnviarNotificacoes === null ? true : normalizedEnviarNotificacoes === 'true';
   }
 
   function bloquearRegistro(info_bloqueio) {

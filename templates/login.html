@@ -311,6 +311,7 @@
                         type="checkbox" 
                         name="usar_dados_visitante" 
                         id="usar-dados-visitante"
+                        checked
                     >
                     Usar dados do modo visitante
                 </label>
@@ -320,35 +321,54 @@
                 </div>
             </div>
 
-            <!-- Opção de notificações por e-mail -->
-            <div id="container-notificacoes-email" class="visitor-migration">
+            <!-- Opção de receber notificações para bônus de energia -->
+            <div id="container-notificacoes-bonus-energia" class="visitor-migration">
                 <label class="visitor-migration-label">
                     <input 
                         type="checkbox" 
-                        name="receber_notificacoes_email" 
-                        id="receber-notificacoes-email"
+                        name="check-notificacoes-bonus-energia" 
+                        id="check-notificacoes-bonus-energia"
                         checked
                     >
                     Notificar ao receber bônus de energia
                 </label>
 
                 <div class="visitor-migration-info">
-                    Seja avisado ao receber bônus de energia para responder novas perguntas e com prazo de expiração para coletar
+                    Seja avisado ao receber bônus de energia para responder novas perguntas com prazo de expiração para coletar
                 </div>
             </div>
 
-            <div id="container-notificacoes-email" class="visitor-migration" style="display: none;">
+            <!-- Opção de receber notificações para alterações nas pontuações -->
+            <div id="container-notificacoes-alteracoes-pontos" class="visitor-migration">
                 <label class="visitor-migration-label">
                     <input 
                         type="checkbox" 
-                        name="receber-outras-notificacoes" 
-                        id="receber-outras-notificacoes"
+                        name="check-notificacoes-alteracoes-pontos" 
+                        id="check-notificacoes-alteracoes-pontos"
+                        checked
                     >
-                    Outras notificações
+                    Notificar alterações nas pontuações
                 </label>
 
                 <div class="visitor-migration-info">
-                    Avisos ligados a temas de interesse, alterações nas pontuações, etc
+                    Seja avisado quando sua pontuação em um dos temas for modificada devido a correções de respostas
+                </div>
+            </div>
+
+            <!-- Opção de receber notificações para atualizações importantes no site -->
+            <div id="container-notificacoes-atualizacoes-site" class="visitor-migration">
+                <label class="visitor-migration-label">
+                    <input 
+                        type="checkbox" 
+                        name="check-notificacoes-atualizacoes-site" 
+                        id="check-notificacoes-atualizacoes-site"
+                        checked
+                    >
+                    Notificar atualizações do site
+                </label>
+
+                <div class="visitor-migration-info">
+                    Seja avisado quando ocorrerem atualizações importantes no site
                 </div>
             </div>
 
