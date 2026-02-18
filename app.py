@@ -9,14 +9,12 @@ import re
 import logging
 import sys
 import traceback
-from apscheduler.schedulers.background import BackgroundScheduler
 import random, string, time
 from PIL import Image, ImageEnhance, ImageFilter
 from io import BytesIO
 import urllib.parse
 import qrcode
 from functools import wraps
-import pytz # Também importado no utils
 from psycopg2.extras import RealDictCursor
 from db import *
 
@@ -32,8 +30,6 @@ invite_token = os.getenv("TOKEN_CONVITE")
 
 SITE_EM_MANUTENCAO = False
 id_visitante_admin = "605720b7-c72f-4b18-9b73-c3615bfce897"
-
-scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
 
 # Código copia e cola gerado pelo Nubank
 codigo_pix = os.getenv("QR_CODE")
@@ -1458,7 +1454,8 @@ def reenviar_email_confirmacao_route():
 
         # 🔑 Gera novo token
         token = secrets.token_urlsafe(32)
-        expiracao = datetime.now(pytz.timezone("America/Sao_Paulo")) + timedelta(hours=24)
+        agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
+        expiracao = agora_sp + timedelta(hours=24)
 
         # 🔄 Atualiza token e expiração
         cur.execute("""
