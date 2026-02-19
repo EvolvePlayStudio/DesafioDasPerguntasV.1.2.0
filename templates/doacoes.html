@@ -1,15 +1,21 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+  <!--
   <meta charset="UTF-8">
+
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/Favicon.png') }}">
+
+  <meta name="description" content="Experimente mais de 1000 perguntas em inúmeros temas científicos e populares, acumule pontos e suba de ranking">
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17529321916"></script> <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'AW-17529321916'); </script>
+  -->
+
+  {% include 'cabecalho_comum.html' %}
   <title>Doações - Desafio das Perguntas</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/Favicon.png') }}">
-  <meta name="description" content="Experimente mais de 1000 perguntas em inúmeros temas científicos e populares, acumule pontos e suba de ranking">
-
-  <!-- Google tag (gtag.js) --> 
-  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17529321916"></script> <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'AW-17529321916'); </script>
   
   <style>
     body {
@@ -127,9 +133,9 @@
 
     <p><strong>Valores sugeridos:</strong></p>
       <ul>
-        <li>❤️ R$ 3/mês – ajuda simbólica </li>
-        <li>☕ R$ 5/mês – apoio recorrente </li>
-        <li>🚀 R$ 10/mês – incentivo ao projeto </li>
+        <li>❤️ R$ 5/mês – ajuda simbólica </li>
+        <li>☕ R$ 15/mês – apoio recorrente </li>
+        <li>🚀 R$ 30/mês – incentivo ao projeto </li>
       </ul>
     
     <p>Caso não possa contribuir financeiramente, considere outras formas de apoio como:</p>
@@ -139,8 +145,6 @@
       </ul>
 
     <p>Toda forma de apoio contribui para a evolução do projeto, seja por doações, feedbacks ou uso contínuo da plataforma.</p>
-
-    
 
     <!-- QR Code -->
     <div class="qrcode">

@@ -787,17 +787,23 @@ async function enviarResposta(pulando = false) {
 
     // --- Lógica de Conversão Google Ads ---
     function analisarMetaConversao() {
-      const totalRespondidas = respondidas.objetiva.length + respondidas.discursiva.length; 
-      if (totalRespondidas >= 5) {
-        gtag('event', 'conversion', {
-          'send_to': 'AW-17529321916/JTBvCKKkoeEbELzz0KZB'
-        });
-      };
-      if (totalRespondidas >= 15) {
-        gtag('event', 'conversion', {
-          'send_to': 'AW-17529321916/Ydq3CL_hhfcbELzz0KZB'
-        });
-      };
+      // if (id_visitante === id_visitante_admin) return;
+      try {
+        const totalRespondidas = respondidas.objetiva.length + respondidas.discursiva.length;
+        if (totalRespondidas >= 5) {
+          gtag('event', 'conversion', {
+            'send_to': 'AW-17529321916/JTBvCKKkoeEbELzz0KZB'
+          });
+        };
+        if (totalRespondidas >= 15) {
+          gtag('event', 'conversion', {
+            'send_to': 'AW-17529321916/Ydq3CL_hhfcbELzz0KZB'
+          });
+        };
+      }
+      catch (error) {
+        console.error("não foi possível fazer registro de conversão de perguntas respondidas", error)
+      }
     }
 
     // Registra o envio da resposta no SQL
