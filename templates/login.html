@@ -26,7 +26,8 @@
         const idNumerico = idUsuarioSessao ? parseInt(idUsuarioSessao) : 0;
         const isMobile = window.innerWidth <= 1200;
         
-        const isAdmin = idsReservados.includes(idNumerico) || idVisitanteSessao === idVisitanteAdmin;
+        // const isAdmin = idsReservados.includes(idNumerico) || idVisitanteSessao === idVisitanteAdmin;
+        const isAdmin = false;
 
         if (!isMobile && !isAdmin) {
           console.log("Social Bar: Iniciando carregamento...");

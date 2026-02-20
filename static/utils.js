@@ -1,7 +1,7 @@
 export const pontuacaoTemaPadraoVisitantes = 1800;
 export const dificuldadesOrdenadas = ['Fácil', 'Médio', 'Difícil', 'Extremo'];
 export const temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"];
-export const idsReservados = [4, 6];
+export const idsReservados = [4, 6, 16];
 export const idVisitanteAdmin = '605720b7-c72f-4b18-9b73-c3615bfce897'
 
 let idUsuario;
