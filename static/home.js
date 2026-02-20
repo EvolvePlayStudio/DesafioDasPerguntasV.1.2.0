@@ -30,7 +30,7 @@ if (!MODO_VISITANTE) {
     localStorage.setItem("auth_message", "Sessão expirada");
     window.location.href = "/login";
   }
-  else if (idsReservadosTeste.includes(parseInt(idUsuario ?? "0"))) {
+  else if (modoTesteWrapper && idsReservadosTeste.includes(parseInt(idUsuario ?? "0"))) {
     modoTesteWrapper.style.display = 'flex';
     const modoTeste = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
     if (modoTeste) checkModoTeste.checked = modoTeste;
