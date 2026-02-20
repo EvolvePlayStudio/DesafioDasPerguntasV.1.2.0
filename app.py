@@ -1307,8 +1307,6 @@ def login():
                 "temas_interesse": temas_interesse or []
             }
 
-            print(f"Opções de usuário {opcoes_usuario}")
-
             # 🔑 Retorna JSON e define cookie HttpOnly
             resp = make_response(jsonify(
                 success=True,

@@ -8,38 +8,12 @@ let tema_atual = null;
 let tipo_pergunta = null;
 const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
 sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
-const modoTesteWrapper = document.getElementById("modo-teste-wrapper");
-const checkModoTeste = document.getElementById("modo-teste-toggle");
 const idUsuario = sessionStorage.getItem("id_usuario");
-let registrandoModoTeste = false;
 
-async function registrarModoTeste() {
-  registrandoModoTeste = true;
-  sessionStorage.setItem("modo_teste", checkModoTeste.checked);
-  await fetch("/api/modo_teste", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ modo_teste: checkModoTeste.checked})
-  }).catch(() => console.warn("Falha ao registrar modo teste"));
-  registrandoModoTeste = false;
-}
-
-if (!MODO_VISITANTE) {
-  const idsReservadosTeste = [6, 16];
-  if (!idUsuario) {
-    localStorage.setItem("auth_message", "Sessão expirada");
-    window.location.href = "/login";
-  }
-  else if (modoTesteWrapper && idsReservadosTeste.includes(parseInt(idUsuario ?? "0"))) {
-    modoTesteWrapper.style.display = 'flex';
-    const modoTeste = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
-    if (modoTeste) checkModoTeste.checked = modoTeste;
-    
-    if (checkModoTeste) {
-      registrarModoTeste();
-      checkModoTeste.addEventListener("change", () => {registrarModoTeste()});
-    };
-  };
+// Caso ocorra erro de não conseguir pegar id de usuário
+if (!MODO_VISITANTE && !idUsuario) {
+  localStorage.setItem("auth_message", "Sessão expirada");
+  window.location.href = "/login";
 };
 
 const mensagem = document.getElementById("mensagem");
@@ -195,7 +169,8 @@ async function iniciarQuiz(event) {
     radios_tipo_pergunta.forEach(radio => {radio.onclick = null})
   };
 
-  if (registrandoModoTeste) return;
+  const config = window.ADS_CONFIG;
+  if (config.registrandoModoTeste) return;
   if (!permitir_escolher_tema) return;
   playSound("click");
 

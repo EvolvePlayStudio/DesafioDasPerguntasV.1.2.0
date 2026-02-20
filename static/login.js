@@ -84,7 +84,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const container_notificacoes_alteracoes_pontos = document.getElementById("container-notificacoes-alteracoes-pontos");
   const check_notificacoes_alteracoes_pontos = document.getElementById("check-notificacoes-alteracoes-pontos");
 
-
   // Check para notificar atualizações do site
   const container_notificacoes_atualizacoes_site = document.getElementById("container-notificacoes-atualizacoes-site");
   const check_notificacoes_atualizacoes_site = document.getElementById("check-notificacoes-atualizacoes-site");

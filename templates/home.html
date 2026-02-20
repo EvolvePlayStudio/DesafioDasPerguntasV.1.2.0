@@ -6,50 +6,6 @@
   <title>Home - Desafio das Perguntas</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-  <!-- Social bar do AdsTerra -->
-  <script type="module">
-    async function carregarSocialBar() {
-      try {
-        // Import dinâmico (funciona dentro de try/catch)
-        const utils = await import("{{ url_for('static', filename='utils.js') }}");
-        const { idsReservados, idVisitanteAdmin } = utils;
-
-        const idUsuarioSessao = sessionStorage.getItem("id_usuario");
-        const idVisitanteSessao = sessionStorage.getItem("id_visitante");
-        const idNumerico = idUsuarioSessao ? parseInt(idUsuarioSessao) : 0;
-        const isMobile = window.innerWidth <= 1200;
-        
-        // const isAdmin = idsReservados.includes(idNumerico) || idVisitanteSessao === idVisitanteAdmin;
-        const isAdmin = false;
-
-        if (!isMobile && !isAdmin) {
-          console.log("Social Bar: Iniciando carregamento...");
-          const adScript = document.createElement('script');
-          adScript.src = "https://pl28750365.effectivegatecpm.com/0f/87/79/0f877988a14c549bbccd28d0180a5867.js";
-          adScript.type = 'text/javascript';
-          adScript.async = true;
-          
-          // Usar appendChild no head ou body (DOMContentLoaded não é necessário em type="module")
-          document.head.appendChild(adScript);
-        }
-      }
-      catch (error) {
-        console.error("Não foi possível carregar social bar:", error);
-      }
-    }
-    carregarSocialBar();
-  </script>
-
-  <!--
-  <script>
-    if (window.innerWidth > 1200) {
-        var script = document.createElement('script');
-        script.src = "https://pl28750365.effectivegatecpm.com/0f/87/79/0f877988a14c549bbccd28d0180a5867.js";
-        script.type = 'text/javascript';
-        document.head.appendChild(script);
-    }
-  </script>-->
-
   <!-- Para cálculo de rowgap entre os cards de temas mais à frente --> 
   <script>
     (function () {
@@ -565,6 +521,7 @@
   </script>
 
 </head>
+
 <body>
 
   <!-- Header em mobile -->
@@ -632,14 +589,14 @@
   </header>
 
   <main>
-    <!-- Modo Testando Perguntas 
+    <!-- Modo Testando Perguntas -->
     <div id="modo-teste-wrapper" class="modo-teste-wrapper">
       <label class="switch">
         <input type="checkbox" id="modo-teste-toggle">
         <span class="slider"></span>
       </label>
       <span class="modo-teste-texto">Modo Teste</span>
-    </div>-->
+    </div>
 
     <!-- Banner de anúncio na lateral esquerda -->
     <div id="banner-lateral-esquerda" class="ad-sidebar">
@@ -729,21 +686,7 @@
       </div>
     </div>
 
-    <!-- Posiciona anúncio da esquerda -->
-    <script>
-      const anuncioBannerEsquerda = document.getElementById("banner-lateral-esquerda");
-      const altura_header = document.getElementById("header-desktop").getBoundingClientRect().height;
-      const y_top_cards_scroll = document.getElementById("cards-scroll-wrapper").getBoundingClientRect().top;
-      const alturaContainerAnuncio = y_top_cards_scroll - altura_header;
-      const marginTopBannerEquerda = (alturaContainerAnuncio - anuncioBannerEsquerda.getBoundingClientRect().height) / 2
-      anuncioBannerEsquerda.style.marginTop = `${marginTopBannerEquerda}px`;
-    </script>
-    
-    <!--
-    <div class="mensagens-container">
-      <div id="instrucoes-jogo" class="mensagens-jogo">📖 Perguntas com alternativas são mais numerosas e focadas em análise, enquanto as digitadas exigem memorização
-      </div>
-    </div>-->
+
   </main>
 
   <!-- Rodapé da página -->
@@ -780,7 +723,94 @@
 
 </div>
 
-  <body data-modo-visitante="{{ session.get('visitante', False) | tojson }}"></body>
+  <body data-modo-visitante="{{ session.get('visitante', False) | tojson }}">
+    <!-- Social bar do AdsTerra -->
+    <script>
+      const MODO_VISITANTE_HTML = document.body.dataset.modoVisitante === 'true';
+      const idUsuarioSessao = MODO_VISITANTE_HTML ? null : sessionStorage.getItem("id_usuario");
+      sessionStorage.setItem("id_usuario", idUsuarioSessao);
+      const idNumerico = idUsuarioSessao ? parseInt(idUsuarioSessao) : 0;
+      const isMobile = window.innerWidth <= 1200;
+      const isAdmin = [4, 6, 16].includes(idNumerico);
+      
+      window.ADS_CONFIG = {
+        isAdmin: isAdmin,
+        isMobile: isMobile,
+        registrandoModoTeste: false,
+        modoVisitante: MODO_VISITANTE_HTML
+      }
+      
+      /*
+      if (!isMobile && !isAdmin) {
+        var script = document.createElement('script');
+        script.src = "https://pl28750365.effectivegatecpm.com/0f/87/79/0f877988a14c549bbccd28d0180a5867.js";
+        script.type = 'text/javascript';
+        document.head.appendChild(script);
+      }*/
+    </script>
+
+    <!-- Push-in Ad da AdsTerra -->
+    <script>
+      if (window.innerWidth > 1200) {
+        var script = document.createElement('script');
+        script.src = "https://pl28750365.effectivegatecpm.com/0f/87/79/0f877988a14c549bbccd28d0180a5867.js";
+        script.type = 'text/javascript';
+        document.head.appendChild(script);
+      }
+    </script>
+  
+    <!-- Posiciona anúncio de banner da esquerda -->
+    <script>
+      const modoTesteWrapper = document.getElementById("modo-teste-wrapper");
+      const checkModoTeste = document.getElementById("modo-teste-toggle");
+
+      async function registrarModoTeste() {
+        const config = window.ADS_CONFIG;
+        config.registrandoModoTeste = true;
+        
+        sessionStorage.setItem("modo_teste", checkModoTeste.checked);
+        await fetch("/api/modo_teste", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ modo_teste: checkModoTeste.checked})
+        }).catch(() => console.warn("Falha ao registrar modo teste"));
+        config.registrandoModoTeste = false;
+      }
+
+      function posicionarAnuncioBanner() {
+        const anuncioBannerEsquerda = document.getElementById("banner-lateral-esquerda");
+        const config = window.ADS_CONFIG;
+        try {
+          if (config.isMobile || config.isAdmin) {
+            anuncioBannerEsquerda.style.display = 'none';
+            
+            // Coloca botão de modo teste caso não tenha colocado anúncio
+            if (config.isAdmin && !config.modoVisitante) {
+              modoTesteWrapper.style.display = 'flex';
+              const modoTeste = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
+              if (modoTeste) checkModoTeste.checked = modoTeste;
+      
+              if (checkModoTeste) {
+                registrarModoTeste();
+                checkModoTeste.addEventListener("change", () => {registrarModoTeste()});
+              };
+            }
+            return;
+          }
+        }
+        catch(error) {
+          console.error("Erro ao tentar remover anúncio de banner")
+        }
+        
+        const altura_header = document.getElementById("header-desktop").getBoundingClientRect().height;
+        const y_top_cards_scroll = document.getElementById("cards-scroll-wrapper").getBoundingClientRect().top;
+        const alturaContainerAnuncio = y_top_cards_scroll - altura_header;
+        const marginTopBannerEquerda = (alturaContainerAnuncio - anuncioBannerEsquerda.getBoundingClientRect().height) / 2
+        anuncioBannerEsquerda.style.marginTop = `${marginTopBannerEquerda}px`;
+      }
+      posicionarAnuncioBanner();
+    </script>
+  </body>
 
   <script type="module" src="{{ url_for('static', filename='home.js') }}?v=1.2.1"></script>
 
