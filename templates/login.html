@@ -14,13 +14,36 @@
     </script>-->
     
     <!-- Social bar do AdsTerra -->
-    <script>
-        if (window.innerWidth > 1200) {
-            var script = document.createElement('script');
-            script.src = "https://pl28750365.effectivegatecpm.com/0f/87/79/0f877988a14c549bbccd28d0180a5867.js";
-            script.type = 'text/javascript';
-            document.head.appendChild(script);
+    <script type="module">
+    async function carregarSocialBar() {
+      try {
+        // Import dinâmico (funciona dentro de try/catch)
+        const utils = await import("{{ url_for('static', filename='utils.js') }}");
+        const { idsReservados, idVisitanteAdmin } = utils;
+
+        const idUsuarioSessao = sessionStorage.getItem("id_usuario");
+        const idVisitanteSessao = sessionStorage.getItem("id_visitante");
+        const idNumerico = idUsuarioSessao ? parseInt(idUsuarioSessao) : 0;
+        const isMobile = window.innerWidth <= 1200;
+        
+        const isAdmin = idsReservados.includes(idNumerico) || idVisitanteSessao === idVisitanteAdmin;
+
+        if (!isMobile && !isAdmin) {
+          console.log("Social Bar: Iniciando carregamento...");
+          const adScript = document.createElement('script');
+          adScript.src = "https://pl28750365.effectivegatecpm.com/0f/87/79/0f877988a14c549bbccd28d0180a5867.js";
+          adScript.type = 'text/javascript';
+          adScript.async = true;
+          
+          // Usar appendChild no head ou body (DOMContentLoaded não é necessário em type="module")
+          document.head.appendChild(adScript);
         }
+      }
+      catch (error) {
+        console.error("Não foi possível carregar social bar:", error);
+      }
+    }
+    carregarSocialBar();
     </script>
 
     <style>
