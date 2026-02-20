@@ -208,7 +208,6 @@
     padding: 1rem;
     border-radius: 12px; 
     text-align: center; 
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     display: flex;
     flex-direction: column;
     justify-content: space-between; /* Distribui o conteúdo no espaço */
@@ -222,12 +221,24 @@
     font-weight: bold;
     margin-bottom: 0.95rem;
   }
-  .anuncio-banner img {
+  .img-produto {
     width: 92%;
     height: auto;
     max-height: 250px;
     object-fit: contain;
     margin-bottom: 0.95rem;
+  }
+  .img-logotipo {
+    width: 70%;
+    display: block;
+    object-fit: contain;
+    margin-bottom: 0.95rem !important;
+  }
+  .img-logotipo.amazon {
+    width: 70%;
+  }
+  .img-logotipo.mercado-livre {
+    width: 85%;
   }
   .anuncio-banner p {
     font-size: var(--fs-base); 
@@ -653,8 +664,8 @@
         <div class="ad-sidebar" id="banner-lateral-esquerda" style="visibility: hidden; pointer-events: none;">
           <a href="" target="_blank" style="text-decoration: none;">
             <div class="anuncio-banner">
-                <label id="label-anuncio-esquerda" class="titulo-banner"></label>
-                <img src="" alt="Produto">
+                <img id="logotipo-anuncio-esq" alt="Logotipo" class="img-logotipo">
+                <img src="" alt="Produto" class="img-produto">
                 <p id="descricao-banner-esquerda"></p>
                 <div class="btn-ver-oferta">Ver Oferta</div>
             </div>
@@ -774,8 +785,8 @@
         <div class="ad-sidebar" id="banner-lateral-direita" style="visibility: hidden; pointer-events: none;">
           <a href="" target="_blank" style="text-decoration: none;">
             <div class="anuncio-banner">
-              <label id="label-anuncio-direita" class="titulo-banner"></label>
-              <img src="" alt="Produto">
+              <img id="logotipo-anuncio-dir" alt="Logotipo" class="img-logotipo">
+              <img src="" alt="Produto" class="img-produto">
               <p id="descricao-banner-direita"></p>
               <div class="btn-ver-oferta">Ver Oferta</div>
             </div>

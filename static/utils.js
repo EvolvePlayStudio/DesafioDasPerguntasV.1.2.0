@@ -14,7 +14,7 @@ function atualizarVariaveis() {
   MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === "true";
 }
 
-export function atualizarAnuncios(containerEsq, containerDir, labelAnuncioEsq, labelAnuncioDir, tema_atual, dadosAnuncios, telaAtual, historicoExibicao={}) {
+export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq, logotipoAnuncioDir, tema_atual, dadosAnuncios, telaAtual, historicoExibicao={}) {
   atualizarVariaveis();
   
   const aplicarAnuncio = (container, produto) => {
@@ -26,24 +26,31 @@ export function atualizarAnuncios(containerEsq, containerDir, labelAnuncioEsq, l
       link.setAttribute('data-id-anuncio', produto.id);
       link.setAttribute('data-provedor-anuncio', produto.provedor);
       link.setAttribute('data-tipo-midia-anuncio', produto.tipo_midia);
-      container.querySelector('img').src = produto.imagem;
+      container.querySelector('.img-produto').src = produto.imagem;
       container.querySelector('p').textContent = produto.descricao || produto.nome;
   
       if (historicoExibicao[produto.id] === 1) {
         registrarInteracaoAnuncio(link, "Impressão", tema_atual);
       }      
   };
-    
-  const gerarLabel = (provedor) => {
+  
+  // Retorna a fonte da imagem de logotipo
+  const gerarLogotipo = (logotipo, provedor) => {
+    logotipo.classList.remove('amazon', 'mercado-livre');
     const provedorForm = provedor ? provedor.toLowerCase().trim() : provedor;
-    if (provedorForm === 'amazon') return 'Amazon';
-    if (provedorForm === 'mercado livre') return 'Mercado Livre';
-    return "Ofertas de produtos";
+    if (provedorForm === 'amazon') {
+      logotipo.src = 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg';
+      logotipo.classList.add('amazon');
+    } 
+    if (provedorForm === 'mercado livre') {
+      logotipo.src = 'https://github.com/EvolvePlayStudio/assets-quiz/blob/main/logotipoMercadoLivre02.png?raw=true';
+      logotipo.classList.add('mercado-livre');
+    } 
   };
   
   try {
-    if (labelAnuncioEsq) labelAnuncioEsq.textContent = '';
-    if (labelAnuncioDir) labelAnuncioDir.textContent = '';
+    if (logotipoAnuncioEsq) logotipoAnuncioEsq.src = '';
+    if (logotipoAnuncioDir) logotipoAnuncioDir.src = '';
     
     if (!dadosAnuncios[tema_atual]) {
       if (containerEsq) {
@@ -113,12 +120,12 @@ export function atualizarAnuncios(containerEsq, containerDir, labelAnuncioEsq, l
       }
       // Renderiza os anúncios e registra impressão ocorrida na base de dados
       if (produtoEsq) {
-        labelAnuncioEsq.textContent = gerarLabel(produtoEsq.provedor);
+        gerarLogotipo(logotipoAnuncioEsq, produtoEsq.provedor);
         historicoExibicao[produtoEsq.id]++;
         aplicarAnuncio(containerEsq, produtoEsq);
       }
       if (produtoDir && produtoDir.id !== produtoEsq.id) {
-        labelAnuncioDir.textContent = gerarLabel(produtoDir.provedor);
+        gerarLogotipo(logotipoAnuncioDir, produtoDir.provedor);
         historicoExibicao[produtoDir.id]++;
         aplicarAnuncio(containerDir, produtoDir);
       }
@@ -135,8 +142,8 @@ export function atualizarAnuncios(containerEsq, containerDir, labelAnuncioEsq, l
       }
 
       produtoDir = listaUnificada[0];
-      if (labelAnuncioDir) {
-        labelAnuncioDir.textContent = gerarLabel(produtoDir.provedor);
+      if (logotipoAnuncioDir) {
+        gerarLogotipo(logotipoAnuncioDir, produtoDir.provedor);
       }
       historicoExibicao[produtoDir.id]++;
       aplicarAnuncio(containerDir, produtoDir);

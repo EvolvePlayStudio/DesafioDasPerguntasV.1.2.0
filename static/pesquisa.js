@@ -95,7 +95,7 @@ btn_salvar_favoritos.addEventListener("click", () => {
 })
 
 // Implementa a função para iniciar uma revisão
-btn_revisar.addEventListener("click", () => {
+btn_revisar.addEventListener("click", async() => {
   playSound("click");
   const linhas = tabela.querySelectorAll("tr");
   const perguntas_totais = JSON.parse(sessionStorage.getItem("perguntas_para_revisar"));
@@ -120,6 +120,18 @@ btn_revisar.addEventListener("click", () => {
     sessionStorage.setItem("modo_jogo", "revisao")
     sessionStorage.setItem("tipo_pergunta", tipo_pergunta)
     sessionStorage.setItem("tema_atual", tema_atual)
+
+    // Este trecho aparece mais 2 vezes em home.js, depois deve-se passar para utils.js
+    try {
+        const resposta = await fetch("/api/obter_todos_anuncios");
+        const dados = await resposta.json();
+        sessionStorage.setItem("anuncios", JSON.stringify(dados));
+    }
+    catch (erro) {
+        console.error("Falha ao carregar anúncios:", erro);
+        sessionStorage.setItem("anuncios", JSON.stringify({}));
+    }
+
     window.location.href = `/quiz?tema=${tema_atual}&modo=revisao&tipo-de-pergunta=${tipo_pergunta}`;
   }
 })

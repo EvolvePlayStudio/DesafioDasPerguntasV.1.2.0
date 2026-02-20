@@ -156,8 +156,8 @@ botaoDislikeNota.addEventListener("click", () => {
 let qPerguntasRespondidas = 0; // perguntas que o usuário respondeu desde o início do quiz
 const cacheAnuncios = sessionStorage.getItem('anuncios') || '{}';
 const dadosAnuncios = JSON.parse(cacheAnuncios);
-const labelAnuncioEsq = document.getElementById('label-anuncio-esquerda');
-const labelAnuncioDir = document.getElementById('label-anuncio-direita');
+const logotipoAnuncioEsq = document.getElementById('logotipo-anuncio-esq');
+const logotipoAnuncioDir = document.getElementById('logotipo-anuncio-dir');
 const containerEsq = document.getElementById('banner-lateral-esquerda');
 const containerDir = document.getElementById('banner-lateral-direita');
 let historicoExibicao = {}; 
@@ -1040,14 +1040,16 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   dica_icon.style.pointerEvents = 'none';
 
   // Atualiza anúncios exibidos
+  console.log("Logo esq: ", logotipoAnuncioEsq)
+  console.log("Logo dir: ", logotipoAnuncioDir)
   if (idsReservados.includes(idUsuario)) {
     if (chamarAtualizarAnuncios || qPerguntasRespondidas % 1 === 0) {
-      historicoExibicao = atualizarAnuncios(containerEsq, containerDir, labelAnuncioEsq, labelAnuncioDir, tema_atual, dadosAnuncios, 'Quiz', historicoExibicao);
+      historicoExibicao = atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq, logotipoAnuncioDir, tema_atual, dadosAnuncios, 'Quiz', historicoExibicao);
     }
   }
   else {
     if (chamarAtualizarAnuncios || qPerguntasRespondidas % 2 === 0) {
-      historicoExibicao = atualizarAnuncios(containerEsq, containerDir, labelAnuncioEsq, labelAnuncioDir, tema_atual, dadosAnuncios, 'Quiz', historicoExibicao);
+      historicoExibicao = atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq, logotipoAnuncioDir, tema_atual, dadosAnuncios, 'Quiz', historicoExibicao);
     }
   }
 
