@@ -1,6 +1,27 @@
 import { playSound, playKeySound } from "./sound.js";
+import { atualizarAnuncios, registrarInteracaoAnuncio } from "./utils.js";
 
+const cacheAnuncios = sessionStorage.getItem('anuncios') || '{}';
+const dadosAnuncios = JSON.parse(cacheAnuncios);
+const containerEsq = null;
+const labelAnuncioEsq = null;
+const containerDir = document.getElementById('banner-lateral-direita');
+const labelAnuncioDir = document.getElementById('label-anuncio-direita');
 const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === "true";
+let historicoExibicao = {};
+
+const banner_anuncio_direita = document.getElementById("banner-lateral-direita");
+banner_anuncio_direita.addEventListener('click', function() {
+    registrarInteracaoAnuncio(this.querySelector('a'), "Clique", 'Resultado');
+});
+
+historicoExibicao = atualizarAnuncios(containerEsq, containerDir, labelAnuncioEsq, labelAnuncioDir, 'Resultado', dadosAnuncios, 'Resultado', historicoExibicao);
+    
+setInterval(() => {
+    historicoExibicao = atualizarAnuncios(containerEsq, containerDir, labelAnuncioEsq, labelAnuncioDir, 'Resultado', dadosAnuncios, 'Resultado', historicoExibicao
+    );
+}, 12000);
+
 const perguntas_respondidas = JSON.parse(sessionStorage.getItem("perguntas_respondidas"));
 const tema_atual = sessionStorage.getItem("tema_atual");
 const tipo_pergunta = sessionStorage.getItem("tipo_pergunta").toLowerCase();

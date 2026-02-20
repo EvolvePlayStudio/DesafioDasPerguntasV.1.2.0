@@ -1,46 +1,39 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <!--
-  <meta charset="UTF-8">
-
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/Favicon.png') }}">
-  <meta name="description" content="Experimente mais de 1000 perguntas em inúmeros temas científicos e populares, acumule pontos e suba de ranking">
-
-  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17529321916"></script> <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'AW-17529321916'); </script>
-  -->
-
+ 
   {% include 'cabecalho_comum.html' %}
   <title>Resultado - Desafio das Perguntas</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-  <!-- Push-in ad do monetag -->
-  <script>
-    if (window.innerWidth > 1200) {
-      (function(s){s.dataset.zone='10603253',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))
-    }
-  </script>
-  
   <style>
     :root {
-      --footer-h: 69px;
+      --footer-h: 4.5rem;
+      --padding-top-body: 1.5rem;
+      --container-height: calc(100vh - var(--footer-h) - 2 * var(--padding-top-body));
+      --ads-container-width: 160px;
+      --ads-container-height: 300px;
+      --fs-aux: 0.80rem;
+      --fs-base: 0.95rem;
+      --fs-emph: 1.10rem;
+      --fs-title: 1.25rem;
     }
     body {
       font-family: "Noto Serif", Roboto, serif, sans-serif;
       background: var(--cor-fundo-padrao);
       margin: 0;
-      padding: 2rem;
-      height: 20vh;
+      padding-top: var(--padding-top-body);
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      overflow-y: hidden;
+      overflow: hidden;
     }
     .main {
       padding-bottom: calc(var(--footer-h) + 8px);
       max-height: calc(88.2vh - var(--footer-h));
     }
     .container {
-      max-width: 800px;
+      max-width: 60%;
       margin: auto;
       background: var(--cor-fundo-claro);
       border-radius: 12px;
@@ -48,7 +41,29 @@
       padding: 20px;
       flex: 1;
       overflow-y: auto;
-      height: calc(85vh - var(--footer-h));
+      height: var(--container-height);
+    }
+    .layout-horizontal {
+      position: relative;
+      justify-content: center;
+      display: flex;
+      align-items: flex-start;
+      flex: 1;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .ad-sidebar, .ad-sidebar-right {
+      position: absolute;
+      width: var(--ads-container-width);
+      height: var(--ads-container-height);
+      margin-top: calc(var(--container-height) / 2 - var(--ads-container-height) / 2);
+    }
+    #banner-lateral-esquerda {
+      left: calc(10vw - var(--ads-container-width) / 2);
+    }
+    #banner-lateral-direita {
+      right: calc(10vw - var(--ads-container-width) / 2);
     }
     h1 {
       text-align: center;
@@ -79,9 +94,9 @@
     }
     .footer {
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      bottom: 0; /* Não apagar para manter o footer fixo */
+      left: 0; /* Não apagar para manter o footer fixo */
+      right: 0; /* Não apagar para manter o footer fixo */
       width: 100%;
       background: var(--cor-fundo-escuro);
       height: var(--footer-h);
@@ -206,6 +221,56 @@
       background: #fdecea;
       color: #a12622;
     }
+    .ad-sidebar iframe {
+      border-radius: 12px;
+    }
+    #banner-lateral-direita img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+      max-height: calc(0.6 * var(--container-height));
+      object-fit: contain;
+    }
+    .anuncio-banner {
+      background: var(--cor-fundo-claro);
+      padding: 0.85rem;
+      border-radius: 8px; 
+      text-align: center; 
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      width: var(--ads-container-width);
+      height: var(--ads-container-height);
+      transition: transform 0.3s ease;
+    }
+    .titulo-banner {
+      color: black;
+      font-size: var(--fs-base);
+      font-weight: bold;
+      margin-bottom: 0.85rem;
+    }
+    .anuncio-banner img {
+      width: auto !important;
+      max-height: calc(0.45 * var(--ads-container-height)) !important;
+      object-fit: contain;
+      margin-bottom: 0.95rem;
+    }
+    .anuncio-banner p {
+      font-size: var(--fs-aux); 
+      font-weight: bold; 
+      color: black; 
+      margin: 10px 0; 
+      line-height: 1.4;
+    }
+    @media (max-width: 1200px) {
+      .container {
+        max-width: 90%;
+      }
+      .ad-sidebar, .ad-sidebar-right {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
@@ -215,21 +280,52 @@
   <audio id="key-sound" src="/static/sounds/key.wav" preload="auto"></audio>
 
   <div class="main">
-    <div class="container">
-      <h1>Resultado</h1>
 
-      <div class="pontuacao">
-        <p><strong>Tema:</strong> <span id="tema-perguntas"></span></p>
-        <p><strong>Pontuação inicial:</strong> <span id="pontuacao-anterior">0</span></p>
-        <p><strong>Pontuação final:</strong> <span id="pontuacao-final">0</span></p>
-        <p><strong>Saldo:</strong> <span id="pontuacao-saldo">0</span></p>
-        <p><strong>Ranking atual:</strong> <span id="ranking-atual"></span></p>
+    <!-- Anúncios nas laterais e layout de resultado no centro -->
+    <div class="layout-horizontal">
+
+      <!-- Banner de anúncio na esquerda -->
+      <div id="banner-lateral-esquerda" class="ad-sidebar">
+        <script>
+          atOptions = {
+            'key' : '86afbf986bafeb11e54cb49351936737',
+            'format' : 'iframe',
+            'height' : 300,
+            'width' : 160,
+            'params' : {}
+          };
+        </script>
+        <script src="https://www.highperformanceformat.com/86afbf986bafeb11e54cb49351936737/invoke.js"></script>
       </div>
 
-      <div class="perguntas-revisao">
-        <h1>Revisão</h1>
-        <div id="lista-perguntas"></div>
+      <!-- Container das informações do quiz feito -->
+      <div class="container">
+        <h1>Resultado</h1>
+
+        <div class="pontuacao">
+          <p><strong>Tema:</strong> <span id="tema-perguntas"></span></p>
+          <p><strong>Pontuação inicial:</strong> <span id="pontuacao-anterior">0</span></p>
+          <p><strong>Pontuação final:</strong> <span id="pontuacao-final">0</span></p>
+          <p><strong>Saldo:</strong> <span id="pontuacao-saldo">0</span></p>
+          <p><strong>Ranking atual:</strong> <span id="ranking-atual"></span></p>
+        </div>
+
+        <div class="perguntas-revisao">
+          <div id="lista-perguntas"></div>
+        </div>
       </div>
+
+      <!-- Banner de anúncio na direita -->
+      <div id="banner-lateral-direita" class="ad-sidebar-right" style="visibility: hidden; pointer-events: none;">
+        <a href="" target="_blank" style="text-decoration: none;">
+          <div class="anuncio-banner">
+            <label id="label-anuncio-direita" class="titulo-banner"></label>
+            <img src="" alt="Produto">
+            <p id="descricao-banner-direita"></p>
+          </div>
+        </a>
+      </div>
+
     </div>
 
     <!-- Rodapé da página com os botões -->

@@ -1352,7 +1352,7 @@ def obter_todos_anuncios():
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            SELECT id, tema, nome, descricao, link_asin, imagem_url, somente_admin, provedor, tipo_midia
+            SELECT id, tema, nome, descricao, link_asin, imagem_url, provedor, tipo_midia, disponivel_visitantes, disponivel_usuarios
             FROM anuncios
             WHERE is_ativo = TRUE
         """)
@@ -1360,7 +1360,7 @@ def obter_todos_anuncios():
         anuncios = cur.fetchall()
 
         for a in anuncios:
-            id_banco, tema, nome, desc, link_referencia, img, so_admin, provedor, tipo_midia = a
+            id_banco, tema, nome, desc, link_referencia, img, provedor, tipo_midia, disp_visitantes, disp_usuarios = a
             
             # Garante a criação do Tema e do Provedor no dicionário
             if tema not in dicionario_anuncios:
@@ -1381,9 +1381,10 @@ def obter_todos_anuncios():
                 'descricao': desc,
                 'link': link_final,
                 'imagem': img,
-                'somente_admin': so_admin,
                 'tipo_midia': tipo_midia,
-                'provedor': provedor
+                'provedor': provedor,
+                'disponivel_visitantes': disp_visitantes,
+                'disponivel_usuarios': disp_usuarios
             })
 
     except Exception:
