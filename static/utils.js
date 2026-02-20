@@ -164,24 +164,24 @@ export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIG
   if (MODO_TESTE) return false;
   const tema = sessionStorage.getItem("tema_atual");
   const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === 'true';
-  const ranking = obterInfoRankingAtual(tema, MODO_VISITANTE).ranking;
+  const infoRanking = obterInfoRankingAtual(tema, MODO_VISITANTE)
+  const ranking = infoRanking.ranking;
 
   const qtdFacil = perguntas_por_dificuldade["Fácil"]?.length ?? 0;
   const qtdMedio = perguntas_por_dificuldade["Médio"]?.length ?? 0;
   const qtdDificil = perguntas_por_dificuldade["Difícil"]?.length ?? 0;
   const qtdExtremo = perguntas_por_dificuldade["Extremo"]?.length ?? 0;
 
-  const apenasFaceis = qtdMedio === 0 && qtdDificil === 0 && qtdExtremo === 0;
-  const apenasMedias = qtdFacil === 0 && qtdDificil === 0 && qtdExtremo === 0;
-  const apenasDificeis = qtdFacil === 0 && qtdMedio === 0 && qtdExtremo === 0;
-  const apenasExtremas = qtdFacil === 0 && qtdMedio === 0 && qtdDificil === 0;
+  const apenasFaceis = qtdMedio === 0 && (qtdDificil === 0 || !infoRanking.pode_receber_dificil) && (qtdExtremo === 0 || !infoRanking.pode_receber_extremo);
+  const apenasMedias = qtdFacil === 0 && (qtdDificil === 0 || !infoRanking.pode_receber_dificil) && (qtdExtremo === 0 || !infoRanking.pode_receber_extremo);
+  const apenasDificeis = qtdFacil === 0 && qtdMedio === 0 && (qtdExtremo === 0 || !infoRanking.pode_receber_extremo);
+  const apenasExtremas = qtdFacil === 0 && qtdMedio === 0 && (qtdDificil === 0 || !infoRanking.pode_receber_dificil);
   const apenasDificeisOuExtremas = qtdFacil === 0 && qtdMedio === 0;
   const apenas_1_nivel = apenasFaceis || apenasMedias || apenasDificeis || apenasExtremas;
+
   if (!MODO_VISITANTE) {
     // Não permite prosseguir se houver apenas 1 nível de dificuldade
-    if (apenas_1_nivel) {
-      return true;
-    }
+    if (ranking !== 'Iniciante' && apenas_1_nivel) return true;
     
     // 🧑‍🎓 APRENDIZ: encerra se SÓ houverem difíceis e extremas
     if (ranking === "Aprendiz" && apenasDificeisOuExtremas) return true;
