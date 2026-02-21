@@ -22,12 +22,16 @@
   </script>
 
   <style>
-    :root {
+    :root {/* O IDEAL ERA SALVAR NO WINDOW ESTAS VARIÁVEIS, POIS SÃO UTILIZADAS EM SCRIOT MAIS ABAIXO */
       --footer-h: 4.5rem;
       --padding-top-body: 1.5rem;
-      --container-height: calc(100vh - var(--footer-h) - 2 * var(--padding-top-body));
       --ads-container-width: 160px;
       --ads-container-height: 300px;
+      --ads-top-width: 728px;
+      --ads-top-height: 90px;
+      --folga-anuncio-topo: 0.5rem;
+      /*--container-height: calc(100vh - var(--footer-h) - 2 * var(--padding-top-body));*/
+      --container-height: calc(100vh - var(--footer-h) - var(--ads-top-height) - 3 * var(--folga-anuncio-topo));
       --fs-aux: 0.80rem;
       --fs-base: 0.95rem;
       --fs-emph: 1.10rem;
@@ -37,15 +41,11 @@
       font-family: "Noto Serif", Roboto, serif, sans-serif;
       background: var(--cor-fundo-padrao);
       margin: 0;
-      padding-top: var(--padding-top-body);
+      /*padding-top: var(--padding-top-body);*/
       height: 100vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-    }
-    .main {
-      padding-bottom: calc(var(--footer-h) + 8px);
-      max-height: calc(88.2vh - var(--footer-h));
     }
     .container {
       max-width: 60%;
@@ -56,6 +56,7 @@
       flex: 1;
       overflow-y: auto;
       height: var(--container-height);
+      /*max-height: calc(88.2vh - var(--footer-h) - var(--ads-top-height) - var(--folga-anuncio-topo));*/
     }
     .layout-horizontal {
       position: relative;
@@ -66,19 +67,6 @@
       width: 100%;
       max-width: 1400px;
       margin: 0 auto;
-    }
-    .ad-sidebar, .ad-sidebar-right {
-      position: absolute;
-      width: var(--ads-container-width);
-      height: var(--ads-container-height);
-      margin-top: calc(var(--container-height) / 2 - var(--ads-container-height) / 2);
-    }
-    #banner-lateral-esquerda {
-      left: calc(10vw - var(--ads-container-width) / 2);
-    }
-    #banner-lateral-direita {
-      background: linear-gradient(180deg, var(--cor-fundo-muito-claro) 0%, var(--cor-fundo-claro) 100%);
-      right: calc(10vw - var(--ads-container-width) / 2);
     }
     h1 {
       text-align: center;
@@ -239,13 +227,11 @@
     .ad-sidebar iframe {
       border-radius: 12px;
     }
-    #banner-lateral-direita img {
-      max-width: 100%;
-      height: auto;
-      display: block;
-      margin: 0 auto;
-      max-height: calc(0.6 * var(--container-height));
-      object-fit: contain;
+    .ad-sidebar, .ad-sidebar-right {
+      position: absolute;
+      width: var(--ads-container-width);
+      height: var(--ads-container-height);
+      margin-top: calc(var(--container-height) / 2 - var(--ads-container-height) / 2);
     }
     .anuncio-banner {
       background: var(--cor-fundo-claro);
@@ -259,6 +245,21 @@
       height: var(--ads-container-height);
       transition: transform 0.3s ease;
     }
+    #banner-lateral-esquerda {
+      left: calc(10vw - var(--ads-container-width) / 2);
+    }
+    #banner-lateral-direita {
+      right: calc(10vw - var(--ads-container-width) / 2);
+    }
+    #banner-lateral-direita img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+      max-height: calc(0.6 * var(--container-height));
+      object-fit: contain;
+    }
+    
     .titulo-banner {
       color: black;
       font-size: var(--fs-base);
@@ -267,15 +268,12 @@
     }
     .img-produto {
       width: auto !important;
-      /*max-height: calc(0.45 * var(--ads-container-height)) !important;*/
       object-fit: contain;
-      /*margin-bottom: 0.85rem;*/
     }
     .img-logotipo {
       width: 70%;
       display: block;
       object-fit: contain;
-      /*margin-bottom: 0.55rem !important;  Ajustado dinamicamente pelo js */
     }
     .img-logotipo.amazon {
       width: 70%;
@@ -284,18 +282,15 @@
       width: 85%;
     }
     .container-badges {
-      /*display: none;*/
       justify-content: space-between;
       align-items: center;
       width: 100%;
       padding: 0 0.2rem;
       gap: 0.7rem;
-      /*margin-bottom: 1.2rem;*/
       min-height: 1.2rem;
       position: relative;
     }
     .badge-promo {
-      /*display: none;*/
       position: relative;
       top: 0.5em;
       padding: 0.2rem 0.4rem;
@@ -325,11 +320,24 @@
       margin: 10px 0; 
       line-height: 1.4;
     }
+    .ad-top {
+      width: var(--ads-top-width);
+      height: calc(var(--ads-top-height) + 2 * var(--folga-anuncio-topo));
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+      margin: 0 auto;
+    }
+    .ad-top iframe {
+      display: block;
+      margin: 0 auto;
+    }
     @media (max-width: 1200px) {
       .container {
         max-width: 90%;
       }
-      .ad-sidebar, .ad-sidebar-right {
+      .ad-sidebar, .ad-sidebar-right, .ad-top {
         display: none;
       }
     }
@@ -341,8 +349,21 @@
   <audio id="button-click-sound" src="/static/sounds/button_click.wav" preload="auto"></audio>
   <audio id="key-sound" src="/static/sounds/key.wav" preload="auto"></audio>
 
-  <div class="main">
+  <!-- Banner de anúncio emcima -->
+  <div id="banner-topo-tela" class="ad-top">
+    <script>
+    atOptions = {
+      'key' : '69118dd5dc6c01c0b935cecfc05b9b8c',
+      'format' : 'iframe',
+      'height' : 90,
+      'width' : 728,
+      'params' : {}
+    };
+    </script>
+    <script src="https://www.highperformanceformat.com/69118dd5dc6c01c0b935cecfc05b9b8c/invoke.js"></script>
+  </div>
 
+  <div class="main">
     <!-- Anúncios nas laterais e layout de resultado no centro -->
     <div class="layout-horizontal">
 
@@ -361,7 +382,7 @@
       </div>
 
       <!-- Container das informações do quiz feito -->
-      <div class="container">
+      <div id="container-resultado" class="container">
         <h1>Resultado</h1>
 
         <div class="pontuacao">
@@ -436,6 +457,33 @@
     </div>
 
     </div>
+  
+  <!-- Esconde anúncios para Admin e Mobile -->
+  <script>
+    function esconderAnuncios() {
+      const anuncioBannerTopo = document.getElementById("banner-topo-tela");
+      const anuncioBannerEsq = document.getElementById("banner-lateral-esquerda");
+      const idUsuario = parseInt(sessionStorage.getItem("id_usuario") ?? "0");
+      const isMobile = window.innerWidth <= 1200;
+      const isAdmin = [4, 6, 16].includes(idUsuario);
+      const containerResultado = document.getElementById("container-resultado");
+      const anuncioBannerDir = document.getElementById("banner-lateral-direita");
+     
+      try {
+        if (isMobile || isAdmin) {
+          anuncioBannerTopo.style.display = 'none';
+          anuncioBannerEsq.style.display = 'none';
+          containerResultado.style.marginTop = '0.5rem';
+          containerResultado.style.height = 'calc(100vh - 4.5rem - 1rem)';
+          anuncioBannerDir.style.marginTop = 'calc((100vh - 4.5rem - 1rem) / 2 - 150px)';
+        } 
+      }
+      catch(error) {
+        console.error("Erro ao tentar remover anúncio de banner", error)
+      }
+    }
+    esconderAnuncios();
+  </script>
 
   <script type="module" src="{{ url_for('static', filename='resultado.js')}}?v=1.1.0"></script>
 </body>

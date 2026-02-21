@@ -26,6 +26,8 @@
     :root {
       --ads-container-width: 320px;
       --ads-container-height: 50px;
+      --ads-bottom-width: 468px;
+      --ads-bottom-height: 60px;
     }
     html, body {
       height: 100%;
@@ -462,11 +464,24 @@
       width: var(--ads-container-width);
       height: var(--ads-container-height);
     }
+    .ad-bottom {
+      width: var(--ads-bottom-width);
+      height: calc(var(--ads-bottom-height) + 1rem);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+      margin: 0 auto;
+    }
+    .ad-bottom iframe {
+      display: block;
+      margin: 0 auto;
+    }
     #banner-lateral-esquerda {
-      left: 4rem; /*O ideal aqui era fazer cálculo para ajustar isto*/
+      left: 4rem; /* O ideal aqui era fazer cálculo para ajustar isto */
     }
     @media (max-width: 1200px) {
-      .ad-sidebar {
+      .ad-sidebar, .ad-bottom {
         display: none;
       }
     }
@@ -686,6 +701,20 @@
       </div>
     </div>
 
+    <!-- Banner de anúncio embaixo -->
+    <div id="banner-fundo-tela" class="ad-bottom">
+      <script>
+      atOptions = {
+        'key' : '55263b9cc4a5ef2b21aa73db69fd047b',
+        'format' : 'iframe',
+        'height' : 60,
+        'width' : 468,
+        'params' : {}
+      };
+      </script>
+      <script src="https://www.highperformanceformat.com/55263b9cc4a5ef2b21aa73db69fd047b/invoke.js"></script>
+    </div>
+
 
   </main>
 
@@ -759,11 +788,12 @@
       }
     </script>
   
-    <!-- Posiciona anúncio de banner da esquerda -->
+    
     <script>
       const modoTesteWrapper = document.getElementById("modo-teste-wrapper");
       const checkModoTeste = document.getElementById("modo-teste-toggle");
 
+      // Registra no backend se modo teste for selecionado (apenas para admin)
       async function registrarModoTeste() {
         const config = window.ADS_CONFIG;
         config.registrandoModoTeste = true;
@@ -777,11 +807,14 @@
         config.registrandoModoTeste = false;
       }
 
+      // Posiciona anúncio de banner da esquerda
       function posicionarAnuncioBanner() {
+        const anuncioBannerFundo = document.getElementById("banner-fundo-tela")
         const anuncioBannerEsquerda = document.getElementById("banner-lateral-esquerda");
         const config = window.ADS_CONFIG;
         try {
           if (config.isMobile || config.isAdmin) {
+            anuncioBannerFundo.style.display = 'none';
             anuncioBannerEsquerda.style.display = 'none';
             
             // Coloca botão de modo teste caso não tenha colocado anúncio
