@@ -6,7 +6,6 @@ CONNECT_TIMEOUT = 10
 
 def get_db_connection():
     if database_url:
-        # Adicionamos o connect_timeout aqui também para segurança
         return psycopg2.connect(database_url, sslmode="require", connect_timeout=CONNECT_TIMEOUT)
     else:
         return psycopg2.connect(

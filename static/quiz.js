@@ -152,7 +152,7 @@ botaoDislikeNota.addEventListener("click", () => {
   botaoLikeNota.classList.remove("ativo");
 });
 
-// Variáveis de controle de exibição
+// Variáveis de controle de exibição de anúncios
 let qPerguntasRespondidas = 0; // perguntas que o usuário respondeu desde o início do quiz
 const cacheAnuncios = sessionStorage.getItem('anuncios') || '{}';
 const dadosAnuncios = JSON.parse(cacheAnuncios);
@@ -1040,8 +1040,6 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   dica_icon.style.pointerEvents = 'none';
 
   // Atualiza anúncios exibidos
-  console.log("Logo esq: ", logotipoAnuncioEsq)
-  console.log("Logo dir: ", logotipoAnuncioDir)
   if (idsReservados.includes(idUsuario)) {
     if (chamarAtualizarAnuncios || qPerguntasRespondidas % 1 === 0) {
       historicoExibicao = atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq, logotipoAnuncioDir, tema_atual, dadosAnuncios, 'Quiz', historicoExibicao);

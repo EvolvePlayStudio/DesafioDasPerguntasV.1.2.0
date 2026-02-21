@@ -222,23 +222,60 @@
     margin-bottom: 0.95rem;
   }
   .img-produto {
+    /*
     width: 92%;
-    height: auto;
+    height: auto;*/
+    
     max-height: 250px;
+    width: auto !important;
     object-fit: contain;
-    margin-bottom: 0.95rem;
+    /*margin-bottom: 0.95rem;*/
   }
   .img-logotipo {
     width: 70%;
     display: block;
     object-fit: contain;
-    margin-bottom: 0.95rem !important;
+    /*margin-bottom: 0.55rem !important;  Ajustado dinamicamente pelo js*/
   }
   .img-logotipo.amazon {
     width: 70%;
   }
   .img-logotipo.mercado-livre {
     width: 85%;
+  }
+  .container-badges {
+    display: none;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.2rem;
+    min-height: 1.2rem;
+  }
+  .badge-promo {
+    display: none;
+    position: absolute;
+    top: 0.5em;
+    padding: 0.2rem 0.4rem;
+    font-size: var(--fs-aux);
+    font-weight: bold;
+    color: white;
+    border-radius: 0.2rem;
+    text-transform: uppercase;
+    z-index: 5;
+    box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+  }
+  .badge-verde {
+    left: 0.5rem;
+    background-color: #00a650;
+  }
+  .badge-vermelho {
+    right: 0.5rem;
+    background-color: #e44d26;
+  }
+  .img-produto {
+    display: block;
+    width: 100%;
+    border-radius: 0.5rem;
   }
   .anuncio-banner p {
     font-size: var(--fs-base); 
@@ -665,6 +702,10 @@
           <a href="" target="_blank" style="text-decoration: none;">
             <div class="anuncio-banner">
                 <img id="logotipo-anuncio-esq" alt="Logotipo" class="img-logotipo">
+                <div class="container-badges" style="position: relative; width: 100%">
+                  <span id="badge-frete-gratis" class="badge-promo badge-verde">Frete Grátis</span>
+                  <span id="badge-desconto" class="badge-promo badge-vermelho"></span>
+                </div>
                 <img src="" alt="Produto" class="img-produto">
                 <p id="descricao-banner-esquerda"></p>
                 <div class="btn-ver-oferta">Ver Oferta</div>
@@ -786,6 +827,10 @@
           <a href="" target="_blank" style="text-decoration: none;">
             <div class="anuncio-banner">
               <img id="logotipo-anuncio-dir" alt="Logotipo" class="img-logotipo">
+              <div class="container-badges" style="position: relative; width: 100%">
+                <span id="badge-frete-gratis" class="badge-promo badge-verde">Frete Grátis</span>
+                <span id="badge-desconto" class="badge-promo badge-vermelho">-50%</span>
+              </div>
               <img src="" alt="Produto" class="img-produto">
               <p id="descricao-banner-direita"></p>
               <div class="btn-ver-oferta">Ver Oferta</div>

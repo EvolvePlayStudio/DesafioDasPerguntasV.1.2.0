@@ -19,6 +19,115 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
   
   const aplicarAnuncio = (container, produto) => {
       if (!container || !produto) return;
+
+      const logotipo = container.querySelector('.img-logotipo');
+      const containerBadges = container.querySelector('.container-badges');
+      const bFrete = container.querySelector('#badge-frete-gratis');
+      const bDesconto = container.querySelector('#badge-desconto');
+      const imgProduto = container.querySelector('.img-produto');
+      const descricaoProduto = container.querySelector('p');
+
+      // Verifica se a oferta não expirou (como planejamos)
+      const agora = new Date(); // O CERTO SERIA PEGAR HORÁRIO DE SÃO PAULO
+      const expira = produto.oferta_expira_em ? new Date(produto.oferta_expira_em) : null;
+      const isValido = expira && agora < expira;
+      if (isValido) {
+        /* // Lógica Frete
+        if (produto.frete_gratis) bFrete.style.display = 'block';
+        else bFrete.style.display = 'none';
+
+        // Lógica Desconto
+        if (produto.desconto > 0) {
+          bDesconto.style.display = 'block';
+          bDesconto.textContent = `-${produto.desconto}%`;
+        }
+        else {
+          bDesconto.style.display = 'none';
+        }*/
+        
+        /*
+        // Com badges
+        containerBadges.style.display = 'flex';
+        bFrete.style.display = 'block';
+        bDesconto.style.display = 'block';
+        if (telaAtual === 'Resultado') {
+          logotipo.style.marginTop = '0.1rem';
+          logotipo.style.setProperty('margin-bottom', '0.25rem', 'important');
+          imgProduto.style.setProperty('max-height', '7rem', 'important');
+          imgProduto.style.marginTop = '0.8rem';
+          descricaoProduto.style.marginTop = '0.25rem';
+        }
+        else { // tela de quiz
+          logotipo.style.marginTop = '0.1rem';
+          logotipo.style.setProperty('margin-bottom', '0.6rem', 'important');
+          imgProduto.style.setProperty('max-height', '13rem', 'important');
+          imgProduto.style.marginTop = '0.45rem';
+          descricaoProduto.style.marginTop = '0.45rem';
+        }*/
+        
+        /*
+        // Sem badges
+        containerBadges.style.display = 'none';
+        if (telaAtual === 'Resultado') {
+          logotipo.style.marginTop = '0.2rem';
+          logotipo.style.setProperty('margin-bottom', '0.65rem', 'important')
+          imgProduto.style.setProperty('max-height', '8rem', 'important')
+          imgProduto.style.marginTop = '0';
+          descricaoProduto.style.marginTop = '0.4rem';
+        }
+        else {
+          logotipo.style.marginTop = '0.2rem';
+          logotipo.style.setProperty('margin-bottom', '0.8rem', 'important');
+          imgProduto.style.setProperty('max-height', '15rem', 'important');
+          imgProduto.style.marginTop = '0';
+          descricaoProduto.style.marginTop = '0.8rem';
+        }*/
+        
+
+        /*
+        if (produto.frete_gratis || produto.desconto) {
+          containerBadges.style.display = 'flex';
+          bFrete.style.display = 'block';
+          bDesconto.style.display = 'block';
+          if (telaAtual === 'Resultado') {
+            logotipo.style.marginTop = '0.1rem';
+            logotipo.style.setProperty('margin-bottom', '0.25rem', 'important');
+            imgProduto.style.setProperty('max-height', '7rem', 'important');
+            imgProduto.style.marginTop = '0.8rem';
+            descricaoProduto.style.marginTop = '0.25rem';
+          }
+          else { // tela de quiz
+            logotipo.style.marginTop = '0.1rem';
+            logotipo.style.setProperty('margin-bottom', '0.6rem', 'important');
+            imgProduto.style.setProperty('max-height', '13rem', 'important');
+            imgProduto.style.marginTop = '0.45rem';
+            descricaoProduto.style.marginTop = '0.45rem';
+          }
+        }
+        else {
+          containerBadges.style.display = 'none';
+          if (telaAtual === 'Resultado') {
+            logotipo.style.marginTop = '0.2rem';
+            logotipo.style.setProperty('margin-bottom', '0.65rem', 'important')
+            imgProduto.style.setProperty('max-height', '8rem', 'important')
+            imgProduto.style.marginTop = '0';
+            descricaoProduto.style.marginTop = '0.4rem';
+          }
+          else {
+            logotipo.style.marginTop = '0.2rem';
+            logotipo.style.setProperty('margin-bottom', '0.8rem', 'important');
+            imgProduto.style.setProperty('max-height', '15rem', 'important');
+            imgProduto.style.marginTop = '0';
+            descricaoProduto.style.marginTop = '0.8rem';
+          }
+        }*/
+        
+      }
+      else {
+        if (bFrete) bFrete.style.display = 'none';
+        if (bDesconto) bDesconto.style.display = 'none';
+      }
+
       container.style.visibility = 'visible';
       container.style.pointerEvents = 'auto';
       const link = container.querySelector('a');
@@ -51,7 +160,7 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
   try {
     if (logotipoAnuncioEsq) logotipoAnuncioEsq.src = '';
     if (logotipoAnuncioDir) logotipoAnuncioDir.src = '';
-    
+
     if (!dadosAnuncios[tema_atual]) {
       if (containerEsq) {
         containerEsq.style.visibility = 'hidden';
