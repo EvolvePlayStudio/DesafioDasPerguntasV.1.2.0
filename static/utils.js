@@ -32,7 +32,7 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
       const expira = produto.oferta_expira_em ? new Date(produto.oferta_expira_em) : null;
       const isValido = expira && agora < expira;
       if (isValido) {
-        /* // Lógica Frete
+        // Lógica Frete
         if (produto.frete_gratis) bFrete.style.display = 'block';
         else bFrete.style.display = 'none';
 
@@ -43,7 +43,9 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
         }
         else {
           bDesconto.style.display = 'none';
-        }*/
+        }
+        /* 
+        */
         
         /*
         // Com badges
@@ -84,11 +86,12 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
         }*/
         
 
-        /*
+        
         if (produto.frete_gratis || produto.desconto) {
           containerBadges.style.display = 'flex';
-          bFrete.style.display = 'block';
-          bDesconto.style.display = 'block';
+          if (produto.frete_gratis) bFrete.style.display = 'block';
+          if (produto.desconto) bDesconto.style.display = 'block';
+          
           if (telaAtual === 'Resultado') {
             logotipo.style.marginTop = '0.1rem';
             logotipo.style.setProperty('margin-bottom', '0.25rem', 'important');
@@ -120,7 +123,7 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
             imgProduto.style.marginTop = '0';
             descricaoProduto.style.marginTop = '0.8rem';
           }
-        }*/
+        }
         
       }
       else {
