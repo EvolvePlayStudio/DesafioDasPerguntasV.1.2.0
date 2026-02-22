@@ -44,48 +44,6 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
         else {
           bDesconto.style.display = 'none';
         }
-        /* 
-        */
-        
-        /*
-        // Com badges
-        containerBadges.style.display = 'flex';
-        bFrete.style.display = 'block';
-        bDesconto.style.display = 'block';
-        if (telaAtual === 'Resultado') {
-          logotipo.style.marginTop = '0.1rem';
-          logotipo.style.setProperty('margin-bottom', '0.25rem', 'important');
-          imgProduto.style.setProperty('max-height', '7rem', 'important');
-          imgProduto.style.marginTop = '0.8rem';
-          descricaoProduto.style.marginTop = '0.25rem';
-        }
-        else { // tela de quiz
-          logotipo.style.marginTop = '0.1rem';
-          logotipo.style.setProperty('margin-bottom', '0.6rem', 'important');
-          imgProduto.style.setProperty('max-height', '13rem', 'important');
-          imgProduto.style.marginTop = '0.45rem';
-          descricaoProduto.style.marginTop = '0.45rem';
-        }*/
-        
-        /*
-        // Sem badges
-        containerBadges.style.display = 'none';
-        if (telaAtual === 'Resultado') {
-          logotipo.style.marginTop = '0.2rem';
-          logotipo.style.setProperty('margin-bottom', '0.65rem', 'important')
-          imgProduto.style.setProperty('max-height', '8rem', 'important')
-          imgProduto.style.marginTop = '0';
-          descricaoProduto.style.marginTop = '0.4rem';
-        }
-        else {
-          logotipo.style.marginTop = '0.2rem';
-          logotipo.style.setProperty('margin-bottom', '0.8rem', 'important');
-          imgProduto.style.setProperty('max-height', '15rem', 'important');
-          imgProduto.style.marginTop = '0';
-          descricaoProduto.style.marginTop = '0.8rem';
-        }*/
-        
-
         
         if (produto.frete_gratis || produto.desconto) {
           containerBadges.style.display = 'flex';
@@ -455,4 +413,17 @@ export function sincronizarPontuacoesVisitante(PONTUACAO_INICIAL) {
 
   // Sobrescreve removendo temas antigos automaticamente
   localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoesAtualizadas));
+}
+
+export function slugify(texto) {
+  if (!texto) return "";
+
+  return texto
+    .normalize("NFD")                    // separa acentos
+    .replace(/[\u0300-\u036f]/g, "")     // remove acentos
+    .toLowerCase()                       // minúsculo
+    .trim()                              // remove espaços externos
+    .replace(/[^a-z0-9\s-]/g, "")        // remove caracteres inválidos
+    .replace(/\s+/g, "-")                // espaços → hífen
+    .replace(/-+/g, "-");                // remove hífens duplicados
 }

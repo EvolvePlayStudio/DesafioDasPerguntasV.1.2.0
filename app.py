@@ -1715,12 +1715,23 @@ def sobre_app_from_login():
     registrar_pagina_visitada("Login -> Sobre")
     return render_template('sobre_o_app.html')
 
+"""
 @app.route("/quiz")
 @token_required
 def quiz(user_id):
     tema = request.args.get("tema", "Geral")
     nivel = request.args.get("nivel", "Médio")
-    return render_template("quiz.html", tema=tema, nivel=nivel, AMAZON_TRACKING_ID=AMAZON_TRACKING_ID)
+    return render_template("quiz.html", tema=tema, nivel=nivel, AMAZON_TRACKING_ID=AMAZON_TRACKING_ID)"""
+
+@app.route("/quiz/<tema>/<tipo>")
+@token_required
+def quiz(user_id, tema, tipo):
+    return render_template("quiz.html", AMAZON_TRACKING_ID=AMAZON_TRACKING_ID)
+
+@app.route("/revisao/<tema>/<tipo>")
+@token_required
+def revisao(user_id, tema, tipo):
+    return render_template("quiz.html", AMAZON_TRACKING_ID=AMAZON_TRACKING_ID)
 
 @app.route("/usar_dica", methods=["GET","POST"])
 @token_required

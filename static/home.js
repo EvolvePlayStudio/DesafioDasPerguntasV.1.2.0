@@ -1,4 +1,4 @@
-import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, idsReservados, exibirMensagem, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, sincronizarPontuacoesVisitante, temas_disponiveis } from "./utils.js";
+import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, idsReservados, exibirMensagem, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
 import { playSound } from "./sound.js";
 
 // console.log("ID de visitante: ", localStorage.getItem("id_visitante"));
@@ -217,6 +217,7 @@ async function iniciarQuiz(event) {
   try {
     if (!MODO_VISITANTE) {
       const response = await fetchAutenticado(`/api/perguntas?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`)
+
       if (response.ok) {
         const data = await response.json();
 
@@ -258,16 +259,16 @@ async function iniciarQuiz(event) {
               // Opcional: define um objeto vazio para não quebrar o quiz
               sessionStorage.setItem("anuncios", JSON.stringify({}));
           }
-          window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;
+          window.location.href = `/quiz/${encodeURIComponent(slugify(tema_atual))}/${encodeURIComponent(slugify(tipo_pergunta))}s`;
         }
         else {
           exibirMensagem(mensagem, `Você não possui novas perguntas ${tipo_pergunta.toLowerCase()}s disponíveis para o tema ${tema_atual} no momento`, 'orange')
           desbloquearBotoes();
-          return
+          return;
         }
       }
     }
-    else {
+    else { // modo visitante
       const response = await fetch(`/api/perguntas?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`)
       if (response.ok) {
         const data = await response.json();
@@ -319,7 +320,7 @@ async function iniciarQuiz(event) {
 
         // Chama a tela de quiz
         mensagem.style.opacity = 0
-        window.location.href = `/quiz?tema=${tema_atual}&modo=desafio&tipo-de-pergunta=${tipo_pergunta}`;
+        window.location.href = `/quiz/${encodeURIComponent(slugify(tema_atual))}/${encodeURIComponent(slugify(tipo_pergunta))}s`;
       }
     }
   }
@@ -489,18 +490,13 @@ function exibirModalRegistroVisitante(marco) {
 document.addEventListener("DOMContentLoaded", async () => {
   // Adiciona áudio no clique dos botões
   if (btnModalPrimario) {
-    btnModalPrimario.addEventListener("click", () => {
-      playSound("click");
-    })
+    btnModalPrimario.addEventListener("click", () => playSound("click"));
   }
   if (btnModalSecundario) {
-    btnModalSecundario.addEventListener("click", () => {
-      playSound("click");
-    })
+    btnModalSecundario.addEventListener("click", () => playSound("click"));
   }
   document.querySelectorAll('input[type="radio"]').forEach(cb => {
-    cb.addEventListener('change', () => {
-      playSound("checkbox")})
+    cb.addEventListener('change', () => playSound("checkbox"));
   })
   
   // Carrega as regras de pontuações do jogo

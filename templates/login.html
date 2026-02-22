@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-br" style="height: 100%; box-sizing: border-box; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
 <head>
-    {% include 'cabecalho_comum.html' %}
-    <title>Login - Desafio das Perguntas</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% include 'cabecalho_comum.html' %}
+  <title>Login - Desafio das Perguntas</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-    <!-- Push-in Ad da Monetag -->
-    <script type="module">
+  <!-- Push-in Ad da Monetag -->
+  <script type="module">
         async function carregarPushInAd() {
         try {
             const utils = await import("{{ url_for('static', filename='utils.js') }}");
@@ -27,9 +27,9 @@
         }
         }
         carregarPushInAd();
-    </script>
+  </script>
 
-    <style>
+  <style>
         *, *:before, *:after {
           box-sizing: border-box;
         }
@@ -247,7 +247,7 @@
                 padding: 2rem;
             } 
         }
-    </style>
+  </style>
 </head>
 <body>
   <!-- Anúncio de banner no topo -->
@@ -435,7 +435,6 @@
       <a href="{{ url_for('sobre_app_from_login') }}">Sobre</a>
   </footer>
 
-
   <!-- Esconde anúncios para Admin e Mobile -->
   <script type='module'>
     import { idsReservados, idVisitanteAdmin } from '../static/utils.js';
@@ -443,15 +442,15 @@
       const anuncioBannerTopo = document.getElementById("anuncio-banner-topo");
       const isMobile = window.innerWidth <= 1200;
       const idUsuario = parseInt(sessionStorage.getItem("id_usuario") ?? "0");
-      const idVisitante = sessionStorage.getItem("id_visitante");
+      const idVisitante = localStorage.getItem("id_visitante");
       const isAdmin = idsReservados.includes(idUsuario) || idVisitante === idVisitanteAdmin;
       const containerLogin = document.getElementById("auth-container");
       const mainElement = document.getElementById("main-element");
+
       try {
         if (isMobile || isAdmin) {
           anuncioBannerTopo.style.display = 'none';
           if (!isMobile) mainElement.style.height = 'calc(var(--main-height) - 1.05rem)';
-          }
         } 
       }
       catch(error) {

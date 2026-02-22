@@ -1,4 +1,4 @@
-import { fetchAutenticado, exibirMensagem, sincronizarPontuacoesVisitante, temas_disponiveis } from "./utils.js";
+import { fetchAutenticado, exibirMensagem, sincronizarPontuacoesVisitante, slugify } from "./utils.js";
 import { playSound } from "./sound.js"
 
 let tema_atual;
@@ -132,7 +132,7 @@ btn_revisar.addEventListener("click", async() => {
         sessionStorage.setItem("anuncios", JSON.stringify({}));
     }
 
-    window.location.href = `/quiz?tema=${tema_atual}&modo=revisao&tipo-de-pergunta=${tipo_pergunta}`;
+    window.location.href = `/revisao/${encodeURIComponent(slugify(tema_atual))}/${encodeURIComponent(slugify(tipo_pergunta))}s`;
   }
 })
 

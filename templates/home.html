@@ -753,45 +753,28 @@
 </div>
 
   <body data-modo-visitante="{{ session.get('visitante', False) | tojson }}">
-    <!-- Social bar do AdsTerra -->
-    <script>
+    <script type='module'>
+      import { idsReservados, idVisitanteAdmin } from '../static/utils.js';
       const MODO_VISITANTE_HTML = document.body.dataset.modoVisitante === 'true';
       const idUsuarioSessao = MODO_VISITANTE_HTML ? null : sessionStorage.getItem("id_usuario");
       sessionStorage.setItem("id_usuario", idUsuarioSessao);
       const idNumerico = idUsuarioSessao ? parseInt(idUsuarioSessao) : 0;
+      const idVisitante = localStorage.getItem("id_visitante");
       const isMobile = window.innerWidth <= 1200;
-      const isAdmin = [4, 6, 16].includes(idNumerico);
-      
+      const isAdmin = idsReservados.includes(idNumerico) || idVisitante === idVisitanteAdmin;
       window.ADS_CONFIG = {
         isAdmin: isAdmin,
         isMobile: isMobile,
         registrandoModoTeste: false,
         modoVisitante: MODO_VISITANTE_HTML
       }
-      
-      /*
-      if (!isMobile && !isAdmin) {
-        var script = document.createElement('script');
-        script.src = "https://pl28750365.effectivegatecpm.com/0f/87/79/0f877988a14c549bbccd28d0180a5867.js";
-        script.type = 'text/javascript';
-        document.head.appendChild(script);
-      }*/
-    </script>
 
-    <!-- Push-in Ad da AdsTerra -->
-    <script>
-      if (window.innerWidth > 1200) {
-        var script = document.createElement('script');
-        script.src = "https://pl28750365.effectivegatecpm.com/0f/87/79/0f877988a14c549bbccd28d0180a5867.js";
-        script.type = 'text/javascript';
-        document.head.appendChild(script);
-      }
-    </script>
-  
-    
-    <script>
+      const config = window.ADS_CONFIG;
+      const anuncioBannerEsquerda = document.getElementById("banner-lateral-esquerda");
+      const anuncioBannerFundo = document.getElementById("banner-fundo-tela");
       const modoTesteWrapper = document.getElementById("modo-teste-wrapper");
       const checkModoTeste = document.getElementById("modo-teste-toggle");
+      const modoTeste = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
 
       // Registra no backend se modo teste for selecionado (apenas para admin)
       async function registrarModoTeste() {
@@ -807,42 +790,49 @@
         config.registrandoModoTeste = false;
       }
 
+      // Esconde anúncio em mobile e para admin
+      function esconderAnuncios() {
+        anuncioBannerFundo.style.display = 'none';
+        anuncioBannerEsquerda.style.display = 'none';
+          
+        // Coloca botão de modo teste caso não tenha colocado anúncio
+        if (config.isAdmin && !MODO_VISITANTE_HTML) {
+          modoTesteWrapper.style.display = 'flex';
+          if (modoTeste) checkModoTeste.checked = modoTeste;
+          if (checkModoTeste) {
+            registrarModoTeste();
+            checkModoTeste.addEventListener("change", () => {registrarModoTeste()});
+          };
+        };
+      };
+      
       // Posiciona anúncio de banner da esquerda
       function posicionarAnuncioBanner() {
-        const anuncioBannerFundo = document.getElementById("banner-fundo-tela")
-        const anuncioBannerEsquerda = document.getElementById("banner-lateral-esquerda");
-        const config = window.ADS_CONFIG;
-        try {
-          if (config.isMobile || config.isAdmin) {
-            anuncioBannerFundo.style.display = 'none';
-            anuncioBannerEsquerda.style.display = 'none';
-            
-            // Coloca botão de modo teste caso não tenha colocado anúncio
-            if (config.isAdmin && !config.modoVisitante) {
-              modoTesteWrapper.style.display = 'flex';
-              const modoTeste = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
-              if (modoTeste) checkModoTeste.checked = modoTeste;
-      
-              if (checkModoTeste) {
-                registrarModoTeste();
-                checkModoTeste.addEventListener("change", () => {registrarModoTeste()});
-              };
-            }
-            return;
-          }
-        }
-        catch(error) {
-          console.error("Erro ao tentar remover anúncio de banner")
-        }
-        
         const altura_header = document.getElementById("header-desktop").getBoundingClientRect().height;
         const y_top_cards_scroll = document.getElementById("cards-scroll-wrapper").getBoundingClientRect().top;
         const alturaContainerAnuncio = y_top_cards_scroll - altura_header;
         const marginTopBannerEquerda = (alturaContainerAnuncio - anuncioBannerEsquerda.getBoundingClientRect().height) / 2
         anuncioBannerEsquerda.style.marginTop = `${marginTopBannerEquerda}px`;
       }
+      
+      if (config.isMobile || config.isAdmin) {
+        try {esconderAnuncios()}
+        catch(error) {console.error("Erro ao tentar remover anúncio de banner")};
+      }
+      if (!isMobile && ![4, 6].includes(idNumerico) && !idVisitante === idVisitanteAdmin) {
+        var script = document.createElement('script');
+        script.src = "https://pl28750365.effectivegatecpm.com/0f/87/79/0f877988a14c549bbccd28d0180a5867.js";
+        script.type = 'text/javascript';
+        document.head.appendChild(script);
+      }
       posicionarAnuncioBanner();
     </script>
+
+    <!-- Push-in Ad da AdsTerra -->
+    <script>
+      
+    </script>
+  
   </body>
 
   <script type="module" src="{{ url_for('static', filename='home.js') }}?v=1.2.1"></script>
