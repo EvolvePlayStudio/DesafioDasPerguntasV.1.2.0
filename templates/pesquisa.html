@@ -7,6 +7,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   
   <style>
+    *, *:before, *:after {
+      box-sizing: border-box;
+    }
     :root {
       --footer-h: 60px;
       --fs-aux: 0.85rem;
@@ -40,8 +43,9 @@
       flex: 1;
       display: flex;
       flex-direction: column;
+      align-items: center;
       min-height: 0;
-      padding: 1rem;
+      padding-top: 1rem;
       padding-bottom: calc(var(--footer-h) + 8px);
       max-height: calc(88.2vh - var(--footer-h));
     }
@@ -64,8 +68,8 @@
       font-size: var(--fs-base);
       font-weight: bold;
       display: grid;
-      grid-template-columns: auto 2fr auto;
-      align-items: start;
+      grid-template-columns: 0.4fr 2.2fr 0.4fr;
+      align-items: center;
       gap: 2rem;
       color:white;
       text-align: left;
@@ -130,7 +134,8 @@
     }
     .subtemas-wrap {
       display: grid;
-      align-items: center;
+      align-items: stretch;
+      width: 97%;
       grid-template-columns: auto 1fr;
       column-gap: 0.75rem;
       align-items: start;
@@ -186,6 +191,7 @@
       overflow-y: auto;
       margin-top: 1rem;
       height: 30vh;
+      align-self: stretch;
     }
     table {
       width: 100%;
@@ -260,13 +266,91 @@
     button:hover {
       background-color: var(--bg-hover-botao-login);
     }
+    @media (min-width: 1000px) {
+      .top-bar {
+        width: 97%;
+      }     
+    }
     @media (max-width: 1000px) { 
       .subtemas-wrap {
+        align-items: center;
         margin-top: 1.3rem;
         margin-bottom: 0.1rem;
         color: white;
       }
-    }
+      .top-bar {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+          "tema tipo"
+          "dificuldade dificuldade";
+      }
+
+      .filtro-esquerda { grid-area: tema; }
+      .filtro-direita { grid-area: tipo; }
+      #checks-dificuldades { grid-area: dificuldade; }
+      .filtro-esquerda,
+      .filtro-direita {
+        width: 100%;
+      }
+      .filtro-esquerda {
+        justify-content: flex-start;
+      }
+      .filtro-direita {
+        justify-content: flex-end; 
+      }
+      .linha-superior {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        width: 100%;
+      }
+      .linha-inferior {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        width: max-content;
+      }
+      .filtro-centro {
+        width: 100%;
+        justify-content: center;
+      }
+      #checks-dificuldades {
+        display: flex;
+        align-items: center;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        gap: 1.2rem;
+        width: 100%;
+      }
+      #checks-dificuldades span {
+        white-space: nowrap;
+        font-weight: 600;
+      }
+      #checks-dificuldades label {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        white-space: nowrap;
+      }
+      .footer {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        row-gap: 0.4rem;
+        height: auto;
+        padding: 0.6rem 1rem;
+      }
+      .footer-left {
+        justify-content: center;
+        text-align: center;
+      }
+      .footer-right {
+        justify-content: center;
+      }
+  }
+
   </style>
 </head>
 <body>
@@ -276,46 +360,41 @@
       <span class="header-titulo">Pesquisa</span>
     </div>
   </header>
-  
+
   <main>
-    
+
     <div class="top-bar">
-      <!-- Coluna Esquerda: Tema -->
       <div class="filtro-esquerda">
-      <label for="tema">Tema:</label>
-      <select id="tema" disabled>
-      <option>Artes</option>
-      <option>Astronomia</option>
-      <option>Biologia</option>
-      <option>Esportes</option>
-      <option>Filosofia</option>
-      <option>Física</option>
-      <option>Geografia</option>
-      <option>História</option>
-      <option>Mídia</option>
-      <option>Música</option>
-      <option>Química</option>
-      <option>Variedades</option>
+        <label for="tema">Tema:</label>
+        <select id="tema" disabled>
+        <option>Artes</option>
+        <option>Astronomia</option>
+        <option>Biologia</option>
+        <option>Esportes</option>
+        <option>Filosofia</option>
+        <option>Física</option>
+        <option>Geografia</option>
+        <option>História</option>
+        <option>Mídia</option>
+        <option>Música</option>
+        <option>Química</option>
+        <option>Variedades</option>
+        </select>
+      </div>
+      <div id="checks-dificuldades" class="filtro-centro" style="margin-top: 0.15rem;">
+        <span>Dificuldade:</span>
+        <label><input type="checkbox" value="Fácil" checked> Fácil</label>
+        <label><input type="checkbox" value="Médio" checked> Médio</label>
+        <label><input type="checkbox" value="Difícil" checked> Difícil</label>
+        <label><input type="checkbox" value="Extremo" checked> Extremo</label>
+      </div>
+      <div class="filtro-direita">
+        <label for="tipo-pergunta">Tipo:</label>
+        <select id="tipo-pergunta" disabled>
+        <option>Objetiva</option>
+        <option>Discursiva</option>
       </select>
-    </div>
-
-    <!-- Coluna Centro: Dificuldade -->
-    <div id="checks-dificuldades" class="filtro-centro" style="margin-top: 0.15rem;">
-      <span>Dificuldade:</span>
-      <label><input type="checkbox" value="Fácil" checked> Fácil</label>
-      <label><input type="checkbox" value="Médio" checked> Médio</label>
-      <label><input type="checkbox" value="Difícil" checked> Difícil</label>
-      <label><input type="checkbox" value="Extremo" checked> Extremo</label>
-    </div>
-
-    <!-- Coluna Direita: Tipo -->
-    <div class="filtro-direita">
-      <label for="tipo-pergunta">Tipo:</label>
-      <select id="tipo-pergunta" disabled>
-      <option>Objetiva</option>
-      <option>Discursiva</option>
-    </select>
-    </div>
+      </div>
     </div>
 
     <!-- Subtemas abaixo centralizado -->
