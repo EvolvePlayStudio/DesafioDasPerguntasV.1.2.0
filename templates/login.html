@@ -30,8 +30,15 @@
     </script>
 
     <style>
+        *, *:before, *:after {
+          box-sizing: border-box;
+        }
         :root {
           --footer-h: 1.05rem;
+          --ads-top-width: 468px;
+          --ads-top-height: 60px;
+          --folga-anuncio-topo: 0.6rem;
+          --main-height: calc(100vh - var(--footer-h) - var(--ads-top-height) - 2 * var(--folga-anuncio-topo));
         }
         html, body {
             width: 100%;
@@ -42,12 +49,24 @@
             background: var(--cor-fundo-padrao);
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            min-height: 100vh;
-            max-height: 100vh;
+            justify-content: flex-start;
+            height: 100vh;
             box-sizing: border-box;
             margin: 0;
             overflow: hidden;
+        }
+        .ad-top {
+            width: var(--ads-top-width);
+            height: calc(var(--ads-top-height) + var(--folga-anuncio-topo));
+            display: flex;
+            justify-content: center; /* Centraliza o anúncio horizontalmente */
+            align-items: flex-end; /* Ancora o anúncio no fundo do layout pai em que está */
+            flex-shrink: 0;
+            margin: 0 auto;
+        }
+        .ad-top iframe {
+            display: block;
+            margin: 0 auto;
         }
         main {
             flex: 1;
@@ -56,6 +75,7 @@
             align-items: center;
             width: 100%;
             max-width: 100%;
+            height: var(--main-height)
         }
         .auth-container {
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -64,8 +84,8 @@
             padding: 2.5rem;
             border-radius: 16px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            width: min(88%, 22rem);
-            max-height: 75vh; /*Gambiarra, o ideal era medir exatamente o quanto o footer mede de altura para ver o espaço que poderia utilizar*/
+            width: min(88%, 29rem);
+            height: calc(var(--main-height) - 2.5rem - var(--folga-anuncio-topo));
             display: flex;
             flex-direction: column;
             align-items: stretch;
@@ -74,7 +94,8 @@
             text-align: center;
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             font-size: 1.6em;
-            margin-bottom: 16px;
+            margin-top: -0.8rem;
+            margin-bottom: 0.8rem;
             color: black;
             font-weight: bold;
         }
@@ -229,8 +250,22 @@
     </style>
 </head>
 <body>
-  <main>
-    <div class="auth-container">
+  <!-- Anúncio de banner no topo -->
+  <div id="anuncio-banner-topo" class="ad-top">
+    <script>
+      atOptions = {
+        'key' : '55263b9cc4a5ef2b21aa73db69fd047b',
+        'format' : 'iframe',
+        'height' : 60,
+        'width' : 468,
+        'params' : {}
+      };
+    </script>
+    <script src="https://www.highperformanceformat.com/55263b9cc4a5ef2b21aa73db69fd047b/invoke.js"></script>
+  </div>
+
+  <main id="main-element">
+    <div id="auth-container" class="auth-container">
         <div class="title">Desafio das Perguntas</div>
 
         <!-- Abas de login e registro (a de recuperação de senha fica oculta)-->
@@ -400,6 +435,32 @@
       <a href="{{ url_for('sobre_app_from_login') }}">Sobre</a>
   </footer>
 
-    <script type="module" src="{{ url_for('static', filename='login.js') }}"></script>
+
+  <!-- Esconde anúncios para Admin e Mobile -->
+  <script type='module'>
+    import { idsReservados, idVisitanteAdmin } from '../static/utils.js';
+    function esconderAnuncios() {
+      const anuncioBannerTopo = document.getElementById("anuncio-banner-topo");
+      const isMobile = window.innerWidth <= 1200;
+      const idUsuario = parseInt(sessionStorage.getItem("id_usuario") ?? "0");
+      const idVisitante = sessionStorage.getItem("id_visitante");
+      const isAdmin = idsReservados.includes(idUsuario) || idVisitante === idVisitanteAdmin;
+      const containerLogin = document.getElementById("auth-container");
+      const mainElement = document.getElementById("main-element");
+      try {
+        if (isMobile || isAdmin) {
+          anuncioBannerTopo.style.display = 'none';
+          if (!isMobile) mainElement.style.height = 'calc(var(--main-height) - 1.05rem)';
+          }
+        } 
+      }
+      catch(error) {
+        console.error("Erro ao tentar remover anúncio de banner", error)
+      }
+    }
+    esconderAnuncios();
+  </script>
+
+  <script type="module" src="{{ url_for('static', filename='login.js') }}"></script>
 </body>
 </html>

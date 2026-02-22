@@ -259,7 +259,6 @@
       max-height: calc(0.6 * var(--container-height));
       object-fit: contain;
     }
-    
     .titulo-banner {
       color: black;
       font-size: var(--fs-base);
@@ -473,9 +472,11 @@
         if (isMobile || isAdmin) {
           anuncioBannerTopo.style.display = 'none';
           anuncioBannerEsq.style.display = 'none';
-          containerResultado.style.marginTop = '0.5rem';
-          containerResultado.style.height = 'calc(100vh - 4.5rem - 1rem)';
-          anuncioBannerDir.style.marginTop = 'calc((100vh - 4.5rem - 1rem) / 2 - 150px)';
+          if (!isMobile) {
+            containerResultado.style.marginTop = '0.5rem';
+            containerResultado.style.height = 'calc(100vh - 4.5rem - 1rem)';
+            anuncioBannerDir.style.marginTop = 'calc((100vh - 4.5rem - 1rem) / 2 - 150px)';
+          }
         } 
       }
       catch(error) {
