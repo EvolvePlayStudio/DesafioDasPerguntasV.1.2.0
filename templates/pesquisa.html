@@ -64,16 +64,6 @@
       font-weight: bold;
       color: white;
     }
-    .top-bar {
-      font-size: var(--fs-base);
-      font-weight: bold;
-      display: grid;
-      grid-template-columns: 0.4fr 2.2fr 0.4fr;
-      align-items: center;
-      gap: 2rem;
-      color:white;
-      text-align: left;
-    }
     .filtros-container {
       display: flex;
       justify-content: space-between;
@@ -132,16 +122,6 @@
       align-items: center;
       gap: 0.6rem;
     }
-    .subtemas-wrap {
-      display: grid;
-      align-items: stretch;
-      width: 97%;
-      grid-template-columns: auto 1fr;
-      column-gap: 0.75rem;
-      align-items: start;
-      margin-top: 1rem;
-      color: white;
-    }
     .subtemas span {
       margin-top: 1rem;
     }
@@ -155,14 +135,13 @@
       font-weight: var(--peso-fonte-botoes);
       white-space: nowrap;
       align-self: start;
-      margin-top: 0.85rem;
+      margin-top: 0.4rem; /* Gambiarra para centralizar o texto de tópicos */
     }
     .subtemas-grid {
       display: flex;
       flex-wrap: wrap;
       grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
       gap: 0.5rem;
-      margin-top: 0.5rem;
     }
     .subtema-btn {
       font-size: var(--fs-aux);
@@ -189,7 +168,7 @@
       flex: 1;
       min-height: 0;
       overflow-y: auto;
-      margin-top: 1rem;
+      margin-top: 0.4rem;
       height: 30vh;
       align-self: stretch;
     }
@@ -266,30 +245,86 @@
     button:hover {
       background-color: var(--bg-hover-botao-login);
     }
+    .top-bar {
+      font-size: var(--fs-base);
+      font-weight: bold;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /*justify-content: center;*/
+      gap: 1rem;
+      color:white;
+      text-align: left;
+    }
+    .top-bar-inner {
+      column-gap: 3rem;
+    }
+    .subtemas-wrap {
+      display: grid;
+      align-items: stretch;
+      width: 100%;
+      grid-template-columns: auto 1fr;
+      column-gap: 0.75rem;
+      align-items: start;
+      color: white;
+    }
+    .filtro-esquerda {grid-area: tema; }
+    #checks-dificuldades { grid-area: dificuldade; }
+    .filtro-direita { grid-area: tipo; }
+    .subtemas-wrap { grid-area: topicos; }
+    .filtro-esquerda { justify-self: start; }
+    #checks-dificuldades {justify-self: center; }
+    .filtro-direita { justify-self: end; }
+    /* Medidas para desktop */
     @media (min-width: 1000px) {
       .top-bar {
         width: 97%;
-      }     
+      }
+      .top-bar-inner {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        grid-template-areas:
+        "tema dificuldade tipo";
+        align-items: center;
+        gap: 2rem;
+        color:white;
+        text-align: left;
+        
+      }
+      
     }
+    /* Medidas para mobile */
     @media (max-width: 1000px) { 
       .subtemas-wrap {
         align-items: center;
-        margin-top: 1.3rem;
-        margin-bottom: 0.1rem;
+        /*margin-top: 1.3rem;
+        margin-bottom: 0.1rem;*/
         color: white;
       }
       .top-bar {
-        display: grid;
-        gap: 1rem;
+        /*gap: 1rem;
+        
         grid-template-columns: 1fr 1fr;
         grid-template-areas:
           "tema tipo"
-          "dificuldade dificuldade";
+          "dificuldade dificuldade"
+          "topicos topicos";*/
+        width: 97%;
+        align-items: flex-start;
       }
-
-      .filtro-esquerda { grid-area: tema; }
-      .filtro-direita { grid-area: tipo; }
-      #checks-dificuldades { grid-area: dificuldade; }
+      .top-bar-inner {
+        
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+        "tema tipo"
+        "dificuldade dificuldade";
+        width: max-content;
+        margin: 0;
+        row-gap: 0.6rem;
+      }
       .filtro-esquerda,
       .filtro-direita {
         width: 100%;
@@ -300,6 +335,7 @@
       .filtro-direita {
         justify-content: flex-end; 
       }
+      /*
       .linha-superior {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -311,10 +347,11 @@
         grid-template-columns: 1fr;
         gap: 1rem;
         width: max-content;
-      }
+      }*/
       .filtro-centro {
         width: 100%;
         justify-content: center;
+        gap: 0.8rem 0.6rem;
       }
       #checks-dificuldades {
         display: flex;
@@ -338,16 +375,17 @@
         display: grid;
         grid-template-columns: 1fr;
         grid-template-rows: auto auto;
-        row-gap: 0.4rem;
+        row-gap: 0.8rem;
         height: auto;
         padding: 0.6rem 1rem;
       }
       .footer-left {
-        justify-content: center;
-        text-align: center;
+        justify-content: left;
+        text-align: left;
       }
       .footer-right {
-        justify-content: center;
+        justify-content: left;
+        padding-bottom: 0.2rem;
       }
   }
 
@@ -364,43 +402,47 @@
   <main>
 
     <div class="top-bar">
-      <div class="filtro-esquerda">
-        <label for="tema">Tema:</label>
-        <select id="tema" disabled>
-        <option>Artes</option>
-        <option>Astronomia</option>
-        <option>Biologia</option>
-        <option>Esportes</option>
-        <option>Filosofia</option>
-        <option>Física</option>
-        <option>Geografia</option>
-        <option>História</option>
-        <option>Mídia</option>
-        <option>Música</option>
-        <option>Química</option>
-        <option>Variedades</option>
+      <!-- Filtro de tema de pergunta -->
+      <div class="top-bar-inner">
+        <div class="filtro-esquerda">
+          <label for="tema">Tema:</label>
+          <select id="tema" disabled>
+          <option>Artes</option>
+          <option>Astronomia</option>
+          <option>Biologia</option>
+          <option>Esportes</option>
+          <option>Filosofia</option>
+          <option>Física</option>
+          <option>Geografia</option>
+          <option>História</option>
+          <option>Mídia</option>
+          <option>Música</option>
+          <option>Química</option>
+          <option>Variedades</option>
+          </select>
+        </div>
+        <!-- Filtro de dificuldades -->
+        <div id="checks-dificuldades" class="filtro-centro" style="margin-top: 0.15rem;">
+          <span>Dificuldade:</span>
+          <label><input type="checkbox" value="Fácil" checked> Fácil</label>
+          <label><input type="checkbox" value="Médio" checked> Médio</label>
+          <label><input type="checkbox" value="Difícil" checked> Difícil</label>
+          <label><input type="checkbox" value="Extremo" checked> Extremo</label>
+        </div>
+        <!-- Filtro de tipo de pergunta -->
+        <div class="filtro-direita">
+          <label for="tipo-pergunta">Tipo:</label>
+          <select id="tipo-pergunta" disabled>
+          <option>Objetiva</option>
+          <option>Discursiva</option>
         </select>
+        </div>
       </div>
-      <div id="checks-dificuldades" class="filtro-centro" style="margin-top: 0.15rem;">
-        <span>Dificuldade:</span>
-        <label><input type="checkbox" value="Fácil" checked> Fácil</label>
-        <label><input type="checkbox" value="Médio" checked> Médio</label>
-        <label><input type="checkbox" value="Difícil" checked> Difícil</label>
-        <label><input type="checkbox" value="Extremo" checked> Extremo</label>
+      <!-- Subtemas abaixo centralizado -->
+      <div class="subtemas-wrap">
+        <span class="subtemas-label">Tópicos:</span>
+        <div id="container-subtemas" class="subtemas-grid"></div>
       </div>
-      <div class="filtro-direita">
-        <label for="tipo-pergunta">Tipo:</label>
-        <select id="tipo-pergunta" disabled>
-        <option>Objetiva</option>
-        <option>Discursiva</option>
-      </select>
-      </div>
-    </div>
-
-    <!-- Subtemas abaixo centralizado -->
-    <div class="subtemas-wrap">
-      <span class="subtemas-label">Tópicos:</span>
-      <div id="container-subtemas" class="subtemas-grid"></div>
     </div>
 
     <!-- Mensagem -->
