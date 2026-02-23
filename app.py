@@ -92,6 +92,14 @@ def ads_txt():
     conteudo = "google.com, pub-9650050810390735, DIRECT, f08c47fec0942fa0"
     return conteudo, 200, {'Content-Type': 'text/plain'}
 
+@app.route('/791dfdb243c561dea3f90a8babc584d1.html')
+def clickadu_verify():
+    return send_from_directory('.', '791dfdb243c561dea3f90a8babc584d1.html')
+
+@app.route('/e607b7eacc66223b94d4.txt')
+def hilltopads_verify():
+    return send_from_directory('.', 'e607b7eacc66223b94d4.txt')
+
 @app.route('/sw.js')
 def serve_monetag_js():
     return send_from_directory('static', 'sw.js', mimetype='application/javascript')
