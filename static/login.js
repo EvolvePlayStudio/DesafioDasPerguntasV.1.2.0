@@ -7,15 +7,27 @@ function gtag_report_conversion() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+  // Mensagens
+  const forgot_message = document.getElementById("forgot-message");
+  const lbl_mensagem_login = document.getElementById("login-message");
+  const lbl_mensagem_registro = document.getElementById("registro-message");
+
   // Adiciona áudio nas caixas de texto
   const caixasTexto = document.querySelectorAll("#email, #senha, #nome-registro, #email-registro, #senha-registro, #confirmar-senha-registro")
-  caixasTexto.forEach(caixa => {caixa.addEventListener("keydown", (e) => {playKeySound(e)})});
+  caixasTexto.forEach(caixa => {
+    caixa.addEventListener("keydown", (e) => {
+      playKeySound(e);
+      lbl_mensagem_login.textContent = '';
+      lbl_mensagem_login.style.display = 'none';
+      lbl_mensagem_registro.textContent = '';
+      lbl_mensagem_registro.style.display = 'none';
+    });
+  });
   
   // Adiciona áudio nos checkboxes
   document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-    cb.addEventListener('change', () => {
-      playSound("checkbox")})
-  })
+    cb.addEventListener('change', () => {playSound("checkbox")});
+  });
 
   // Trecho abaixo se repete em home.js, talvez vire função do utils.js
   let idVisitante = localStorage.getItem("id_visitante");
@@ -63,11 +75,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const register_form = document.getElementById('register-form');
   const forgot_form = document.getElementById("forgot-form");
 
-  // Mensagens
-  const forgot_message = document.getElementById("forgot-message");
-  const lbl_mensagem_login = document.getElementById("login-message");
-  const lbl_mensagem_registro = document.getElementById("registro-message");
-
   // Outras variáveis
   const info_section = document.querySelector('.info-section');
   const btnRegister = register_form?.querySelector('button[type="submit"]');
@@ -90,8 +97,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const containersChecks = [container_migrar_dados_visitante, container_notificacoes_bonus_energia, container_notificacoes_alteracoes_pontos, container_notificacoes_atualizacoes_site];
 
-  // const checksRegistro = [check_migrar_dados, check_notificacoes_bonus_energia, check_notificacoes_alteracoes_pontos, check_notificacoes_atualizacoes_site];
-
   const hasVisitorData = localStorage.getItem('visitante_respondidas') || localStorage.getItem('visitante_avaliacoes');
 
   // CAPTCHA elementos (pode ser undefined se o HTML não tiver)
@@ -103,10 +108,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const msg = localStorage.getItem("auth_message");
   if (msg) {
-    lbl_mensagem_login.display = '';
-    lbl_mensagem_login.style.visibility = 'visible';
     lbl_mensagem_login.style.color = 'red';
     lbl_mensagem_login.textContent = msg;
+    lbl_mensagem_login.display = '';
     localStorage.removeItem("auth_message");
   }
 
@@ -122,9 +126,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // Esvazia mensagens de erro antes de mostrar o CAPTCHA
     if (lbl_mensagem_registro) {
       lbl_mensagem_registro.textContent = '';
-      lbl_mensagem_registro.style.visibility = 'hidden'
+      lbl_mensagem_registro.style.display = 'none';
     }
-
     try {
       // Se não houver container, nada a fazer
       if (!captchaGrid || !captchaInstrucao) return;
@@ -168,15 +171,16 @@ document.addEventListener('DOMContentLoaded', function () {
             // Desmarca
             selecoes = selecoes.filter(i => i !== index);
             img.style.borderColor = 'transparent';
-          } else {
+          }
+          else {
             // Limita a 3 seleções
             if (selecoes.length >= 3) {
               if (lbl_mensagem_registro) {
-                lbl_mensagem_registro.style.visibility = 'visible';
                 lbl_mensagem_registro.style.color = 'red';
                 lbl_mensagem_registro.textContent = 'Você só pode selecionar 3 imagens';
+                lbl_mensagem_registro.style.display = '';
                 setTimeout(() => {
-                  if (lbl_mensagem_registro) lbl_mensagem_registro.style.visibility = 'hidden';
+                  if (lbl_mensagem_registro) lbl_mensagem_registro.style.display = 'none';
                 }, 2000);
               }
               return;
@@ -215,30 +219,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // Validações locais simples
       if (!nome) {
-        lbl_mensagem_registro.style.visibility = 'visible';
         lbl_mensagem_registro.style.color = 'red';
         lbl_mensagem_registro.textContent = 'O nome é obrigatório';
+        lbl_mensagem_registro.style.display = '';
         return;
       }
 
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        lbl_mensagem_registro.style.visibility = 'visible';
         lbl_mensagem_registro.style.color = 'red';
         lbl_mensagem_registro.textContent = 'Informe um e-mail válido';
+        lbl_mensagem_registro.style.display = '';
         return;
       }
 
       if (senha !== confirmar_senha) {
-        lbl_mensagem_registro.style.visibility = 'visible';
         lbl_mensagem_registro.style.color = 'red';
         lbl_mensagem_registro.textContent = 'As senhas não coincidem';
+        lbl_mensagem_registro.style.display = '';
         return;
       }
 
       if (!senha || senha.length < 6) {
-        lbl_mensagem_registro.style.visibility = 'visible';
         lbl_mensagem_registro.style.color = 'red';
         lbl_mensagem_registro.textContent = 'A senha deve ter pelo menos 6 caracteres';
+        lbl_mensagem_registro.style.display = '';
         return;
       }
 
@@ -258,16 +262,14 @@ document.addEventListener('DOMContentLoaded', function () {
           const validaData = await validaResponse.json();
 
           if (!validaData.success) {
-            lbl_mensagem_registro.style.visibility = 'visible';
             lbl_mensagem_registro.style.color = 'red';
             lbl_mensagem_registro.textContent = validaData.message || 'Erro na validação';
+            lbl_mensagem_registro.style.display = '';
             return;
           }
 
           // Se passou na validação, exibe o CAPTCHA
           if (captchaContainer) {
-            //container_migrar_dados_visitante.style.display = "none";
-            //container_notificacoes_bonus_energia.style.display = "none";
             containersChecks.forEach(c => c.style.display = "none");
             captchaContainer.hidden = false;
 
@@ -280,10 +282,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (btnRegister) btnRegister.disabled = true;
             await carregarCaptcha();
           }
-        } catch (error) {
-          lbl_mensagem_registro.style.visibility = 'visible';
+        }
+        catch (error) {
           lbl_mensagem_registro.style.color = 'red';
           lbl_mensagem_registro.textContent = 'Erro na comunicação com o servidor';
+          lbl_mensagem_registro.style.display = '';
           console.error('Erro validação registro:', error);
         }
 
@@ -292,17 +295,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // Aqui já está no passo do CAPTCHA
       if (selecoes.length !== 3) {
-        lbl_mensagem_registro.style.visibility = 'visible';
         lbl_mensagem_registro.style.color = 'red';
         lbl_mensagem_registro.textContent = 'Selecione exatamente 3 imagens no CAPTCHA';
+        lbl_mensagem_registro.style.display = '';
         return;
       }
 
       // Envia dados para registrar usuário com CAPTCHA
       try {
-        lbl_mensagem_registro.style.visibility = 'visible';
         lbl_mensagem_registro.style.color = '#d1d1d1ff';
         lbl_mensagem_registro.textContent = 'Fazendo registro...';
+        lbl_mensagem_registro.style.display = '';
 
         const response = await fetch('/register', {
           method: 'POST',
@@ -319,13 +322,12 @@ document.addEventListener('DOMContentLoaded', function () {
           })
         });
 
-        if (!response.ok) {
+        if (!response.ok && response.status >= 500) {
           const text = await response.text().catch(() => null);
           throw new Error(`Servidor respondeu com status ${response.status} ${text || ''}`);
         }
 
         const data = await response.json();
-
         if (data.success) {
           // Registra meta de conversão de registro no GoogleAds
           if (typeof gtag_report_conversion === 'function') {
@@ -335,38 +337,34 @@ document.addEventListener('DOMContentLoaded', function () {
           // Chama novamente a tela de login
           if (btnRegister) btnRegister.disabled = true;
           if (lbl_mensagem_login) {
+            lbl_mensagem_login.style.color = 'green';
+            lbl_mensagem_login.textContent = data.message;
             lbl_mensagem_login.style.display = '';
-            lbl_mensagem_login.style.visibility = 'visible'
-            lbl_mensagem_login.style.color = 'green'
-            lbl_mensagem_login.textContent = data.message
           }
           this.reset();
           if (captchaContainer) captchaContainer.hidden = true;
           showForm('login', true);
         }
-        else {
-            // Registra a falha no CAPTCHA
-            const resposta_captcha = await fetch('/registrar_falha_captcha', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' }
-            });
+        else { // registra a falha no CAPTCHA
+          const resposta_captcha = await fetch('/registrar_falha_captcha', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
 
-            const info_bloqueio = await resposta_captcha.json();
-            // Se já está bloqueado, manda para o login e mostra mensagem
-            if (info_bloqueio.tentativas_registro > 0 && info_bloqueio.bloqueado_ate > 0) {
-              bloquearRegistro(info_bloqueio)
-              return;
-            }
-
-            // Caso não esteja bloqueado, apenas recarrega o CAPTCHA
-            carregarCaptcha();
+          const info_bloqueio = await resposta_captcha.json();
+          // Se já está bloqueado, manda para o login e mostra mensagem
+          if (info_bloqueio.tentativas_registro > 0 && info_bloqueio.bloqueado_ate > 0) {
+            bloquearRegistro(info_bloqueio)
+            return;
           }
-        
+          // Caso não esteja bloqueado, apenas recarrega o CAPTCHA
+          carregarCaptcha();
+        }
       }
       catch (error) {
-        lbl_mensagem_registro.style.visibility = 'visible';
         lbl_mensagem_registro.style.color = 'red';
         lbl_mensagem_registro.textContent = 'Erro na comunicação com o servidor';
+        lbl_mensagem_registro.style.display = '';
         console.error('register submit error:', error);
       }
     });
@@ -411,19 +409,17 @@ document.addEventListener('DOMContentLoaded', function () {
       } 
       else {
         if (lbl_mensagem_login) {
-          lbl_mensagem_login.style.display = '';
-          lbl_mensagem_login.style.visibility = 'visible';
           lbl_mensagem_login.style.color = 'red';
           lbl_mensagem_login.textContent = data.message || 'Falha no login';
+          lbl_mensagem_login.style.display = '';
         }
       }
     }
     catch (error) {
       if (lbl_mensagem_login) {
-        lbl_mensagem_login.style.display = '';
-        lbl_mensagem_login.style.visibility = 'visible';
         lbl_mensagem_login.style.color = 'red';
         lbl_mensagem_login.textContent = 'Erro na comunicação com o servidor';
+        lbl_mensagem_login.style.display = '';
       }
       console.error('login submit error:', error);
     }
@@ -437,18 +433,18 @@ document.addEventListener('DOMContentLoaded', function () {
       const email = document.getElementById('forgot-email')?.value?.trim();
       if (!email) {
         if (forgot_message) {
-          forgot_message.style.visibility = 'visible';
           forgot_message.style.color = 'red';
-          forgot_message.textContent = 'Informe um e-mail válido.';
+          forgot_message.textContent = 'Informe um e-mail válido';
+          forgot_message.style.display = '' ;
         }
         return;
       }
 
       // feedback visual
       if (forgot_message) {
-        forgot_message.style.visibility = 'visible';
-        forgot_message.style.color = '#333';
+        forgot_message.style.color = 'white';
         forgot_message.textContent = 'Enviando...';
+        forgot_message.style.display = '';
       }
 
       try {
@@ -467,7 +463,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (data.success) {
           if (forgot_message) {
             forgot_message.style.color = 'green';
-            forgot_message.textContent = data.message || 'E-mail enviado. Verifique sua caixa de entrada.';
+            forgot_message.textContent = data.message || 'E-mail enviado. Verifique sua caixa de entrada';
           }
           // opcional: limpar campo
           forgot_form.reset();
@@ -484,7 +480,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.error('Erro forgot_password:', err);
         if (forgot_message) {
           forgot_message.style.color = 'red';
-          forgot_message.textContent = 'Erro na comunicação com o servidor.';
+          forgot_message.textContent = 'Erro na comunicação com o servidor';
         }
       }
     });
@@ -511,7 +507,8 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       if (lbl_mensagem_registro) {
         lbl_mensagem_registro.textContent = '';
-        lbl_mensagem_registro.style.visibility = 'hidden';
+        //lbl_mensagem_registro.style.visibility = 'hidden';
+        lbl_mensagem_registro.style.display = 'none';
       }
       btnEntrarSemLogin.style.display = "block"
     }
@@ -569,7 +566,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (lbl_mensagem_registro) {
           lbl_mensagem_registro.textContent = '';
-          lbl_mensagem_registro.style.visibility = 'hidden';
+          lbl_mensagem_registro.style.display = 'none';
         }
       }
 
@@ -603,11 +600,11 @@ document.addEventListener('DOMContentLoaded', function () {
       if (lbl_mensagem_login) lbl_mensagem_login.textContent = '';
       if (lbl_mensagem_registro) {
         lbl_mensagem_registro.textContent = '';
-        lbl_mensagem_registro.style.visibility = 'hidden';
+        lbl_mensagem_registro.style.display = 'none';
       }
       if (forgot_message) {
-        forgot_message.style.visibility = 'hidden';
         forgot_message.textContent = '';
+        forgot_message.style.display = 'none';
       }
     }
   }
@@ -618,15 +615,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Exibe mensagem de bloqueio
     if (lbl_mensagem_login) {
-      lbl_mensagem_login.style.visibility = 'visible';
       lbl_mensagem_login.style.color = 'red';
-      lbl_mensagem_login.textContent = `Registro bloqueado por múltiplas tentativas malsucedidas. Aguarde até ${horario_formatado} para nova tentativa.`;
+      lbl_mensagem_login.textContent = `Registro bloqueado por múltiplas tentativas malsucedidas. Aguarde até ${horario_formatado} para nova tentativa`;
+      lbl_mensagem_login.style.display = '';
     }
 
     // Bloqueia as entradas da tela de registro
-    if (register_form) {
-      register_form.querySelectorAll('input, button').forEach(el => el.disabled = true);
-    }
+    if (register_form) {register_form.querySelectorAll('input, button').forEach(el => el.disabled = true)};
   }
 
   window.showForm = showForm;

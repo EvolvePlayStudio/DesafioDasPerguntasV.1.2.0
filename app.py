@@ -1759,6 +1759,7 @@ def usar_dica(user_id):
 
 @app.route("/register", methods=["POST"])
 def registrar():
+    print("Registrando usuário")
     data = request.get_json()
     notificacoes_bonus_energia = bool(data.get("notificacoes_bonus_energia", True))
     notificacoes_alteracoes_pontos = bool(data.get("notificacoes_alteracoes_pontos", True))
@@ -1784,7 +1785,10 @@ def registrar():
         return jsonify(success=False, message="CAPTCHA expirado ou inválido"), 400
 
     if sorted(captcha_selecoes) != sorted(dados_captcha.get("corretos", [])):
+        print("Seleção de captcha incorreta")
         return jsonify(success=False, message="Seleções do CAPTCHA incorretas"), 400
+
+    print("2. Cheguei aqui")
 
     # Invalida o CAPTCHA para evitar reutilização
     session.pop(f"captcha_{captcha_token}", None)

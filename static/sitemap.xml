@@ -3,7 +3,7 @@
 
   <url>
     <loc>https://desafiodasperguntas.com.br/</loc>
-    <lastmod>2026-01-23</lastmod>
+    <lastmod>2026-02-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -51,7 +51,7 @@
   </url>
   <url>
     <loc>https://desafiodasperguntas.com.br/resultado</loc>
-    <lastmod>2026-02-19</lastmod>
+    <lastmod>2026-02-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -87,7 +87,7 @@
   <!-- Páginas técnicas: indexáveis mas prioridade baixa -->
   <url>
     <loc>https://desafiodasperguntas.com.br/login</loc>
-    <lastmod>2026-02-18</lastmod>
+    <lastmod>2026-02-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.2</priority>
   </url>
