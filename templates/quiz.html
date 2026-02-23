@@ -16,6 +16,9 @@
     --fs-title: 1.25rem;
     --fs-icon-pular: 1.35rem;
     --fs-estrelas: 2.2rem;
+    --ads-top-width: 320px;
+    --ads-top-height: 50px;
+    --folga-anuncio-topo: 0.5rem;
   }
   @media (max-width: 1000px) { 
     :root {
@@ -52,9 +55,9 @@
     position: relative;
     width: 100%;
     max-width: 650px;
-    height: 2rem; /* altura do ranking */
+    height: 1.2rem; /* altura do ranking */
     margin-top: -0.8rem;
-    margin-bottom: 1.5rem;
+    /*margin-bottom: 1.5rem;*/
     color: white;
     font-weight: bold;
   }
@@ -176,6 +179,28 @@
   #pontuacao.hide-inc::after, #pontuacao-mobile.hide-inc::after {
     opacity: 0;
   }
+  #container-principal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 0;
+  }
+  .ad-top {
+    width: var(--ads-top-width);
+    height: calc(var(--ads-top-height) + 2 * var(--folga-anuncio-topo));
+    justify-content: center; /* Centraliza o anúncio horizontalmente */
+    display: none;
+    align-items: center;
+    display: flex;
+    flex-shrink: 0;
+    margin: 0 auto;
+    padding: 0;
+  }
+  .ad-top iframe {
+    display: block;
+    margin: 0 auto;
+    padding: 0;
+  }
   /* Container que organiza os 3 elementos em colunas */
   .quiz-grid-layout {
     display: grid;
@@ -189,6 +214,7 @@
   }
   /* Ajuste das Sidebars para o fluxo do Grid */
   .ad-sidebar {
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
     position: relative;
     display: block;
     width: 195px;
@@ -615,7 +641,6 @@
     width: 100%;
     max-width: 38rem;
   }
-
   /* Responsivo */
   @media (max-width: 1000px) {
     .status-wrapper-mobile {
@@ -657,7 +682,7 @@
 </head>
 
   <body style="margin: 0; font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1E1E14, #1E1E14);">
-    <div style="display: flex; flex-direction: column; align-items: center; padding: 2rem 0;">
+    <div id="container-principal">
       <!-- Pontuação e ranking do jogador em mobile -->
       <div class="status-wrapper-mobile">
         <header class="pontuacoes-mobile">Pontuação: 
@@ -687,6 +712,20 @@
 
         <!-- Próximo ranking -->
         <span id="proximo-ranking"></span>
+      </div>
+
+      <!-- Anúncio de banner no topo -->
+      <div id="anuncio-banner-topo" class="ad-top">
+        <script>
+          atOptions = {
+            'key' : '147bea0a9dfbe2620ce04da50d1530bd',
+            'format' : 'iframe',
+            'height' : 50,
+            'width' : 320,
+            'params' : {}
+          };
+        </script>
+        <script src="https://www.highperformanceformat.com/147bea0a9dfbe2620ce04da50d1530bd/invoke.js"></script>
       </div>
 
       <div class="quiz-grid-layout">
@@ -840,9 +879,33 @@
     </div>
   </div>
 
+  <!-- Gerencia quais anúncios devem aparecer -->
+  <script type='module'>
+    import { idsReservados, idVisitanteAdmin } from '../../../static/utils.js';
+    const idVisitante = localStorage.getItem("id_visitante")
+    const idUsuarioHTML = sessionStorage.getItem("id_usuario") ?? "0";
+    const idNumerico = idUsuarioHTML ? parseInt(idUsuarioHTML) : 0;
+    const isMobile = window.innerWidth <= 1200;
+    const isAdmin = idsReservados.includes(idNumerico) || idVisitante === idVisitanteAdmin;
+    const anuncioBannerTopo = document.getElementById("anuncio-banner-topo");
+    const rankingContainer = document.querySelector('.ranking-container');
+    
+    function mostrarAnuncios() {
+      if (!isAdmin) {
+        try {anuncioBannerTopo.style.display = 'flex'}
+        catch(error) {console.error("Erro ao tentar remover anúncio de banner", error)};
+      }
+      else {
+        rankingContainer.style.marginBottom = '3rem';
+        anuncioBannerTopo.style.display = 'none';
+      };
+    }
+    mostrarAnuncios(); 
+  </script>
+
   <script>
-    const emailUsuario = "{{ session['email'] if 'email' in session else '' }}";
-    const idUsuario = "{{ session['id_usuario'] if 'id_usuario' in session else '' }}";
+    // const emailUsuario = "{{ session['email'] if 'email' in session else '' }}";
+    // const idUsuario = "{{ session['id_usuario'] if 'id_usuario' in session else '' }}";
   </script>
   <script type="module" src="{{ url_for('static', filename='quiz.js') }}?v=1.1.9"></script>
 </body>
