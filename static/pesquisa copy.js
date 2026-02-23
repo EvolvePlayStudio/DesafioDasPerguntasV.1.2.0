@@ -11,6 +11,7 @@ const contadorEl = document.getElementById("contador");
 const btn_voltar = document.getElementById("btn-voltar");
 const btn_marcar_todas = document.getElementById("marcar-todas");
 const btn_pesquisar = document.getElementById("btn-pesquisar");
+const btn_salvar_favoritos = document.getElementById("btn-salvar-favoritos");
 const btn_revisar = document.getElementById("btn-revisar");
 const checksDificuldades = document.querySelectorAll(`#checks-dificuldades input[type="checkbox"]`);
 const box_tema = document.getElementById("tema");
@@ -18,7 +19,6 @@ const box_tipo_pergunta = document.getElementById("tipo-pergunta");
 const mensagem = document.getElementById("mensagem");
 const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === "true";
 const TTL_ESTADO_PESQUISA = 7 * 24 * 60 * 60 * 1000; // 7 dias
-let favoritosAlterados = 0;
 
 // Áudio para clique em checkboxes
 checksDificuldades.forEach(check => {
@@ -37,10 +37,6 @@ box_tema.addEventListener("change", async () => {
 // Implementa a função para retornar para a home
 btn_voltar.addEventListener("click", () => {
   playSound("click");
-  if (favoritosAlterados > 0) {
-    console.log("Salvando favoritos...");
-    salvarFavoritos();
-  }
   window.location.href = '/home';
 })
 
@@ -78,14 +74,29 @@ btn_marcar_todas.addEventListener("click", () => {
 // Implementa a função para pesquisar as perguntas
 btn_pesquisar.addEventListener("click", () => {
   playSound("click");
-  salvarFavoritos();
   pesquisar();
 });
+
+// Implementa a função para salvar as perguntas nos favoritos
+btn_salvar_favoritos.addEventListener("click", () => {
+  playSound("click");
+  if (!MODO_VISITANTE) {
+    salvarFavoritos();
+  }
+  else {
+    exibirMensagem(
+      mensagem,
+      "É necessário criar uma conta para poder salvar perguntas nos favoritos",
+      "orange",
+      true,
+      true
+    );
+  }
+})
 
 // Implementa a função para iniciar uma revisão
 btn_revisar.addEventListener("click", async() => {
   playSound("click");
-  salvarFavoritos();
   const linhas = tabela.querySelectorAll("tr");
   const perguntas_totais = JSON.parse(sessionStorage.getItem("perguntas_para_revisar"));
   const perguntas_filtradas = {Fácil: [], Médio: [], Difícil: [], Extremo: []};
@@ -98,9 +109,11 @@ btn_revisar.addEventListener("click", async() => {
       const id_pergunta_tabela = linha.getAttribute("data-id");
       const dificuldade_pergunta = linha.getAttribute("data-dificuldade");
       const pergunta = perguntas_totais[dificuldade_pergunta].find(p => p.id_pergunta == id_pergunta_tabela);
-      if (pergunta) perguntas_filtradas[dificuldade_pergunta].push(pergunta);
-    };
-  });
+      if (pergunta) {
+        perguntas_filtradas[dificuldade_pergunta].push(pergunta);
+      }
+    }
+  })
 
   if (perguntas_filtradas["Fácil"].length > 0 || perguntas_filtradas["Médio"].length > 0 || perguntas_filtradas["Difícil"].length > 0 || perguntas_filtradas["Extremo"].length > 0) {
     sessionStorage.setItem("perguntas", JSON.stringify(perguntas_filtradas));
@@ -174,6 +187,17 @@ async function carregarFavoritos() {
   }
 }
 
+function getOwnerKey() {
+  let owner_key;
+  if (!MODO_VISITANTE) {
+    owner_key = sessionStorage.getItem("id_usuario")
+  }
+  else {
+    owner_key = "visitante"
+  }
+  return owner_key
+}
+
 async function mostrarSubtemasDisponiveis(subtemasRestaurar = []) {
 
   function atualizarBotoesSubtemas(subtemas, subtemasSelecionados = new Set()) {
@@ -211,6 +235,7 @@ async function mostrarSubtemasDisponiveis(subtemasRestaurar = []) {
     contadorEl.textContent = "0";
     contador_perguntas = 0;
     btn_marcar_todas.disabled = true;
+    btn_salvar_favoritos.disabled = true;
     btn_revisar.disabled = true;
     btn_marcar_todas.textContent = "Marcar Todas";
   }
@@ -242,6 +267,7 @@ async function mostrarSubtemasDisponiveis(subtemasRestaurar = []) {
 
 async function pesquisar() {
   btn_marcar_todas.disabled = true;
+  btn_salvar_favoritos.disabled = true;
   btn_revisar.disabled = true;
   btn_pesquisar.disabled = true;
   const dificuldadesSelecionadas = Array.from(document.querySelectorAll(".filtro-centro input[type='checkbox']:checked")).map(cb => cb.value);
@@ -374,6 +400,7 @@ async function pesquisar() {
     document.querySelectorAll(".checkbox-selecionar")
     .forEach(cb => cb.disabled = false);
     btn_marcar_todas.disabled = false;
+    btn_salvar_favoritos.disabled = false;
     btn_revisar.disabled = false;
 
   }
@@ -406,17 +433,27 @@ function salvarEstadoPesquisa(tema, tipo_pergunta, dificuldades, subtemas) {
   localStorage.setItem("estado_pesquisa", JSON.stringify(estados));
 }
 
+function temaValido(tema) {
+  return Array.from(box_tema.options)
+    .some(opt => opt.value === tema);
+}
+
 function toggleFavorito(estrelaEl, id_pergunta)  {
+
   if (MODO_VISITANTE) {
-    exibirMensagem(mensagem, "É necessário criar uma conta para poder salvar perguntas nos favoritos", "orange", true, true);
+    exibirMensagem(
+      mensagem,
+      "É necessário criar uma conta para poder salvar perguntas nos favoritos",
+      "orange",
+      true,
+      true
+    );
     return;
   }
 
   // Estado atual e novo estado da estrela
   const atualmente = estrelaEl.classList.contains("favorito")
   const novo_estado = !atualmente;
-  favoritosAlterados ++;
-  if (favoritosAlterados >= 5) salvarFavoritos();
 
   // Atualiza a estrela visualmente
   estrelaEl.classList.toggle("favorito", novo_estado);
@@ -432,23 +469,32 @@ function toggleFavorito(estrelaEl, id_pergunta)  {
 }
 
 async function salvarFavoritos() {
-  const linhasTabela = document.querySelectorAll("#tabela-perguntas tbody tr[data-id]").length;
-  if (linhasTabela <= 1) return;
+  exibirMensagem(mensagem, "Salvando favoritos...", '#d1d1d1ff')
   // IDs visíveis na tabela no momento
-  const idsVisiveis = Array.from(document.querySelectorAll("#tabela-perguntas tbody tr")).map(tr => Number(tr.dataset.id));
+  const idsVisiveis = Array.from(document.querySelectorAll("#tabela-perguntas tbody tr"))
+    .map(tr => Number(tr.dataset.id));
 
   // favoritos_selecionados é um Set com os IDs atualmente estrelados (UI)
   const adicionar = idsVisiveis.filter(id => favoritos_selecionados.has(id));
   const remover   = idsVisiveis.filter(id => !favoritos_selecionados.has(id));
-  favoritosAlterados = 0;
 
   try {
-    await fetchAutenticado("/api/favoritos", {
+    const response = await fetchAutenticado("/api/favoritos", {
       method: "POST",
       body: { tema_atual, tipo_pergunta, adicionar, remover }
     });
+    const result = await response.json()
+    if (result.success) {
+      console.log(result)
+      exibirMensagem(mensagem, "Favoritos salvos com sucesso", 'lime', true, true)
+    }
+    else {
+      exibirMensagem(mensagem, "Erro! não foi possível salvar os favoritos", 'red', true, true)}
   }
-  catch (err) {console.error("Erro ao salvar favoritos", err)};
+  catch (err) {
+    exibirMensagem(mensagem, "Erro! não foi possível salvar os favoritos", 'red', true, true);
+    console.error("Erro ao salvar favoritos", err);
+  }
 }
 
 function identificarMudancaCheck (checkbox) {
@@ -467,15 +513,6 @@ function identificarMudancaCheck (checkbox) {
     }
     contadorEl.textContent = contador_perguntas;
   })
-}
-
-// HELPERS
-function getOwnerKey() {
-  return MODO_VISITANTE === true ? "visitante" : sessionStorage.getItem("id_usuario");
-}
-
-function temaValido(tema) {
-  return Array.from(box_tema.options).some(opt => opt.value === tema);
 }
 
 const estado = carregarEstadoPesquisa();
