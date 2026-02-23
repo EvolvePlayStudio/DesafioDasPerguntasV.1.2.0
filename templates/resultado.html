@@ -325,6 +325,10 @@
         display: none;
       }
     }
+    #main-element {
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
   </style>
 </head>
 <body>
@@ -347,7 +351,7 @@
     <script src="https://www.highperformanceformat.com/69118dd5dc6c01c0b935cecfc05b9b8c/invoke.js"></script>
   </div>
 
-  <div class="main">
+  <div id="main-element" class="main">
     <!-- Anúncios nas laterais e layout de resultado no centro -->
     <div class="layout-horizontal">
 
@@ -396,7 +400,6 @@
           </div>
         </a>
       </div>
-
     </div>
 
     <!-- Rodapé da página com os botões -->
@@ -441,8 +444,28 @@
     </div>
 
   </div>
-  
-  
+
+  <script>
+    // Carrega o script da Monetag sem travar a página (async)
+    (function(s){
+      s.dataset.zone='10617482';
+      s.src='https://gizokraijaw.net/vignette.min.js';
+      s.async = true; // Não trava o carregamento
+      document.head.appendChild(s);
+    })(document.createElement('script'));
+
+    // Lógica do Delay de 0.8s
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        // Remove o loader e mostra a página
+        const mainElement = document.getElementById('main-element')
+        
+        if(mainElement) mainElement.style.opacity = '1';
+      }, 800); 
+    });
+  </script>
+
+
   <script type="module">
     import { idsReservados, idVisitanteAdmin } from '../static/utils.js';
     const anuncioBannerTopo = document.getElementById("banner-topo-tela");
@@ -457,7 +480,7 @@
     const idNumerico = idUsuarioSessao ? parseInt(idUsuarioSessao) : 0;
 
     // Push-in Ad da AdsTerra
-    if (!isMobile && ![4, 6].includes(idNumerico) && !idVisitante === idVisitanteAdmin) {
+    if (!isMobile && ![6, 16].includes(idNumerico) && !idVisitante === idVisitanteAdmin) {
       var script = document.createElement('script');
       script.src = "https://pl28750365.effectivegatecpm.com/0f/87/79/0f877988a14c549bbccd28d0180a5867.js";
       script.type = 'text/javascript';
