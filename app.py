@@ -1382,7 +1382,10 @@ def obter_todos_anuncios():
                 else:
                     link_final = f"https://www.amazon.com.br/dp/{link_referencia}?tag={AMAZON_TRACKING_ID}"
             else:
-                link_final = f"https://mercadolivre.com/sec/{link_referencia}"
+                if tipo_midia == 'Melhores ofertas':
+                    link_final = link_referencia
+                else:
+                    link_final = f"https://mercadolivre.com/sec/{link_referencia}"
 
             dicionario_anuncios[tema][provedor].append({
                 'id': id_banco,
