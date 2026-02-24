@@ -136,31 +136,43 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
     }
 
     const dadosTema = dadosAnuncios[tema_atual];
+    const anunciosGenericos = dadosAnuncios['Nenhum'];
     const isUserAdmin = MODO_VISITANTE ? false : idsReservados.includes(parseInt(idUsuario));
 
     const prepararListaPriorizada = (listaRaw) => {
       if (!listaRaw) return [];
-        return listaRaw
-        .filter(a => {
-            if (isUserAdmin) return true;
-            if (MODO_VISITANTE) return a.disponivel_visitantes === true;
-            return a.disponivel_usuarios === true;
+      
+      // Anúncios genéricos
+      ['Amazon', 'Mercado Livre'].forEach(p => {
+        if (anunciosGenericos[p]) {
+          anunciosGenericos[p].forEach(a => {
+          const sorteio = Math.random();
+          if (sorteio >= 0.3) listaRaw.push(a);
         })
-        .map(a => {
-            if (!historicoExibicao[a.id]) historicoExibicao[a.id] = 0;
+       }
+      })
+      
+      return listaRaw
+      .filter(a => {
+        if (isUserAdmin) return true;
+        if (MODO_VISITANTE) return a.disponivel_visitantes === true;
+          return a.disponivel_usuarios === true;
+      })
+      .map(a => {
+        if (!historicoExibicao[a.id]) historicoExibicao[a.id] = 0;
             
-            let prioridade = 1000 - (historicoExibicao[a.id] * 10);
+        let prioridade = 1000 - (historicoExibicao[a.id] * 10);
             
-            // Bônus de Admin para anúncios em teste (ambos false)
-            const isAnuncioTeste = !a.disponivel_visitantes && !a.disponivel_usuarios;
-            if (isUserAdmin && isAnuncioTeste && historicoExibicao[a.id] === 0) {
-                prioridade += 5000;
-            }
+        // Bônus de Admin para anúncios em teste (ambos false)
+        const isAnuncioTeste = !a.disponivel_visitantes && !a.disponivel_usuarios;
+        if (isUserAdmin && isAnuncioTeste && historicoExibicao[a.id] === 0) {
+          prioridade += 5000;
+        }
 
-            const ruidoRandomico = Math.random() * 5; 
-            return { ...a, _score: prioridade + ruidoRandomico };
-        })
-        .sort((a, b) => b._score - a._score);
+        const ruidoRandomico = Math.random() * 5; 
+        return { ...a, _score: prioridade + ruidoRandomico };
+      })
+      .sort((a, b) => b._score - a._score);
     };
 
     let listaAmazon = prepararListaPriorizada(dadosTema['Amazon']);

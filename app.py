@@ -1377,7 +1377,10 @@ def obter_todos_anuncios():
             
             # Montagem do Link
             if provedor == 'Amazon':
-                link_final = f"https://www.amazon.com.br/dp/{link_referencia}?tag={AMAZON_TRACKING_ID}"
+                if tipo_midia == 'Melhores ofertas':
+                    link_final = f"{link_referencia}?tag={AMAZON_TRACKING_ID}"
+                else:
+                    link_final = f"https://www.amazon.com.br/dp/{link_referencia}?tag={AMAZON_TRACKING_ID}"
             else:
                 link_final = f"https://mercadolivre.com/sec/{link_referencia}"
 
