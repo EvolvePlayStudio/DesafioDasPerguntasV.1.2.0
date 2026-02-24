@@ -49,7 +49,6 @@ const actionsVoltar = document.getElementById("feedback-actions-pos-envio");
 const btnVoltar = document.getElementById("voltar-feedback");
 let feedbackIdAtual = null;
 let feedbackEmEnvio = false;
-modal, caixaTextoFeedback
 
 if (valor_saldo > 0) {
     cor_saldo = 'lime';

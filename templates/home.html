@@ -24,10 +24,8 @@
   <!-- CSS -->
   <style>
     :root {
-      --ads-container-width: 320px;
-      --ads-container-height: 50px;
-      --ads-bottom-width: 468px;
-      --ads-bottom-height: 60px;
+      --ads-container-width: 460px;
+      --ads-container-height: 80px;
     }
     html, body {
       height: 100%;
@@ -460,34 +458,55 @@
       width: 100%;
     }
     .ad-sidebar {
+      display: none;
       position: absolute;
       width: var(--ads-container-width);
       height: var(--ads-container-height);
     }
-    .ad-bottom {
-      width: var(--ads-bottom-width);
-      height: calc(var(--ads-bottom-height) + 1rem);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-shrink: 0;
-      margin: 0 auto;
-    }
-    .ad-bottom iframe {
-      display: block;
-      margin: 0 auto;
-    }
     #banner-lateral-esquerda {
-      left: 4rem; /* O ideal aqui era fazer cálculo para ajustar isto */
+      left: 3rem; /* O ideal aqui era fazer cálculo para ajustar isto */
+    }
+    #banner-lateral-direita {
+      right: 3rem;
+    }
+    .link-anuncio-duplo {
+      display: flex; /* Alinha logo e produto lado a lado */
+      width: 100%;
+      height: 100%;
+      text-decoration: none;
+      background-color: #fff; /* Fundo branco para unir as duas imagens */
+      overflow: hidden;
+    }
+    .logo-container {
+      flex: 0 0 25%; /* Ocupa exatamente 20% e não encolhe */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      /*border-right: 1px solid #eee;  Linha sutil separando o logo do produto */
+    }
+    .produto-container {
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      display: block;
+      align-items: center;
+      justify-content: center;
+    }
+    .link-anuncio-duplo img {
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      display: block;
     }
     @media (max-width: 1200px) {
-      .ad-sidebar, .ad-bottom {
+      .ad-sidebar {
         display: none;
       }
     }
   </style>
 
-  <!-- Calcula rowgap entres os cards de temas -->
+  <!-- Calcula rowgap entre os cards de temas -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       requestAnimationFrame(() => {
@@ -604,7 +623,7 @@
   </header>
 
   <main>
-    <!-- Modo Testando Perguntas -->
+    <!-- Modo testando perguntas -->
     <div id="modo-teste-wrapper" class="modo-teste-wrapper">
       <label class="switch">
         <input type="checkbox" id="modo-teste-toggle">
@@ -612,20 +631,6 @@
       </label>
       <span class="modo-teste-texto">Modo Teste</span>
     </div>
-
-    <!-- Banner de anúncio na lateral esquerda 
-    <div id="banner-lateral-esquerda" class="ad-sidebar">
-      <script>
-        atOptions = {
-          'key' : '147bea0a9dfbe2620ce04da50d1530bd',
-          'format' : 'iframe',
-          'height' : 50,
-          'width' : 320,
-          'params' : {}
-        };
-      </script>
-      <script src="https://www.highperformanceformat.com/147bea0a9dfbe2620ce04da50d1530bd/invoke.js"></script>
-    </div>-->
 
     <!-- Bloco de escolha do tipo de pergunta -->
     <div class="opcoes-container">
@@ -639,6 +644,30 @@
           <label><input id="radio-discursiva" type="radio" name="tipo-de-pergunta" value="Discursiva" disabled> Digitada</label>
         </div>
       </div>
+    </div>
+
+    <!-- Banner de anúncio na lateral esquerda -->
+    <div id="banner-lateral-esquerda" class="ad-sidebar">
+      <a href="" target="_blank" class="link-anuncio-duplo">
+        <div class="logo-container">
+          <img src="https://github.com/EvolvePlayStudio/assets-quiz/blob/main/logotipoAmazon.png?raw=true" alt="Logo Amazon">
+        </div>
+        <div class="produto-container">
+          <img src="" alt="Produto">
+        </div>
+      </a>
+    </div>
+
+    <!-- Banner de anúncio na lateral direita -->
+    <div id="banner-lateral-direita" class="ad-sidebar">
+      <a href="" target="_blank" class="link-anuncio-duplo">
+        <div class="logo-container">
+          <img src="https://github.com/EvolvePlayStudio/assets-quiz/blob/main/logotipoMercadoLivre03.png?raw=true" alt="Logo ML">
+        </div>
+        <div class="produto-container">
+          <img src="" alt="Produto">
+        </div>
+      </a>
     </div>
 
     <!-- Mensagem na tela -->
@@ -701,20 +730,6 @@
       </div>
     </div>
 
-    <!-- Banner de anúncio embaixo 
-    <div id="banner-fundo-tela" class="ad-bottom">
-      <script>
-      atOptions = {
-        'key' : '55263b9cc4a5ef2b21aa73db69fd047b',
-        'format' : 'iframe',
-        'height' : 60,
-        'width' : 468,
-        'params' : {}
-      };
-      </script>
-      <script src="https://www.highperformanceformat.com/55263b9cc4a5ef2b21aa73db69fd047b/invoke.js"></script>
-    </div>-->
-
   </main>
 
   <!-- Rodapé da página -->
@@ -753,79 +768,49 @@
 
   <body data-modo-visitante="{{ session.get('visitante', False) | tojson }}">
     <script type='module'>
-      import { idsReservados, idVisitanteAdmin } from '../static/utils.js';
+      import { idsReservados, idsVisitantesReservados } from '../static/utils.js';
+      const modoTesteWrapper = document.getElementById("modo-teste-wrapper");
+      const checkModoTeste = document.getElementById("modo-teste-toggle");
+      const modoTeste = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
       const MODO_VISITANTE_HTML = document.body.dataset.modoVisitante === 'true';
-      const idUsuarioSessao = MODO_VISITANTE_HTML ? null : sessionStorage.getItem("id_usuario");
-      sessionStorage.setItem("id_usuario", idUsuarioSessao);
-      const idNumerico = idUsuarioSessao ? parseInt(idUsuarioSessao) : 0;
+      // Trecho abaixo se repete no html de resultado e login
       const idVisitante = localStorage.getItem("id_visitante");
+      const idUsuarioHTML = parseInt(sessionStorage.getItem("id_usuario") ?? "0");
+      sessionStorage.setItem("id_usuario", idUsuarioHTML);
       const isMobile = window.innerWidth <= 1200;
-      const isAdmin = idsReservados.includes(idNumerico) || idVisitante === idVisitanteAdmin;
+      const isAdmin = idsReservados.includes(idUsuarioHTML) || idsVisitantesReservados.includes(idVisitante);
       window.ADS_CONFIG = {
         isAdmin: isAdmin,
         isMobile: isMobile,
         registrandoModoTeste: false,
         modoVisitante: MODO_VISITANTE_HTML
       }
-
       const config = window.ADS_CONFIG;
-      const anuncioBannerEsquerda = document.getElementById("banner-lateral-esquerda");
-      const anuncioBannerFundo = document.getElementById("banner-fundo-tela");
-      const modoTesteWrapper = document.getElementById("modo-teste-wrapper");
-      const checkModoTeste = document.getElementById("modo-teste-toggle");
-      const modoTeste = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
-
-      // Registra no backend se modo teste for selecionado (apenas para admin)
-      async function registrarModoTeste() {
-        const config = window.ADS_CONFIG;
-        config.registrandoModoTeste = true;
+      
+      // Coloca botão de modo teste
+      function inserirBotaoModoTeste() {
+        // Registra no backend se modo teste for selecionado (apenas para admin)
+        async function registrarModoTeste() {
+          const config = window.ADS_CONFIG;
+          config.registrandoModoTeste = true;
         
-        sessionStorage.setItem("modo_teste", checkModoTeste.checked);
-        await fetch("/api/modo_teste", {
+          sessionStorage.setItem("modo_teste", checkModoTeste.checked);
+          await fetch("/api/modo_teste", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ modo_teste: checkModoTeste.checked})
-        }).catch(() => console.warn("Falha ao registrar modo teste"));
-        config.registrandoModoTeste = false;
-      }
-      
-      /*
-      // Esconde anúncio em mobile e para admin
-      function esconderAnuncios() {
-        anuncioBannerFundo.style.display = 'none';
-        anuncioBannerEsquerda.style.display = 'none';
-          
-        // Coloca botão de modo teste caso não tenha colocado anúncio
-        if (config.isAdmin && !MODO_VISITANTE_HTML) {
-          modoTesteWrapper.style.display = 'flex';
-          if (modoTeste) checkModoTeste.checked = modoTeste;
-          if (checkModoTeste) {
-            registrarModoTeste();
-            checkModoTeste.addEventListener("change", () => {registrarModoTeste()});
-          };
+          }).catch(() => console.warn("Falha ao registrar modo teste"));
+          config.registrandoModoTeste = false;
+        }
+
+        modoTesteWrapper.style.display = 'flex';
+        if (modoTeste) checkModoTeste.checked = modoTeste;
+        if (checkModoTeste) {
+          registrarModoTeste();
+          checkModoTeste.addEventListener("change", () => {registrarModoTeste()});
         };
-      };
-      
-      // Posiciona anúncio de banner da esquerda
-      function posicionarAnuncioBanner() {
-        const altura_header = document.getElementById("header-desktop").getBoundingClientRect().height;
-        const y_top_cards_scroll = document.getElementById("cards-scroll-wrapper").getBoundingClientRect().top;
-        const alturaContainerAnuncio = y_top_cards_scroll - altura_header;
-        const marginTopBannerEquerda = (alturaContainerAnuncio - anuncioBannerEsquerda.getBoundingClientRect().height) / 2
-        anuncioBannerEsquerda.style.marginTop = `${marginTopBannerEquerda}px`;
       }
-      
-      if (config.isMobile || config.isAdmin) {
-        try {esconderAnuncios()}
-        catch(error) {console.error("Erro ao tentar remover anúncio de banner")};
-      }
-      if (!isMobile && ![6, 16].includes(idNumerico) && !idVisitante === idVisitanteAdmin) {
-        var script = document.createElement('script');
-        script.src = "https://pl28750365.effectivegatecpm.com/0f/87/79/0f877988a14c549bbccd28d0180a5867.js";
-        script.type = 'text/javascript';
-        document.head.appendChild(script);
-      }
-      posicionarAnuncioBanner();*/
+    
     </script>
   
   </body>

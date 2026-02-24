@@ -115,7 +115,6 @@
     #btn-feedback {
       cursor: pointer;
     }
-    /* Fundo escuro do modal */
     .modal {
       position: fixed;
       inset: 0;
@@ -125,7 +124,6 @@
       align-items: center;
       justify-content: center;
     }
-    /* Conteúdo do modal */
     .modal-content {
       background: #fff;
       width: 90%;
@@ -139,7 +137,6 @@
       margin-top: 0;
       margin-bottom: 8px;
     }
-    /* Texto auxiliar */
     .feedback-hint {
       font-size: 14px;
       color: var(--hint-text);
@@ -209,10 +206,7 @@
       background: #fdecea;
       color: #a12622;
     }
-    .ad-sidebar iframe {
-      border-radius: 12px;
-    }
-    .ad-sidebar, .ad-sidebar-right {
+    .ad-sidebar-right {
       position: absolute;
       width: var(--ads-container-width);
       height: var(--ads-container-height);
@@ -223,17 +217,19 @@
       padding: 0.85rem;
       border-radius: 8px; 
       text-align: center; 
-      display: flex;
       flex-direction: column;
       justify-content: space-between;
       width: var(--ads-container-width);
       height: var(--ads-container-height);
       transition: transform 0.3s ease;
     }
+    /*
     #banner-lateral-esquerda {
+      display: none;
       left: calc(10vw - var(--ads-container-width) / 2);
-    }
+    }*/
     #banner-lateral-direita {
+      display: flex;
       right: calc(10vw - var(--ads-container-width) / 2);
     }
     #banner-lateral-direita img {
@@ -304,19 +300,6 @@
       margin: 10px 0; 
       line-height: 1.4;
     }
-    .ad-top {
-      width: var(--ads-top-width);
-      height: calc(var(--ads-top-height) + 2 * var(--folga-anuncio-topo));
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-shrink: 0;
-      margin: 0 auto;
-    }
-    .ad-top iframe {
-      display: block;
-      margin: 0 auto;
-    }
     @media (max-width: 1200px) {
       .container {
         max-width: 90%;
@@ -324,10 +307,6 @@
       .ad-sidebar, .ad-sidebar-right, .ad-top {
         display: none;
       }
-    }
-    #main-element {
-      opacity: 0;
-      transition: opacity 0.3s ease;
     }
   </style>
 </head>
@@ -337,37 +316,9 @@
   <audio id="button-click-sound" src="/static/sounds/button_click.wav" preload="auto"></audio>
   <audio id="key-sound" src="/static/sounds/key.wav" preload="auto"></audio>
 
-  <!-- Banner de anúncio encima 
-  <div id="banner-topo-tela" class="ad-top">
-    <script>
-    atOptions = {
-      'key' : '69118dd5dc6c01c0b935cecfc05b9b8c',
-      'format' : 'iframe',
-      'height' : 90,
-      'width' : 728,
-      'params' : {}
-    };
-    </script>
-    <script src="https://www.highperformanceformat.com/69118dd5dc6c01c0b935cecfc05b9b8c/invoke.js"></script>
-  </div>-->
-
   <div id="main-element" class="main">
     <!-- Anúncios nas laterais e layout de resultado no centro -->
     <div class="layout-horizontal">
-
-      <!-- Banner de anúncio na esquerda 
-      <div id="banner-lateral-esquerda" class="ad-sidebar">
-        <script>
-          atOptions = {
-            'key' : '86afbf986bafeb11e54cb49351936737',
-            'format' : 'iframe',
-            'height' : 300,
-            'width' : 160,
-            'params' : {}
-          };
-        </script>
-        <script src="https://www.highperformanceformat.com/86afbf986bafeb11e54cb49351936737/invoke.js"></script>
-      </div>-->
 
       <!-- Container das informações do quiz feito -->
       <div id="container-resultado" class="container">
@@ -445,69 +396,14 @@
 
   </div>
 
-  
   <script>
-    // Carrega o script da Monetag sem travar a página (async)
-    /*
-    (function(s){
-      s.dataset.zone='10617482';
-      s.src='https://gizokraijaw.net/vignette.min.js';
-      s.async = true; // Não trava o carregamento
-      document.head.appendChild(s);
-    })(document.createElement('script'));*/
-
-    // Lógica do Delay de 0.8s
-    window.addEventListener('load', function() {
-      setTimeout(function() {
-        // Remove o loader e mostra a página
-        const mainElement = document.getElementById('main-element')
-        
-        if(mainElement) mainElement.style.opacity = '1';
-      }, 800); 
-    });
-  </script>
-
-
-  <script type="module">
-    import { idsReservados, idVisitanteAdmin } from '../static/utils.js';
-    const anuncioBannerTopo = document.getElementById("banner-topo-tela");
-    const anuncioBannerEsq = document.getElementById("banner-lateral-esquerda");
-    const idUsuario = parseInt(sessionStorage.getItem("id_usuario") ?? "0");
-    const isMobile = window.innerWidth <= 1200;
-    const idVisitante = localStorage.getItem("id_visitante");
-    const isAdmin = idsReservados.includes(idUsuario) || idVisitante === idVisitanteAdmin;
     const containerResultado = document.getElementById("container-resultado");
     const anuncioBannerDir = document.getElementById("banner-lateral-direita");
-    const idUsuarioSessao = sessionStorage.getItem("id_usuario");
-    const idNumerico = idUsuarioSessao ? parseInt(idUsuarioSessao) : 0;
-
-    // Push-in Ad da AdsTerra
-    /*
-    if (!isMobile && ![6, 16].includes(idNumerico) && !idVisitante === idVisitanteAdmin) {
-      var script = document.createElement('script');
-      script.src = "https://pl28750365.effectivegatecpm.com/0f/87/79/0f877988a14c549bbccd28d0180a5867.js";
-      script.type = 'text/javascript';
-      document.head.appendChild(script);
-    }*/
     
-    // Esconde anúncios para Admin e Mobile
-    function esconderAnuncios() {
-      try {
-        if (isMobile || isAdmin) {
-          if (anuncioBannerTopo) anuncioBannerTopo.style.display = 'none';
-          if (anuncioBannerEsq) anuncioBannerEsq.style.display = 'none';
-          if (!isMobile) {
-            containerResultado.style.marginTop = '0.5rem';
-            containerResultado.style.height = 'calc(100vh - 4.5rem - 1rem)';
-            anuncioBannerDir.style.marginTop = 'calc((100vh - 4.5rem - 1rem) / 2 - 150px)';
-          }
-        } 
-      }
-      catch(error) {
-        console.error("Erro ao tentar remover anúncio de banner", error)
-      }
-    }
-    esconderAnuncios();
+    // Depois passar isto para o CSS
+    containerResultado.style.marginTop = '0.5rem';
+    containerResultado.style.height = 'calc(100vh - 4.5rem - 1rem)';
+    anuncioBannerDir.style.marginTop = 'calc((100vh - 4.5rem - 1rem) / 2 - 150px)';
   </script>
 
   <script type="module" src="{{ url_for('static', filename='resultado.js')}}?v=1.1.0"></script>

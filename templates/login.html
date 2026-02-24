@@ -32,19 +32,6 @@
             margin: 0;
             overflow: hidden;
         }
-        .ad-top {
-            width: var(--ads-top-width);
-            height: calc(var(--ads-top-height) + var(--folga-anuncio-topo));
-            display: none;
-            justify-content: center; /* Centraliza o anúncio horizontalmente */
-            align-items: flex-end; /* Ancora o anúncio no fundo do layout pai em que está */
-            flex-shrink: 0;
-            margin: 0 auto;
-        }
-        .ad-top iframe {
-            display: block;
-            margin: 0 auto;
-        }
         main {
             flex: 1;
             display: flex;
@@ -63,7 +50,7 @@
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
             width: min(88%, 29rem);
             height: auto;
-            max-height: calc(var(--main-height) - 2.5rem - var(--folga-anuncio-topo));
+            max-height: calc(var(--main-height) - 1.05rem);
             display: flex;
             flex-direction: column;
             align-items: stretch;
@@ -218,28 +205,15 @@
             margin-top: auto;
         }
         @media (max-width: 1000px) {
-            .auth-container {
-                padding: 2rem;
-            } 
+          .auth-container {
+            padding: 2rem;
+          }
         }
   </style>
 </head>
 <body>
-  <!-- Anúncio de banner no topo 
-  <div id="anuncio-banner-topo" class="ad-top">
-    <script>
-      atOptions = {
-        'key' : '55263b9cc4a5ef2b21aa73db69fd047b',
-        'format' : 'iframe',
-        'height' : 60,
-        'width' : 468,
-        'params' : {}
-      };
-    </script>
-    <script src="https://www.highperformanceformat.com/55263b9cc4a5ef2b21aa73db69fd047b/invoke.js"></script>
-  </div>-->
-
-  <main id="main-element">
+  <!-- Conteúdo principal com o layout de formulário -->
+  <main>
     <div id="auth-container" class="auth-container">
         <div class="title">Desafio das Perguntas</div>
 
@@ -410,44 +384,6 @@
       <a href="{{ url_for('termos_uso_from_login') }}">Termos de Uso</a> |
       <a href="{{ url_for('sobre_app_from_login') }}">Sobre</a>
   </footer>
-
-  <!-- Gerencia quais anúncios devem aparecer 
-  <script type='module'>
-    import { idsReservados, idVisitanteAdmin } from '../static/utils.js';
-    const idVisitante = localStorage.getItem("id_visitante")
-    const idUsuario = sessionStorage.getItem("id_usuario") ?? "0";
-    const idNumerico = idUsuario ? parseInt(idUsuario) : 0;
-    const isMobile = window.innerWidth <= 1200;
-    const isAdmin = idsReservados.includes(idNumerico) || idVisitante === idVisitanteAdmin;
-    const anuncioBannerTopo = document.getElementById("anuncio-banner-topo");
-    const containerLogin = document.getElementById("auth-container");
-    const mainElement = document.getElementById("main-element");
-    
-    async function carregarPushInAd() {
-      try {
-          (function(s){s.dataset.zone='10606174',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))
-        }
-      catch (error) {
-          console.error("Não foi possível carregar push-in ad:", error);
-        }
-    }
-    
-    function mostrarAnuncios() {
-      if (!isAdmin) {
-        try {
-          anuncioBannerTopo.style.display = 'flex';
-          if (!isMobile) {carregarPushInAd()};
-        }
-        catch(error) {console.error("Erro ao tentar remover anúncio de banner", error)};
-      }
-      else {
-        containerLogin.style.maxHeight = '95%';
-        mainElement.style.height = 'calc(var(--main-height) - 1.05rem)';
-      };
-    }
-    mostrarAnuncios();-->
-    
-  </script>
 
   <script type="module" src="{{ url_for('static', filename='login.js') }}"></script>
 </body>

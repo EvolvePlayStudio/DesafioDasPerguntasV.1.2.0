@@ -86,20 +86,6 @@ def token_required(f):
 
     return decorated
 
-@app.route('/ads.txt')
-def ads_txt():
-    # Esta linha é o padrão exigido pelo Google
-    conteudo = "google.com, pub-9650050810390735, DIRECT, f08c47fec0942fa0"
-    return conteudo, 200, {'Content-Type': 'text/plain'}
-
-@app.route('/791dfdb243c561dea3f90a8babc584d1.html')
-def clickadu_verify():
-    return send_from_directory('.', '791dfdb243c561dea3f90a8babc584d1.html')
-
-@app.route('/e607b7eacc66223b94d4.txt')
-def hilltopads_verify():
-    return send_from_directory('.', 'e607b7eacc66223b94d4.txt')
-
 @app.route('/sw.js')
 def serve_monetag_js():
     return send_from_directory('static', 'sw.js', mimetype='application/javascript')
@@ -1347,6 +1333,55 @@ def login():
     finally:
         if cur: cur.close()
         if conn: conn.close()
+
+@app.route('/api/obter_anuncios_home')
+def obter_anuncios_home():
+    conn = cur = None
+    dicionario_anuncios = {}
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, nome, tema, descricao, link_asin, imagem_url, tipo_midia, provedor, disponivel_visitantes, disponivel_usuarios, oferta_expira_em
+            FROM anuncios
+            WHERE is_ativo = TRUE AND tema = 'Banner horizontal'
+        """)
+
+        anuncios = cur.fetchall()
+
+        for a in anuncios:
+            id_banco, nome, tema, desc, link_referencia, img, tipo_midia, provedor, disp_visitantes, disp_usuarios, oferta_expira_em = a
+            
+            # Garante a criação do provedor no dicionário
+            if provedor not in dicionario_anuncios:
+                dicionario_anuncios[provedor] = []
+            
+            # Montagem do Link
+            if provedor == 'Amazon':
+                link_final = f"{link_referencia}?tag={AMAZON_TRACKING_ID}"
+            else:
+                link_final = link_referencia
+
+            dicionario_anuncios[provedor].append({
+                'id': id_banco,
+                'nome': nome,
+                'tema': tema,
+                'descricao': desc,
+                'link': link_final,
+                'imagem': img,
+                'tipo_midia': tipo_midia,
+                'provedor': provedor,
+                'disponivel_visitantes': disp_visitantes,
+                'disponivel_usuarios': disp_usuarios,
+                'oferta_expira_em': oferta_expira_em
+            })
+    except Exception:
+        app.logger.exception("Erro ao tentar obter anúncios")
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+    return jsonify(dicionario_anuncios)
 
 @app.route('/api/obter_todos_anuncios')
 def obter_todos_anuncios():

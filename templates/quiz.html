@@ -186,12 +186,12 @@
     padding: 2rem 0;
   }
   .ad-top {
+    display: none;
     width: var(--ads-top-width);
     height: calc(var(--ads-top-height) + 2 * var(--folga-anuncio-topo));
     justify-content: center; /* Centraliza o anúncio horizontalmente */
-    display: none;
     align-items: center;
-    display: flex;
+    display: none;
     flex-shrink: 0;
     margin: 0 auto;
     padding: 0;
@@ -319,7 +319,7 @@
   }
   .btn-ver-oferta:hover { background: #f7ca00; }
   /* Responsividade: Esconde anúncios se a tela for pequena demais para os 3 */
-  @media (max-width: 1150px) {
+  @media (max-width: 1200px) {
     .quiz-grid-layout {
       grid-template-columns: 1fr; /* Quiz ocupa tudo */
     }
@@ -881,32 +881,23 @@
 
   <!-- Gerencia quais anúncios devem aparecer -->
   <script type='module'>
-    import { idsReservados, idVisitanteAdmin } from '../../../static/utils.js';
-    const idVisitante = localStorage.getItem("id_visitante")
-    const idUsuarioHTML = sessionStorage.getItem("id_usuario") ?? "0";
-    const idNumerico = idUsuarioHTML ? parseInt(idUsuarioHTML) : 0;
-    const isMobile = window.innerWidth <= 1200;
-    const isAdmin = idsReservados.includes(idNumerico) || idVisitante === idVisitanteAdmin;
+    import { idsReservados, idVisitanteAdmin, idsVisitantesReservados } from '../../../static/utils.js';
     const anuncioBannerTopo = document.getElementById("anuncio-banner-topo");
     const rankingContainer = document.querySelector('.ranking-container');
+    const idVisitante = localStorage.getItem("id_visitante")
+    const idUsuarioHTML = parseInt(sessionStorage.getItem("id_usuario") ?? "0");
+    const isMobile = window.innerWidth <= 1200;
+    const isAdmin = idsReservados.includes(idUsuarioHTML) || idsVisitantesReservados.includes(idVisitante);
     
     function mostrarAnuncios() {
-      if (!isAdmin) {
-        try {anuncioBannerTopo.style.display = 'flex'}
-        catch(error) {console.error("Erro ao tentar remover anúncio de banner", error)};
-      }
-      else {
-        rankingContainer.style.marginBottom = '2.5rem';
-        anuncioBannerTopo.style.display = 'none';
-      };
+      console.log("Mostrarei anúncios");
+      if (anuncioBannerTopo) anuncioBannerTopo.style.display = 'flex';
     }
-    mostrarAnuncios(); 
+    
+    if (!isAdmin) mostrarAnuncios(); 
+    else {rankingContainer.style.marginBottom = '2.5rem'};
   </script>
 
-  <script>
-    // const emailUsuario = "{{ session['email'] if 'email' in session else '' }}";
-    // const idUsuario = "{{ session['id_usuario'] if 'id_usuario' in session else '' }}";
-  </script>
   <script type="module" src="{{ url_for('static', filename='quiz.js') }}?v=1.1.9"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, idsReservados, exibirMensagem, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
+import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, idsReservados, exibirMensagem, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
 import { playSound } from "./sound.js";
 
 // console.log("ID de visitante: ", localStorage.getItem("id_visitante"));
@@ -161,6 +161,81 @@ function abrirModal({titulo = "", corpoHTML = "", textoPrimario = null, textoSec
 
   // Exibe o modal
   modal.classList.remove("hidden");
+}
+
+const anuncioBannerEsquerda = document.getElementById("banner-lateral-esquerda");
+const anuncioBannerDireita = document.getElementById("banner-lateral-direita");
+[anuncioBannerEsquerda, anuncioBannerDireita].forEach(a => {
+  a.addEventListener('click', function() {
+    registrarInteracaoAnuncio(this.querySelector('a'), "Clique", "Banner horizontal");
+  });
+});
+
+async function exibirAnuncios() {
+  // Função auxiliar para preencher os dados no HTML que você criou
+  function configurarBanner(container, produto) {
+    const link = container.querySelector(".link-anuncio-duplo");
+    const imgProd = container.querySelector(".produto-container img");
+    link.setAttribute('data-id-anuncio', produto.id);
+    link.setAttribute('data-provedor-anuncio', produto.provedor);
+    link.setAttribute('data-tipo-midia-anuncio', produto.tipo_midia);
+    if (link) link.href = produto.link;
+    if (imgProd) imgProd.src = produto.imagem;
+    registrarInteracaoAnuncio(link, 'Impressão', produto.tema)
+  }
+
+  // Posiciona anúncio de banner da esquerda
+  function posicionarAnuncioBanner() {
+    // Calcula a altura do container onde se encontram os anúncios de banners
+    const altura_header = document.getElementById("header-desktop").getBoundingClientRect().height;
+    const y_top_cards_scroll = document.getElementById("cards-scroll-wrapper").getBoundingClientRect().top;
+    const alturaContainerAnuncio = y_top_cards_scroll - altura_header;
+
+    // Ajuste as margens dos anúncios de banner da esquerda e direita
+    const marginTopBanners = (alturaContainerAnuncio - anuncioBannerDireita.getBoundingClientRect().height) / 2
+    if (anuncioBannerEsquerda) anuncioBannerEsquerda.style.marginTop = `${marginTopBanners}px`;
+    if (anuncioBannerDireita) anuncioBannerDireita.style.marginTop = `${marginTopBanners}px`;
+  }
+
+  try {
+    const resposta = await fetch("/api/obter_anuncios_home");
+    const dados = await resposta.json(); // Espera-se uma lista de objetos
+
+    // 1. Filtra os anúncios por provedor
+    const anunciosAmazon = dados['Amazon'].filter(a => a.provedor?.toLowerCase() === "amazon");
+    const anunciosML = dados['Mercado Livre'].filter(a => a.provedor?.toLowerCase() === "mercado livre");
+
+    // Lógica para Amazon (Esquerda)
+    if (anunciosAmazon.length > 0) {
+      const aleatorioAmazon = anunciosAmazon[Math.floor(Math.random() * anunciosAmazon.length)];
+      configurarBanner(anuncioBannerEsquerda, aleatorioAmazon);
+      anuncioBannerEsquerda.style.display = "flex";
+    }
+    else {
+      anuncioBannerEsquerda.style.display = "none";
+    }
+
+    // Lógica para Mercado Livre (Direita)
+    if (anunciosML.length > 0) {
+      const aleatorioML = anunciosML[Math.floor(Math.random() * anunciosML.length)];
+      configurarBanner(anuncioBannerDireita, aleatorioML);
+      anuncioBannerDireita.style.display = "flex";
+    }
+    else {
+      anuncioBannerDireita.style.display = "none";
+    }
+    posicionarAnuncioBanner();
+
+  } catch (erro) {
+    console.error("Falha ao carregar anúncios:", erro);
+  }
+}
+if (!window.ADS_CONFIG.isMobile) {
+  console.log("Não estou em mobile")
+  exibirAnuncios();
+}
+else {
+  console.log("Estou em mobille")
 }
 
 async function iniciarQuiz(event) {
@@ -405,8 +480,6 @@ async function exibirModalConfirmacaoEmail() {
 function exibirModalEscolhaTipoPergunta() {
   
   function salvarTipoPergunta(tipo) {
-    /*
-    localStorage.setItem("tipo_pergunta", tipo);*/
     sessionStorage.setItem("tipo_pergunta", tipo);
     localStorage.setItem("preferencia_tipo_pergunta", "true");
 
