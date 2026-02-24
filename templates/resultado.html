@@ -337,7 +337,7 @@
   <audio id="button-click-sound" src="/static/sounds/button_click.wav" preload="auto"></audio>
   <audio id="key-sound" src="/static/sounds/key.wav" preload="auto"></audio>
 
-  <!-- Banner de anúncio emcima -->
+  <!-- Banner de anúncio encima 
   <div id="banner-topo-tela" class="ad-top">
     <script>
     atOptions = {
@@ -349,13 +349,13 @@
     };
     </script>
     <script src="https://www.highperformanceformat.com/69118dd5dc6c01c0b935cecfc05b9b8c/invoke.js"></script>
-  </div>
+  </div>-->
 
   <div id="main-element" class="main">
     <!-- Anúncios nas laterais e layout de resultado no centro -->
     <div class="layout-horizontal">
 
-      <!-- Banner de anúncio na esquerda -->
+      <!-- Banner de anúncio na esquerda 
       <div id="banner-lateral-esquerda" class="ad-sidebar">
         <script>
           atOptions = {
@@ -367,7 +367,7 @@
           };
         </script>
         <script src="https://www.highperformanceformat.com/86afbf986bafeb11e54cb49351936737/invoke.js"></script>
-      </div>
+      </div>-->
 
       <!-- Container das informações do quiz feito -->
       <div id="container-resultado" class="container">
@@ -445,14 +445,16 @@
 
   </div>
 
+  
   <script>
     // Carrega o script da Monetag sem travar a página (async)
+    /*
     (function(s){
       s.dataset.zone='10617482';
       s.src='https://gizokraijaw.net/vignette.min.js';
       s.async = true; // Não trava o carregamento
       document.head.appendChild(s);
-    })(document.createElement('script'));
+    })(document.createElement('script'));*/
 
     // Lógica do Delay de 0.8s
     window.addEventListener('load', function() {
@@ -480,19 +482,20 @@
     const idNumerico = idUsuarioSessao ? parseInt(idUsuarioSessao) : 0;
 
     // Push-in Ad da AdsTerra
+    /*
     if (!isMobile && ![6, 16].includes(idNumerico) && !idVisitante === idVisitanteAdmin) {
       var script = document.createElement('script');
       script.src = "https://pl28750365.effectivegatecpm.com/0f/87/79/0f877988a14c549bbccd28d0180a5867.js";
       script.type = 'text/javascript';
       document.head.appendChild(script);
-    }
+    }*/
     
     // Esconde anúncios para Admin e Mobile
     function esconderAnuncios() {
       try {
         if (isMobile || isAdmin) {
-          anuncioBannerTopo.style.display = 'none';
-          anuncioBannerEsq.style.display = 'none';
+          if (anuncioBannerTopo) anuncioBannerTopo.style.display = 'none';
+          if (anuncioBannerEsq) anuncioBannerEsq.style.display = 'none';
           if (!isMobile) {
             containerResultado.style.marginTop = '0.5rem';
             containerResultado.style.height = 'calc(100vh - 4.5rem - 1rem)';

@@ -147,7 +147,7 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
         if (anunciosGenericos[p]) {
           anunciosGenericos[p].forEach(a => {
           const sorteio = Math.random();
-          if (sorteio >= 0) listaRaw.push(a);
+          if (sorteio >= 0.3) listaRaw.push(a);
         })
        }
       })
