@@ -37,17 +37,13 @@ box_tema.addEventListener("change", async () => {
 // Implementa a função para retornar para a home
 btn_voltar.addEventListener("click", () => {
   playSound("click");
-  if (favoritosAlterados > 0) {
-    console.log("Salvando favoritos...");
-    salvarFavoritos();
-  }
+  if (favoritosAlterados > 0) salvarFavoritos();
   window.location.href = '/home';
 })
 
 // Implementa a função para selecionar ou desselecionar todas as perguntas
 btn_marcar_todas.addEventListener("click", () => {
   playSound("click");
-  console.log("Clique no botão")
   const linhas = tabela.querySelectorAll("tr");
   
   if (btn_marcar_todas.textContent === 'Marcar Todas') {
@@ -83,10 +79,13 @@ btn_pesquisar.addEventListener("click", () => {
 
 // Implementa a função para iniciar uma revisão
 btn_revisar.addEventListener("click", async() => {
-  alterarEstadoBotoes(true); // TALVEZ DEVESSE ESTAR TUDO DENTRO DE UM TRY PORQUE SE DER ERRO O BOTÃO FICARÁ BLOQUEADO
+  const linhas = tabela.querySelectorAll("tr");
+  if (linhas.length <= 1 || contador_perguntas === 0) return;
+  alterarEstadoBotoes(true);
+
   playSound("click");
   salvarFavoritos();
-  const linhas = tabela.querySelectorAll("tr");
+  
   const perguntas_totais = JSON.parse(sessionStorage.getItem("perguntas_para_revisar"));
   const perguntas_filtradas = {Fácil: [], Médio: [], Difícil: [], Extremo: []};
   tema_atual = box_tema.value;
@@ -124,11 +123,9 @@ btn_revisar.addEventListener("click", async() => {
 })
 
 function alterarEstadoBotoes(bloquear) {
-  console.log("FUnção de alterar estado chamada")
   btn_marcar_todas.disabled = bloquear;
   btn_pesquisar.disabled = bloquear;
   btn_revisar.disabled = bloquear;
-  console.log("Btn desativado?", btn_marcar_todas.disabled);
 }
 
 function carregarEstadoPesquisa() {
@@ -156,7 +153,6 @@ async function carregarFavoritos() {
     const response = await fetch(`/api/carregar-favoritos?tema-atual=${tema_atual}&tipo-pergunta=${tipo_pergunta}`);
     const result = await response.json();
     contadorEl.textContent = contador_perguntas = 0;
-    console.log("44Numeração zerada");
     favoritos_selecionados.clear()
 
     result["favoritos"].forEach(idp => {

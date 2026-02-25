@@ -195,7 +195,13 @@ async function exibirAnuncios() {
     const y_top_cards_scroll = cardsWrapper.getBoundingClientRect().top;
     const alturaContainerAnuncio = y_top_cards_scroll - altura_header;
 
-    const heightBanner = anuncioBannerDireita.getBoundingClientRect().height;
+    let heightBanner;
+    if (anuncioBannerDireita.style.display !== 'none') {
+      heightBanner = anuncioBannerDireita.getBoundingClientRect().height;
+    }
+    else {
+      heightBanner = anuncioBannerEsquerda.getBoundingClientRect().height;
+    }
     const marginTopBanners = (alturaContainerAnuncio - heightBanner) / 2;
     
     if (anuncioBannerEsquerda) anuncioBannerEsquerda.style.marginTop = `${marginTopBanners}px`;
@@ -216,12 +222,13 @@ async function exibirAnuncios() {
     const anunciosAmazon = filtrarValidos(dados['Amazon']);
     const anunciosML = filtrarValidos(dados['Mercado Livre']);
 
-    // 3. Exibição Amazon (Esquerda)
+    // 3. Exibição Amazon (esquerda)
     if (anunciosAmazon.length > 0) {
       const aleatorioAmazon = anunciosAmazon[Math.floor(Math.random() * anunciosAmazon.length)];
       configurarBanner(anuncioBannerEsquerda, aleatorioAmazon);
       anuncioBannerEsquerda.style.display = "flex";
-    } else {
+    }
+    else {
       anuncioBannerEsquerda.style.display = "none";
     }
 
@@ -230,12 +237,11 @@ async function exibirAnuncios() {
       const aleatorioML = anunciosML[Math.floor(Math.random() * anunciosML.length)];
       configurarBanner(anuncioBannerDireita, aleatorioML);
       anuncioBannerDireita.style.display = "flex";
-    } else {
+    }
+    else {
       anuncioBannerDireita.style.display = "none";
     }
-
     posicionarAnuncioBanner();
-
   }
   catch (erro) {
     console.error("Falha ao carregar anúncios:", erro);

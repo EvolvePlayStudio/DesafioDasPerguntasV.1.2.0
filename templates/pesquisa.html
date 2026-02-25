@@ -11,25 +11,29 @@
       box-sizing: border-box;
     }
     :root {
-      --footer-h: 60px;
+      --header-height: 3.35rem;
+      --footer-height: 3.8rem;
+      --padding-lateral: 1.4rem; /* Não utilizado ainda */
+      --size-checkbox-dificuldades: 1.50;
+      --size-checkbox-selecionar: 1.50;
       --fs-aux: 0.85rem;
       --fs-base: 0.95rem;
       --fs-emph: 1.10rem;
       --fs-title: 1.25rem;
       --fs-estrela: 1.85rem;
-      --size-checkbox-dificuldades: 1.50;
-      --size-checkbox-selecionar: 1.50;
-      --header-height: 3.35rem;
     }
     @media (max-width: 1000px) { 
       :root {
+        --footer-height: 5.7rem;
+        --padding-lateral: 0.8rem;
+        --size-checkbox-dificuldades: 0.70;
+        --size-checkbox-selecionar: 1.20;
         --fs-aux: 0.75rem;
         --fs-base: 0.85rem;
         --fs-emph: 1.00rem;
         --fs-title: 1.15rem;
         --fs-estrela: 1.65rem;
-        --size-checkbox-dificuldades: 0.70;
-        --size-checkbox-selecionar: 1.20;
+        
       }
     }
     body {
@@ -65,7 +69,23 @@
       align-items: center;
       min-height: 0;
       padding-top: 1rem;
-      max-height: calc(100vh - var(--header-height) - var(--footer-h));
+      max-height: calc(100vh - var(--header-height) - var(--footer-height));
+    }
+    .top-bar {
+      font-size: var(--fs-base);
+      font-weight: bold;
+      width: 100%;
+      padding: 0 var(--padding-lateral);
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      color:white;
+      text-align: left;
+    }
+    .top-bar-inner {
+      column-gap: 3rem;
     }
     .filtros-container {
       display: flex;
@@ -147,7 +167,7 @@
     .subtema-btn {
       font-size: var(--fs-aux);
       font-weight: var(--peso-fonte-botoes);
-      padding: 0.4rem 0.8rem;
+      padding: 0.4rem 0.6rem;
       margin-bottom: 0.3rem;
       border-radius: 6px;
       background: white;
@@ -212,8 +232,8 @@
       right: 0;
       width: 100%;
       background: var(--cor-fundo-escuro);
-      height: var(--footer-h);
-      padding: 0 1rem;
+      height: var(--footer-height);
+      padding: 0 var(--padding-lateral);
       z-index: 10;
       box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
       display: flex;
@@ -248,21 +268,6 @@
     }
     button:hover {
       background-color: var(--bg-hover-botao-login);
-    }
-    .top-bar {
-      font-size: var(--fs-base);
-      font-weight: bold;
-      width: 97%;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
-      color:white;
-      text-align: left;
-    }
-    .top-bar-inner {
-      column-gap: 3rem;
     }
     .subtemas-wrap {
       display: grid;
@@ -356,8 +361,8 @@
         grid-template-columns: 1fr;
         grid-template-rows: auto auto;
         row-gap: 0.8rem;
-        height: auto;
-        padding: 0.6rem 1rem;
+        /*height: auto;*/
+        padding: 0.6rem var(--padding-lateral);
       }
       .footer-left {
         justify-content: left;
