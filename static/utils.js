@@ -29,9 +29,9 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
       const descricaoProduto = container.querySelector('p');
 
       // Verifica se a oferta não expirou (como planejamos)
-      const agora = new Date(); // O CERTO SERIA PEGAR HORÁRIO DE SÃO PAULO
+      const agoraSP = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
       const expira = produto.oferta_expira_em ? new Date(produto.oferta_expira_em) : null;
-      const isValido = expira && agora < expira;
+      const isValido = expira && agoraSP < expira;
       if (isValido) {
         // Lógica Frete
         if (produto.frete_gratis) bFrete.style.display = 'block';
@@ -129,12 +129,15 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
       }
       
       // Anúncios genéricos (redireciona para páginas com vários produtos)
+      const agoraSP = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
       if (anunciosGenericos[provedor]) {
         anunciosGenericos[provedor].forEach(a => {
         /*
         const sorteio = Math.random();
         if (sorteio >= 0.3) listaAnunciosNoTema[provedor].push(a);*/
-        listaAnunciosNoTema[provedor].push(a);
+        const expira = produto.oferta_expira_em ? new Date(produto.oferta_expira_em) : null;
+        const isValido = expira && agoraSP < expira;
+        if (isValido) listaAnunciosNoTema[provedor].push(a);
       })
       }
       return listaAnunciosNoTema[provedor]
