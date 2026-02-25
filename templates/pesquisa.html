@@ -143,6 +143,15 @@
       align-items: center;
       gap: 0.6rem;
     }
+    .subtemas-wrap {
+      display: grid;
+      align-items: stretch;
+      width: 100%;
+      grid-template-columns: auto 1fr;
+      column-gap: 0.75rem;
+      align-items: start;
+      color: white;
+    }
     .subtemas span {
       margin-top: 1rem;
     }
@@ -151,13 +160,14 @@
       align-items: flex-start;
       gap: 1rem;
     }
+    /*
     .subtemas-label {
       font-size: var(--fs-base);
       font-weight: var(--peso-fonte-botoes);
       white-space: nowrap;
       align-self: start;
-      margin-top: 0.4rem; /* Gambiarra para centralizar o texto de tópicos */
-    }
+      margin-top: 0.4rem;  Gambiarra para centralizar o texto de tópicos 
+    }*/
     .subtemas-grid {
       display: flex;
       flex-wrap: wrap;
@@ -268,15 +278,6 @@
     }
     button:hover {
       background-color: var(--bg-hover-botao-login);
-    }
-    .subtemas-wrap {
-      display: grid;
-      align-items: stretch;
-      width: 100%;
-      grid-template-columns: auto 1fr;
-      column-gap: 0.75rem;
-      align-items: start;
-      color: white;
     }
     .filtro-esquerda {grid-area: tema; }
     #checks-dificuldades { grid-area: dificuldade; }
@@ -424,7 +425,6 @@
       </div>
       <!-- Subtemas abaixo centralizado -->
       <div class="subtemas-wrap">
-        <span class="subtemas-label">Tópicos:</span>
         <div id="container-subtemas" class="subtemas-grid"></div>
       </div>
     </div>

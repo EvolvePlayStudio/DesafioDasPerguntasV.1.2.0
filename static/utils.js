@@ -15,7 +15,7 @@ function atualizarVariaveis() {
   MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === "true";
 }
 
-export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq, logotipoAnuncioDir, tema_atual, dadosAnuncios, telaAtual, historicoExibicao={}) {
+export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq, logotipoAnuncioDir, tema_atual, dadosAnuncios, historicoExibicao={}) {
   atualizarVariaveis();
   
   const aplicarAnuncio = (container, produto) => {
@@ -50,38 +50,17 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
           containerBadges.style.display = 'flex';
           if (produto.frete_gratis) bFrete.style.display = 'block';
           if (produto.desconto) bDesconto.style.display = 'block';
-          
-          if (telaAtual === 'Resultado') {
-            logotipo.style.marginTop = '0.1rem';
-            logotipo.style.setProperty('margin-bottom', '0.25rem', 'important');
-            imgProduto.style.setProperty('max-height', '7rem', 'important');
-            imgProduto.style.marginTop = '0.8rem';
-            descricaoProduto.style.marginTop = '0.25rem';
-          }
-          else { // tela de quiz
-            logotipo.style.marginTop = '0.1rem';
-            logotipo.style.setProperty('margin-bottom', '0.6rem', 'important');
-            imgProduto.style.setProperty('max-height', '13rem', 'important');
-            imgProduto.style.marginTop = '0.45rem';
-            descricaoProduto.style.marginTop = '0.45rem';
-          }
+          logotipo.style.marginTop = '0.1rem';
+          logotipo.style.setProperty('margin-bottom', '0.6rem', 'important');
+          imgProduto.style.marginTop = '0.45rem';
+          descricaoProduto.style.marginTop = '0.45rem';
         }
         else {
           containerBadges.style.display = 'none';
-          if (telaAtual === 'Resultado') {
-            logotipo.style.marginTop = '0.2rem';
-            logotipo.style.setProperty('margin-bottom', '0.65rem', 'important')
-            imgProduto.style.setProperty('max-height', '8rem', 'important')
-            imgProduto.style.marginTop = '0';
-            descricaoProduto.style.marginTop = '0.4rem';
-          }
-          else {
-            logotipo.style.marginTop = '0.2rem';
-            logotipo.style.setProperty('margin-bottom', '0.8rem', 'important');
-            imgProduto.style.setProperty('max-height', '15rem', 'important');
-            imgProduto.style.marginTop = '0';
-            descricaoProduto.style.marginTop = '0.8rem';
-          }
+          logotipo.style.marginTop = '0.2rem';
+          logotipo.style.setProperty('margin-bottom', '0.8rem', 'important');
+          imgProduto.style.marginTop = '0';
+          descricaoProduto.style.marginTop = '0.8rem';
         }
         
       }
@@ -139,20 +118,26 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
     const anunciosGenericos = dadosAnuncios['Nenhum'];
     const isUserAdmin = MODO_VISITANTE ? false : idsReservados.includes(parseInt(idUsuario));
 
-    const prepararListaPriorizada = (listaRaw) => {
-      if (!listaRaw) return [];
+    const prepararListaPriorizada = (provedor, listaAnunciosNoTema) => {
+      if (!listaAnunciosNoTema[provedor]){
+        if (!anunciosGenericos[provedor]) {
+          return [];
+        }
+        else {
+          listaAnunciosNoTema[provedor] = [];
+        }
+      }
       
-      // Anúncios genéricos
-      ['Amazon', 'Mercado Livre'].forEach(p => {
-        if (anunciosGenericos[p]) {
-          anunciosGenericos[p].forEach(a => {
-          const sorteio = Math.random();
-          if (sorteio >= 0.3) listaRaw.push(a);
-        })
-       }
+      // Anúncios genéricos (redireciona para páginas com vários produtos)
+      if (anunciosGenericos[provedor]) {
+        anunciosGenericos[provedor].forEach(a => {
+        /*
+        const sorteio = Math.random();
+        if (sorteio >= 0.3) listaAnunciosNoTema[provedor].push(a);*/
+        listaAnunciosNoTema[provedor].push(a);
       })
-      
-      return listaRaw
+      }
+      return listaAnunciosNoTema[provedor]
       .filter(a => {
         if (isUserAdmin) return true;
         if (MODO_VISITANTE) return a.disponivel_visitantes === true;
@@ -175,59 +160,39 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
       .sort((a, b) => b._score - a._score);
     };
 
-    let listaAmazon = prepararListaPriorizada(dadosTema['Amazon']);
-    let listaML = prepararListaPriorizada(dadosTema['Mercado Livre']);
+    let listaAmazon = prepararListaPriorizada('Amazon', dadosTema);
+    let listaML = prepararListaPriorizada('Mercado Livre', dadosTema);
     
     let produtoEsq, produtoDir;
-    if (telaAtual === 'Quiz') {
-      // Esconde banners se não há anúncios para exibir
-      if (listaAmazon.length === 0 && listaML.length === 0) {
-        [containerEsq, containerDir].forEach(c => { if(c) c.style.visibility = 'hidden'; c.style.pointerEvents = 'none'});
-        return;
-      }
-
-      // Se tiver anúncios da Amazon e Mercado Livre
-      if (listaAmazon.length > 0 && listaML.length > 0) {
-        produtoEsq = listaAmazon[0];
-        produtoDir = listaML[0];
-      }
-      // Se tiver só anúncios da Amazon
-      else if (listaAmazon.length > 0) {
-        produtoEsq = listaAmazon[0];
-        produtoDir = (listaAmazon.length > 1) ? listaAmazon[1] : listaAmazon[0];
-      }
-      // Se tiver só anúncios do Mercado Livre
-      else if (listaML.length > 0) {
-        produtoEsq = listaML[0];
-        produtoDir = (listaML.length > 1) ? listaML[1] : listaML[0];
-      }
-      // Renderiza os anúncios e registra impressão ocorrida na base de dados
-      if (produtoEsq) {
-        gerarLogotipo(logotipoAnuncioEsq, produtoEsq.provedor);
-        historicoExibicao[produtoEsq.id]++;
-        aplicarAnuncio(containerEsq, produtoEsq);
-      }
-      if (produtoDir && produtoDir.id !== produtoEsq.id) {
-        gerarLogotipo(logotipoAnuncioDir, produtoDir.provedor);
-        historicoExibicao[produtoDir.id]++;
-        aplicarAnuncio(containerDir, produtoDir);
-      }
+    // Esconde banners se não há anúncios para exibir
+    if (listaAmazon.length === 0 && listaML.length === 0) {
+      [containerEsq, containerDir].forEach(c => { if(c) c.style.visibility = 'hidden'; c.style.pointerEvents = 'none'});
+      return;
     }
-    else { // lógica da tela de Resultado
 
-      let listaUnificada =[...listaAmazon, ...listaML].sort((a, b) => b._score - a._score);
-      if (listaUnificada.length === 0) {
-        if (containerDir) {
-          containerDir.style.visibility = 'hidden';
-          containerDir.style.pointerEvents = 'none';
-        }
-        return;
-      }
-
-      produtoDir = listaUnificada[0];
-      if (logotipoAnuncioDir) {
-        gerarLogotipo(logotipoAnuncioDir, produtoDir.provedor);
-      }
+    // Se tiver anúncios da Amazon e Mercado Livre
+    if (listaAmazon.length > 0 && listaML.length > 0) {
+      produtoEsq = listaAmazon[0];
+      produtoDir = listaML[0];
+    }
+    // Se tiver só anúncios da Amazon
+    else if (listaAmazon.length > 0) {
+      produtoEsq = listaAmazon[0];
+      produtoDir = (listaAmazon.length > 1) ? listaAmazon[1] : listaAmazon[0];
+    }
+    // Se tiver só anúncios do Mercado Livre
+    else if (listaML.length > 0) {
+      produtoEsq = listaML[0];
+      produtoDir = (listaML.length > 1) ? listaML[1] : listaML[0];
+    }
+    // Renderiza os anúncios e registra impressão ocorrida na base de dados
+    if (produtoEsq) {
+      gerarLogotipo(logotipoAnuncioEsq, produtoEsq.provedor);
+      historicoExibicao[produtoEsq.id]++;
+      aplicarAnuncio(containerEsq, produtoEsq);
+    }
+    if (produtoDir && produtoDir.id !== produtoEsq.id) {
+      gerarLogotipo(logotipoAnuncioDir, produtoDir.provedor);
       historicoExibicao[produtoDir.id]++;
       aplicarAnuncio(containerDir, produtoDir);
     }

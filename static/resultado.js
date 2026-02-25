@@ -1,29 +1,33 @@
 import { playSound, playKeySound } from "./sound.js";
 import { atualizarAnuncios, registrarInteracaoAnuncio } from "./utils.js";
 
+// Variáveis relacionadas aos anúncios
+const tema_atual = sessionStorage.getItem("tema_atual");
 const cacheAnuncios = sessionStorage.getItem('anuncios') || '{}';
 const dadosAnuncios = JSON.parse(cacheAnuncios);
-const containerEsq = null;
-const logotipoAnuncioEsq = null;
+const containerEsq = document.getElementById('banner-lateral-esquerda');
 const containerDir = document.getElementById('banner-lateral-direita');
+const logotipoAnuncioEsq = document.getElementById('logotipo-anuncio-esq')
 const logotipoAnuncioDir = document.getElementById('logotipo-anuncio-dir');
-const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === "true";
-let historicoExibicao = {};
-
-const banner_anuncio_direita = document.getElementById("banner-lateral-direita");
-banner_anuncio_direita.addEventListener('click', function() {
-    registrarInteracaoAnuncio(this.querySelector('a'), "Clique", 'Resultado');
+const bannerAnuncioEsq = document.getElementById('banner-lateral-esquerda')
+const bannerAnuncioDir = document.getElementById('banner-lateral-direita');
+[bannerAnuncioEsq, bannerAnuncioDir].forEach(b => {
+  b.addEventListener('click', function() {
+    registrarInteracaoAnuncio(this.querySelector('a'), "Clique", 'Resultado'); // Depois ver se é Resultado que deve passar sempre aqui
+  });
 });
-
-historicoExibicao = atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq, logotipoAnuncioDir, 'Resultado', dadosAnuncios, 'Resultado', historicoExibicao);
+let historicoExibicao = {};
+historicoExibicao = atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq, logotipoAnuncioDir, tema_atual, dadosAnuncios, historicoExibicao);
     
 setInterval(() => {
-    historicoExibicao = atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq, logotipoAnuncioDir, 'Resultado', dadosAnuncios, 'Resultado', historicoExibicao
+    historicoExibicao = atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq, logotipoAnuncioDir, tema_atual, dadosAnuncios, historicoExibicao
     );
 }, 14000);
 
+// Outras variáveis
+const MODO_VISITANTE = sessionStorage.getItem('modoVisitante') === "true";
+
 const perguntas_respondidas = JSON.parse(sessionStorage.getItem("perguntas_respondidas"));
-const tema_atual = sessionStorage.getItem("tema_atual");
 const tipo_pergunta = sessionStorage.getItem("tipo_pergunta").toLowerCase();
 const pontuacoes_jogador = MODO_VISITANTE ? JSON.parse(localStorage.getItem("pontuacoes_visitante")) : JSON.parse(sessionStorage.getItem("pontuacoes_usuario"));
 const rankings_jogador = JSON.parse(sessionStorage.getItem("rankings_jogador"));

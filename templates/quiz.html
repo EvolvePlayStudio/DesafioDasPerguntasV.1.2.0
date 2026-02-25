@@ -6,6 +6,7 @@
   <title>Quiz - Desafio das Perguntas</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
+  <!-- CSS -->
   <style>
   :root {
     --altura-barra: 1rem;
@@ -39,10 +40,15 @@
   }
   body {
     font-size: var(--fs-base);
-    background: var(--cor-fundo-padrao);
+    /*background: var(--cor-fundo-padrao);*/
     display: block;
     min-height: 100vh;
     overflow-y: scroll;
+
+
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #1E1E14, hsl(60, 20%, 10%));
   }
   #resposta-input, #box-comentario, #comentario-texto {
     font-size: var(--fs-base);
@@ -183,7 +189,7 @@
   #pontuacao.hide-inc::after, #pontuacao-mobile.hide-inc::after {
     opacity: 0;
   }
-  #container-principal {
+  #container-principal {/* Talvez não seja necessário utiliza isto */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -191,7 +197,7 @@
   }
   .quiz-grid-layout {
     display: grid;
-    grid-template-columns: 180px 1fr 180px; 
+    /* grid-template-columns: 180px 1fr 180px; */
     gap: 25px;
     width: 100%;
     max-width: 1200px; /* Limita a largura total para não espalhar demais */
@@ -199,111 +205,15 @@
     align-items: start; /* Alinha os anúncios pelo topo do grid */
     justify-items: center;
   }
-  .ad-sidebar {
-    box-shadow: 0 0 15px rgba(0,0,0,0.2);
-    position: relative;
-    display: block;
-    width: 195px;
-    z-index: 100;
-  }
-  #banner-lateral-esquerda img,
-  #banner-lateral-direita img {
-    max-width: 100%;
-    height: auto;
-    display: block;
-    margin: 0 auto;
-    max-height: 15rem;
-    object-fit: contain;
-  }
-  .anuncio-banner {
-    background: var(--cor-fundo-claro);
-    padding: 1rem;
-    border-radius: 12px; 
-    text-align: center; 
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between; /* Distribui o conteúdo no espaço */
-    min-height: 73vh;              /* Define uma altura mínima maior */
-    min-width: 12rem;
-    transition: transform 0.3s ease;
-  }
-  .titulo-banner {
-    color: black;
-    font-size: var(--fs-emph);
-    font-weight: bold;
-    margin-bottom: 0.95rem;
-  }
-  .img-produto {
-    max-height: 250px;
-    width: auto !important;
-    object-fit: contain;
-  }
-  .img-logotipo {
-    width: 70%;
-    display: block;
-    object-fit: contain;
-  }
-  .img-logotipo.amazon {
-    width: 70%;
-  }
-  .img-logotipo.mercado-livre {
-    width: 85%;
-  }
-  .container-badges {
-    display: none;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-bottom: 1.2rem;
-    min-height: 1.2rem;
-  }
-  .badge-promo {
-    display: none;
-    position: absolute;
-    top: 0.5em;
-    padding: 0.2rem 0.4rem;
-    font-size: var(--fs-aux);
-    font-weight: bold;
+  .quiz-header {
+    display: grid;
+    grid-template-columns: minmax(0, auto) 1fr minmax(0, auto);
+    align-items: center;
+    gap: 12px;
+    margin-top: -10px;
+    padding: 0;
     color: white;
-    border-radius: 0.2rem;
-    text-transform: uppercase;
-    z-index: 5;
-    box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.2);
-    white-space: nowrap;
   }
-  .badge-verde {
-    left: 0.5rem;
-    background-color: #00a650;
-  }
-  .badge-vermelho {
-    right: 0.5rem;
-    background-color: #e44d26;
-  }
-  .img-produto {
-    display: block;
-    width: 100%;
-    border-radius: 0.5rem;
-  }
-  .anuncio-banner p {
-    font-size: var(--fs-base); 
-    font-weight: bold; 
-    color: black; 
-    margin: 10px 0; 
-    line-height: 1.4;
-  }
-  .btn-ver-oferta {
-      background: #FFD814; 
-      border: 1px solid #FCD200; 
-      border-radius: 1rem; 
-      padding: 12px 0; 
-      cursor: pointer;
-      font-size: var(--fs-base);
-      font-weight: bold;
-      width: 100%; 
-      height: 10%;
-      color: black;
-      margin-top: auto; /* Empurra o botão sempre para o fim do card */
-  }
-  .btn-ver-oferta:hover { background: #f7ca00; }
   .quiz-container {
     background: var(--cor-fundo-claro);
     padding: 2rem;
@@ -312,16 +222,6 @@
     width: 100%;
     max-width: 38rem;
     position: relative;
-  }
-  .quiz-header {
-    display: grid;
-    /*grid-template-columns: 80px 1fr 80px;*/
-    grid-template-columns: minmax(0, auto) 1fr minmax(0, auto);
-    align-items: center;
-    gap: 12px;
-    margin-top: -10px;
-    padding: 0;
-    color: white;
   }
   #perguntas-restantes-icon, #dica-icon {
     display: none;
@@ -526,6 +426,16 @@
   #dica-box, #nota-box {
     margin-top: var(--small-vertical-margin);
   }
+  #avaliacao {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: nowrap; /* Impede quebra de linha */
+    margin-top: calc(var(--vertical-margin) - 0.8rem);
+    font-size: 2rem;
+    width: 100%;
+    text-align: center;
+  }
   .avaliacao-inline {
     display: inline-flex;
     gap: 0.3rem;
@@ -558,16 +468,6 @@
     stroke-width: 1.4;
     fill: #555;               /* cinza neutro */
     transition: all 0.15s ease;
-  }
-  #avaliacao {
-    display: none;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: nowrap; /* Impede quebra de linha */
-    margin-top: calc(var(--vertical-margin) - 0.8rem);
-    font-size: 2rem;
-    width: 100%;
-    text-align: center;
   }
   .estrela {
     font-size: var(--fs-estrelas);
@@ -620,18 +520,11 @@
   .hidden {
     display: none;
   }
-  
-  /* Responsividade: Esconde anúncios se a tela for pequena demais para os 3 */
-  @media (max-width: 1200px) {
-    .quiz-grid-layout {
-      grid-template-columns: 1fr; /* Quiz ocupa tudo */
-    }
-    .ad-sidebar {
-      display: none !important;
-    }
-  }
   /* Responsivo em smartphones */
   @media (max-width: 1000px) {
+    .quiz-grid-layout {
+      grid-template-columns: 1fr;
+    }
     #alternativas-container {
       grid-template-columns: 1fr; /* Uma por linha no celular */
     }
@@ -672,8 +565,7 @@
   </style>
 
 </head>
-
-  <body style="margin: 0; font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1E1E14, #1E1E14);">
+  <body>
     <div id="container-principal">
       <!-- Pontuação e ranking do jogador em mobile -->
       <div class="status-wrapper-mobile">
@@ -706,27 +598,13 @@
         <span id="proximo-ranking"></span>
       </div>
 
+      <!-- Grid layout com anúncios nas laterais e layout de quiz no centro -->
       <div class="quiz-grid-layout">
-        <!-- Anúncio do lado esquerdo -->
-        <div class="ad-sidebar" id="banner-lateral-esquerda" style="visibility: hidden; pointer-events: none;">
-          <a href="" target="_blank" style="text-decoration: none;">
-            <div class="anuncio-banner">
-                <img id="logotipo-anuncio-esq" alt="Logotipo" class="img-logotipo">
-                <div class="container-badges" style="position: relative; width: 100%">
-                  <span id="badge-frete-gratis" class="badge-promo badge-verde">Frete Grátis</span>
-                  <span id="badge-desconto" class="badge-promo badge-vermelho"></span>
-                </div>
-                <img src="" alt="Produto" class="img-produto">
-                <p id="descricao-banner-esquerda"></p>
-                <div class="btn-ver-oferta">Ver Oferta</div>
-            </div>
-          </a>
-        </div>
-
         <!-- Layout contendo o enunciado, ícone de dica, etc -->
         <div class="quiz-container">
+          <!-- Cabeçalho do quiz -->
           <div class="quiz-header">
-            <!-- Ícone do raio (Perguntas restantes) à esquerda -->
+            <!-- Ícone de perguntas restantes à esquerda -->
             <div id="perguntas-restantes-icon" class="dica-icon" title="Perguntas restantes" style="display: flex;">
               <span>⚡</span>
               <span id="perguntas-count">0</span>
@@ -741,7 +619,8 @@
               <span id="contador-dicas">0</span>
             </div>
           </div>
-
+          
+          <!-- Parte central do quiz com enunciado, alternativas, botões, etc -->
           <div id="quiz-box">
             <!-- Enunciado da pergunta -->
             <p id="pergunta-enunciado"></p>
@@ -829,34 +708,18 @@
                 disabled
               ></textarea>
             </div>
-
           </div>
         </div>
 
-        <!-- Anúncio do lado direito -->
-        <div class="ad-sidebar" id="banner-lateral-direita" style="visibility: hidden; pointer-events: none;">
-          <a href="" target="_blank" style="text-decoration: none;">
-            <div class="anuncio-banner">
-              <img id="logotipo-anuncio-dir" alt="Logotipo" class="img-logotipo">
-              <div class="container-badges" style="position: relative; width: 100%">
-                <span id="badge-frete-gratis" class="badge-promo badge-verde">Frete Grátis</span>
-                <span id="badge-desconto" class="badge-promo badge-vermelho"></span>
-              </div>
-              <img src="" alt="Produto" class="img-produto">
-              <p id="descricao-banner-direita"></p>
-              <div class="btn-ver-oferta">Ver Oferta</div>
-            </div>
-          </a>
-        </div>
       </div>
 
-    <!-- Comentários dos usuários para a pergunta -->
-    <div id="comentarios">
-      <h3>Comentários (não disponíveis na versão atual):</h3>
-      <ul id="lista-comentarios"></ul>
+      <!-- Comentários dos usuários para a pergunta -->
+      <div id="comentarios">
+        <h3>Comentários (não disponíveis na versão atual):</h3>
+        <ul id="lista-comentarios"></ul>
+      </div>
     </div>
-  </div>
 
-  <script type="module" src="{{ url_for('static', filename='quiz.js') }}?v=1.1.9"></script>
-</body>
+    <script type="module" src="{{ url_for('static', filename='quiz.js') }}?v=1.1.9"></script>
+  </body>
 </html>

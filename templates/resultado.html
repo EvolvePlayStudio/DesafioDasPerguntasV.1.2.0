@@ -7,16 +7,16 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
   <style>
+    *, *:before, *:after {
+      box-sizing: border-box;
+    }
     :root {/* O IDEAL ERA SALVAR NO WINDOW ESTAS VARIÁVEIS, POIS SÃO UTILIZADAS EM SCRIOT MAIS ABAIXO */
       --footer-h: 4.5rem;
       --padding-top-body: 1.5rem;
-      --ads-container-width: 160px;
-      --ads-container-height: 300px;
-      --ads-top-width: 728px;
-      --ads-top-height: 90px;
+      --ads-container-width: 200px;
+      --ads-container-height: 420px;
       --folga-anuncio-topo: 0.5rem;
-      /*--container-height: calc(100vh - var(--footer-h) - 2 * var(--padding-top-body));*/
-      --container-height: calc(100vh - var(--footer-h) - var(--ads-top-height) - 3 * var(--folga-anuncio-topo));
+      --container-height: calc(100vh - 4.5rem - 1rem);
       --fs-aux: 0.80rem;
       --fs-base: 0.95rem;
       --fs-emph: 1.10rem;
@@ -32,26 +32,28 @@
       flex-direction: column;
       overflow: hidden;
     }
-    .container {
-      max-width: 60%;
-      margin: auto;
-      background: var(--cor-fundo-claro);
-      border-radius: 12px;
-      padding: 20px;
-      flex: 1;
-      overflow-y: auto;
-      height: var(--container-height);
-      /*max-height: calc(88.2vh - var(--footer-h) - var(--ads-top-height) - var(--folga-anuncio-topo));*/
-    }
     .layout-horizontal {
-      position: relative;
-      justify-content: center;
-      display: flex;
-      align-items: flex-start;
-      flex: 1;
+      display: grid;
+      grid-template-columns: var(--ads-container-width) auto var(--ads-container-width);
+      gap: 6rem;
       width: 100%;
       max-width: 1400px;
       margin: 0 auto;
+      align-items: center;
+      justify-items: center;
+      justify-content: center;
+      padding: 0.5rem 1rem;
+    }
+    .container {
+      margin: auto;
+      background: var(--cor-fundo-claro);
+      border-radius: 12px;
+      padding: 1rem 2rem;
+      flex: 1;
+      overflow-y: auto;
+      height: var(--container-height);
+      min-width: 100%;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
     }
     h1 {
       text-align: center;
@@ -80,6 +82,113 @@
     .pergunta span {
       font-weight: bold;
     }
+    .ad-sidebar {
+      display: flex;
+      justify-content: center;
+      width: var(--ads-container-width);
+      max-height: var(--ads-container-height);
+      max-width: var(--ads-container-width);
+    }
+    .anuncio-banner {
+      position: relative;
+      background: var(--cor-fundo-claro);
+      padding: 1rem;
+      padding-bottom: 3.5rem; /* Para caber o botão de ver oferta */
+      border-radius: 0.5rem; 
+      text-align: center; 
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      width: 100%;
+      height: var(--ads-container-height);
+      transition: transform 0.3s ease;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    }
+    .ad-link {
+      min-width: 100%;
+      text-decoration: none;
+    }
+    .titulo-banner {
+      color: black;
+      font-size: var(--fs-emph);
+      font-weight: bold;
+      margin-bottom: 0.95rem;
+    }
+    .img-logotipo {
+      display: block;
+      object-fit: contain;
+      max-width: 100%;
+      margin: 0 auto;
+      max-height: 11rem;
+    }
+    .img-logotipo.amazon {
+      width: 70%;
+    }
+    .img-logotipo.mercado-livre {
+      width: 85%;
+    }
+    .img-produto {
+      width: 100% !important;
+      min-height: calc(0.34 * var(--ads-container-height));
+      max-height: calc(0.43 * var(--ads-container-height));
+      object-fit: contain;
+      margin: 0 auto;
+      display: block;
+    }
+    .container-badges {
+      display: none;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1.2rem;
+      min-height: 1.2rem;
+    }
+    .badge-promo {
+      display: none;
+      position: absolute;
+      top: 0.5em;
+      padding: 0.2rem 0.4rem;
+      font-size: var(--fs-aux);
+      font-weight: bold;
+      color: white;
+      border-radius: 0.2rem;
+      text-transform: uppercase;
+      z-index: 5;
+      box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.2);
+      white-space: nowrap;
+    }
+    .badge-verde {
+      left: 0.5rem;
+      background-color: #00a650;
+    }
+    .badge-vermelho {
+      right: 0.5rem;
+      background-color: #e44d26;
+    }
+    .anuncio-banner p {
+      font-size: var(--fs-aux); 
+      font-weight: bold; 
+      color: black; 
+      margin: 10px 0; 
+      line-height: 1.4;
+    }
+    .btn-ver-oferta {
+      background: #FFD814; 
+      border: 1px solid #FCD200; 
+      border-radius: 1rem; 
+      padding: 10px 0; 
+      cursor: pointer;
+      font-size: var(--fs-base);
+      font-weight: bold;
+      color: black;
+      
+      /* Fixa o botão no rodapé do card */
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      right: 1rem;
+      width: calc(100% - 2rem);
+    }
+    .btn-ver-oferta:hover { background: #f7ca00; }
     .footer {
       position: fixed;
       bottom: 0; /* Não apagar para manter o footer fixo */
@@ -206,105 +315,14 @@
       background: #fdecea;
       color: #a12622;
     }
-    .ad-sidebar-right {
-      position: absolute;
-      width: var(--ads-container-width);
-      height: var(--ads-container-height);
-      margin-top: calc(var(--container-height) / 2 - var(--ads-container-height) / 2);
-    }
-    .anuncio-banner {
-      background: var(--cor-fundo-claro);
-      padding: 0.85rem;
-      border-radius: 8px; 
-      text-align: center; 
-      flex-direction: column;
-      justify-content: space-between;
-      width: var(--ads-container-width);
-      height: var(--ads-container-height);
-      transition: transform 0.3s ease;
-    }
-    /*
-    #banner-lateral-esquerda {
-      display: none;
-      left: calc(10vw - var(--ads-container-width) / 2);
-    }*/
-    #banner-lateral-direita {
-      display: flex;
-      right: calc(10vw - var(--ads-container-width) / 2);
-    }
-    #banner-lateral-direita img {
-      max-width: 100%;
-      height: auto;
-      display: block;
-      margin: 0 auto;
-      max-height: calc(0.6 * var(--container-height));
-      object-fit: contain;
-    }
-    .titulo-banner {
-      color: black;
-      font-size: var(--fs-base);
-      font-weight: bold;
-      margin-bottom: 0.85rem;
-    }
-    .img-produto {
-      width: auto !important;
-      object-fit: contain;
-    }
-    .img-logotipo {
-      width: 70%;
-      display: block;
-      object-fit: contain;
-    }
-    .img-logotipo.amazon {
-      width: 70%;
-    }
-    .img-logotipo.mercado-livre {
-      width: 85%;
-    }
-    .container-badges {
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-      padding: 0 0.2rem;
-      gap: 0.7rem;
-      min-height: 1.2rem;
-      position: relative;
-    }
-    .badge-promo {
-      position: relative;
-      top: 0.5em;
-      padding: 0.2rem 0.4rem;
-      font-size: 0.65rem;
-      font-weight: bold;
-      color: white;
-      border-radius: 0.15rem;
-      text-transform: uppercase;
-      z-index: 5;
-      box-shadow: 0 0.1rem 0.2rem rgba(0, 0, 0, 0.2);
-      white-space: nowrap;
-      flex: 1;
-      text-align: center;
-    }
-    .badge-verde {
-      left: 0.2rem;
-      background-color: #00a650;
-    }
-    .badge-vermelho {
-      right: 0.2rem;
-      background-color: #e44d26;
-    }
-    .anuncio-banner p {
-      font-size: var(--fs-aux); 
-      font-weight: bold; 
-      color: black; 
-      margin: 10px 0; 
-      line-height: 1.4;
-    }
     @media (max-width: 1200px) {
+      .layout-horizontal {
+        grid-template-columns: 1fr;
+      }
       .container {
         max-width: 90%;
       }
-      .ad-sidebar, .ad-sidebar-right, .ad-top {
+      .ad-sidebar {
         display: none;
       }
     }
@@ -319,6 +337,21 @@
   <div id="main-element" class="main">
     <!-- Anúncios nas laterais e layout de resultado no centro -->
     <div class="layout-horizontal">
+      <!-- Banner de anúncio na lateral esquerda -->
+      <div class="ad-sidebar" id="banner-lateral-esquerda" style="visibility: hidden; pointer-events: none;">
+        <a href="" target="_blank" class="ad-link">
+          <div class="anuncio-banner">
+            <img id="logotipo-anuncio-esq" alt="Logotipo" class="img-logotipo">
+            <div class="container-badges" style="position: relative; width: 100%">
+              <span id="badge-frete-gratis" class="badge-promo badge-verde">Frete Grátis</span>
+              <span id="badge-desconto" class="badge-promo badge-vermelho"></span>
+            </div>
+            <img src="" alt="Produto" class="img-produto">
+            <p id="descricao-banner-esquerda"></p>
+            <div class="btn-ver-oferta">Ver Oferta</div>
+          </div>
+        </a>
+      </div>
 
       <!-- Container das informações do quiz feito -->
       <div id="container-resultado" class="container">
@@ -337,9 +370,9 @@
         </div>
       </div>
 
-      <!-- Banner de anúncio na direita -->
-      <div id="banner-lateral-direita" class="ad-sidebar-right" style="visibility: hidden; pointer-events: none;">
-        <a href="" target="_blank" style="text-decoration: none;">
+      <!-- Banner de anúncio na lateral direita -->
+      <div class="ad-sidebar" id="banner-lateral-direita" style="visibility: hidden; pointer-events: none;">
+        <a href="" target="_blank" class="ad-link">
           <div class="anuncio-banner">
             <img id="logotipo-anuncio-dir" alt="Logotipo" class="img-logotipo">
             <div class="container-badges" style="position: relative; width: 100%">
@@ -348,6 +381,7 @@
             </div>
             <img src="" alt="Produto" class="img-produto">
             <p id="descricao-banner-direita"></p>
+            <div class="btn-ver-oferta">Ver Oferta</div>
           </div>
         </a>
       </div>
@@ -393,18 +427,7 @@
         </div>
       </div>
     </div>
-
   </div>
-
-  <script>
-    const containerResultado = document.getElementById("container-resultado");
-    const anuncioBannerDir = document.getElementById("banner-lateral-direita");
-    
-    // Depois passar isto para o CSS
-    containerResultado.style.marginTop = '0.5rem';
-    containerResultado.style.height = 'calc(100vh - 4.5rem - 1rem)';
-    anuncioBannerDir.style.marginTop = 'calc((100vh - 4.5rem - 1rem) / 2 - 150px)';
-  </script>
 
   <script type="module" src="{{ url_for('static', filename='resultado.js')}}?v=1.1.0"></script>
 </body>

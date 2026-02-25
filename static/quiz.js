@@ -132,7 +132,7 @@ const GAP_ENTRE_ALTERNATIVAS        = 380;
 const VELOCIDADE_LETRA_ENUNCIADO    = 21;
 const VELOCIDADE_LETRA_ALTERNATIVAS = 16; // quanto menor, mais rápido
 
-if (tipo_pergunta === "objetiva" || !MODO_VISITANTE && !exibir_instrucoes_quiz) hint_avaliacao.style.marginTop = "1rem";// ajuste no hint de avaliação caso os outros não estejam presentes (o de dica e o de pular pergunta)
+if (tipo_pergunta === "objetiva" || !MODO_VISITANTE && !exibir_instrucoes_quiz) hint_avaliacao.style.marginTop = "1rem"; // ajuste no hint de avaliação caso os outros não estejam presentes (o de dica e o de pular pergunta)
 
 // Ids de perguntas que são selecionados primeiro
 let idsPrioritarios = JSON.parse(sessionStorage.getItem('ids_prioritarios') ?? "[]").map(Number);
@@ -151,16 +151,6 @@ botaoDislikeNota.addEventListener("click", () => {
   botaoDislikeNota.classList.toggle("ativo", !jaAtivo);
   botaoLikeNota.classList.remove("ativo");
 });
-
-// Variáveis de controle de exibição de anúncios
-let qPerguntasRespondidas = 0; // perguntas que o usuário respondeu desde o início do quiz
-const cacheAnuncios = sessionStorage.getItem('anuncios') || '{}';
-const dadosAnuncios = JSON.parse(cacheAnuncios);
-const logotipoAnuncioEsq = document.getElementById('logotipo-anuncio-esq');
-const logotipoAnuncioDir = document.getElementById('logotipo-anuncio-dir');
-const containerEsq = document.getElementById('banner-lateral-esquerda');
-const containerDir = document.getElementById('banner-lateral-direita');
-let historicoExibicao = {}; 
 
 function getWithMigration(key) {
   // Pega dado do sessionStorage, se não encontrar pega do localStorage
@@ -1038,18 +1028,6 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   dica_icon.style.visibility = 'hidden';
   dica_icon.style.pointerEvents = 'none';
 
-  // Atualiza anúncios exibidos
-  if (idsReservados.includes(idUsuario)) {
-    if (chamarAtualizarAnuncios || qPerguntasRespondidas % 1 === 0) {
-      historicoExibicao = atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq, logotipoAnuncioDir, tema_atual, dadosAnuncios, 'Quiz', historicoExibicao);
-    }
-  }
-  else {
-    if (chamarAtualizarAnuncios || qPerguntasRespondidas % 2 === 0) {
-      historicoExibicao = atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq, logotipoAnuncioDir, tema_atual, dadosAnuncios, 'Quiz', historicoExibicao);
-    }
-  }
-
   // Reseta estrelas
   document.querySelectorAll(".estrela").forEach(e => {
     e.textContent = "☆";
@@ -1288,10 +1266,8 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
 }
 
 async function proximaPergunta() {
-  //await registrarFeedback();
-  registrarFeedback()
+  registrarFeedback();
 
-  qPerguntasRespondidas ++;
   function resetarAlternativas() {
     alternativaBtns.forEach(btn => {
       // Remove estados visuais
