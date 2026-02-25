@@ -210,7 +210,7 @@ async function exibirAnuncios() {
     const filtrarValidos = (lista) => (lista || []).filter(a => {
       const expira = new Date(a.oferta_expira_em);
       // Mantém apenas se a data de expiração for maior que agora
-      return expira > agoraSP;
+      return expira > agoraSP && (window.ADS_CONFIG.isAdmin || a.disponivel_visitantes === true && MODO_VISITANTE || a.disponivel_usuarios && !MODO_VISITANTE);
     });
 
     const anunciosAmazon = filtrarValidos(dados['Amazon']);
@@ -236,7 +236,8 @@ async function exibirAnuncios() {
 
     posicionarAnuncioBanner();
 
-  } catch (erro) {
+  }
+  catch (erro) {
     console.error("Falha ao carregar anúncios:", erro);
   }
 }

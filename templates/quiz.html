@@ -19,6 +19,8 @@
     --ads-top-width: 320px;
     --ads-top-height: 50px;
     --folga-anuncio-topo: 0.5rem;
+    --vertical-margin: 1.5rem;
+    --small-vertical-margin: 1rem;
   }
   @media (max-width: 1000px) { 
     :root {
@@ -75,7 +77,7 @@
     border-radius: 10px;
     overflow: hidden;
     z-index: 1;
-    margin-top: 0.25rem;
+    margin-top: 0.07rem; /* Gambiarra */
   }
   #barra-progresso {
     height: 100%;
@@ -89,12 +91,14 @@
     z-index: 2;
   }
   #ranking-anterior {
+    margin-top: -0.12rem; /* Gambiarra */
     left: calc(48% - var(--largura-barra) / 2);
     transform: translateX(-100%); /* posiciona à esquerda da barra */
     text-align: right;
     margin-right: 0.4rem; /* distância da barra */
   }
   #proximo-ranking {
+    margin-top: -0.12rem; /* Gambiarra */
     left: calc(52% + var(--largura-barra) / 2);
     transform: translateX(0); /* colado à borda direita da barra */
     text-align: left;
@@ -185,7 +189,6 @@
     align-items: center;
     padding: 2rem 0;
   }
-  /* Container que organiza os 3 elementos em colunas */
   .quiz-grid-layout {
     display: grid;
     grid-template-columns: 180px 1fr 180px; 
@@ -196,7 +199,6 @@
     align-items: start; /* Alinha os anúncios pelo topo do grid */
     justify-items: center;
   }
-  /* Ajuste das Sidebars para o fluxo do Grid */
   .ad-sidebar {
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
     position: relative;
@@ -302,15 +304,6 @@
       margin-top: auto; /* Empurra o botão sempre para o fim do card */
   }
   .btn-ver-oferta:hover { background: #f7ca00; }
-  /* Responsividade: Esconde anúncios se a tela for pequena demais para os 3 */
-  @media (max-width: 1200px) {
-    .quiz-grid-layout {
-      grid-template-columns: 1fr; /* Quiz ocupa tudo */
-    }
-    .ad-sidebar {
-      display: none !important;
-    }
-  }
   .quiz-container {
     background: var(--cor-fundo-claro);
     padding: 2rem;
@@ -373,23 +366,24 @@
     font-family: 'Noto Serif', 'Roboto', serif, sans-serif;
     font-weight: bold;
     margin-top: 1rem;
-    margin-bottom: 2.5rem;
+    margin-bottom: var(--vertical-margin);
   }
   #alternativas-container {
     display: none;
-    margin-top: -1.1rem !important;
+    margin-top: -0.2rem !important; /* Por algum motivo teve de ser feita esta gambiarra */
     grid-template-columns: repeat(2, 1fr); 
-    gap: 1rem;
+    gap: 1.5rem;
     width: 100%;
   }
   .alternativa-btn {
     font-size: var(--fs-aux);
-    display: flex;
+    display: block;
     align-items: flex-start;
-    gap: .5rem;
-    width: 100%;
+    gap: 0.5rem;
     text-align: left;
-    padding: 0.75rem 1rem;
+    padding-left: 2.5rem;
+    text-indent: -1.65rem;
+    width: 100%;
     margin: 0;
     border-radius: 8px;
     border: none;
@@ -398,12 +392,6 @@
     background: #b8b88a;
     box-shadow: 0 2px 6px rgba(0,0,0,0.06);
     height: 100%; 
-  }
-  /* Ajuste específico para Mobile (voltar para 1 coluna) */
-  @media (max-width: 1000px) {
-    #alternativas-container {
-      grid-template-columns: 1fr; /* Uma por linha no celular */
-    }
   }
   .alternativa-btn .prefixo {
     font-size: var(--fs-base);
@@ -457,7 +445,6 @@
     max-width: 900px;
     border: 1px solid #333333;
     display: block;
-    margin-top: -20px;
     margin-left: auto;
     margin-right: auto;
   }
@@ -469,10 +456,27 @@
     margin-top: 0.3rem
   }
   #hint-dica {
-    margin-top: 0.8rem
+    margin-top: var(--small-vertical-margin); /* O ideal era salvar isto no window, pois é usado lá no js também */
   }
   .nota-box {
     font-weight: var(--peso-fonte-botoes);
+  }
+  #botoes-acao, #botoes-envio{
+    margin-top: var(--vertical-margin);
+    justify-content: space-between;
+    gap: var(--vertical-margin);
+  }
+  #btn-enviar, #btn-pular {
+    justify-content: center;
+  }
+  .btn-enviar.chutar {
+    background: var(--bg-botao-login);
+  }
+  #resultado {
+    display: none;
+    font-family: 'Noto Serif', 'Roboto', serif, sans-serif;
+    margin-top: calc(var(--vertical-margin) - 0.4rem);
+    font-weight: bold;
   }
   .btn-enviar, .btn-finalizar, .btn-pular, .btn-proxima {
     font-size: var(--fs-aux);
@@ -506,14 +510,21 @@
     outline: none;
     box-shadow: none;
   }
-  #dica-box,  #nota-box, #respostas-aceitas-box {
+  .btn-like.ativo .icon { fill: #2e7d32; }
+  .btn-dislike.ativo .icon { fill: #c62828; }
+  .btn-like:hover .icon { fill: #2e7d32; transform: scale(1.1); }
+  .btn-dislike:hover .icon { fill: #c62828; transform: scale(1.1); }
+  #dica-box, #nota-box, #respostas-aceitas-box {
     font-size: var(--fs-aux);
     display: none;
-    margin-top: 1rem;
+    margin-top: calc(var(--vertical-margin) - 0.2rem);
     background: #f0f0f0;
     padding: 0.75rem;
     border-radius: 8px;
     font-weight: var(--peso-fonte-padrao);
+  }
+  #dica-box, #nota-box {
+    margin-top: var(--small-vertical-margin);
   }
   .avaliacao-inline {
     display: inline-flex;
@@ -548,16 +559,12 @@
     fill: #555;               /* cinza neutro */
     transition: all 0.15s ease;
   }
-  .btn-like.ativo .icon { fill: #2e7d32; }
-  .btn-dislike.ativo .icon { fill: #c62828; }
-  .btn-like:hover .icon { fill: #2e7d32; transform: scale(1.1); }
-  .btn-dislike:hover .icon { fill: #c62828; transform: scale(1.1); }
   #avaliacao {
     display: none;
     justify-content: center;
     align-items: center;
-    gap: 50px;
-    margin: 20px 0;
+    flex-wrap: nowrap; /* Impede quebra de linha */
+    margin-top: calc(var(--vertical-margin) - 0.8rem);
     font-size: 2rem;
     width: 100%;
     text-align: center;
@@ -568,13 +575,13 @@
     color: black;
     user-select: none;
     transition: color 0.3s ease;
-    padding: 0 30px;
+    padding: 0 2.2rem;
   }
   .estrela.dourada {
     color: gold;
   }
   .box-comentario {
-    margin-top: 1.2rem;
+    margin-top: 1rem;
     width: 100%;
   }
   #comentario-texto {
@@ -596,27 +603,7 @@
     background: #eaeaea;
     color: var(--hint-text);
     cursor: not-allowed;
-  }
-  .hidden {
-    display: none;
-  }
-  #btn-enviar, #btn-pular {
-    justify-content: center;
-  }
-  .btn-enviar.chutar {
-    background: var(--bg-botao-login);
-  }
-  #botoes-acao, #botoes-envio{
-    margin-top: 1.5rem;
-    justify-content: space-between;
-    gap: 0.75rem;
-  }
-  #resultado {
-    display: none;
-    font-family: 'Noto Serif', 'Roboto', serif, sans-serif;
-    margin-top: 12px;
-    font-weight: bold
-  }
+  }  
   #comentarios {
     transition: all 0.4s ease;
     display: none;
@@ -630,8 +617,24 @@
     width: 100%;
     max-width: 38rem;
   }
-  /* Responsivo */
+  .hidden {
+    display: none;
+  }
+  
+  /* Responsividade: Esconde anúncios se a tela for pequena demais para os 3 */
+  @media (max-width: 1200px) {
+    .quiz-grid-layout {
+      grid-template-columns: 1fr; /* Quiz ocupa tudo */
+    }
+    .ad-sidebar {
+      display: none !important;
+    }
+  }
+  /* Responsivo em smartphones */
   @media (max-width: 1000px) {
+    #alternativas-container {
+      grid-template-columns: 1fr; /* Uma por linha no celular */
+    }
     .status-wrapper-mobile {
       display: flex;
     }
@@ -656,7 +659,7 @@
       margin-top: 0.22rem;
     }
     .estrela {
-      padding: 0 0.85rem;
+      padding: 0 1.4rem;
     }
     #dica-icon img {
       width: 1rem;

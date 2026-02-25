@@ -47,6 +47,7 @@ btn_voltar.addEventListener("click", () => {
 // Implementa a função para selecionar ou desselecionar todas as perguntas
 btn_marcar_todas.addEventListener("click", () => {
   playSound("click");
+  console.log("Clique no botão")
   const linhas = tabela.querySelectorAll("tr");
   
   if (btn_marcar_todas.textContent === 'Marcar Todas') {
@@ -56,8 +57,6 @@ btn_marcar_todas.addEventListener("click", () => {
         checkbox.checked = true
       }
     })
-
-
 
     const totalCheckboxes = document.querySelectorAll(".checkbox-selecionar").length;
     contadorEl.textContent = contador_perguntas = totalCheckboxes;
@@ -84,6 +83,7 @@ btn_pesquisar.addEventListener("click", () => {
 
 // Implementa a função para iniciar uma revisão
 btn_revisar.addEventListener("click", async() => {
+  alterarEstadoBotoes(true); // TALVEZ DEVESSE ESTAR TUDO DENTRO DE UM TRY PORQUE SE DER ERRO O BOTÃO FICARÁ BLOQUEADO
   playSound("click");
   salvarFavoritos();
   const linhas = tabela.querySelectorAll("tr");
@@ -110,18 +110,26 @@ btn_revisar.addEventListener("click", async() => {
 
     // Este trecho aparece mais 2 vezes em home.js, depois deve-se passar para utils.js
     try {
-        const resposta = await fetch("/api/obter_todos_anuncios");
-        const dados = await resposta.json();
-        sessionStorage.setItem("anuncios", JSON.stringify(dados));
+      const resposta = await fetch("/api/obter_todos_anuncios");
+      const dados = await resposta.json();
+      sessionStorage.setItem("anuncios", JSON.stringify(dados));
     }
     catch (erro) {
-        console.error("Falha ao carregar anúncios:", erro);
-        sessionStorage.setItem("anuncios", JSON.stringify({}));
+      console.error("Falha ao carregar anúncios:", erro);
+      sessionStorage.setItem("anuncios", JSON.stringify({}));
     }
 
     window.location.href = `/revisao/${encodeURIComponent(slugify(tema_atual))}/${encodeURIComponent(slugify(tipo_pergunta))}s`;
   }
 })
+
+function alterarEstadoBotoes(bloquear) {
+  console.log("FUnção de alterar estado chamada")
+  btn_marcar_todas.disabled = bloquear;
+  btn_pesquisar.disabled = bloquear;
+  btn_revisar.disabled = bloquear;
+  console.log("Btn desativado?", btn_marcar_todas.disabled);
+}
 
 function carregarEstadoPesquisa() {
   const raw = localStorage.getItem("estado_pesquisa");
@@ -148,6 +156,7 @@ async function carregarFavoritos() {
     const response = await fetch(`/api/carregar-favoritos?tema-atual=${tema_atual}&tipo-pergunta=${tipo_pergunta}`);
     const result = await response.json();
     contadorEl.textContent = contador_perguntas = 0;
+    console.log("44Numeração zerada");
     favoritos_selecionados.clear()
 
     result["favoritos"].forEach(idp => {
@@ -175,6 +184,7 @@ async function carregarFavoritos() {
 }
 
 async function mostrarSubtemasDisponiveis(subtemasRestaurar = []) {
+  alterarEstadoBotoes(true);
 
   function atualizarBotoesSubtemas(subtemas, subtemasSelecionados = new Set()) {
     const container = document.getElementById("container-subtemas");
@@ -184,18 +194,8 @@ async function mostrarSubtemasDisponiveis(subtemasRestaurar = []) {
       const btn = document.createElement("button");
       btn.classList.add("subtema-btn");
       btn.textContent = st;
-
-      if (
-        subtemasSelecionados.size === 0 ||
-        subtemasSelecionados.has(st)
-      ) {
-        btn.classList.add("selected");
-      }
-
-      btn.addEventListener("click", () => {
-        btn.classList.toggle("selected");
-      });
-
+      if (subtemasSelecionados.size === 0 || subtemasSelecionados.has(st)) btn.classList.add("selected");
+      btn.addEventListener("click", () => btn.classList.toggle("selected"));
       container.appendChild(btn);
     });
   }
@@ -208,10 +208,7 @@ async function mostrarSubtemasDisponiveis(subtemasRestaurar = []) {
         </td>
       </tr>
     `;
-    contadorEl.textContent = "0";
-    contador_perguntas = 0;
-    btn_marcar_todas.disabled = true;
-    btn_revisar.disabled = true;
+    contadorEl.textContent = contador_perguntas = 0;
     btn_marcar_todas.textContent = "Marcar Todas";
   }
 
@@ -238,12 +235,11 @@ async function mostrarSubtemasDisponiveis(subtemasRestaurar = []) {
   limparTabelaPerguntas();
   box_tema.disabled = false;
   box_tipo_pergunta.disabled = false;
+  alterarEstadoBotoes(false);
 }
 
 async function pesquisar() {
-  btn_marcar_todas.disabled = true;
-  btn_revisar.disabled = true;
-  btn_pesquisar.disabled = true;
+  alterarEstadoBotoes(true);
   const dificuldadesSelecionadas = Array.from(document.querySelectorAll(".filtro-centro input[type='checkbox']:checked")).map(cb => cb.value);
   const subtemasSelecionados = Array.from(document.querySelectorAll(".subtema-btn.selected")).map(btn => btn.textContent);
 
@@ -366,16 +362,11 @@ async function pesquisar() {
     renderizarPerguntas(perguntasPorDificuldade);
 
     // Carrega favoritos e já deixa marcadas para revisão as perguntsa
-    if (!MODO_VISITANTE) {
-      carregarFavoritos();
-    }
+    if (!MODO_VISITANTE) await carregarFavoritos();
 
     // Reativa as checks para marcar perguntas e os botões
     document.querySelectorAll(".checkbox-selecionar")
     .forEach(cb => cb.disabled = false);
-    btn_marcar_todas.disabled = false;
-    btn_revisar.disabled = false;
-
   }
   catch (err) {
     console.error("Erro ao buscar perguntas", err);
@@ -387,7 +378,7 @@ async function pesquisar() {
       </tr>
     `;
   }
-  btn_pesquisar.disabled = false;
+  alterarEstadoBotoes(false);
 }
 
 // Salva o tema, tipo de pergunta e filtros da pesquisa para retomar depois

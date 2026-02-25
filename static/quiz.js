@@ -132,7 +132,7 @@ const GAP_ENTRE_ALTERNATIVAS        = 380;
 const VELOCIDADE_LETRA_ENUNCIADO    = 21;
 const VELOCIDADE_LETRA_ALTERNATIVAS = 16; // quanto menor, mais rápido
 
-if (tipo_pergunta === "objetiva" || !MODO_VISITANTE && !exibir_instrucoes_quiz) hint_avaliacao.style.marginTop = "0.8rem"; // ajuste no hint de avaliação caso os outros não estejam presentes (o de dica e o de pular pergunta)
+if (tipo_pergunta === "objetiva" || !MODO_VISITANTE && !exibir_instrucoes_quiz) hint_avaliacao.style.marginTop = "1rem";// ajuste no hint de avaliação caso os outros não estejam presentes (o de dica e o de pular pergunta)
 
 // Ids de perguntas que são selecionados primeiro
 let idsPrioritarios = JSON.parse(sessionStorage.getItem('ids_prioritarios') ?? "[]").map(Number);
@@ -532,7 +532,7 @@ async function enviarResposta(pulando = false) {
     const avaliacao_anterior = pergunta_selecionada.estrelas || 0;
     renderizarEstrelas(avaliacao_anterior);
     estrelas_iniciais = avaliacao_anterior;
-    estrelas_avaliacao.style.display = "block";
+    estrelas_avaliacao.style.display = "flex";
     
     // Carrega comentário de feedback anterior do usuário caso exista
     carregarComentarioAnterior();

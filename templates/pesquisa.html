@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   
   <style>
-    
     *, *:before, *:after {
       box-sizing: border-box;
     }
@@ -20,6 +19,7 @@
       --fs-estrela: 1.85rem;
       --size-checkbox-dificuldades: 1.50;
       --size-checkbox-selecionar: 1.50;
+      --header-height: 3.35rem;
     }
     @media (max-width: 1000px) { 
       :root {
@@ -42,21 +42,12 @@
       flex-direction: column;
       /*min-height: 100vh;*/
     }
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 0;
-      padding-top: 1rem;
-      padding-bottom: calc(var(--footer-h) + 8px);
-      max-height: calc(88.2vh - var(--footer-h));
-    }
     .pesquisa-header {
       display: flex;
       align-items: center;
       padding: 0.6rem 1rem;
       background-color: var(--cor-fundo-escuro);
+      height: var(--header-height);
     }
     .pesquisa-icon {
       width: 2.2rem;
@@ -66,6 +57,15 @@
       font-size: var(--fs-title);
       font-weight: bold;
       color: white;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 0;
+      padding-top: 1rem;
+      max-height: calc(100vh - var(--header-height) - var(--footer-h));
     }
     .filtros-container {
       display: flex;
@@ -170,7 +170,6 @@
       min-height: 0;
       overflow-y: auto;
       margin-top: 0.4rem;
-      height: 30vh;
       align-self: stretch;
     }
     table {
@@ -368,8 +367,7 @@
         justify-content: left;
         padding-bottom: 0.2rem;
       }
-  }
-
+    }
   </style>
 </head>
 <body>
@@ -381,7 +379,7 @@
   </header>
 
   <main>
-
+    <!-- Seção de filtros -->
     <div class="top-bar">
       <!-- Filtro de tema de pergunta -->
       <div class="top-bar-inner">
