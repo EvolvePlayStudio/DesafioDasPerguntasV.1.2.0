@@ -15,8 +15,7 @@
       --padding-top-body: 1.5rem;
       --ads-container-width: 200px;
       --ads-container-height: 420px;
-      --folga-anuncio-topo: 0.5rem;
-      --container-height: calc(100vh - 4.5rem - 1rem);
+      --container-height: calc(100vh - 4.5rem - 3rem);
       --fs-aux: 0.80rem;
       --fs-base: 0.95rem;
       --fs-emph: 1.10rem;
@@ -26,7 +25,6 @@
       font-family: "Noto Serif", Roboto, serif, sans-serif;
       background: var(--cor-fundo-padrao);
       margin: 0;
-      /*padding-top: var(--padding-top-body);*/
       height: 100vh;
       display: flex;
       flex-direction: column;
@@ -34,21 +32,19 @@
     }
     .layout-horizontal {
       display: grid;
-      grid-template-columns: var(--ads-container-width) auto var(--ads-container-width);
-      gap: 3rem;
+      grid-template-columns: 0.7fr 1.6fr 0.7fr;
       width: 100%;
-      max-width: 1400px;
       margin: 0 auto;
       align-items: center;
       justify-items: center;
       justify-content: center;
-      padding: 0.5rem 1rem;
+      padding: var(--padding-top-body) 0;
     }
     .container {
       margin: auto;
       background: var(--cor-fundo-claro);
       border-radius: 12px;
-      padding: 1rem 2rem;
+      padding: 0 2rem 0.3rem 2rem;
       flex: 1;
       overflow-y: auto;
       height: var(--container-height);
@@ -61,7 +57,7 @@
     }
     .pontuacao {
       margin: 20px 0;
-      padding: 15px;
+      padding: 1rem;
       background: #f0f0f0;
       border-radius: 8px;
     }
@@ -180,7 +176,6 @@
       font-size: var(--fs-base);
       font-weight: bold;
       color: black;
-      
       /* Fixa o botão no rodapé do card */
       position: absolute;
       bottom: 1rem;
@@ -317,7 +312,7 @@
     }
     @media (max-width: 1200px) {
       .layout-horizontal {
-        grid-template-columns: 1fr;
+        grid-template-columns: 0.9fr;
       }
       .container {
         max-width: 90%;
