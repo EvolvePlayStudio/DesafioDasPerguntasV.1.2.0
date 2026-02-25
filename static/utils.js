@@ -135,7 +135,7 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
         /*
         const sorteio = Math.random();
         if (sorteio >= 0.3) listaAnunciosNoTema[provedor].push(a);*/
-        const expira = produto.oferta_expira_em ? new Date(produto.oferta_expira_em) : null;
+        const expira = a.oferta_expira_em ? new Date(a.oferta_expira_em) : null;
         const isValido = expira && agoraSP < expira;
         if (isValido) listaAnunciosNoTema[provedor].push(a);
       })
