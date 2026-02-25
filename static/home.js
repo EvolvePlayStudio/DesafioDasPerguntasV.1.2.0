@@ -172,7 +172,9 @@ const anuncioBannerDireita = document.getElementById("banner-lateral-direita");
 });
 
 async function exibirAnuncios() {
-  // Função auxiliar para preencher os dados no HTML que você criou
+  // 1. Obtém o horário atual de Brasília/São Paulo
+  const agoraSP = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+
   function configurarBanner(container, produto) {
     const link = container.querySelector(".link-anuncio-duplo");
     const imgProd = container.querySelector(".produto-container img");
@@ -181,62 +183,64 @@ async function exibirAnuncios() {
     link.setAttribute('data-tipo-midia-anuncio', produto.tipo_midia);
     if (link) link.href = produto.link;
     if (imgProd) imgProd.src = produto.imagem;
-    registrarInteracaoAnuncio(link, 'Impressão', produto.tema)
+    registrarInteracaoAnuncio(link, 'Impressão', produto.tema);
   }
 
-  // Posiciona anúncio de banner da esquerda
   function posicionarAnuncioBanner() {
-    // Calcula a altura do container onde se encontram os anúncios de banners
-    const altura_header = document.getElementById("header-desktop").getBoundingClientRect().height;
-    const y_top_cards_scroll = document.getElementById("cards-scroll-wrapper").getBoundingClientRect().top;
+    const header = document.getElementById("header-desktop");
+    const cardsWrapper = document.getElementById("cards-scroll-wrapper");
+    if (!header || !cardsWrapper) return;
+
+    const altura_header = header.getBoundingClientRect().height;
+    const y_top_cards_scroll = cardsWrapper.getBoundingClientRect().top;
     const alturaContainerAnuncio = y_top_cards_scroll - altura_header;
 
-    // Ajuste as margens dos anúncios de banner da esquerda e direita
-    const marginTopBanners = (alturaContainerAnuncio - anuncioBannerDireita.getBoundingClientRect().height) / 2
+    const heightBanner = anuncioBannerDireita.getBoundingClientRect().height;
+    const marginTopBanners = (alturaContainerAnuncio - heightBanner) / 2;
+    
     if (anuncioBannerEsquerda) anuncioBannerEsquerda.style.marginTop = `${marginTopBanners}px`;
     if (anuncioBannerDireita) anuncioBannerDireita.style.marginTop = `${marginTopBanners}px`;
   }
 
   try {
     const resposta = await fetch("/api/obter_anuncios_home");
-    const dados = await resposta.json(); // Espera-se uma lista de objetos
+    const dados = await resposta.json();
 
-    // 1. Filtra os anúncios por provedor
-    const anunciosAmazon = dados['Amazon'].filter(a => a.provedor?.toLowerCase() === "amazon");
-    const anunciosML = dados['Mercado Livre'].filter(a => a.provedor?.toLowerCase() === "mercado livre");
+    // 2. Filtra e limpa as listas (remove expirados e valida provedor)
+    const filtrarValidos = (lista) => (lista || []).filter(a => {
+      const expira = new Date(a.oferta_expira_em);
+      // Mantém apenas se a data de expiração for maior que agora
+      return expira > agoraSP;
+    });
 
-    // Lógica para Amazon (Esquerda)
+    const anunciosAmazon = filtrarValidos(dados['Amazon']);
+    const anunciosML = filtrarValidos(dados['Mercado Livre']);
+
+    // 3. Exibição Amazon (Esquerda)
     if (anunciosAmazon.length > 0) {
       const aleatorioAmazon = anunciosAmazon[Math.floor(Math.random() * anunciosAmazon.length)];
       configurarBanner(anuncioBannerEsquerda, aleatorioAmazon);
       anuncioBannerEsquerda.style.display = "flex";
-    }
-    else {
+    } else {
       anuncioBannerEsquerda.style.display = "none";
     }
 
-    // Lógica para Mercado Livre (Direita)
+    // 4. Exibição Mercado Livre (Direita)
     if (anunciosML.length > 0) {
       const aleatorioML = anunciosML[Math.floor(Math.random() * anunciosML.length)];
       configurarBanner(anuncioBannerDireita, aleatorioML);
       anuncioBannerDireita.style.display = "flex";
-    }
-    else {
+    } else {
       anuncioBannerDireita.style.display = "none";
     }
+
     posicionarAnuncioBanner();
 
   } catch (erro) {
     console.error("Falha ao carregar anúncios:", erro);
   }
 }
-if (!window.ADS_CONFIG.isMobile) {
-  console.log("Não estou em mobile")
-  exibirAnuncios();
-}
-else {
-  console.log("Estou em mobille")
-}
+if (!window.ADS_CONFIG.isMobile) exibirAnuncios();
 
 async function iniciarQuiz(event) {
   function desbloquearBotoes() {

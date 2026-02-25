@@ -910,13 +910,12 @@ async function mostrarAlternativas() {
   if (!container || !pergunta_selecionada) return;
 
   // Assegura que o container está visível e com coluna
-  container.style.display = 'flex';
+  container.style.display = 'grid';
+  /*
   container.style.flexDirection = 'column';
-  container.style.gap = '0.5rem';
+  container.style.gap = '0.5rem';*/
 
-  const alternativas = Array.from(
-    container.querySelectorAll('.alternativa-btn')
-  );
+  const alternativas = Array.from(container.querySelectorAll('.alternativa-btn'));
 
   // 1) Prepara estado inicial
   alternativas.forEach(btn => {
@@ -1506,11 +1505,6 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   }
 
-  // Identifica se a palavra tem padrões estrangeiros (alemão, inglês, etc)
-  function temPadraoEstrangeiro(texto) {
-    return /(sch|ck|tz|ph|th|mm)/.test(texto);
-  }
-
   // Normalização que não distorce tanto a resposta correta
   function normalizarLeve(texto = "", removerStopWords = true) {
     let textoNormalizado = texto
@@ -1657,10 +1651,6 @@ function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
 function respostaObjetivaCorreta() {
   if (!alternativaSelecionada) return false;
   return alternativaSelecionada === pergunta_selecionada.resposta_correta;
-  /*
-  if (pergunta_selecionada.resposta_correta) {
-    return alternativaSelecionada === pergunta_selecionada.resposta_correta;
-  }*/
 }
 
 function selecionarAlternativa(btn) {
@@ -1768,10 +1758,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         enviarResposta(true);
       })
     }
-
-    // Ajuste nos botões que ficam abaixo da caixa de texto para respostas
-    if (botoes_enviar_div) {botoes_enviar_div.style.marginTop = "1.5rem"};
-    if (botoes_finalizar_div) {botoes_finalizar_div.style.marginTop = '1.5rem'};
   }
   else {
     btn_enviar.classList.add("chutar");
