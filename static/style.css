@@ -2,11 +2,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
 :root {
+    /* Cores */
     --cor-fundo-escuro: #111109;
     --cor-fundo-padrao: #1E1E14;
     --cor-fundo-claro: #7f7f47;
-    --peso-fonte-padrao: 500;
-    --peso-fonte-botoes: 700;
     --bg-botao-login: #007BFF;
     --bg-botao-login: #5623e0;
     --bg-hover-botao-login: #0056b3;
@@ -17,6 +16,10 @@
     --cor-pagina-selecionada: gold;
     --cor-textos-pequenos: rgb(36, 36, 36);
     --vermelho-tela-quiz: rgb(255, 51, 15);
+    /* Tamanhos */
+    --major-footer-h: 4.5rem;
+    --peso-fonte-padrao: 500;
+    --peso-fonte-botoes: 700;
 }
 .mensagem {
     color: red;
@@ -29,6 +32,7 @@ body {
     margin: 0;
     padding: 0;
 }
+/*
 footer {
     font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     text-align: center;
@@ -37,6 +41,18 @@ footer {
     color: white;
     background-color: var(--cor-fundo-escuro);
     font-size: 14px;
+}*/
+.footer {
+  width: 100%;
+  display: flex;
+  background: var(--cor-fundo-escuro); 
+  position: fixed;
+  align-items: center;
+  justify-content: center;
+  height: var(--major-footer-h);
+  bottom: 0;
+  left: 0;
+  right: 0; 
 }
 footer a {
     text-decoration: none;
