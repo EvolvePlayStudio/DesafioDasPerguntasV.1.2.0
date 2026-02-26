@@ -896,7 +896,6 @@ function limparIdsPrioritariosInvalidos() {
 }
 
 async function mostrarAlternativas() {
-  //const container = document.getElementById('alternativas-container');
   if (!alternativasContainer || !pergunta_selecionada) return;
 
   // Assegura que o container está visível e com coluna
@@ -923,10 +922,9 @@ async function mostrarAlternativas() {
       btn.appendChild(fullText);
     }
 
-    fullText.innerHTML = `
-      <span class="prefixo">${letra}) </span><span class="texto"></span>
-    `;
-
+    btn.innerHTML = `
+    <span class="prefixo">${letra})</span>
+    <span class="full-text"></span>`
     btn.style.opacity = '0';
     btn.style.transform = 'translateY(6px)';
   });
@@ -938,7 +936,7 @@ async function mostrarAlternativas() {
     btn.style.opacity = '1';
     btn.style.transform = 'translateY(0)';
 
-    const textoSpan = btn.querySelector('.texto');
+    const textoSpan = btn.querySelector('.full-text');
     const texto = btn.dataset.texto;
 
     textoSpan.textContent = '';
