@@ -6,6 +6,12 @@
   <title>Quiz - Desafio das Perguntas</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
+  <!-- Detecta se é o dispositivo é Android ou iOS -->
+  <script>
+    const isMobileOS = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobileOS) document.documentElement.classList.add('is-mobile-os');
+  </script>
+
   <!-- CSS -->
   <style>
   :root {
@@ -22,7 +28,7 @@
     --folga-anuncio-topo: 0.5rem;
     --vertical-margin: 1.5rem;
     --small-vertical-margin: 1rem;
-  }/*
+  }
   @media (max-width: 1200px) { 
     :root {
       --altura-barra: 0.9rem;
@@ -34,7 +40,7 @@
       --fs-icon-pular: 1.35rem;
       --fs-estrelas: 1.9rem;
     }
-  }*/
+  }
   html, body {
     height: 100%
   }
@@ -324,14 +330,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-  /*
-  .alternativa-btn .full-text {
-    font-weight: var(--peso-fonte-botoes);
-    flex: 1;
-    margin-top: 0.22rem;
-    white-space: normal;
-  }*/
-
   .alternativa-btn:focus {
     outline: none;
     box-shadow: none;
@@ -581,6 +579,10 @@
       max-width: 28rem;
     }
   }
+  .is-mobile-os .alternativa-btn {
+    padding-left: 5ch;
+    text-indent: -2.5ch;
+  }
   </style>
 
 </head>
@@ -683,7 +685,7 @@
               ⏭ Pressione "Pular" caso não saiba a resposta para reduzir a penalidade
             </div>
             <div id="hint-avaliacao" style="display: none">
-              ⭐ Apoie a melhoria do conteúdo avaliando a pergunta no final.
+              ⭐ Apoie a melhoria do conteúdo avaliando a pergunta no final
             </div>
 
             <!-- Box da dica -->
