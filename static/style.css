@@ -32,7 +32,6 @@ body {
     margin: 0;
     padding: 0;
 }
-/*
 footer {
     font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     text-align: center;
@@ -41,7 +40,7 @@ footer {
     color: white;
     background-color: var(--cor-fundo-escuro);
     font-size: 14px;
-}*/
+}
 .footer {
   width: 100%;
   display: flex;
