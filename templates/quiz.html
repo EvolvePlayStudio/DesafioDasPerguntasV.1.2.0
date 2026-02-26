@@ -22,8 +22,8 @@
     --folga-anuncio-topo: 0.5rem;
     --vertical-margin: 1.5rem;
     --small-vertical-margin: 1rem;
-  }
-  @media (max-width: 1000px) { 
+  }/*
+  @media (max-width: 1200px) { 
     :root {
       --altura-barra: 0.9rem;
       --largura-barra: 16rem;
@@ -34,7 +34,7 @@
       --fs-icon-pular: 1.35rem;
       --fs-estrelas: 1.9rem;
     }
-  }
+  }*/
   html, body {
     height: 100%
   }
@@ -683,7 +683,7 @@
               ⏭ Pressione "Pular" caso não saiba a resposta para reduzir a penalidade
             </div>
             <div id="hint-avaliacao" style="display: none">
-              ⭐ Apoie a melhoria do conteúdo avaliando a pergunta no final
+              ⭐ Apoie a melhoria do conteúdo avaliando a pergunta no final.
             </div>
 
             <!-- Box da dica -->
@@ -739,6 +739,6 @@
       </div>
     </div>
 
-    <script type="module" src="{{ url_for('static', filename='quiz.js') }}?v=1.1.9"></script>
+    <script type="module" src="{{ url_for('static', filename='quiz.js') }}?v=1.2.0"></script>
   </body>
 </html>
