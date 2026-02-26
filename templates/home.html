@@ -769,9 +769,6 @@
   <body data-modo-visitante="{{ session.get('visitante', False) | tojson }}">
     <script type='module'>
       import { idsReservados, idsVisitantesReservados } from '../static/utils.js';
-      const modoTesteWrapper = document.getElementById("modo-teste-wrapper");
-      const checkModoTeste = document.getElementById("modo-teste-toggle");
-      const modoTeste = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
       const MODO_VISITANTE_HTML = document.body.dataset.modoVisitante === 'true';
       // Trecho abaixo se repete no html de resultado e login
       const idVisitante = localStorage.getItem("id_visitante");
@@ -786,31 +783,6 @@
         modoVisitante: MODO_VISITANTE_HTML
       }
       const config = window.ADS_CONFIG;
-      
-      // Coloca botão de modo teste
-      function inserirBotaoModoTeste() {
-        // Registra no backend se modo teste for selecionado (apenas para admin)
-        async function registrarModoTeste() {
-          const config = window.ADS_CONFIG;
-          config.registrandoModoTeste = true;
-        
-          sessionStorage.setItem("modo_teste", checkModoTeste.checked);
-          await fetch("/api/modo_teste", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ modo_teste: checkModoTeste.checked})
-          }).catch(() => console.warn("Falha ao registrar modo teste"));
-          config.registrandoModoTeste = false;
-        }
-
-        modoTesteWrapper.style.display = 'flex';
-        if (modoTeste) checkModoTeste.checked = modoTeste;
-        if (checkModoTeste) {
-          registrarModoTeste();
-          checkModoTeste.addEventListener("change", () => {registrarModoTeste()});
-        };
-      }
-    
     </script>
   
   </body>

@@ -171,6 +171,10 @@ const anuncioBannerDireita = document.getElementById("banner-lateral-direita");
   });
 });
 
+const modoTesteWrapper = document.getElementById("modo-teste-wrapper");
+const checkModoTeste = document.getElementById("modo-teste-toggle");
+const modoTeste = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
+
 async function exibirAnuncios() {
   // 1. Obtém o horário atual de Brasília/São Paulo
   const agoraSP = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
@@ -247,7 +251,33 @@ async function exibirAnuncios() {
     console.error("Falha ao carregar anúncios:", erro);
   }
 }
-if (!window.ADS_CONFIG.isMobile) exibirAnuncios();
+
+// Coloca botão de modo teste
+function inserirBotaoModoTeste() {
+  // Registra no backend se modo teste for selecionado (apenas para admin)
+  async function registrarModoTeste() {
+    const config = window.ADS_CONFIG;
+    config.registrandoModoTeste = true;
+  
+    sessionStorage.setItem("modo_teste", checkModoTeste.checked);
+    await fetch("/api/modo_teste", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ modo_teste: checkModoTeste.checked})
+    }).catch(() => console.warn("Falha ao registrar modo teste"));
+    config.registrandoModoTeste = false;
+  }
+
+  modoTesteWrapper.style.display = 'flex';
+  if (modoTeste) checkModoTeste.checked = modoTeste;
+  if (checkModoTeste) {
+    registrarModoTeste();
+    checkModoTeste.addEventListener("change", () => {registrarModoTeste()});
+  };
+}
+
+if (window.ADS_CONFIG.isAdmin && !MODO_VISITANTE) inserirBotaoModoTeste()
+else if (!window.ADS_CONFIG.isMobile) exibirAnuncios();
 
 async function iniciarQuiz(event) {
   function desbloquearBotoes() {
