@@ -522,6 +522,9 @@
   }
   /* Responsivo em smartphones */
   @media (max-width: 1200px) {
+    body, .container-principal {
+      overflow-x: hidden;
+    }
     .quiz-grid-layout {
       grid-template-columns: 0.9fr;
       justify-content: center;
@@ -544,30 +547,25 @@
       left: calc(50% + var(--largura-barra) / 2 + 0.6rem);
     }
     .quiz-container {
+      padding: 2rem 1.5rem; /* Depois ver a questão dos valores diferentes aqui, mas lembrar que no smartphones, muito padding horizontal pode fazer o layout de quiz expandir para as laterais quando vai mostrar as estrelas de avaliação */
       margin-top: -0.5rem;
       width: 90%;
-      max-width: 90%; /* Não está funcionando aparentemente para limitar o crecimento horizontal */
+      max-width: 90% !important; /* Não está funcionando aparentemente para limitar o crecimento horizontal */
     }
     .alternativa-btn strong {
       display: inline-block;
       margin-top: 0.22rem;
     }
-    /*
-    .estrela {
-      padding: 0 1.4rem;
-    }*/
-
     #avaliacao {
-      gap: 0.8rem;
+      padding-left: 0;
+      padding-right: 0;
     }
     .estrela {
-      padding: 0 1rem;
+      padding: 0 1.2rem;
     }
     #dica-box, #nota-box, #respostas-aceitas-box {
       padding: 0.75rem 0.5rem;
     }
-
-
     #dica-icon img {
       width: 1rem;
       height: 1rem;
@@ -706,11 +704,11 @@
             
             <!-- Estrelas para avaliação -->
             <div id="avaliacao">
-              <span class="estrela" data-valor="1">☆</span>
+              <span class="estrela" data-valor="1" style="padding-left: 0">☆</span>
               <span class="estrela" data-valor="2">☆</span>
               <span class="estrela" data-valor="3">☆</span>
               <span class="estrela" data-valor="4">☆</span>
-              <span class="estrela" data-valor="5">☆</span>
+              <span class="estrela" data-valor="5" style="padding-right: 0">☆</span>
             </div>
 
             <!-- Caixa de texto para envio de comentário de feedback -->
