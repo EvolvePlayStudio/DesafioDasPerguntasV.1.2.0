@@ -400,7 +400,7 @@
   .btn-finalizar{
     background: var(--bg-botao-vermelho);
   }
-  .btn-pular:hover, .btn-proxima:hover, .btn-enviar.chutar:hover {
+  .btn-pular:hover, .btn-proxima:hover {
     background: var(--bg-hover-botao-login);
   }
   .btn-finalizar:hover {
@@ -521,10 +521,9 @@
     display: none;
   }
   /* Responsivo em smartphones */
-  @media (max-width: 1200px) {
+  @media (max-width: 1000px) {
     .quiz-grid-layout {
-      grid-template-columns: 0.9fr;
-      justify-content: center;
+      grid-template-columns: 1fr;
     }
     #alternativas-container {
       grid-template-columns: 1fr; /* Uma por linha no celular */
@@ -545,29 +544,16 @@
     }
     .quiz-container {
       margin-top: -0.5rem;
-      width: 90%;
-      max-width: 90%; /* Não está funcionando aparentemente para limitar o crecimento horizontal */
+      width: 85%;
+      max-width: 25rem;
     }
     .alternativa-btn strong {
       display: inline-block;
       margin-top: 0.22rem;
     }
-    /*
     .estrela {
       padding: 0 1.4rem;
-    }*/
-
-    #avaliacao {
-      gap: 0.8rem;
     }
-    .estrela {
-      padding: 0 1rem;
-    }
-    #dica-box, #nota-box, #respostas-aceitas-box {
-      padding: 0.75rem 0.5rem;
-    }
-
-
     #dica-icon img {
       width: 1rem;
       height: 1rem;

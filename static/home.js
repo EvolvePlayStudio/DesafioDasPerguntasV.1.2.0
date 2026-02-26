@@ -1,7 +1,7 @@
 import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, idsReservados, exibirMensagem, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
 import { playSound } from "./sound.js";
 
-// console.log("ID de visitante: ", localStorage.getItem("id_visitante"));
+console.log("ID de visitante: ", localStorage.getItem("id_visitante"));
 
 let permitir_escolher_tema = false
 let tema_atual = null;
