@@ -51,7 +51,8 @@ footer {
   height: var(--major-footer-h);
   bottom: 0;
   left: 0;
-  right: 0; 
+  right: 0;
+  z-index: 20;
 }
 footer a {
     text-decoration: none;

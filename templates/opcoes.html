@@ -1,34 +1,10 @@
 <!DOCTYPE html><html lang="pt-BR">
 <head>
-  <!--
-  <meta charset="UTF-8"/>
-
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/Favicon.png') }}">
-
-  <meta name="description" content="Experimente mais de 1000 perguntas em inúmeros temas científicos e populares, acumule pontos e suba de ranking">
-
-  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17529321916"></script> <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'AW-17529321916'); </script>
-  -->
-
   {% include 'cabecalho_comum.html' %}
   <title>Opções - Desafio das Perguntas</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
   <style>
-    /* Footer inferior */
-    .footer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: var(--footer-h);
-      background: var(--cor-fundo-escuro);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 20;
-      box-shadow: 0 -2px 6px rgba(0,0,0,0.35);
-    }
     /* Botão voltar */
     .btn-voltar-menu {
       width: 40%;
@@ -60,7 +36,7 @@
       color: #ffffff;
       min-height: 100vh;
     }
-    main#opcoes {
+    main {
       max-width: 900px;
       margin: 0 auto;
       padding: 1.5rem 1rem 2.5rem;
@@ -144,13 +120,12 @@
     }
     .temas-interesse {
       margin-top: 0.8rem;
-
       display: grid;
       grid-template-columns: repeat(6, 1fr); /* 6 por linha */
       column-gap: 1.2rem; /* espaço horizontal */
       row-gap: 0.6rem;    /* espaço vertical */
-
       font-size: 0.9rem;
+      margin-bottom: 1rem;
     }
     .temas-interesse label {
       display: flex;
