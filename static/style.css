@@ -33,9 +33,10 @@
     text-align: center;
 }
 body {
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
 }
+/* Footer com links */
 footer {
   font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   text-align: center;
@@ -46,6 +47,7 @@ footer {
   background-color: var(--cor-fundo-escuro);
   font-size: 14px;
 }
+/* Footer com botões */
 .footer {
   /*width: 100dvw;*/
   box-sizing: border-box; /* importante para centralizar botões do footer que possuem padding */

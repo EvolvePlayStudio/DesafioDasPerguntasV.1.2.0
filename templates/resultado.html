@@ -15,7 +15,6 @@
       --ads-container-width: 200px;
       --ads-container-height: 420px;
       --container-height: calc(100dvh - 4.5rem - 3rem);
-      --fs-aux: 0.8rem;
     }
     @media(max-width: 1200px) {
       :root {
@@ -71,6 +70,7 @@
       margin: 5px 0;
     }
     .perguntas-revisao {
+      font-size: var(--fs-base);
       margin-top: 30px;
       font-family: "Noto Serif", Roboto, serif, sans-serif;
       flex: 1;
@@ -148,7 +148,7 @@
       position: absolute;
       top: 0.5em;
       padding: 0.2rem 0.4rem;
-      font-size: var(--fs-aux);
+      font-size: calc(var(--fs-aux) - 0.05rem);
       font-weight: bold;
       color: white;
       border-radius: 0.2rem;
@@ -166,7 +166,7 @@
       background-color: #e44d26;
     }
     .anuncio-banner p {
-      font-size: var(--fs-aux); 
+      font-size: calc(var(--fs-aux) - 0.05rem); 
       font-weight: bold; 
       color: black; 
       margin: 10px 0; 
@@ -195,6 +195,7 @@
     }
     .btn {
       flex: 1;
+      font-size: var(--fs-emph);
       max-width: 220px;
       text-align: center;
       padding: 0.8rem;
@@ -204,7 +205,6 @@
       font-weight: var(--peso-fonte-botao);
       border-radius: 8px;
       text-decoration: none;
-      font-size: 18px;
       transition: background 0.3s;
     }
     .btn:hover {
