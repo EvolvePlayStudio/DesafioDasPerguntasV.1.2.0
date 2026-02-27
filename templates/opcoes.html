@@ -220,6 +220,15 @@
     .btn-footer:hover {
       background: var(--bg-hover-botao-login)
     }
+    #input-email {
+      width: 15rem;
+      max-width: 90dvw;
+      padding: 0.6rem;
+      border-radius: 6px;
+      border: none;
+      margin-top: 0.6rem;
+      margin-bottom: 0.2rem;
+    } 
 
   </style>
     <!-- Cabeçalho da página -->
@@ -247,20 +256,7 @@
         <div class="opcao-item opcao-item-coluna" style="margin-top: 0.8rem;">
           <label class="opcao-label" for="novo-email">Novo e-mail</label>
 
-          <input
-            type="email"
-            id="novo-email"
-            placeholder="Digite o novo e-mail"
-            style="
-              width: 100%;
-              max-width: 420px;
-              padding: 0.6rem;
-              border-radius: 6px;
-              border: none;
-              margin-top: 0.6rem;
-              margin-bottom: 0.2rem;
-            "
-          />
+          <input id="input-email" type="email" id="novo-email" placeholder="Digite o novo e-mail" maxlength="40">
 
           <div class="opcao-descricao opcao-descricao-sem-recuo">
             Será necessário confirmar o novo e-mail após alteração
