@@ -24,9 +24,6 @@
       background: var(--bg-hover-botao-login);
       transform: translateY(-1px);
     }
-    :root {
-      --footer-h: 64px;
-    }
     /* ===== BASE ===== */
     body {
       width: 100%;
@@ -44,21 +41,22 @@
       flex-direction: column;
       gap: 1.6rem;
       flex: 1;
-      padding-bottom: calc(var(--footer-h) + 12px);
+      padding-bottom: calc(var(--major-footer-h) + 0.75rem);
+      margin-top: 0.5rem;
     }
     /* ===== HEADER OPÇÕES ===== */
     .opcoes-header {
-        width: 100%;
-        background: var(--cor-fundo-escuro);
-        border-bottom: 1px solid rgba(255,255,255,0.08);
+      width: 100%;
+      background: var(--cor-fundo-escuro);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
     }
     .opcoes-header-conteudo {
-        max-width: none;        /* REMOVE a centralização */
-        margin: 0;
-        padding: 0.9rem 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
+      max-width: none;        /* REMOVE a centralização */
+      margin: 0;
+      padding: 0.9rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
     }
     .opcoes-icon {
         width: 26px;
@@ -68,9 +66,6 @@
         font-size: 1.1rem;
         font-weight: 700;
     }
-    main#opcoes {
-        margin-top: 0.5rem;
-    }
     /* ===== RESPONSIVO ===== */
     @media (max-width: 600px) {
       main#opcoes {
@@ -79,6 +74,15 @@
     }
 
     /* ===== OPÇÕES ===== */
+    #input-email {
+      width: 15rem;
+      max-width: 90dvw;
+      padding: 0.6rem;
+      border-radius: 6px;
+      border: none;
+      margin-top: 0.6rem;
+      margin-bottom: 0.2rem;
+    }
     .opcoes-grupo {
       display: flex;
       flex-direction: column;
@@ -139,9 +143,9 @@
       grid-template-columns: repeat(4, 1fr);
       }
     }
-    @media (max-width: 600px) {
+    @media (max-width: 650px) {
       .temas-interesse {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
       }
     }
     .opcoes-acoes {
@@ -152,7 +156,7 @@
     .opcoes-status {
       position: fixed;
       left: 50%;
-      bottom: calc(var(--footer-h) + 12px);
+      bottom: calc(var(--major-footer-h) + 0.75rem);
       transform: translateX(-50%);
       padding: 0.45rem 0.9rem;
       border-radius: 6px;
@@ -200,7 +204,7 @@
 
     /* ===== Footer ===== */
     .footer-duplo {
-      gap: 0.8rem;
+      gap: 1rem;
       padding: 0 0.8rem;
     }
     .btn-footer {
@@ -219,15 +223,6 @@
     }
     .btn-footer:hover {
       background: var(--bg-hover-botao-login)
-    }
-    #input-email {
-      width: 15rem;
-      max-width: 90dvw;
-      padding: 0.6rem;
-      border-radius: 6px;
-      border: none;
-      margin-top: 0.6rem;
-      margin-bottom: 0.2rem;
     } 
 
   </style>

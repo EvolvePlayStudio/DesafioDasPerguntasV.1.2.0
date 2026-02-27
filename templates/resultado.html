@@ -15,10 +15,15 @@
       --ads-container-width: 200px;
       --ads-container-height: 420px;
       --container-height: calc(100dvh - 4.5rem - 3rem);
-      --fs-aux: 0.80rem;
-      --fs-base: 0.95rem;
-      --fs-emph: 1.10rem;
-      --fs-title: 1.25rem;
+      --fs-aux: 0.8rem;
+    }
+    @media(max-width: 1200px) {
+      :root {
+      --fs-aux: 0.75rem;
+      --fs-base: 0.85rem;
+      --fs-emph: 1.00rem;
+      --fs-title: 1.15rem;
+      }
     }
     body {
       font-family: "Noto Serif", Roboto, serif, sans-serif;
@@ -55,6 +60,7 @@
       color: black;
     }
     .pontuacao {
+      font-size: var(--fs-base);
       margin: 20px 0;
       padding: 1rem;
       background: #f0f0f0;

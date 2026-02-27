@@ -20,6 +20,10 @@
     --major-footer-h: 4.5rem;
     --peso-fonte-padrao: 500;
     --peso-fonte-botoes: 700;
+    --fs-aux: 0.85rem;
+    --fs-base: 0.95rem;
+    --fs-emph: 1.10rem;
+    --fs-title: 1.25rem;
 }
 .mensagem {
     color: red;
@@ -33,16 +37,17 @@ body {
     padding: 0;
 }
 footer {
-    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    text-align: center;
-    font-weight: bold;
-    padding: 1rem;
-    color: white;
-    background-color: var(--cor-fundo-escuro);
-    font-size: 14px;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  text-align: center;
+  justify-content: center;
+  font-weight: bold;
+  padding: 1rem;
+  color: white;
+  background-color: var(--cor-fundo-escuro);
+  font-size: 14px;
 }
 .footer {
-  width: 100dvw;
+  /*width: 100dvw;*/
   box-sizing: border-box; /* importante para centralizar botões do footer que possuem padding */
   display: flex;
   background: var(--cor-fundo-escuro); 
