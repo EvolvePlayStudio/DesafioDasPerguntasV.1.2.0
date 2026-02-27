@@ -15,14 +15,14 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
+      min-height: 100dvh;
     }
     .container {
       max-width: 500px;
       background: var(--cor-fundo-claro);
-      padding: 1.6rem;
       border-radius: 12px;
       box-shadow: var(--config-sombra);
+      padding: 1.6rem;
       margin: 2rem;
     }
     h2 {
@@ -114,6 +114,9 @@
       .pix-box {
         font-size: var(--fs-base);
       }
+      .container {
+        margin: 1.5dvw;
+      }
     }
   </style>
 </head>
@@ -155,7 +158,6 @@
     </div>
 
     <div class="success" id="successMsg">Chave PIX copiada com sucesso!</div>
-    
   </div>
     
   <script type="module">
@@ -172,7 +174,7 @@
     }
     window.voltarParaHome = function () {
       playSound("click");
-      window.location.href = '/home'
+      window.location.href = '/home';
     }
   </script>
 </body>
