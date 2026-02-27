@@ -43,8 +43,9 @@ btn_voltar.addEventListener("click", () => {
 
 // Implementa a função para selecionar ou desselecionar todas as perguntas
 btn_marcar_todas.addEventListener("click", () => {
-  playSound("click");
   const linhas = tabela.querySelectorAll("tr");
+  if (linhas.length <= 1) return;
+  playSound("click");
   
   if (btn_marcar_todas.textContent === 'Marcar Todas') {
     linhas.forEach(linha => {
