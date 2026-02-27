@@ -197,7 +197,7 @@
         justify-content: center;
       }
       .escala-labels span {
-        font-size: calc(var(--fs-min) - 0.25rem);
+        font-size: var(--fs-min);
       }
     }
   </style>
@@ -225,12 +225,12 @@
           </select>
         </div>
       </section>
-
+      
       <!-- Progresso total -->
       <section class="lista-temas" style="margin-bottom: -0.5rem;">
         <div class="tema-item">
           <div class="tema-info">
-            <span class="progresso-label" style="margin-bottom: 0.4rem;">Progresso</span>
+            <span class="progresso-label" style="margin-bottom: 0.4rem;">🚀 Progresso</span>
             <span id="pontos-totais" class="tema-pontos">0 / 60000 pts</span>
           </div>
           <div class="barra-container barra-referencia">
@@ -238,22 +238,22 @@
           </div>
         </div>
       </section>
-
+      
       <!-- Progresso nos temas -->
       <section id="lista-temas" class="lista-temas"></section>
       <script type="module">
-        import { temas_disponiveis } from '../static/utils.js'
+        import { simbolosTemas, temas_disponiveis } from '../static/utils.js'
         const container = document.getElementById("lista-temas");
         const fragment = document.createDocumentFragment();
-
+        
         temas_disponiveis.forEach(tema => {
           const div = document.createElement("div");
           div.className = "tema-item";
           div.dataset.tema = tema;
-
+          const emoji_tema = simbolosTemas[tema] ?? "";
           div.innerHTML = `
             <div class="tema-info">
-              <span class="tema-label">${tema}</span>
+              <span class="tema-label">${emoji_tema} ${tema}</span>
               <span class="tema-pontos">0 / 5000 pts</span>
             </div>
             <section class="escala-ranking">

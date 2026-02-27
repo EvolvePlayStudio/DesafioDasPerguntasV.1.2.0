@@ -82,18 +82,41 @@ footer a:hover {
   background: var(--cor-fundo-claro);
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.06);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+}
+.header-content-politica-de-privacidade {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: -0.5rem;
+  margin-bottom: -0.5rem;
 }
 .h1-politica-de-privacidade {
-  margin: 0 0 8px;
   font-size: 1.6rem;
 }
-.h2-politica-de-privacidade { margin-top: 20px; font-size: 1.05rem; }
-.p-politica-de-privacidade { line-height: 1.5; font-weight: var(--peso-fonte-padrao ); font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
-.li-politica-de-privacidade { margin-left: -38px; margin-top: 5px; font-weight: var(--peso-fonte-padrao ); }
-.ul-politica-de-privacidade { margin: 8px 0 16px 20px; }
-.header-content-politica-de-privacidade { display: flex; justify-content: space-between; }
-.last-update {font-size: 0.9rem; color: var(--cor-textos-pequenos); font-weight: 500; margin-top: 8px}
+.last-update {
+  font-size: 0.9rem;
+  color: var(--cor-textos-pequenos);
+  font-weight: 500;
+  margin-top: 0.18rem;
+}
+.h2-politica-de-privacidade {
+  margin-top: 20px;
+  font-size: 1.05rem;
+}
+.p-politica-de-privacidade {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: var(--peso-fonte-padrao);
+}
+.li-politica-de-privacidade {
+  margin-left: -38px;
+  margin-top: 5px;
+  font-weight: var(--peso-fonte-padrao);
+}
+.ul-politica-de-privacidade {
+  margin: 8px 0 16px 20px;
+}
 .html-politica-de-privacidade, .body-politica-de-privacidade {
   height: 100%;
   display: flex;

@@ -73,7 +73,7 @@ async function animarBarrasSequencialmente(pontuacoes) {
   for (const temaItem of temas) {
     const tema = temaItem.dataset.tema;
     const pontos = pontuacoes[tema] || 0;
-    if (pontos === 0) continu
+    if (pontos === 0) continue;
 
     const barraTema = temaItem.querySelector(".barra-progresso");
     const spanPontosTema = temaItem.querySelector(".tema-pontos");
@@ -139,7 +139,6 @@ async function buscarPontuacoesBackend() {
 
     const dados = await res.json();
     return dados || {};
-
   }
   catch (erro) {
     console.error("Falha ao buscar pontuações do servidor:", erro);

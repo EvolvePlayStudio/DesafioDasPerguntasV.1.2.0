@@ -1,5 +1,5 @@
 import { playSound, playKeySound } from "./sound.js";
-import { atualizarAnuncios, registrarInteracaoAnuncio } from "./utils.js";
+import { atualizarAnuncios, registrarInteracaoAnuncio, simbolosTemas} from "./utils.js";
 
 // Variáveis relacionadas aos anúncios
 const tema_atual = sessionStorage.getItem("tema_atual");
@@ -26,7 +26,6 @@ setInterval(() => {
 
 // Outras variáveis
 const MODO_VISITANTE = sessionStorage.getItem('modoVisitante') === "true";
-
 const perguntas_respondidas = JSON.parse(sessionStorage.getItem("perguntas_respondidas"));
 const tipo_pergunta = sessionStorage.getItem("tipo_pergunta").toLowerCase();
 const pontuacoes_jogador = MODO_VISITANTE ? JSON.parse(localStorage.getItem("pontuacoes_visitante")) : JSON.parse(sessionStorage.getItem("pontuacoes_usuario"));
@@ -79,7 +78,8 @@ const resultado = {
     perguntas_respondidas: perguntas_respondidas
 };
 
-document.getElementById("tema-perguntas").textContent = resultado.tema;
+const emojiTema = simbolosTemas[resultado.tema];
+document.getElementById("tema-perguntas").textContent = `${emojiTema} ${resultado.tema}`;
 document.getElementById("pontuacao-anterior").textContent = resultado.pontuacaoAnterior;
 document.getElementById("pontuacao-final").textContent = resultado.pontuacaoFinal;
 const label_saldo = document.getElementById("pontuacao-saldo")
