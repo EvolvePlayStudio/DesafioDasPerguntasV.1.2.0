@@ -116,6 +116,21 @@ else {
 🎓 Estudante
 🧙‍♂️ Sábio
 🌟 Lenda
+
+Ícones para temas
+Tema Opção 1 (Direto/Clássico) Opção 2 (Simbólico/Moderno)
+Artes 🎨 🎭 
+Astronomia 🪐 🔭
+Biologia 🧬 🌿
+Esportes 🏆 ⚽
+Filosofia 🗿 🧠
+Física ⚛️ ⚡
+Geografia 🌍 🗺️
+História 🏛️ 📜
+Mídia 📺 📱
+Música 🎵 🎸
+Química 🧪 ⚗️
+Variedades 🎲 ❓
 */
 
 // Renderiza os botões do header
