@@ -17,29 +17,26 @@
       align-items: center;
       min-height: 100vh;
     }
-
     .container {
       max-width: 500px;
       background: var(--cor-fundo-claro);
-      padding: 30px;
+      padding: 1.6rem;
       border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      margin-top: 2rem;
-      margin-bottom: 2rem;
+      box-shadow: var(--config-sombra);
+      margin: 2rem;
     }
-
     h2 {
       color: black;
-      margin-bottom: 15px;
+      margin-top: 0;
+      padding-top: 0;
+      margin-bottom: 1.2rem;
       text-align: center;
     }
-
     p {
       color: black;
       line-height: 1.5;
       margin-bottom: 20px;
     }
-
     .pix-box {
       background: #f0f0f0;
       border-radius: 8px;
@@ -61,6 +58,7 @@
       cursor: pointer;
       transition: background 0.3s;
       font-size: 0.95em;
+      font-weight: bold;
     }
     button:hover {
       background: #09610c;
@@ -107,9 +105,15 @@
       margin-top: 15px;
     }
     .pix-box {
+      font-size: var(--fs-emph);
       max-width: 100%;
       margin-left: auto;
       margin-right: auto;
+    }
+    @media(max-width: 1200px) {
+      .pix-box {
+        font-size: var(--fs-base);
+      }
     }
   </style>
 </head>
@@ -121,16 +125,16 @@
     </p>
 
     <p><strong>Valores sugeridos:</strong></p>
-      <ul>
-        <li>❤️ R$ 5/mês – ajuda simbólica </li>
-        <li>☕ R$ 15/mês – apoio recorrente </li>
-        <li>🚀 R$ 30/mês – incentivo ao projeto </li>
-      </ul>
+    <ul class="ul-politica-de-privacidade">
+      <li class="li-politica-de-privacidade">❤️ R$ 5/mês – ajuda simbólica </li>
+      <li class="li-politica-de-privacidade">☕ R$ 15/mês – apoio recorrente </li>
+      <li class="li-politica-de-privacidade">🚀 R$ 30/mês – incentivo ao projeto </li>
+    </ul>
     
     <p>Caso não possa contribuir financeiramente, considere outras formas de apoio como:</p>
-      <ul>
-        <li>Envio de feedbacks e sugestões</li>
-        <li>Indicação do site a outras pessoas</li>
+      <ul class="ul-politica-de-privacidade">
+        <li class="li-politica-de-privacidade">Envio de feedbacks e sugestões</li>
+        <li class="li-politica-de-privacidade">Indicação do site a outras pessoas</li>
       </ul>
 
     <p>Toda forma de apoio contribui para a evolução do projeto, seja por doações, feedbacks ou uso contínuo da plataforma.</p>

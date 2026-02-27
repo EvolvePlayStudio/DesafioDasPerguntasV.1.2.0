@@ -16,10 +16,12 @@
     --cor-pagina-selecionada: gold;
     --cor-textos-pequenos: rgb(36, 36, 36);
     --vermelho-tela-quiz: rgb(255, 51, 15);
+    --config-sombra: 0 0 15px rgba(0,0,0,0.3);
     /* Tamanhos */
     --major-footer-h: 4.5rem;
     --peso-fonte-padrao: 500;
     --peso-fonte-botoes: 700;
+    --fs-min: 0.75rem;
     --fs-aux: 0.85rem;
     --fs-base: 0.95rem;
     --fs-emph: 1.10rem;
@@ -70,10 +72,14 @@ footer a:hover {
     text-decoration: underline;
 }
 .main-politica-de-privacidade {
-  padding-top: 2rem;
-  padding-bottom: 2rem;
+  padding: 2rem;
   box-sizing: border-box;
   overflow-y: auto;
+}
+@media(max-width: 1200px) {
+  .main-politica-de-privacidade {
+    padding: 1rem;
+  }
 }
 .content-politica-de-privacidade {
   max-width: 1000px;
@@ -89,7 +95,7 @@ footer a:hover {
 .li-politica-de-privacidade { margin-left: -38px; margin-top: 5px; font-weight: var(--peso-fonte-padrao ); }
 .ul-politica-de-privacidade { margin: 8px 0 16px 20px; }
 .header-content-politica-de-privacidade { display: flex; justify-content: space-between; }
-.last-update {font-size: 0.9rem; color: var(--cor-textos-pequenos); font-weight: 500; }
+.last-update {font-size: 0.9rem; color: var(--cor-textos-pequenos); font-weight: 500; margin-top: 8px}
 .html-politica-de-privacidade, .body-politica-de-privacidade {
   height: 100%;
   display: flex;

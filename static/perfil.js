@@ -4,9 +4,8 @@ import { pontuacaoTemaPadraoVisitantes, sincronizarPontuacoesVisitante} from "./
 const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === "true";
 let pontuacoes = {};
 let animando = false;
-const select = document.getElementById("ordenacao");
-let totalAcumulado = 0;
 let temas = document.querySelectorAll(".tema-item");
+const select = document.getElementById("ordenacao");
 const TEMAS_MAX_PONTOS = 5000;
 const TOTAL_MAX_PONTOS = TEMAS_MAX_PONTOS * (temas.length - 1);
 const barraProgressoTotal = document.getElementById("barra-progresso-total");
@@ -67,16 +66,14 @@ async function animarBarrasSequencialmente(pontuacoes) {
   const totalFinal = Object.values(pontuacoes).reduce((acc, val) => acc + val, 0);
   const percentualTotal = Math.min((totalFinal / TOTAL_MAX_PONTOS) * 100, 100);
 
+  // Animação da barra de progresso total
   animarBarraAte(barraProgressoTotal, percentualTotal),
-  animarNumero(spanPontosTotais, 0, totalFinal, 1500, TOTAL_MAX_PONTOS)
+  animarNumero(spanPontosTotais, 0, totalFinal, 7000, TOTAL_MAX_PONTOS)
 
   for (const temaItem of temas) {
     const tema = temaItem.dataset.tema;
     const pontos = pontuacoes[tema] || 0;
-    if (pontos === 0) continue;
-    //const totalAnterior = totalAcumulado;
-    totalAcumulado += pontos;
-    //const percentualTotal = Math.min((totalAcumulado / TOTAL_MAX_PONTOS) * 100, 100)
+    if (pontos === 0) continu
 
     const barraTema = temaItem.querySelector(".barra-progresso");
     const spanPontosTema = temaItem.querySelector(".tema-pontos");
@@ -84,19 +81,10 @@ async function animarBarrasSequencialmente(pontuacoes) {
     const percentualTema = Math.min((pontos / TEMAS_MAX_PONTOS) * 100, 100);
     const duracao = calcularDuracao(percentualTema);
 
-    //spanPontos.textContent = `${pontos} / ${TEMAS_MAX_PONTOS} pts`;
-
     barraTema.style.transition = "none";
     barraTema.style.width = "0%";
     barraTema.offsetWidth;
-
     barraTema.style.transition = `width ${duracao}ms cubic-bezier(0.4,0,0.2,1)`;
-
-    /*
-    temaItem.style.opacity = "1";
-    temaItem.style.transform = "translateY(0)";
-    await new Promise(resolve => setTimeout(resolve, 300));*/
-
     await Promise.all([
       animarBarraAte(barraTema, percentualTema),
       animarNumero(spanPontosTema, 0, pontos, duracao, TEMAS_MAX_PONTOS),
