@@ -22,11 +22,25 @@
     --major-footer-h: 4.5rem;
     --peso-fonte-padrao: 500;
     --peso-fonte-botoes: 700;
+    /*
     --fs-min: 0.75rem;
     --fs-aux: 0.85rem;
     --fs-base: 0.95rem;
     --fs-emph: 1.10rem;
-    --fs-title: 1.25rem;
+    --fs-title: 1.25rem;*/
+    
+    --fs-min: clamp(0.1rem, 3dvw, 0.75rem);
+    --fs-aux: clamp(0.1rem, 4dvw, 0.85rem);
+    --fs-base: clamp(0.1rem, 6dvw, 0.95rem);
+    --fs-emph: clamp(0.1rem, 8dvw, 1.10rem);
+    --fs-title: clamp(0.1rem, 10dvw, 1.25rem);
+
+    --fs-min:         clamp(0.60rem, 0.85dvw, 0.70rem);
+    --fs-aux:         clamp(0.65rem, 1.0dvw, 0.80rem);
+    --fs-base:        clamp(0.70rem, 1.2dvw, 0.90rem);
+    --fs-emph:        clamp(0.80rem, 1.6dvw, 1.05rem);
+    --fs-title:       clamp(0.95rem, 2.2dvw, 1.20rem);
+    --fs-max:         clamp(1.40rem, 2.8dvw, 1.60rem);
 }
 .mensagem {
     color: red;
@@ -66,8 +80,9 @@ footer {
   z-index: 20;
 }
 footer a {
-    text-decoration: none;
-    color: white;
+  font-size: var(--fs-base);
+  text-decoration: none;
+  color: white;
 }
 footer a:hover {
     text-decoration: underline;
@@ -93,10 +108,11 @@ footer a:hover {
   margin-bottom: -0.5rem;
 }
 .h1-politica-de-privacidade {
-  font-size: 1.6rem;
+  font-size: var(--fs-max);
 }
 .last-update {
   font-size: 0.9rem;
+  font-size: var(--fs-aux);
   color: var(--cor-textos-pequenos);
   font-weight: 500;
   margin-top: 0.18rem;
@@ -105,18 +121,22 @@ footer a:hover {
 .h2-politica-de-privacidade {
   margin-top: 20px;
   font-size: 1.05rem;
+  font-size: var(--fs-emph);
 }
 .p-politica-de-privacidade {
+  font-size: var(--fs-base);
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   line-height: 1.5;
   font-weight: var(--peso-fonte-padrao);
 }
 .li-politica-de-privacidade {
+  font-size: var(--fs-base);
   margin-left: -38px;
   margin-top: 5px;
   font-weight: var(--peso-fonte-padrao);
 }
 .ul-politica-de-privacidade {
+  font-size: var(--fs-base);  
   margin: 8px 0 16px 20px;
 }
 .html-politica-de-privacidade, .body-politica-de-privacidade {
@@ -130,6 +150,7 @@ footer a:hover {
   overflow: hidden;
 }
 @media(max-width: 1200px) {
+  /*
   .h1-politica-de-privacidade {
     font-size: 1.4rem;
   }
@@ -138,7 +159,7 @@ footer a:hover {
   }
   .li-politica-de-privacidade, .p-politica-de-privacidade, .ul-politica-de-privacidade {
     font-size: calc(var(--fs-aux) + 0.05rem);
-  }
+  }*/
   .main-politica-de-privacidade {
     padding: 1.8dvw;
   }
@@ -146,7 +167,8 @@ footer a:hover {
     padding: 1rem;
   }
 }
-@media(max-width: 600px) { 
+@media(max-width: 600px) {
+  /*
   .h1-politica-de-privacidade {
     font-size: 1.3rem;
   }
@@ -158,9 +180,10 @@ footer a:hover {
   }
   .last-update {
     font-size: var(--fs-min);
-  }
+  }*/
 }
 @media (max-width: 420px) {
+  /*
   .h1-politica-de-privacidade {
     font-size: 1.1rem;
   }
@@ -172,14 +195,15 @@ footer a:hover {
   }
   .last-update {
     font-size: calc(var(--fs-min) - 0.1rem);
-  }
+  }*/
   footer {
     padding-left: 0.15rem;
     padding-right: 0.15rem;
   }
+  /*
   footer a {
     font-size: calc(var(--fs-aux) - 0.2rem);
     font-size: calc(var(--fs-aux) - 0.4rem);
-  }
+  }*/
 }
 

@@ -16,7 +16,6 @@
       max-width: 100%;
     }
     th, td {
-      font-size: var(--fs-emph);
       font-weight: bold;
       border: 2px solid var(--cor-fundo-escuro);
       padding: 0.7rem;
@@ -24,18 +23,22 @@
     td {
       text-align: center;
       background-color: #e7e0e0;
-      font-size: 0.95rem;
+      /*font-size: 0.95rem;*/
+      font-size: var(--fs-base);
       white-space: nowrap;
     }
     .td-rankings {
       min-width: 2.5rem;
+      min-width: 5dvw;
     }
     th {
-      font-size: 1.10rem;
+      /*font-size: 1.10rem;*/
+      font-size: var(--fs-emph);
       background-color: var(--cor-fundo-padrao);
       color: white;
     }
     
+    /*
     @media (max-width: 1200px) {
       td {
         font-size: calc(var(--fs-aux) + 0.05rem);
@@ -45,13 +48,6 @@
       }
     }
     @media (max-width: 600px) {
-      /*
-      td {
-        font-size: calc(var(--fs-min) + 0.05rem);
-      }
-      th {
-        font-size: calc(var(--fs-aux) + 0.05rem)
-      }*/
       td {
         font-size: calc(var(--fs-min));
       }
@@ -66,7 +62,7 @@
       th {
         font-size: calc(var(--fs-aux) - 0.05rem);
       }
-    }
+    }*/
   </style>
 </head>
 <body class="body-politica-de-privacidade">
