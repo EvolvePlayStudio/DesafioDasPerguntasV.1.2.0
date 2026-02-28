@@ -6,7 +6,7 @@ export const idVisitanteAdmin = '1bfbd5e9-db5f-45bf-bf86-1f1335e9d1cb';
 export const idsVisitantesReservados = ['1bfbd5e9-db5f-45bf-bf86-1f1335e9d1cb'];
 export const simbolosTemas = {Artes: "🎨", Astronomia: "🪐", Biologia: "🧬", Esportes: "⚽",
 Filosofia: "🦉", Física: "⚛️", Geografia: "🌍", História: "📜", Mídia: "📺", Música: "🎵", Química: "🧪", Variedades: "🎲"}
-
+export const simbolosRankings = {Iniciante: "🌱", Aprendiz: "🧩", Estudante: "🎓", Sábio: "🧙‍♂️", Lenda: "🌟"}
 let idUsuario;
 let idVisitante;
 let MODO_VISITANTE;

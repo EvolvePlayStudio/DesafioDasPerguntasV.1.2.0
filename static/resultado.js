@@ -1,5 +1,5 @@
 import { playSound, playKeySound } from "./sound.js";
-import { atualizarAnuncios, registrarInteracaoAnuncio, simbolosTemas} from "./utils.js";
+import { atualizarAnuncios, registrarInteracaoAnuncio, simbolosRankings, simbolosTemas} from "./utils.js";
 
 // Variáveis relacionadas aos anúncios
 const tema_atual = sessionStorage.getItem("tema_atual");
@@ -86,7 +86,8 @@ const label_saldo = document.getElementById("pontuacao-saldo")
 label_saldo.textContent = resultado.saldo;
 label_saldo.style.color = cor_saldo;
 label_saldo.style.fontWeight = peso_fonte_saldo;
-document.getElementById("ranking-atual").textContent = resultado.ranking_atual;
+const emojiRanking = simbolosRankings[resultado.ranking_atual] ?? "";
+document.getElementById("ranking-atual").textContent = `${emojiRanking} ${resultado.ranking_atual}`;
 
 const lista = document.getElementById("lista-perguntas");
 resultado.perguntas_respondidas.forEach((p, i) => {

@@ -1,4 +1,4 @@
-import { atualizarAnuncios, dificuldadesOrdenadas, detectarModoTela, deveEncerrarQuiz, idVisitanteAdmin,  idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio } from "./utils.js"
+import { dificuldadesOrdenadas, detectarModoTela, deveEncerrarQuiz, idVisitanteAdmin,  idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings } from "./utils.js"
 import { playSound, playKeySound } from "./sound.js"
 
 // Envia erros para a base de dados caso ocorram
@@ -140,14 +140,12 @@ let idsPrioritarios = JSON.parse(sessionStorage.getItem('ids_prioritarios') ?? "
 // Seleciona os botões
 botaoLikeNota.addEventListener("click", () => {
   const jaAtivo = botaoLikeNota.classList.contains("ativo");
-
   botaoLikeNota.classList.toggle("ativo", !jaAtivo);
   botaoDislikeNota.classList.remove("ativo");
 });
 
 botaoDislikeNota.addEventListener("click", () => {
   const jaAtivo = botaoDislikeNota.classList.contains("ativo");
-
   botaoDislikeNota.classList.toggle("ativo", !jaAtivo);
   botaoLikeNota.classList.remove("ativo");
 });
@@ -204,7 +202,6 @@ function alterarPontuacaoUsuario(pontuacao_atual, pontuacao_alvo) {
       }
 
       renderizarPontuacaoAtual(pontuacao_atual, incrementoTotal);
-
       ultimaExecucao = timestamp;
     }
 
@@ -238,7 +235,7 @@ function atualizarRankingVisual() {
   rankings_jogador[tema_atual] = info_ranking_atual.ranking;
 
   const pontuacao = pontuacoes_jogador[tema_atual] || 0;
-  let ranking_anterior = "";
+  let ranking_anterior;
   let ranking_proximo;
   let progressoFinal = 100;
   let intervalo;
@@ -278,6 +275,7 @@ function atualizarRankingVisual() {
       barra.style.width = "100%";
       forcarReflow(barra);
     }
+    // Animação da barra ao mante o ranking
     else {
       atualizarTextosRanking();
     }
@@ -286,15 +284,23 @@ function atualizarRankingVisual() {
     await animarBarraAte(progressoFinal);
   }
   function atualizarTextosRanking() {
+    // Carrega emoji e texto do ranking atual
     renderizarRanking(info_ranking_atual.ranking)
-    lblRankingAnterior.textContent = ranking_anterior;
-    lblProximoRanking.textContent = ranking_proximo ? ranking_proximo.ranking : "";
+    // Carrega os emojis dos rankings anterior e próximo
+    const emojiRankingAnterior = ranking_anterior ? simbolosRankings[ranking_anterior.ranking] : "";
+    const emojiProximoRanking = ranking_proximo ? simbolosRankings[ranking_proximo.ranking] : "";
+    // Modifica o texto de rankings anterior e próximo
+    lblRankingAnterior.textContent = ranking_anterior ? `${emojiRankingAnterior} ${ranking_anterior.ranking}` : "";
+    lblProximoRanking.textContent = ranking_proximo ? `${emojiProximoRanking} ${ranking_proximo.ranking}` : "";
   }
   function forcarReflow(elemento) {
     elemento.offsetWidth; // Força o browser a aplicar o estado atual
   }
   function renderizarRanking(textoRankingAtual) {
-    document.querySelectorAll('[data-ui="ranking"]').forEach(el => el.textContent = textoRankingAtual);
+    const emojiRankingAtual = simbolosRankings[textoRankingAtual] ?? "";
+    document.querySelectorAll('[data-ui="ranking"]').forEach(el => {
+      el.textContent = `${emojiRankingAtual} ${textoRankingAtual}`
+    });
   }
 
   // Identifica o ranking anterior alcançado pelo usuário
@@ -302,7 +308,7 @@ function atualizarRankingVisual() {
     if (regras_pontuacao[i].ranking === info_ranking_atual.ranking) {
       // Se não for o primeiro da lista, pega o anterior
       if (i > 0) {
-        ranking_anterior = regras_pontuacao[i - 1].ranking;
+        ranking_anterior = regras_pontuacao[i - 1];
       }
       break;
     }

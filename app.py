@@ -86,10 +86,6 @@ def token_required(f):
 
     return decorated
 
-@app.route('/sw.js')
-def serve_monetag_js():
-    return send_from_directory('static', 'sw.js', mimetype='application/javascript')
-
 @app.route("/alterar-email", methods=["POST"])
 def alterar_email_route():
     conn = cur = None
