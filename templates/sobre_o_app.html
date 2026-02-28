@@ -16,6 +16,7 @@
       max-width: 100%;
     }
     th, td {
+      font-size: var(--fs-emph);
       font-weight: bold;
       border: 2px solid var(--cor-fundo-escuro);
       padding: 0.7rem;
@@ -26,6 +27,9 @@
       font-size: 0.95rem;
       white-space: nowrap;
     }
+    .td-rankings {
+      min-width: 4rem;
+    }
     th {
       font-size: 1.10rem;
       background-color: var(--cor-fundo-padrao);
@@ -33,10 +37,18 @@
     }
     @media (max-width: 1200px) {
       td {
-        font-size: 0.85rem;
+        font-size: calc(var(--fs-aux) + 0.05rem);
       }
       th {
-        font-size: 1rem;
+        font-size: calc(var(--fs-base));
+      }
+    }
+    @media (max-width: 600px) {
+      td {
+        font-size: calc(var(--fs-min) + 0.05rem);
+      }
+      th {
+        font-size: calc(var(--fs-aux) + 0.05rem)
       }
     }
   </style>
@@ -84,35 +96,35 @@
         </thead>
         <tbody>
             <tr>
-              <td style="padding-right: 0.8rem; min-width: 7.5rem;">🌱 Iniciante</td>
+              <td style="padding-right: 1.4rem;" class="td-rankings">🌱 Iniciante</td>
               <td>+120</td>
               <td>+200</td>
               <td>---</td>
               <td>---</td>
             </tr>
             <tr>
-              <td style="padding-right: 0.4rem; min-width: 7.5rem;">🧩 Aprendiz</td>
+              <td style="padding-right: 1.1rem;" class="td-rankings">🧩 Aprendiz</td>
               <td>+80</td>
               <td>+120</td>
               <td>+200</td>
               <td>---</td>
             </tr>
             <tr>
-              <td style="padding-right: 0; min-width: 7.5rem;">🎓 Estudante</td>
+              <td style="padding-right: 0.7;" class="td-rankings">🎓 Estudante</td>
               <td>+40</td>
               <td>+80</td>
               <td>+120</td>
               <td>+200</td>
             </tr>
             <tr>
-              <td style="padding-right: 1.8rem; min-width: 7.5rem;">🧙‍♂️ Sábio</td>
+              <td style="padding-right: 2.5rem;" class="td-rankings">🧙‍♂️ Sábio</td>
               <td>+20</td>
               <td>+40</td>
               <td>+80</td>
               <td>+120</td>
             </tr>
             <tr>
-              <td style="padding-right: 1.7rem; min-width: 7.5rem;">🌟 Lenda</td>
+              <td style="padding-right: 2.4rem;" class='td-rankings'>🌟 Lenda</td>
               <td>0</td>
               <td>+20</td>
               <td>+40</td>

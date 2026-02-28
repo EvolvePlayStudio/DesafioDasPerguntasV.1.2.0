@@ -49,6 +49,7 @@ footer {
   color: white;
   background-color: var(--cor-fundo-escuro);
   font-size: 14px;
+  white-space: nowrap;
 }
 /* Footer com botões */
 .footer {
@@ -129,13 +130,31 @@ footer a:hover {
   overflow: hidden;
 }
 @media(max-width: 1200px) {
+  .h1-politica-de-privacidade {
+    font-size: 1.4rem;
+  }
+  .h2-politica-de-privacidade {
+    font-size: calc(var(--fs-base) + 0.05rem);
+  }
+  .li-politica-de-privacidade, .p-politica-de-privacidade, .ul-politica-de-privacidade {
+    font-size: calc(var(--fs-aux) + 0.05rem);
+  }
   .main-politica-de-privacidade {
     padding: 1.8dvw;
   }
   .content-politica-de-privacidade {
-    padding: 1.2rem;
+    padding: 1rem;
   }
+  
+}
+@media(max-width: 600px) { 
   .h1-politica-de-privacidade {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
+  }
+  .h2-politica-de-privacidade {
+    font-size: calc(var(--fs-aux) + 0.05rem);
+  }
+  .li-politica-de-privacidade, .p-politica-de-privacidade, .ul-politica-de-privacidade {
+    font-size: calc(var(--fs-min) + 0.05rem);
   }
 }
