@@ -40,6 +40,7 @@
       align-items: center;
       min-height: 0;
       padding-top: 1rem;
+      max-height: calc(100dvh - var(--header-height) - var(--footer-height));
     }
     .pesquisa-icon {
       width: 2.2rem;
@@ -185,7 +186,6 @@
       overflow: auto;
       margin-top: 0.8rem;
       align-self: stretch;
-      padding-bottom: 1rem;
     }
     table {
       width: 100%;
@@ -238,9 +238,6 @@
     button:hover {
       background-color: var(--bg-hover-botao-login);
     }
-    .footer {
-      flex-shrink: 0;
-    }
   </style>
 </head>
 <body>
@@ -254,7 +251,6 @@
 
   <!-- Parte central da página -->
   <main>
-    <!-- Campo para escolha do tema -->
     <div class="top-bar">
       <!-- Coluna Esquerda: Tema -->
       <div class="filtro-esquerda">
@@ -322,12 +318,12 @@
         <tbody></tbody>
       </table>
     </div>
+
+    <!-- Layout inferior com os botões -->
+    <div class="footer">
+      <button id="btn-voltar">Voltar ao menu</button>
+    </div>
   </main>
-  
-  <!-- Layout inferior com os botões -->
-  <div class="footer">
-    <button id="btn-voltar">Voltar ao menu</button>
-  </div>
 
   <script type="module" src="{{ url_for('static', filename='pesquisaAvancada.js') }}"></script>
 </body>

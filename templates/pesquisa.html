@@ -11,7 +11,7 @@
       box-sizing: border-box;
     }
     :root {
-      --header-height: 3.35rem;
+      /*--header-height: 3.35rem;*/
       --footer-height: 3.8rem;
       --padding-lateral: 1.4rem;
       --size-checkbox-dificuldades: 1.50;
@@ -388,6 +388,7 @@
     </div>
   </header>
 
+  <!-- Corpo principal da página -->
   <main>
     <!-- Seção de filtros -->
     <div class="top-bar">
@@ -436,18 +437,19 @@
     <!-- Mensagem -->
     <div id="mensagem" style="font-weight: bold; text-align: center; color: white; margin-top: 0.5rem; opacity: 0; cursor: default"></div>  
 
+    <!-- Tabela com informações das perguntas -->
     <div class="tabela-scroll-wrapper">
       <table id="tabela-perguntas">
         <thead>
-            <tr>
-                <th>ID</th>
-                <th>Tema</th>
-                <th>Tópico</th>
-                <th>Enunciado</th>
-                <th>Dificuldade</th>
-                <th>Selecionar</th>
-                <th>Favoritar</th>
-            </tr>
+          <tr>
+            <th>ID</th>
+            <th>Tema</th>
+            <th>Tópico</th>
+            <th>Enunciado</th>
+            <th>Dificuldade</th>
+            <th>Selecionar</th>
+            <th>Favoritar</th>
+          </tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -464,7 +466,7 @@
       <button id="btn-pesquisar">Pesquisar</button>
       <button id="btn-revisar">Revisar</button>
     </div>
-    </div>
+  </div>
   </main>
 
   <script type="module" src="{{ url_for('static', filename='pesquisa.js') }}?v=1.1.0"></script>
