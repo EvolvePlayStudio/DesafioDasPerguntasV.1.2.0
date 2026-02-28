@@ -28,7 +28,7 @@
       white-space: nowrap;
     }
     .td-rankings {
-      min-width: 2.5rem;
+      min-width: 2.2rem;
       min-width: 5dvw;
     }
     th {
@@ -55,14 +55,15 @@
         font-size: calc(var(--fs-aux));
       }
     }
+    */
     @media (max-width: 420px) {
       td {
-        font-size: calc(var(--fs-min) - 0.05rem);
+        font-size: var(--fs-aux);
       }
       th {
-        font-size: calc(var(--fs-aux) - 0.05rem);
+        font-size: var(--fs-base);
       }
-    }*/
+    }
   </style>
 </head>
 <body class="body-politica-de-privacidade">
@@ -103,41 +104,41 @@
           <th>Fácil</th>
           <th>Médio</th>
           <th>Difícil</th>
-          <th>Extremo</th>
+          <th id="nivel-extremo">Extremo</th>
         </tr>
         </thead>
 
         <tbody>
             <tr>
-              <td style="padding-right: 2.2ch;" class="td-rankings">🌱 Iniciante</td>
+              <td style="padding-right: 2.9ch;" class="td-rankings">🌱 Iniciante</td>
               <td>+120</td>
               <td>+200</td>
               <td>---</td>
               <td>---</td>
             </tr>
             <tr>
-              <td style="padding-right: 1.9ch;" class="td-rankings">🧩 Aprendiz</td>
+              <td style="padding-right: 2.6ch;" class="td-rankings">🧩 Aprendiz</td>
               <td>+80</td>
               <td>+120</td>
               <td>+200</td>
               <td>---</td>
             </tr>
             <tr>
-              <td style="padding-right: 1.1ch;" class="td-rankings">🎓 Estudante</td>
+              <td style="padding-right: 1.8ch;" class="td-rankings">🎓 Estudante</td>
               <td>+40</td>
               <td>+80</td>
               <td>+120</td>
               <td>+200</td>
             </tr>
             <tr>
-              <td style="padding-right: 4.4ch;" class="td-rankings">🧙‍♂️ Sábio</td>
+              <td style="padding-right: 5.1ch;" class="td-rankings">🧙‍♂️ Sábio</td>
               <td>+20</td>
               <td>+40</td>
               <td>+80</td>
               <td>+120</td>
             </tr>
             <tr>
-              <td style="padding-right: 4.2ch;" class='td-rankings'>🌟 Lenda</td>
+              <td style="padding-right: 4.9ch;" class='td-rankings'>🌟 Lenda</td>
               <td>0</td>
               <td>+20</td>
               <td>+40</td>
@@ -169,5 +170,10 @@
     {% endif %}
   </footer>
 
+  <script>
+    if (window.innerWidth <= 420) {
+      document.getElementById('nivel-extremo').textContent = 'Ext.'
+    }
+  </script>
 </body>
 </html>

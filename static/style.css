@@ -35,15 +35,15 @@
     --fs-base-min:  0.60rem;
     --fs-emph-min:  0.70rem;
     --fs-title-min: 0.95rem;
-    --fs-max-min:   1.30rem;
+    --fs-max-min:   1.20rem;
 
     /* Valores padrões de fontes */
     --fs-min-standard:       1.00dvw;
-    --fs-aux-standard:       1.20dvw;
-    --fs-base-standard:      1.40dvw;
-    --fs-emph-standard:      1.80dvw;
-    --fs-title-standard:     2.40dvw;
-    --fs-max-standard:       3.00dvw;
+    --fs-aux-standard:       1.50dvw;
+    --fs-base-standard:      1.80dvw;
+    --fs-emph-standard:      2.20dvw;
+    --fs-title-standard:     2.70dvw;
+    --fs-max-standard:       3.30dvw;
 
     /* Valores máximos de fontes */
     --fs-min-max:   0.75rem;
@@ -55,7 +55,7 @@
 
     /* Intervalo para os valores de fontes */
     --fs-min:   clamp(var(--fs-min-min), var(--fs-min-standard), var(--fs-min-max));
-    --fs-aux:   clamp(var(--fs-min-aux), var(--fs-aux-standard), var(--fs-aux-max));
+    --fs-aux:   clamp(var(--fs-aux-min), var(--fs-aux-standard), var(--fs-aux-max));
     --fs-base:  clamp(var(--fs-base-min), var(--fs-base-standard), var(--fs-base-max));
     --fs-emph:  clamp(var(--fs-emph-min), var(--fs-emph-standard), var(--fs-emph-max));
     --fs-title: clamp(var(--fs-title-min), var(--fs-title-standard), var(--fs-title-max));
@@ -186,21 +186,6 @@ footer a:hover {
     padding: 1rem;
   }
 }
-@media(max-width: 600px) {
-  /*
-  .h1-politica-de-privacidade {
-    font-size: 1.3rem;
-  }
-  .h2-politica-de-privacidade {
-    font-size: calc(var(--fs-aux) + 0.05rem);
-  }
-  .li-politica-de-privacidade, .p-politica-de-privacidade, .ul-politica-de-privacidade {
-    font-size: calc(var(--fs-min) + 0.05rem);
-  }
-  .last-update {
-    font-size: var(--fs-min);
-  }*/
-}
 @media (max-width: 420px) {
   /*
   .h1-politica-de-privacidade {
@@ -225,7 +210,7 @@ footer a:hover {
     font-size: calc(var(--fs-aux) - 0.4rem);
   }*/
   .content-politica-de-privacidade {
-    padding: 1rem 0.6rem;
+    padding: 0.4rem;
   }
 }
 /* Menor valor de largura de smartphone para testar no desktop: 305px */
