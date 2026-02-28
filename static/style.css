@@ -160,6 +160,20 @@ footer a:hover {
   .last-update {
     font-size: var(--fs-min);
   }
+}
+@media (max-width: 460px) {
+  .h1-politica-de-privacidade {
+    font-size: 1.1rem;
+  }
+  .h2-politica-de-privacidade {
+    font-size: var(--fs-aux);
+  }
+  .li-politica-de-privacidade, .p-politica-de-privacidade, .ul-politica-de-privacidade {
+    font-size: calc(var(--fs-min) - 0.05rem);
+  }
+  .last-update {
+    font-size: calc(var(--fs-min) - 0.1rem);
+  }
   footer {
     padding-left: 0.15rem;
     padding-right: 0.15rem;
@@ -168,3 +182,4 @@ footer a:hover {
     font-size: calc(var(--fs-aux) - 0.2rem);
   }
 }
+

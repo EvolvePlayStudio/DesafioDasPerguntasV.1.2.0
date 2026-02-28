@@ -28,7 +28,7 @@
       white-space: nowrap;
     }
     .td-rankings {
-      min-width: 4rem;
+      min-width: 2.5rem;
     }
     th {
       font-size: 1.10rem;
@@ -52,18 +52,19 @@
         font-size: calc(var(--fs-aux) + 0.05rem)
       }*/
 
+      .td {
+        font-size: calc(var(--fs-min));
+      }
+      .th {
+        font-size: calc(var(--fs-aux))
+      }
+    }
+    @media (max-width: 460px) {
       td {
-        font-size: calc(var(--fs-min) - 0.1rem);
+        font-size: calc(var(--fs-min) - 0.05rem);
       }
       th {
-        font-size: calc(var(--fs-aux) - 0.1rem)
-      }
-    @media (max-width: 400px) {
-      td {
-        font-size: calc(var(--fs-min) - 0.35rem);
-      }
-      th {
-        font-size: calc(var(--fs-aux) - 0.35rem)
+        font-size: calc(var(--fs-aux) - 0.05rem)
       }
     }
   </style>
