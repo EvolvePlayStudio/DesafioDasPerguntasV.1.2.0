@@ -35,6 +35,7 @@
       background-color: var(--cor-fundo-padrao);
       color: white;
     }
+    
     @media (max-width: 1200px) {
       td {
         font-size: calc(var(--fs-aux) + 0.05rem);
@@ -51,27 +52,26 @@
       th {
         font-size: calc(var(--fs-aux) + 0.05rem)
       }*/
-
-      .td {
+      td {
         font-size: calc(var(--fs-min));
       }
-      .th {
-        font-size: calc(var(--fs-aux))
+      th {
+        font-size: calc(var(--fs-aux));
       }
     }
-    @media (max-width: 380px) {
-      
+    @media (max-width: 420px) {
       td {
         font-size: calc(var(--fs-min) - 0.05rem);
       }
       th {
         font-size: calc(var(--fs-aux) - 0.05rem);
       }
+
       td {
-        font-size: calc(var(--fs-min) - 0.45rem);
+        font-size: 0.2rem;
       }
       th {
-        font-size: calc(var(--fs-aux) - 0.45rem);
+        font-size: 0.2rem;
       }
     }
   </style>
