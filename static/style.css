@@ -157,4 +157,14 @@ footer a:hover {
   .li-politica-de-privacidade, .p-politica-de-privacidade, .ul-politica-de-privacidade {
     font-size: calc(var(--fs-min) + 0.05rem);
   }
+  .last-update {
+    font-size: var(--fs-min);
+  }
+  footer {
+    padding-left: 0.15rem;
+    padding-right: 0.15rem;
+  }
+  footer a {
+    font-size: calc(var(--fs-aux) - 0.2rem);
+  }
 }

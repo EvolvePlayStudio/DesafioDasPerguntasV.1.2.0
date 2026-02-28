@@ -44,11 +44,26 @@
       }
     }
     @media (max-width: 600px) {
+      /*
       td {
         font-size: calc(var(--fs-min) + 0.05rem);
       }
       th {
         font-size: calc(var(--fs-aux) + 0.05rem)
+      }*/
+
+      td {
+        font-size: calc(var(--fs-min) - 0.1rem);
+      }
+      th {
+        font-size: calc(var(--fs-aux) - 0.1rem)
+      }
+    @media (max-width: 400px) {
+      td {
+        font-size: calc(var(--fs-min) - 0.35rem);
+      }
+      th {
+        font-size: calc(var(--fs-aux) - 0.35rem)
       }
     }
   </style>
