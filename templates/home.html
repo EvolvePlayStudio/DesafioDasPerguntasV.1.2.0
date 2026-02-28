@@ -70,12 +70,11 @@
       justify-content: center;
     }
     .status-item {
-      font-size: var(--fs-emph);
+      font-size: 1.05rem;
       display: flex;
       align-items: center;
       gap: 0.3rem;
       font-weight: 700;
-      
       white-space: nowrap;
       user-select: none;
     }
@@ -94,13 +93,15 @@
     }
     .header-left .user-name {
       font-weight: 700;
-      font-size: 1rem;
+      font-size: var(--fs-emph);
+      font-size: 1.05rem;
       color: white;
     }
+    /*
     .header-right nav button {
       font-size: 0.85rem;
-      padding: 0.3rem 0.6rem;
-    }
+      padding: 5.3rem 5.6rem;
+    }*/
     .header-mobile {
       display: none;
       flex-direction: column;
@@ -120,7 +121,7 @@
     .header-mobile .header-up .user-name {
       min-width: 8rem;
       font-weight: 700;
-      font-size: 1rem;
+      font-size: 1.05rem;
       white-space: nowrap;
       text-overflow: ellipsis;
     }
@@ -383,25 +384,7 @@
       margin-top: 0.2rem;
       margin-bottom: 0.2rem;
     }
-    @media (max-width: 1000px) {
-      .header-desktop {
-        display: none;
-      }
-      .header-mobile {
-        display: flex;
-      }
-      .cards-container {
-        grid-template-columns: repeat(2, 1fr);
-        column-gap: 0.5rem;
-      }
-      .card {
-        width: 185px;
-        height: 155px;
-      }
-      .card span {
-        font-size: 14px;
-      }
-    }
+    
     .modo-teste-wrapper {
       display: none;
       align-items: center;
@@ -501,7 +484,44 @@
       .ad-sidebar {
         display: none;
       }
+      .cards-container {
+        grid-template-columns: repeat(3, 1fr);
+        column-gap: 0.5rem;
+      }
     }
+    @media (max-width: 1000px) {
+      .card {
+        width: 185px;
+        height: 155px;
+      }
+      .card span {
+        font-size: 14px;
+      }
+    }
+    @media (max-width: 850px) {
+      .header-desktop {
+        display: none;
+      }
+      .header-mobile {
+        display: flex;
+      }
+      .cards-container {
+        grid-template-columns: repeat(2, 1fr);
+        column-gap: 0.5rem;
+      }
+    }
+    @media (max-width: 420px) {
+      .header-mobile .header-up .user-name {
+        font-size: var(--fs-emph);
+      }
+      .status-item {
+        font-size: var(--fs-emph);
+      }
+      nav button {
+        font-size: var(--fs-base);
+      }
+    }
+    
   </style>
 
   <!-- Calcula rowgap entre os cards de temas -->

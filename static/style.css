@@ -35,9 +35,9 @@
     --fs-emph: clamp(0.1rem, 8dvw, 1.10rem);
     --fs-title: clamp(0.1rem, 10dvw, 1.25rem);
 
-    --fs-min:         clamp(0.60rem, 0.85dvw, 0.70rem);
-    --fs-aux:         clamp(0.65rem, 1.0dvw, 0.80rem);
-    --fs-base:        clamp(0.70rem, 1.2dvw, 0.90rem);
+    --fs-min:         clamp(0.60rem, 0.85dvw, 0.75rem);
+    --fs-aux:         clamp(0.65rem, 1.0dvw, 0.85rem);
+    --fs-base:        clamp(0.70rem, 1.2dvw, 0.95rem);
     --fs-emph:        clamp(0.80rem, 1.6dvw, 1.05rem);
     --fs-title:       clamp(0.95rem, 2.2dvw, 1.20rem);
     --fs-max:         clamp(1.40rem, 2.8dvw, 1.60rem);
