@@ -54,15 +54,14 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
           if (produto.desconto) bDesconto.style.display = 'block';
           logotipo.style.marginTop = '0.1rem';
           logotipo.style.setProperty('margin-bottom', '0.6rem', 'important');
-          imgProduto.style.marginTop = '0.45rem';
+          imgProduto.style.marginTop = '0.45rem'; // Talvez só precise do margin-bottom do logotipo
           descricaoProduto.style.marginTop = '0.45rem';
         }
         else {
           containerBadges.style.display = 'none';
           logotipo.style.marginTop = '0.2rem';
-          logotipo.style.setProperty('margin-bottom', '0.8rem', 'important');
-          imgProduto.style.marginTop = '0';
-          descricaoProduto.style.marginTop = '0.8rem';
+          logotipo.style.setProperty('margin-bottom', '1.2rem', 'important');
+          descricaoProduto.style.marginTop = '1.2rem';
         }
         
       }
