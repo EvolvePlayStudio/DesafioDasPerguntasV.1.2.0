@@ -194,7 +194,8 @@ footer a:hover {
     font-size: var(--fs-base-min);
   }
   .li-politica-de-privacidade, .p-politica-de-privacidade, .ul-politica-de-privacidade {
-    font-size: var(--fs-aux-min);
+    font-size: var(--fs-aux-m
+    in);
   }
   .last-update {
     font-size: var(--fs-min-min);

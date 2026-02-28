@@ -66,7 +66,7 @@
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             overflow: auto;
             background-color: var(--cor-fundo-claro);
-            padding: 1.2rem 1.6rem 0.8rem 1.6rem;
+            padding: 1.6rem 1.6rem 1.2rem 1.6rem;
             border-radius: 16px;
             box-shadow: 0 0 15px rgba(0,0,0,0.2);
             width: min(88%, 29rem);
@@ -89,6 +89,9 @@
           justify-content: space-around;
           margin-bottom: 20px;
           border-bottom: 1px solid #eee;
+        }
+        #login-message {
+            font-size: var(--fs-emph);
         }
         .auth-tabs button {
           font-size: var(--fs-emph);
@@ -171,6 +174,10 @@
           border-radius: 6px;
           border: 1px solid #ccc;
         }
+        input[type="checkbox"] {
+          width: var(--fs-base);
+          height: var(--fs-base);
+        }
         button {
           font-size: calc(var(--fs-aux));
         }
@@ -235,7 +242,11 @@
             border-radius: 6px;
         }
         #captcha-grid {
+            display: grid;
+            grid-template-columns: repeat(3, max-content);
             justify-content: center;
+            align-items: center;
+            gap: 5px;  
         }
         footer {
           flex-shrink: 0;
@@ -270,6 +281,10 @@
         @media (max-width: 420px) {
           .link-esqueci-senha {
             margin-top: -1rem;
+          }
+          #captcha-grid img {
+            width: 70px;
+            height: 70px;
           }
         }
   </style>
@@ -348,7 +363,7 @@
             <!-- Contêiner do CAPTCHA -->
             <div id="captcha-container" hidden style="margin-bottom: 1.8rem; margin-top: -1rem;">
                 <p id="captcha-instrucao"></p>
-                <div id="captcha-grid" style="display: grid; grid-template-columns: repeat(3, 100px); gap: 5px; justify-content: center;"></div>
+                <div id="captcha-grid"></div>
                 <!-- Inputs ocultos para envio via JS -->
                 <input type="hidden" id="captcha-token" name="captcha_token">
                 <input type="hidden" id="captcha-selecoes" name="captcha_selecoes">
@@ -432,7 +447,7 @@
             </div>
 
             <!-- Botão para envio do formulário de registro -->
-            <button type="submit" style="margin-top: 1rem">Registrar</button>
+            <button type="submit" style="margin-top: 1rem; margin-bottom: 0.4rem;">Registrar</button>
         </form>
 
     </div>
