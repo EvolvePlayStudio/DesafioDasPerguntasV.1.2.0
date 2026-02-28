@@ -17,6 +17,27 @@
           --main-height: calc(100dvh - var(--footer-h) - var(--ads-top-height) - 2 * var(--folga-anuncio-topo));
           --padding-bottom-li: 0.45rem;
         }
+        @media(min-width: 420px) {
+          :root {
+            --fs-min:   var(--fs-min-max);
+            --fs-aux:   var(--fs-aux-max);
+            --fs-base:  var(--fs-base-max);
+            --fs-emph:  var(--fs-emph-max);
+            --fs-title: var(--fs-title-max);
+            --fs-max:   var(--fs-max-max);
+          }
+        }
+        @media(max-width: 420px) {
+            :root {
+              --fs-min:   var(--fs-min-min);
+              --fs-aux:   var(--fs-aux-min);
+              --fs-base:  var(--fs-base-min);
+              --fs-emph:  var(--fs-emph-min);
+              --fs-title: var(--fs-title-min);
+              --fs-max:   var(--fs-max-min);
+            }
+        }
+        
         html, body {
             width: 100%;
             max-width: 100%;
@@ -58,7 +79,6 @@
         .title {
             text-align: center;
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            font-size: 1.6em;
             font-size: var(--fs-max);
             color: black;
             font-weight: bold;
@@ -71,7 +91,6 @@
           border-bottom: 1px solid #eee;
         }
         .auth-tabs button {
-          font-size: 16px;
           font-size: var(--fs-emph);
           color: black;
           background: none;
@@ -100,18 +119,13 @@
           margin-top: -0.6rem;
           margin-bottom: 1rem;
         }
-        @media (max-width: 1000px) {
-          .link-esqueci-senha {
-            margin-top: -0.8rem;
-          }
-        }
+        
         .link-esqueci-senha a {
           font-size: var(--fs-aux);
           font-weight: bold;
           text-decoration: none;
           cursor: pointer;
           color: var(--bg-botao-login);
-
         }
         #forgot-form {
             width: 100%;
@@ -158,7 +172,7 @@
           border: 1px solid #ccc;
         }
         button {
-          font-size: var(--fs-base);
+          font-size: calc(var(--fs-aux));
         }
         button[type="submit"], button[type="botao-retorno"], button[type="button"] {
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -251,6 +265,11 @@
         @media (max-width: 600px) {
           .auth-container {
             padding: 1.2rem 1.2rem 0.8rem 1.2rem;
+          }
+        }
+        @media (max-width: 420px) {
+          .link-esqueci-senha {
+            margin-top: -1rem;
           }
         }
   </style>

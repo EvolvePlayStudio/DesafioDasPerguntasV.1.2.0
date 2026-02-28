@@ -82,7 +82,7 @@ footer {
   padding: 1rem;
   color: white;
   background-color: var(--cor-fundo-escuro);
-  font-size: var(--fs-aux);
+  font-size: var(--fs-aux-max);
   white-space: nowrap;
 }
 /* Footer com botões */
@@ -100,7 +100,7 @@ footer {
   z-index: 20;
 }
 footer a {
-  font-size: var(--fs-base);
+  font-size: var(--fs-aux-max);
   text-decoration: none;
   color: white;
 }
@@ -187,31 +187,33 @@ footer a:hover {
   }
 }
 @media (max-width: 420px) {
-  /*
   .h1-politica-de-privacidade {
-    font-size: 1.1rem;
+    font-size: var(--fs-emph-max);
   }
   .h2-politica-de-privacidade {
-    font-size: var(--fs-aux);
+    font-size: var(--fs-base-min);
   }
   .li-politica-de-privacidade, .p-politica-de-privacidade, .ul-politica-de-privacidade {
-    font-size: calc(var(--fs-min) - 0.05rem);
+    font-size: var(--fs-aux-min);
   }
   .last-update {
-    font-size: calc(var(--fs-min) - 0.1rem);
-  }*/
+    font-size: var(--fs-min-min);
+  }
   footer {
     padding-left: 0.15rem;
     padding-right: 0.15rem;
   }
-  /*
-  footer a {
-    font-size: calc(var(--fs-aux) - 0.2rem);
-    font-size: calc(var(--fs-aux) - 0.4rem);
-  }*/
   .content-politica-de-privacidade {
     padding: 0.4rem;
   }
+  footer {
+    font-size: var(--fs-aux-min);
+  }
+  footer a {
+  font-size: var(--fs-aux-min);
+  text-decoration: none;
+  color: white;
+}
 }
 /* Menor valor de largura de smartphone para testar no desktop: 305px */
 
