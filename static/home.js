@@ -39,7 +39,7 @@ const btn_logout = document.querySelectorAll(".btn-logout");
 let btnsHeader;
 
 if (MODO_VISITANTE) {
-  btnsHeader = [btn_perfil, btn_pesquisa, btn_logout];
+  btnsHeader = [btn_perfil, btn_pesquisa, btn_doacoes, btn_logout];
   permitir_escolher_tema = true;
   btn_criar_conta.forEach(btn => {
     btn.style.display = "";
