@@ -34,6 +34,7 @@
       --fs-title: var(--fs-title-max);
       --fs-max:   var(--fs-max-max);
     }
+    /*
     @media(max-width: 420px) {
       :root {
         --fs-min:   var(--fs-min-min);
@@ -43,7 +44,7 @@
         --fs-title: var(--fs-title-min);
         --fs-max:   var(--fs-max-min);
       }
-    }
+    }*/
   </style>
 
   <!-- CSS do header -->
@@ -479,6 +480,7 @@
         width: 38px;
         height: 38px;
       }
+      /*
       .header-mobile .header-up .user-name {
         font-size: calc(var(--fs-emph-max) - 0.1rem);
         font-size: calc(var(--fs-emph-max) - ((550px - vw) * 0.2));
@@ -488,12 +490,13 @@
         font-size: calc(var(--fs-emph-max) - 0.1rem);
         font-size: calc(var(--fs-emph-max) - ((550px - vw) * 0.2));
         font-size: clamp(0.6rem, calc(0.25rem + 2.10vw), var(--fs-emph-max));
-      }
+      }*/
       nav button {
         font-size: calc(var(--fs-base-max) - 0.1rem);
         font-size: calc(var(--fs-emph-max) - ((550px - vw) * 0.2));
         font-size: clamp(0.5rem, calc(0.25rem + 1.70vw), var(--fs-base-max));
       }
+      /*
       .bloco-opcao .opcoes {
         font-size: calc(var(--fs-base-max) - 0.1rem);
         font-size: calc(var(--fs-emph-max) - ((550px - vw) * 0.2));
@@ -502,14 +505,15 @@
       #tipo-de-resposta {
         font-size: calc(var(--fs-base-max) - 0.1rem);
         font-size: calc(var(--fs-emph-max) - ((550px - vw) * 0.2));
-        font-size: clamp(0.5rem, calc(0.25rem + 1.70vw), var(--fs-base-max));
+        font-size: clamp(0.5rem, calc(0.25rem + 1.70vw), var(--fs-emph-max));
       }
       .opcoes input[type="radio"] {
         height: calc(var(--fs-base-max) - 0.1rem);
         width: calc(var(--fs-base-max) - 0.1rem);
         height: clamp(0.5rem, calc(0.25rem + 1.70vw), var(--fs-base-max));
         width: clamp(0.5rem, calc(0.25rem + 1.70vw), var(--fs-base-max));
-      }
+      }*/
+
       .card span {
         font-size: clamp(0.5rem, calc(0.25rem + 1.70vw), var(--fs-base-max));
       }
@@ -536,19 +540,25 @@
     }
     @media (max-width: 460px) {
       .card {
-        width: 119px;
-        height: 100px;
+        width: 162px;
+        height: 136px;
       }
-      ;/*
-      .card span {
-        font-size: var(--fs-base-min);
-      }*/
       .avatar {
         width: 32px;
         height: 32px;
       } 
       nav {
         gap: 0.2rem;
+      }
+      .bloco-opcao .opcoes {
+        font-size: calc(var(--fs-base-max) - 0.1rem);
+      }
+      #tipo-de-resposta {
+        font-size: calc(var(--fs-emph-max) - 0.1rem);
+      }
+      .opcoes input[type="radio"] {
+        height: calc(var(--fs-base-max) - 0.1rem);
+        width: calc(var(--fs-base-max) - 0.1rem);
       }
       /*
       .header-mobile .header-up .user-name {
@@ -564,7 +574,7 @@
         font-size: calc(var(--fs-base-max) - 0.2rem);
       }
       #tipo-de-resposta {
-        font-size: calc(var(--fs-base-max) - 0.2rem);
+        font-size: calc(var(--fs-emph-max) - 0.2rem);
       }
       .opcoes input[type="radio"] {
         height: calc(var(--fs-base-max) - 0.2rem);
@@ -572,6 +582,10 @@
       }*/
     }
     @media (max-width: 340px) {
+      .card {
+        width: 119px;
+        height: 102px;
+      }
       nav {
         gap: 0.06rem;
       }
@@ -861,13 +875,14 @@
     </div>
 
     <!-- Scroll com os cards de temas -->
+    <!-- É possível simplificar aqui para os 12 talvez -->
     <div id="cards-scroll-wrapper" class="cards-scroll-wrapper">
       <div class="cards-container">
-        <div class="card tema-card" data-tema="Artes">
+        <div class="card" data-tema="Artes">
           <img src="{{ url_for('static', filename='img/Artes.jpeg') }}" alt="Artes">
           <span>Artes</span>
         </div>
-        <div class="card tema-card" data-tema="Astronomia">
+        <div class="card" data-tema="Astronomia">
           <img src="{{ url_for('static', filename='img/Astronomia.jpeg') }}" alt="Astronomia">
           <span>Astronomia</span>
         </div>
@@ -875,40 +890,40 @@
           <img src="{{ url_for('static', filename='img/Biologia.jpeg') }}" alt="Biologia">
           <span>Biologia</span>
         </div>
-        <div class="card tema-card" data-tema="Esportes">
+        <div class="card" data-tema="Esportes">
           <img src="{{ url_for('static', filename='img/Esportes.jpeg') }}" alt="Esportes">
           <span>Esportes</span>
         </div>
-        <div class="card tema-card" data-tema="Filosofia">
+        <div class="card" data-tema="Filosofia">
           <img src="{{ url_for('static', filename='img/Filosofia.jpeg') }}" alt="Filosofia">
           <span>Filosofia</span>
         </div>
-        <div class="card tema-card" data-tema="Física">
+        <div class="card" data-tema="Física">
           <img src="{{ url_for('static', filename='img/Fisica.jpeg') }}" alt="Física">
           <span>Física</span>
         </div>
-        <div class="card tema-card" data-tema="Geografia">
+        <div class="card" data-tema="Geografia">
           <img src="{{ url_for('static', filename='img/Geografia.jpeg') }}" alt="Geografia">
           <span>Geografia</span>
         </div>
-        <div class="card tema-card" data-tema="História">
+        <div class="card" data-tema="História">
           <img src="{{ url_for('static', filename='img/Historia.jpeg') }}" alt="História">
           <span>História</span>
         </div>
-        <div class="card tema-card" data-tema="Mídia">
+        <div class="card" data-tema="Mídia">
           <img src="{{ url_for('static', filename='img/Midia.jpeg') }}" alt="Mídia">
           <span>Mídia</span>
         </div>
-        <div class="card tema-card" data-tema="Música">
+        <div class="card" data-tema="Música">
           <img src="{{ url_for('static', filename='img/Musica.jpeg') }}" alt="Música">
           <span>Música</span>
         </div>
         
-        <div class="card tema-card" data-tema="Química">
+        <div class="card" data-tema="Química">
           <img src="{{ url_for('static', filename='img/Quimica.jpeg') }}" alt="Química">
           <span>Quimíca</span>
         </div>
-        <div class="card tema-card" data-tema="Variedades">
+        <div class="card" data-tema="Variedades">
           <img src="{{ url_for('static', filename='img/Variedades.jpeg') }}" alt="Variedades">
           <span>Variedades</span>
         </div>
