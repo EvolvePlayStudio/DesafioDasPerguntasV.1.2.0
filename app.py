@@ -352,7 +352,6 @@ def enviar_feedback_comentario(user_id):
     tema = data.get("tema")
     feedback_id = data.get("feedback_id")
     pontuacao_saldo = data.get("pontuacao_saldo")
-    print(f"Tema é {tema}")
 
     if modo_visitante is None:
         return jsonify({"erro": "modo_visitante é obrigatório"}), 400
@@ -1694,7 +1693,6 @@ def revisao(user_id, tema):
 
 @app.route("/register", methods=["POST"])
 def registrar():
-    print("Registrando usuário")
     data = request.get_json()
     notificacoes_bonus_energia = bool(data.get("notificacoes_bonus_energia", True))
     notificacoes_alteracoes_pontos = bool(data.get("notificacoes_alteracoes_pontos", True))
@@ -1720,10 +1718,7 @@ def registrar():
         return jsonify(success=False, message="CAPTCHA expirado ou inválido"), 400
 
     if sorted(captcha_selecoes) != sorted(dados_captcha.get("corretos", [])):
-        print("Seleção de captcha incorreta")
         return jsonify(success=False, message="Seleções do CAPTCHA incorretas"), 400
-
-    print("2. Cheguei aqui")
 
     # Invalida o CAPTCHA para evitar reutilização
     session.pop(f"captcha_{captcha_token}", None)
@@ -2001,7 +1996,7 @@ def registrar_resposta_visitante():
                 modo_tela,
                 dificuldade,
                 auto_chute
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             dados.get("tema"),
             dados.get("id_pergunta"),

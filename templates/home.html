@@ -33,18 +33,8 @@
       --fs-emph:  var(--fs-emph-max);
       --fs-title: var(--fs-title-max);
       --fs-max:   var(--fs-max-max);
+      --padding-lateral: 1.4rem;
     }
-    /*
-    @media(max-width: 420px) {
-      :root {
-        --fs-min:   var(--fs-min-min);
-        --fs-aux:   var(--fs-aux-min);
-        --fs-base:  var(--fs-base-min);
-        --fs-emph:  var(--fs-emph-min);
-        --fs-title: var(--fs-title-min);
-        --fs-max:   var(--fs-max-min);
-      }
-    }*/
   </style>
 
   <!-- CSS do header -->
@@ -55,7 +45,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       align-items: center;
-      padding: 0.6rem 1rem;
+      padding: 0.6rem var(--padding-lateral);
     }
     .header-left,
     .header-right {
@@ -86,7 +76,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.8rem 0.6rem;
+      padding: 0.8rem;
       gap: 0.1rem;
     }
     .header-mobile .header-up .avatar {
@@ -106,7 +96,8 @@
       margin-left: auto;
     }
     .header-mobile .header-down {
-      padding: 0.4rem 0.6rem 0.6rem;
+      /*padding: 0.4rem 0.6rem 0.6rem;*/
+      padding: 0.4rem 0.8rem;
     }
     .header-desktop nav .header-mobile nav {
       display: flex;
@@ -232,37 +223,60 @@
       visibility: visible;
     }
     #escolha-tema {
+      color: white;
+      font-weight: bold;
+      font-size: var(--fs-title);
       align-items: center;
       justify-content: center;
-      color: white;
-      font-weight: bold;
-      margin-top: 1rem;
-      font-size: var(--fs-title);
+      white-space: nowrap;
     }
-    .bloco-opcao {
+    #topo-corpo-pagina {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
-      color: white;
-      font-weight: bold;
+      justify-content: center;
+      height: calc(var(--ads-container-height) + 1.5rem);
+      height: 4.6rem;
+      gap: 4rem;
+      margin-right: 0.8rem;
     }
-    .bloco-opcao .opcoes {
-      display: flex;
-      gap: 1.5rem;
-      font-size: var(--fs-base);
+    .ad-sidebar {
+      flex: 0 1 auto;
+      display: none;
+      /*position: absolute;*/
+      width: var(--ads-container-width);
+      height: var(--ads-container-height);
+      align-self: center;
     }
-    .bloco-opcao .opcoes label{
+    .link-anuncio-duplo {
+      display: flex; /* Alinha logo e produto lado a lado */
+      width: 100%;
+      height: 100%;
+      text-decoration: none;
+      background-color: #fff; /* Fundo branco para unir as duas imagens */
+      overflow: hidden;
+    }
+    .logo-container {
+      flex: 0 0 25%; /* Ocupa exatamente 20% e não encolhe */
       display: flex;
       align-items: center;
+      justify-content: center;
+      padding: 18px;
+      /*border-right: 1px solid #eee;  Linha sutil separando o logo do produto */
     }
-    .opcoes input[type="radio"] {
-      height: var(--fs-emph);
-      width: var(--fs-emph);
-      margin-right: 0.4rem;
-      margin-bottom: calc(0.26 * var(--fs-base-max)); /* Isto é um ajuste porque o tamanho da letra ao lado do radio considera a parte de baixo onde pode ter cecidilha, pernas de letras, etc
-      transform: scale(1.3);
-      -webkit-transform: scale(1.3);
-      */
+    .produto-container {
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      display: block;
+      align-items: center;
+      justify-content: center;
+    }
+    .link-anuncio-duplo img {
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      display: block;
     }
     .cards-scroll-wrapper {
       flex: 1;
@@ -277,7 +291,7 @@
       justify-items: center;
       align-content: space-between;
       column-gap: 1.5rem;
-      padding-top: 0.4rem;
+      /*padding-top: 0.4rem;*/
       padding-bottom: 1.6rem;
     }
     .card {
@@ -310,26 +324,17 @@
     .hidden {
       display: none;
     }
-    .mensagens-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 98%;
-      margin-top: 0.6rem;
-      margin-bottom: 0.6rem;
-    }
-    .mensagens-jogo {
-      display: block;
-      color: #ddd;
-      text-align: left;
-      width: fit-content;
-      line-height: 1.4;
-      font-size: 0.9rem;
-      font-size: var(--fs-base)
-    }
     #mensagem {
-      margin-top: 0.2rem;
-      margin-bottom: 0.2rem;
+      font-size: var(--fs-base);
+      width: 100%;
+      display: none;
+      top: 0;
+      height: 1.2rem;
+      margin-bottom: 0.7rem;
+      align-self: center;
+      align-content: center;
+      justify-content: center;
+      margin-right: 0.8rem;
     }
     .modo-teste-wrapper {
       display: none;
@@ -342,11 +347,6 @@
       font-weight: 700;
       font-size: 0.95rem;
       user-select: none;
-    }
-    #tipo-de-resposta {
-      font-size: var(--fs-emph);
-      font-weight: bold;
-      color: white;
     }
     .switch {
       position: relative;
@@ -383,48 +383,6 @@
     }
     .switch input:checked + .slider::before {
       transform: translateX(20px);
-    }
-    .ad-sidebar {
-      display: none;
-      position: absolute;
-      width: var(--ads-container-width);
-      height: var(--ads-container-height);
-    }
-    #banner-lateral-esquerda {
-      left: 3rem; /* O ideal aqui era fazer cálculo para ajustar isto */
-    }
-    #banner-lateral-direita {
-      right: 3rem;
-    }
-    .link-anuncio-duplo {
-      display: flex; /* Alinha logo e produto lado a lado */
-      width: 100%;
-      height: 100%;
-      text-decoration: none;
-      background-color: #fff; /* Fundo branco para unir as duas imagens */
-      overflow: hidden;
-    }
-    .logo-container {
-      flex: 0 0 25%; /* Ocupa exatamente 20% e não encolhe */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      /*border-right: 1px solid #eee;  Linha sutil separando o logo do produto */
-    }
-    .produto-container {
-      width: 100%;
-      height: 100%;
-      object-fit: fill;
-      display: block;
-      align-items: center;
-      justify-content: center;
-    }
-    .link-anuncio-duplo img {
-      width: 100%;
-      height: 100%;
-      object-fit: fill;
-      display: block;
     }
   </style>
 
@@ -547,10 +505,6 @@
       .status-item {
         font-size: calc(var(--fs-emph-max) - 0.2rem);
       }
-      /*
-      nav button {
-        font-size: calc(var(--fs-base-max) - 0.2rem);
-      }*/
     }
     @media (max-width: 340px) {
       .card {
@@ -800,37 +754,39 @@
       <span class="modo-teste-texto">Modo Teste</span>
     </div>
 
-    <!-- Banner de anúncio na lateral esquerda -->
-    <div id="banner-lateral-esquerda" class="ad-sidebar">
-      <a href="" target="_blank" class="link-anuncio-duplo">
-        <div class="logo-container">
-          <img src="https://github.com/EvolvePlayStudio/assets-quiz/blob/main/logotipoAmazon.png?raw=true" alt="Logo Amazon">
-        </div>
-        <div class="produto-container">
-          <img src="" alt="Produto">
-        </div>
-      </a>
-    </div>
+    <div id="topo-corpo-pagina">
+      <!-- Banner de anúncio na lateral esquerda -->
+      <div id="banner-lateral-esquerda" class="ad-sidebar">
+        <a href="" target="_blank" class="link-anuncio-duplo">
+          <div class="logo-container">
+            <img src="https://github.com/EvolvePlayStudio/assets-quiz/blob/main/logotipoAmazon.png?raw=true" alt="Logo Amazon">
+          </div>
+          <div class="produto-container">
+            <img src="" alt="Produto">
+          </div>
+        </a>
+      </div>
 
-    <!-- Banner de anúncio na lateral direita -->
-    <div id="banner-lateral-direita" class="ad-sidebar">
-      <a href="" target="_blank" class="link-anuncio-duplo">
-        <div class="logo-container">
-          <img src="https://github.com/EvolvePlayStudio/assets-quiz/blob/main/logotipoMercadoLivre03.png?raw=true" alt="Logo ML">
-        </div>
-        <div class="produto-container">
-          <img src="" alt="Produto">
-        </div>
-      </a>
-    </div>
+      <!-- Label da escolha do tema -->
+      <div id="escolha-tema">
+        Escolha um Tema
+      </div>
 
-    <!-- Label da escolha do tema -->
-    <div id="escolha-tema">
-      Escolha um Tema
+      <!-- Banner de anúncio na lateral direita -->
+      <div id="banner-lateral-direita" class="ad-sidebar">
+        <a href="" target="_blank" class="link-anuncio-duplo">
+          <div class="logo-container">
+            <img src="https://github.com/EvolvePlayStudio/assets-quiz/blob/main/logotipoMercadoLivre03.png?raw=true" alt="Logo ML">
+          </div>
+          <div class="produto-container">
+            <img src="" alt="Produto">
+          </div>
+        </a>
+      </div>
     </div>
 
     <!-- Mensagem na tela -->
-    <div id="mensagem" class="mensagem" style="cursor: default;"> Mensagem
+    <div id="mensagem" style="cursor: default"> Mensagem
     </div>
 
     <!-- Scroll com os cards de temas -->

@@ -1,7 +1,7 @@
 import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
 import { playSound } from "./sound.js";
 
-// console.log("ID de visitante: ", localStorage.getItem("id_visitante"));
+console.log("ID de visitante: ", localStorage.getItem("id_visitante"));
 
 let permitir_escolher_tema = false
 let tema_atual = null;
@@ -52,7 +52,7 @@ if (MODO_VISITANTE) {
     });
 
   })
-
+  
   /*
   localStorage.removeItem("pontuacoes_visitante");
   localStorage.removeItem("perguntas_restantes_visitante");
@@ -169,28 +169,6 @@ async function exibirAnuncios() {
     registrarInteracaoAnuncio(link, 'Impressão', produto.tema);
   }
 
-  function posicionarAnuncioBanner() {
-    const header = document.getElementById("header-desktop");
-    const cardsWrapper = document.getElementById("cards-scroll-wrapper");
-    if (!header || !cardsWrapper) return;
-
-    const altura_header = header.getBoundingClientRect().height;
-    const y_top_cards_scroll = cardsWrapper.getBoundingClientRect().top;
-    const alturaContainerAnuncio = y_top_cards_scroll - altura_header;
-
-    let heightBanner;
-    if (anuncioBannerDireita.style.display !== 'none') {
-      heightBanner = anuncioBannerDireita.getBoundingClientRect().height;
-    }
-    else {
-      heightBanner = anuncioBannerEsquerda.getBoundingClientRect().height;
-    }
-    const marginTopBanners = (alturaContainerAnuncio - heightBanner) / 2;
-    
-    if (anuncioBannerEsquerda) anuncioBannerEsquerda.style.marginTop = `${marginTopBanners}px`;
-    if (anuncioBannerDireita) anuncioBannerDireita.style.marginTop = `${marginTopBanners}px`;
-  }
-
   try {
     const resposta = await fetch("/api/obter_anuncios_home");
     const dados = await resposta.json();
@@ -207,6 +185,7 @@ async function exibirAnuncios() {
 
     // 3. Exibição Amazon (esquerda)
     if (anunciosAmazon.length > 0) {
+      document.getElementById("topo-corpo-pagina").style.height = 'calc(80px + 1.5rem)';
       const aleatorioAmazon = anunciosAmazon[Math.floor(Math.random() * anunciosAmazon.length)];
       configurarBanner(anuncioBannerEsquerda, aleatorioAmazon);
       anuncioBannerEsquerda.style.display = "flex";
@@ -217,6 +196,7 @@ async function exibirAnuncios() {
 
     // 4. Exibição Mercado Livre (Direita)
     if (anunciosML.length > 0) {
+      document.getElementById("topo-corpo-pagina").style.height = 'calc(80px + 1.5rem)';
       const aleatorioML = anunciosML[Math.floor(Math.random() * anunciosML.length)];
       configurarBanner(anuncioBannerDireita, aleatorioML);
       anuncioBannerDireita.style.display = "flex";
@@ -224,7 +204,10 @@ async function exibirAnuncios() {
     else {
       anuncioBannerDireita.style.display = "none";
     }
-    posicionarAnuncioBanner();
+
+    if (anunciosML.length === 0 && anunciosAmazon.length === 0) {
+      document.getElementById("topo-corpo-pagina").style.height = '4.3rem';
+    }
   }
   catch (erro) {
     console.error("Falha ao carregar anúncios:", erro);
@@ -255,8 +238,8 @@ function inserirBotaoModoTeste() {
   };
 }
 
-//if (window.ADS_CONFIG.isAdmin && !MODO_VISITANTE) inserirBotaoModoTeste()
-//else if (!window.ADS_CONFIG.isMobile) exibirAnuncios();
+if (window.ADS_CONFIG.isAdmin && !MODO_VISITANTE) inserirBotaoModoTeste();
+else if (!window.ADS_CONFIG.isMobile) exibirAnuncios();
 
 async function iniciarQuiz(event) {
   function desbloquearBotoes() {
@@ -282,17 +265,19 @@ async function iniciarQuiz(event) {
 
   // Mensagem avisando que as perguntas acabaram
   const perguntas_restantes_atuais = parseInt(perguntas_restantes[0]?.textContent.split("/")[0] ?? "0", 10);
+  mensagem.style.display = 'flex';
+
   if (perguntas_restantes_atuais <= 0) {
-    if (!MODO_VISITANTE) {
-      exibirMensagem(mensagem, `Energia esgotada, retorne amanhã para poder responder novas perguntas`, 'orange');
+    if (!MODO_VISITANTE) { 
+      exibirMensagem(mensagem, `Energia esgotada, retorne amanhã para poder responder novas perguntas`, 'orange', true, true, 'flex');
     }
     else {
-      exibirMensagem(mensagem, `É necessário criar uma conta para ter acesso ao conteúdo completo do jogo`, 'orange');
+      exibirMensagem(mensagem, `É necessário criar uma conta para ter acesso ao conteúdo completo do jogo`, 'orange', true, true, 'flex');
     }
     desbloquearBotoes();
     return;
   }
-  exibirMensagem(mensagem, "Preparando quiz...", '#d1d1d1ff', false)
+  exibirMensagem(mensagem, "Preparando quiz...", '#d1d1d1ff', false, false, 'flex')
 
   // Carrega as perguntas para o quiz
   try {
@@ -326,7 +311,7 @@ async function iniciarQuiz(event) {
         const ha_perguntas_disponiveis = Object.values(perguntas_filtradas).some(arr => Array.isArray(arr) && arr.length > 0)
 
         if (ha_perguntas_disponiveis && !encerrar_quiz) {
-          mensagem.style.opacity = 0;
+          //mensagem.style.opacity = 0;
           try {
               // 1. Faz a requisição
               const resposta = await fetch("/api/obter_todos_anuncios");
@@ -343,7 +328,8 @@ async function iniciarQuiz(event) {
           window.location.href = `/quiz/${encodeURIComponent(slugify(tema_atual))}`;
         }
         else {
-          exibirMensagem(mensagem, `Você não possui novas perguntas disponíveis para o tema ${tema_atual} no momento`, 'orange')
+          mensagem.style.display = '';
+          exibirMensagem(mensagem, `Você não possui novas perguntas disponíveis para o tema ${tema_atual} no momento`, 'orange', true, true, 'flex'),
           desbloquearBotoes();
           return;
         }
@@ -367,10 +353,8 @@ async function iniciarQuiz(event) {
         const encerrar_quiz = deveEncerrarQuiz(data["perguntas"], MODO_VISITANTE);
         const haPerguntas = Object.values(data.perguntas).some(arr => arr.length > 0);
         if (!haPerguntas || encerrar_quiz) {
-          exibirMensagem(
-            mensagem,
-            `É necessário criar uma conta para ter aceso a mais perguntas no tema ${tema_atual}`,
-            'orange'
+          mensagem.style.display = '';
+          exibirMensagem(mensagem, `É necessário criar uma conta para ter aceso a mais perguntas no tema ${tema_atual}`, 'orange', true, true, 'flex'
           )
           desbloquearBotoes();
           return
@@ -399,7 +383,7 @@ async function iniciarQuiz(event) {
         }
 
         // Chama a tela de quiz
-        mensagem.style.opacity = 0
+        //mensagem.style.opacity = 0
         window.location.href = `/quiz/${encodeURIComponent(slugify(tema_atual))}`;
       }
     }

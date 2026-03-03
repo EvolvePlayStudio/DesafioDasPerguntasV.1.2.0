@@ -228,7 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const payload = {
         id_visitante: localStorage.getItem("id_visitante"),
-        tema: document.getElementById("tema-perguntas").textContent,
+        tema: tema_atual,
         pontuacao_saldo: valor_saldo,
         comentario: comentario,
         feedback_id: feedbackIdAtual
