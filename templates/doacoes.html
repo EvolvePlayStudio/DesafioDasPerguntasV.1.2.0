@@ -105,17 +105,25 @@
       margin-top: 15px;
     }
     .pix-box {
-      font-size: var(--fs-emph);
+      font-size: var(--fs-emph-max);
       max-width: 100%;
       margin-left: auto;
       margin-right: auto;
     }
+    .li-politica-de-privacidade {
+      font-size: var(--fs-base-max) !important;
+    }
     @media(max-width: 1200px) {
       .pix-box {
-        font-size: calc(var(--fs-base) - 0.05rem);
+        font-size: calc(var(--fs-base-max) - 0.05rem);
       }
       .container {
         margin: 1.8dvw;
+      }
+    }
+    @media(max-width: 600px) {
+      .pix-box {
+        font-size: calc(var(--fs-base-max) - 0.1rem);
       }
     }
   </style>
