@@ -2,7 +2,6 @@ import { fetchAutenticado, exibirMensagem, sincronizarPontuacoesVisitante, slugi
 import { playSound } from "./sound.js"
 
 let tema_atual;
-let tipo_pergunta;
 let contador_perguntas = 0;
 let favoritos_selecionados = new Set();
 const tabela = document.querySelector("#tabela-perguntas tbody");
@@ -14,11 +13,11 @@ const btn_pesquisar = document.getElementById("btn-pesquisar");
 const btn_revisar = document.getElementById("btn-revisar");
 const checksDificuldades = document.querySelectorAll(`#checks-dificuldades input[type="checkbox"]`);
 const box_tema = document.getElementById("tema");
-const box_tipo_pergunta = document.getElementById("tipo-pergunta");
 const mensagem = document.getElementById("mensagem");
 const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === "true";
 const TTL_ESTADO_PESQUISA = 7 * 24 * 60 * 60 * 1000; // 7 dias
 let favoritosAlterados = 0;
+let permitirMarcarFavoritos = false;
 
 // Áudio para clique em checkboxes
 checksDificuldades.forEach(check => {
@@ -30,7 +29,6 @@ checksDificuldades.forEach(check => {
 // Implementas a função para exibir subtemas ao mudar o tema
 box_tema.addEventListener("change", async () => {
   box_tema.disabled = true;
-  box_tipo_pergunta.disabled = true;
   mostrarSubtemasDisponiveis();
 });
 
@@ -90,7 +88,6 @@ btn_revisar.addEventListener("click", async() => {
   const perguntas_totais = JSON.parse(sessionStorage.getItem("perguntas_para_revisar"));
   const perguntas_filtradas = {Fácil: [], Médio: [], Difícil: [], Extremo: []};
   tema_atual = box_tema.value;
-  tipo_pergunta = box_tipo_pergunta.value;
 
   linhas.forEach(linha => {
     const checkbox = linha.querySelector("input[type='checkbox']");
@@ -105,7 +102,6 @@ btn_revisar.addEventListener("click", async() => {
   if (perguntas_filtradas["Fácil"].length > 0 || perguntas_filtradas["Médio"].length > 0 || perguntas_filtradas["Difícil"].length > 0 || perguntas_filtradas["Extremo"].length > 0) {
     sessionStorage.setItem("perguntas", JSON.stringify(perguntas_filtradas));
     sessionStorage.setItem("modo_jogo", "revisao")
-    sessionStorage.setItem("tipo_pergunta", tipo_pergunta)
     sessionStorage.setItem("tema_atual", tema_atual)
 
     // Este trecho aparece mais 2 vezes em home.js, depois deve-se passar para utils.js
@@ -119,7 +115,7 @@ btn_revisar.addEventListener("click", async() => {
       sessionStorage.setItem("anuncios", JSON.stringify({}));
     }
 
-    window.location.href = `/revisao/${encodeURIComponent(slugify(tema_atual))}/${encodeURIComponent(slugify(tipo_pergunta))}s`;
+    window.location.href = `/revisao/${encodeURIComponent(slugify(tema_atual))}`;
   }
 })
 
@@ -151,7 +147,7 @@ function carregarEstadoPesquisa() {
 async function carregarFavoritos() {
   btn_marcar_todas.textContent = 'Marcar Todas';
   try {
-    const response = await fetch(`/api/carregar-favoritos?tema-atual=${tema_atual}&tipo-pergunta=${tipo_pergunta}`);
+    const response = await fetch(`/api/carregar-favoritos?tema-atual=${tema_atual}`);
     const result = await response.json();
     contadorEl.textContent = contador_perguntas = 0;
     favoritos_selecionados.clear()
@@ -231,7 +227,6 @@ async function mostrarSubtemasDisponiveis(subtemasRestaurar = []) {
 
   limparTabelaPerguntas();
   box_tema.disabled = false;
-  box_tipo_pergunta.disabled = false;
   alterarEstadoBotoes(false);
 }
 
@@ -241,10 +236,8 @@ async function pesquisar() {
   const subtemasSelecionados = Array.from(document.querySelectorAll(".subtema-btn.selected")).map(btn => btn.textContent);
 
   function filtrarPerguntasVisitante(perguntasPorDificuldade) {
-    // Coloca em lowerCase o tipo pergunta para ficar de acordo com como está no localStorage
     const respondidas = JSON.parse(
-      localStorage.getItem("visitante_respondidas")
-    )?.[tipo_pergunta.toLowerCase()] || [];
+      localStorage.getItem("visitante_respondidas")) ?? [];
 
     const respondidasSet = new Set(respondidas);
 
@@ -284,9 +277,10 @@ async function pesquisar() {
             <input type="checkbox" class="checkbox-selecionar" data-id="${p.id_pergunta}" disabled>
           </td>
           <td>
-            <span class="estrela" data-id="${p.id_pergunta}" data-tipo-pergunta="${tipo_pergunta}">☆</span>
+            <span class="estrela" data-id="${p.id_pergunta}">☆</span>
           </td>
         `;
+        permitirMarcarFavoritos = false;
 
         identificarMudancaCheck(tr.querySelector("input"));
         tr.querySelector(".estrela").addEventListener("click", () =>
@@ -310,10 +304,9 @@ async function pesquisar() {
   }
 
   tema_atual = box_tema.value;
-  tipo_pergunta = box_tipo_pergunta.value;
 
-  if (!tema_atual || !tipo_pergunta) {
-    exibirMensagem(mensagem, "Selecione o tema e o tipo de pergunta", "orange", true, true);
+  if (!tema_atual) {
+    exibirMensagem(mensagem, "Selecione o tema das perguntas", "orange", true, true);
     btn_pesquisar.disabled = false;
     return;
   }
@@ -334,7 +327,7 @@ async function pesquisar() {
   // Busca as perguntas
   try {
     const response = await fetchAutenticado(
-      `/api/perguntas?tema=${tema_atual}&modo=revisao&tipo-de-pergunta=${tipo_pergunta}`
+      `/api/perguntas?tema=${tema_atual}&modo=revisao`
     );
 
     if (!response.ok) throw new Error("Erro na busca");
@@ -352,7 +345,7 @@ async function pesquisar() {
       perguntasPorDificuldade = data.perguntas;
     }
     
-    salvarEstadoPesquisa(tema_atual, tipo_pergunta, dificuldadesSelecionadas, subtemasSelecionados);
+    salvarEstadoPesquisa(tema_atual, dificuldadesSelecionadas, subtemasSelecionados);
     sessionStorage.setItem("perguntas_para_revisar", JSON.stringify(perguntasPorDificuldade));
 
     // Renderiza tabela respeitando filtros
@@ -364,6 +357,7 @@ async function pesquisar() {
     // Reativa as checks para marcar perguntas e os botões
     document.querySelectorAll(".checkbox-selecionar")
     .forEach(cb => cb.disabled = false);
+    permitirMarcarFavoritos = true;
   }
   catch (err) {
     console.error("Erro ao buscar perguntas", err);
@@ -378,14 +372,13 @@ async function pesquisar() {
   alterarEstadoBotoes(false);
 }
 
-// Salva o tema, tipo de pergunta e filtros da pesquisa para retomar depois
-function salvarEstadoPesquisa(tema, tipo_pergunta, dificuldades, subtemas) {
+// Salva o tema e filtros da pesquisa para retomar depois
+function salvarEstadoPesquisa(tema, dificuldades, subtemas) {
   const owner_key = getOwnerKey();
   const raw = localStorage.getItem("estado_pesquisa") || "{}";
   const estados = JSON.parse(raw);
   estados[owner_key] = {
     tema: tema,
-    tipo_pergunta: tipo_pergunta,
     dificuldades: dificuldades,
     subtemas: subtemas,
     expiracao: Date.now()
@@ -395,6 +388,7 @@ function salvarEstadoPesquisa(tema, tipo_pergunta, dificuldades, subtemas) {
 }
 
 function toggleFavorito(estrelaEl, id_pergunta)  {
+  if (!permitirMarcarFavoritos) return;
   if (MODO_VISITANTE) {
     exibirMensagem(mensagem, "É necessário criar uma conta para poder salvar perguntas nos favoritos", "orange", true, true);
     return;
@@ -427,13 +421,12 @@ async function salvarFavoritos() {
 
   // favoritos_selecionados é um Set com os IDs atualmente estrelados (UI)
   const adicionar = idsVisiveis.filter(id => favoritos_selecionados.has(id));
-  const remover   = idsVisiveis.filter(id => !favoritos_selecionados.has(id));
-  favoritosAlterados = 0;
+  const remover   = idsVisiveis.filter(id => !favoritos_selecionados.has(id));  favoritosAlterados = 0;
 
   try {
     await fetchAutenticado("/api/favoritos", {
       method: "POST",
-      body: { tema_atual, tipo_pergunta, adicionar, remover }
+      body: { tema_atual, adicionar, remover }
     });
   }
   catch (err) {console.error("Erro ao salvar favoritos", err)};
@@ -468,9 +461,8 @@ function temaValido(tema) {
 
 const estado = carregarEstadoPesquisa();
 if (estado && temaValido(estado.tema)) {
-  // Define tema e tipo de pergunta
+  // Define tema o tema da pergunta
   box_tema.value = estado.tema;
-  box_tipo_pergunta.value = estado.tipo_pergunta;
 
   // Define dificuldades
   document.querySelectorAll("#checks-dificuldades input[type='checkbox']").forEach(cb => {cb.checked = estado.dificuldades.includes(cb.value)});

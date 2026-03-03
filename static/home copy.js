@@ -259,13 +259,18 @@ function inserirBotaoModoTeste() {
 //else if (!window.ADS_CONFIG.isMobile) exibirAnuncios();
 
 async function iniciarQuiz(event) {
+  console.log("Escolha de tema permitido? ", permitir_escolher_tema)
   function desbloquearBotoes() {
     permitir_escolher_tema = true;
   };
 
   const config = window.ADS_CONFIG;
   if (config.registrandoModoTeste) return;
-  if (!permitir_escolher_tema) return;
+  if (!permitir_escolher_tema) {
+    console.log("Retornando")
+    return;
+  }
+  console.log("1.Cheguei aqui")
   playSound("click");
   permitir_escolher_tema = false;
 
@@ -282,6 +287,7 @@ async function iniciarQuiz(event) {
 
   // Mensagem avisando que as perguntas acabaram
   const perguntas_restantes_atuais = parseInt(perguntas_restantes[0]?.textContent.split("/")[0] ?? "0", 10);
+  console.log("2.Cheguei aqui")
   if (perguntas_restantes_atuais <= 0) {
     if (!MODO_VISITANTE) {
       exibirMensagem(mensagem, `Energia esgotada, retorne amanhã para poder responder novas perguntas`, 'orange');
@@ -292,6 +298,9 @@ async function iniciarQuiz(event) {
     desbloquearBotoes();
     return;
   }
+
+  console.log("3.Cheguei aqui")
+  
   exibirMensagem(mensagem, "Preparando quiz...", '#d1d1d1ff', false)
 
   // Carrega as perguntas para o quiz
@@ -605,7 +614,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Implementa a função de clique nos temas
-  document.querySelectorAll(".card").forEach(card => {
+  document.querySelectorAll(".tema-card").forEach(card => {
+    console.log("Card selecionado")
     card.addEventListener("click", iniciarQuiz);
   });
 

@@ -250,7 +250,6 @@ def enviar_feedback(user_id):
     data = request.get_json()
     id_pergunta = data.get("id_pergunta")
     tema = data.get("tema").lower().capitalize()
-    tipo_pergunta = data.get("tipo_pergunta").lower().capitalize()
     estrelas = data.get("estrelas")
     if estrelas not in (1, 2, 3, 4, 5):
         estrelas = None
@@ -264,10 +263,10 @@ def enviar_feedback(user_id):
     modo_visitante = session.get("visitante")
 
     if modo_visitante:
-        if not all([data.get("id_pergunta"), data.get("tipo_pergunta"), data.get("versao_pergunta"), id_visitante]):
+        if not all([data.get("id_pergunta"), data.get("versao_pergunta"), id_visitante]):
             return jsonify({"erro": "Dados incompletos como visitante"}), 400
     else:
-        if not all([data.get("id_pergunta"), data.get("tema"), data.get("tipo_pergunta"), data.get("versao_pergunta"), id_usuario]):
+        if not all([data.get("id_pergunta"), data.get("tema"), data.get("versao_pergunta"), id_usuario]):
             return jsonify({"erro": "Dados incompletos como usuário cadastrado"}), 400
     try:
         conn = get_db_connection()
@@ -277,43 +276,42 @@ def enviar_feedback(user_id):
         if data['atualizar_feedback_estrelas']:
             if modo_visitante:
                 cur.execute("""
-                    INSERT INTO feedbacks (id_pergunta, tema, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (id_pergunta, tipo_pergunta, versao_pergunta, id_visitante)
+                    INSERT INTO feedbacks (id_pergunta, tema, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (id_pergunta, versao_pergunta, id_visitante)
                     DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, comentario = EXCLUDED.comentario, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'))
                     RETURNING id_feedback;
-                """, (id_pergunta, tema, tipo_pergunta, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade))
+                """, (id_pergunta, tema, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade))
             else:
                 cur.execute("""
-                    INSERT INTO feedbacks (id_pergunta, tema, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (id_pergunta, tipo_pergunta, versao_pergunta, id_usuario)
+                    INSERT INTO feedbacks (id_pergunta, tema, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (id_pergunta, versao_pergunta, id_usuario)
                     DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, comentario = EXCLUDED.comentario, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'))
                     RETURNING id_feedback;
-                """, (id_pergunta, tema, tipo_pergunta, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade))
+                """, (id_pergunta, tema, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade))
             id_feedback = cur.fetchone()[0]
         # Feedback para a nota da pergunta
         if data["atualizar_feedback_nota"]:
             if modo_visitante:
                 cur.execute("""
-                    INSERT INTO feedbacks_notas (id_pergunta, tipo_pergunta, id_visitante,
-                                                    versao, positivo)
-                    VALUES (%s, %s, %s, %s, %s)
-                    ON CONFLICT (id_pergunta, tipo_pergunta, id_visitante, versao)
+                    INSERT INTO feedbacks_notas (id_pergunta, id_visitante, versao, positivo)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (id_pergunta, id_visitante, versao)
                     DO UPDATE SET positivo = EXCLUDED.positivo,
                                     versao = EXCLUDED.versao,
                                     ultima_atualizacao = date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo');
-                """, (id_pergunta, tipo_pergunta, id_visitante, versao_pergunta, aprovacao_nota))
+                """, (id_pergunta, id_visitante, versao_pergunta, aprovacao_nota))
             else:
                 cur.execute("""
-                    INSERT INTO feedbacks_notas (id_pergunta, tipo_pergunta, id_usuario,
+                    INSERT INTO feedbacks_notas (id_pergunta, id_usuario,
                                                     versao, positivo)
-                    VALUES (%s, %s, %s, %s, %s)
-                    ON CONFLICT (id_pergunta, tipo_pergunta, id_usuario, versao)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (id_pergunta, id_usuario, versao)
                     DO UPDATE SET positivo = EXCLUDED.positivo,
                                     versao = EXCLUDED.versao,
                                     ultima_atualizacao = date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo');
-                """, (id_pergunta, tipo_pergunta, id_usuario, versao_pergunta, aprovacao_nota))
+                """, (id_pergunta, id_usuario, versao_pergunta, aprovacao_nota))
         conn.commit()
 
         # Notifica por e-mail o feedback enviado caso tenha comentário
@@ -323,7 +321,6 @@ def enviar_feedback(user_id):
                     id_feedback=id_feedback,
                     id_pergunta=id_pergunta,
                     tema = tema,
-                    tipo_pergunta=tipo_pergunta,
                     enunciado=data.get("enunciado"),
                     comentario=comentario,
                     estrelas=estrelas,
@@ -353,9 +350,9 @@ def enviar_feedback_comentario(user_id):
     modo_visitante = session["visitante"]
     comentario = (data.get("comentario") or "").strip()
     tema = data.get("tema")
-    tipo_pergunta = data.get("tipo_pergunta").lower().capitalize()
     feedback_id = data.get("feedback_id")
     pontuacao_saldo = data.get("pontuacao_saldo")
+    print(f"Tema é {tema}")
 
     if modo_visitante is None:
         return jsonify({"erro": "modo_visitante é obrigatório"}), 400
@@ -429,9 +426,9 @@ def enviar_feedback_comentario(user_id):
                         id_visitante,
                         tema,
                         pontuacao_saldo,
-                        comentario, tipo_pergunta
+                        comentario
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s)
                     RETURNING id_feedback;
                     """,
                     (
@@ -440,8 +437,7 @@ def enviar_feedback_comentario(user_id):
                         id_visitante,
                         tema,
                         pontuacao_saldo,
-                        comentario,
-                        tipo_pergunta
+                        comentario
                     )
                 )
 
@@ -453,7 +449,6 @@ def enviar_feedback_comentario(user_id):
                     enviar_email_feedback_site(
                         id_feedback=feedback_id,
                         tema=tema,
-                        tipo_pergunta=tipo_pergunta,
                         comentario=comentario,
                         pontuacao_saldo=pontuacao_saldo,
                         modo_visitante=modo_visitante
@@ -812,10 +807,9 @@ def pesquisa(user_id):
 @app.route("/api/carregar-favoritos", methods=["GET"])
 def get_favoritos_usuario():
     tema = request.args.get("tema-atual")
-    tipo_pergunta = request.args.get("tipo-pergunta")
     id_usuario = session["id_usuario"]
 
-    if not id_usuario or not tema or not tipo_pergunta:
+    if not id_usuario or not tema:
         return jsonify({"error": "Parâmetros inválidos"}), 400
 
     conn = cur = None
@@ -826,9 +820,9 @@ def get_favoritos_usuario():
         query = """
             SELECT id_pergunta
             FROM favoritos_usuarios
-            WHERE id_usuario = %s AND tema = %s AND tipo_pergunta = %s
+            WHERE id_usuario = %s AND tema = %s
         """
-        cur.execute(query, (id_usuario, tema, tipo_pergunta))
+        cur.execute(query, (id_usuario, tema))
         favoritos = [row[0] for row in cur.fetchall()]
     except Exception:
         app.logger.exception("Erro ao carregar favoritos do usuário com id %s", id_usuario)
@@ -908,55 +902,29 @@ def pegar_email_confirmado():
         'email_confirmado': session["email_confirmado"]
     })
 
-@app.route("/pergunta/<int:id_pergunta>/<tipo_pergunta>/gabarito", methods=["GET"])
+@app.route("/pergunta/<int:id_pergunta>/gabarito", methods=["GET"])
 @token_required
-def get_gabarito(id_pergunta, tipo_pergunta, user_id):
+def get_gabarito(id_pergunta, user_id):
     """Função para só pegar o gabarito e nota da pergunta após resposta enviada pelo usuário no modo desafio (evita expor o gabarito no localStorage)"""
     conn = cur = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # Consulta para objetivas
-        if tipo_pergunta == 'objetiva':
-            cur.execute("""
-                SELECT resposta_correta, nota
-                FROM perguntas_objetivas
-                WHERE id_pergunta = %s
-            """, (id_pergunta,))
-            row = cur.fetchone()
+        cur.execute("""
+            SELECT resposta_correta, nota
+            FROM perguntas_objetivas
+            WHERE id_pergunta = %s
+        """, (id_pergunta,))
+        row = cur.fetchone()
 
-            if not row:
-                return {"erro": "Pergunta não encontrada"}, 404
-            resposta_correta, nota = row
-
-            return {
-                "resposta_correta": resposta_correta,
-                "nota": nota
-            }
-        # Consulta para discursivas
-        else:
-            cur.execute("""
-                SELECT respostas_corretas, nota
-                FROM perguntas_discursivas
-                WHERE id_pergunta = %s
-            """, (id_pergunta,))
-            row = cur.fetchone()
-
-            if not row:
-                return {"erro": "Pergunta não encontrada"}, 404
-            rc, nota = row
-
-            # Função abaixo repetida em listar_perguntas
-            try:
-                respostas_corretas = [r.strip() if isinstance(r, str) else r for r in rc]
-            except Exception:
-                respostas_corretas = list(rc)
-
-            return {
-                "respostas_corretas": respostas_corretas,
-                "nota": nota
-            }
+        if not row:
+            return {"erro": "Pergunta não encontrada"}, 404
+        resposta_correta, nota = row
+        return {
+            "resposta_correta": resposta_correta,
+            "nota": nota
+        }
     except Exception:
         app.logger.exception("Erro ao buscar gabarito")
         return {"erro": "Erro interno"}, 500
@@ -974,7 +942,6 @@ def listar_perguntas(user_id):
     # Parâmetros de query
     tema = request.args.get('tema')
     modo = (request.args.get('modo') or '').lower()
-    tipo_pergunta = (request.args.get('tipo-de-pergunta') or '').lower()
     id_usuario = session.get('id_usuario')
     id_visitante = session.get('id_visitante')
     modo_visitante = session.get("visitante")
@@ -983,7 +950,7 @@ def listar_perguntas(user_id):
     limit = 150 if modo == 'desafio' else 1000
 
     # Validações
-    if not tema or modo not in ('desafio', 'revisao') or tipo_pergunta not in ('objetiva', 'discursiva'):
+    if not tema or modo not in ('desafio', 'revisao'):
         app.logger.error("Parâmetros inválidos ou ausentes")
         return jsonify({'erro': 'Parâmetros inválidos ou ausentes'}), 400
     if not id_usuario and not modo_visitante:
@@ -992,11 +959,6 @@ def listar_perguntas(user_id):
     if not id_visitante and modo_visitante:
         app.logger.error("Visitante não autenticado")
         return jsonify({'erro': 'Visitante não autenticado'}), 401
-    
-    cfg = QUESTION_CONFIG.get(tipo_pergunta)
-    if not cfg:
-        app.logger.error("Tipo de pergunta inválido")
-        return jsonify({'erro': 'Tipo de pergunta inválido'}), 400
     
     # Conexão com servidor
     conn = cur = None
@@ -1010,10 +972,8 @@ def listar_perguntas(user_id):
     # Busca das perguntas
     ids_prioritarios = []
     try:
-        select_clause = ",\n".join(cfg['select_cols'])
-        select_cols_visitante = ",\n".join(cfg['select_cols_visitante'])
-        tipo_str = cfg['tipo_str']   # Usado para filtrar feedbacks/respostas
-        table = cfg['table']         # Nome da tabela — vindo do cfg interno (seguro)
+        select_clause = ",\n".join(QUESTION_CONFIG['select_cols'])
+        select_cols_visitante = ",\n".join(QUESTION_CONFIG['select_cols_visitante'])
     
         is_privileged = False if modo_visitante else int(id_usuario) in privileged_ids
         modo_teste = session.get("modo_teste", False)
@@ -1027,96 +987,61 @@ def listar_perguntas(user_id):
         if modo_visitante:
             sql = f"""
                 SELECT {select_cols_visitante}
-                FROM {table} p
+                FROM perguntas_objetivas p
                 LEFT JOIN feedbacks f
                     ON f.id_pergunta = p.id_pergunta
                     AND f.id_visitante = %s
-                    AND f.tipo_pergunta = %s
                     AND f.versao_pergunta = p.versao
                 LEFT JOIN feedbacks_notas fn
                     ON fn.id_pergunta = p.id_pergunta 
                     AND fn.id_visitante = %s
-                    AND fn.tipo_pergunta = %s
                     AND (p.versao - floor(p.versao)) = (fn.versao - floor(fn.versao))
                 WHERE p.tema = %s AND {where_filter}
                 LIMIT %s
             """
-            params = (id_visitante, tipo_str, id_visitante, tipo_str, tema, limit)
+            params = (id_visitante, id_visitante, tema, limit)
         else:
             sql = f"""
                 SELECT {select_clause}
-                FROM {table} p
+                FROM perguntas_objetivas p
                 LEFT JOIN respostas_usuarios r
-                    ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s AND r.tipo_pergunta = %s
+                    ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s
                 LEFT JOIN feedbacks f
                     ON f.id_pergunta = p.id_pergunta
                     AND f.id_usuario = %s
-                    AND f.tipo_pergunta = %s
                     AND f.versao_pergunta = p.versao
                 LEFT JOIN feedbacks_notas fn
                     ON fn.id_pergunta = p.id_pergunta
                     AND fn.id_usuario = %s
-                    AND fn.tipo_pergunta = %s
                     AND (p.versao - floor(p.versao)) = (fn.versao - floor(fn.versao))
                 WHERE p.tema = %s AND {where_filter}
                 LIMIT %s
             """
             # Aqui são passados 8 paramêtros por causa da tabela respostas_usuarios, que não é analisada no modo visitante
-            params = (id_usuario, tipo_str, id_usuario, tipo_str, id_usuario, tipo_str, tema, limit)
+            params = (id_usuario, id_usuario, id_usuario, tema, limit)
         cur.execute(sql, params)
         perguntas = cur.fetchall()
-
         perguntas_por_dificuldade = {'Fácil': [], 'Médio': [], 'Difícil': [], 'Extremo': []}
         for row in perguntas:
             respondida = False if modo_visitante else bool(row['respondida'])
             dificuldade = row['dificuldade'] or 'Médio'
-            if tipo_pergunta == 'discursiva':
-                rc = row.get('respostas_corretas') or []
-                try:
-                    respostas_corretas = [r.strip() if isinstance(r, str) else r for r in rc]
-                except Exception:
-                    respostas_corretas = list(rc)
-
-                item = {
-                    'id_pergunta': row['id_pergunta'],
-                    'subtemas': row['subtemas'],
-                    'enunciado': row['enunciado'],
-                    'dica': row['dica'],
-                    'nota': row['nota'],
-                    'dificuldade': dificuldade,
-                    'versao_pergunta': row['versao'],
-                    'estrelas': row['estrelas'],
-                    'comentario': row['comentario'],
-                    'aprovacao_nota': row['aprovacao_nota']
-                }
-
-                # No modo revisão pode mandar resposta correta
-                if modo == 'revisao':
-                    item.update({
-                        'respostas_corretas': respostas_corretas,
-                    })
-
-            else:  # Objetiva
-                item = {
-                    'id_pergunta': row['id_pergunta'],
-                    'subtemas': row['subtemas'],
-                    'enunciado': row['enunciado'],
-                    'alternativa_a': row['alternativa_a'],
-                    'alternativa_b': row['alternativa_b'],
-                    'alternativa_c': row['alternativa_c'],
-                    'alternativa_d': row['alternativa_d'],
-                    'nota': row['nota'],
-                    'dificuldade': dificuldade,
-                    'versao_pergunta': row['versao'],
-                    'estrelas': row['estrelas'],
-                    'comentario': row['comentario'],
-                    'aprovacao_nota': row['aprovacao_nota']
-                }
-
-                if modo == 'revisao':
-                    item.update({
-                        'resposta_correta': row['resposta_correta'],
-                    })
+            item = {
+                'id_pergunta': row['id_pergunta'],
+                'subtemas': row['subtemas'],
+                'enunciado': row['enunciado'],
+                'alternativa_a': row['alternativa_a'],
+                'alternativa_b': row['alternativa_b'],
+                'alternativa_c': row['alternativa_c'],
+                'alternativa_d': row['alternativa_d'],
+                'nota': row['nota'],
+                'dificuldade': dificuldade,
+                'versao_pergunta': row['versao'],
+                'estrelas': row['estrelas'],
+                'comentario': row['comentario'],
+                'aprovacao_nota': row['aprovacao_nota']
+            }
+            if modo == 'revisao':
+                item.update({'resposta_correta': row['resposta_correta']})
             # Filtra por modo
             if modo_visitante:
                 perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
@@ -1190,7 +1115,7 @@ def login():
 
             # Verifica usuário
             cur.execute("""
-                SELECT id_usuario, senha_hash, nome, email_confirmado, dicas_restantes, perguntas_restantes, ultima_sessao, bonus_energia, expiracao_bonus
+                SELECT id_usuario, senha_hash, nome, email_confirmado, perguntas_restantes, ultima_sessao, bonus_energia, expiracao_bonus
                 FROM usuarios_registrados WHERE email = %s
             """, (email,))
             usuario = cur.fetchone()
@@ -1198,7 +1123,7 @@ def login():
             if not usuario:
                 return jsonify(success=False, message="E-mail não registrado")
 
-            id_usuario, senha_hash, nome_usuario, email_confirmado, dicas_restantes, p_restantes, u_sessao, b_energia, exp_bonus = usuario
+            id_usuario, senha_hash, nome_usuario, email_confirmado, p_restantes, u_sessao, b_energia, exp_bonus = usuario
             session["id_usuario"] = id_usuario
             session["email"] = email
             session["email_confirmado"] = email_confirmado
@@ -1305,7 +1230,6 @@ def login():
                 id_usuario=id_usuario,
                 email=email,
                 nome_usuario=nome_usuario,
-                dicas_restantes=dicas_restantes,
                 perguntas_restantes=p_restantes,
                 opcoes_usuario=opcoes_usuario
             ), 200)
@@ -1586,12 +1510,11 @@ def salvar_favoritos(user_id):
     data = request.get_json(force=True)
 
     tema = data.get("tema_atual")
-    tipo_pergunta = data.get("tipo_pergunta")
     adicionar = set(map(int, data.get("adicionar", [])))
     remover   = set(map(int, data.get("remover", [])))
 
-    if not tema or not tipo_pergunta:
-        return jsonify({"success": False, "msg": "Parâmetros inválidos."}), 400
+    if not tema:
+        return jsonify({"success": False, "msg": "Tema inválido"}), 400
 
     conn = cur = None
     try:
@@ -1603,26 +1526,25 @@ def salvar_favoritos(user_id):
             cur.execute("""
                 DELETE FROM favoritos_usuarios
                 WHERE id_usuario = %s
-                  AND tipo_pergunta = %s
                   AND tema = %s
                   AND id_pergunta = ANY(%s)
-            """, (user_id, tipo_pergunta, tema, list(remover)))
+            """, (user_id, tema, list(remover)))
 
         # Inserir os IDs explicitamente enviados
         for id_pergunta in adicionar:
             cur.execute("""
-                INSERT INTO favoritos_usuarios (id_usuario, id_pergunta, tipo_pergunta, tema)
-                VALUES (%s, %s, %s, %s)
-                ON CONFLICT (id_usuario, id_pergunta, tipo_pergunta) DO NOTHING
-            """, (user_id, id_pergunta, tipo_pergunta, tema))
+                INSERT INTO favoritos_usuarios (id_usuario, id_pergunta, tema)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (id_usuario, id_pergunta) DO NOTHING
+            """, (user_id, id_pergunta, tema))
 
         conn.commit()
         return jsonify({"success": True, "msg": "Favoritos atualizados com sucesso."}), 200
 
-    except Exception as e:
+    except Exception:
         if conn: conn.rollback()
         app.logger.exception("Erro ao salvar favoritos do usuário %s", user_id)
-        return jsonify({"success": False, "msg": "Erro ao salvar favoritos."}), 500
+        return jsonify({"success": False, "msg": "Erro ao salvar favoritos"}), 500
     finally:
         if cur: cur.close()
         if conn: conn.close()
@@ -1760,47 +1682,15 @@ def sobre_app_from_login():
     registrar_pagina_visitada("Login -> Sobre")
     return render_template('sobre_o_app.html')
 
-@app.route("/quiz/<tema>/<tipo>")
+@app.route("/quiz/<tema>")
 @token_required
-def quiz(user_id, tema, tipo):
+def quiz(user_id, tema):
     return render_template("quiz.html", AMAZON_TRACKING_ID=AMAZON_TRACKING_ID)
 
-@app.route("/revisao/<tema>/<tipo>")
+@app.route("/revisao/<tema>")
 @token_required
-def revisao(user_id, tema, tipo):
+def revisao(user_id, tema):
     return render_template("quiz.html", AMAZON_TRACKING_ID=AMAZON_TRACKING_ID)
-
-@app.route("/usar_dica", methods=["GET","POST"])
-@token_required
-def usar_dica(user_id):
-    if "id_usuario" not in session:
-        return jsonify(success=False, message="Usuário não autenticado."), 401
-
-    id_usuario = session["id_usuario"]
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    # Verifica se ainda tem dicas
-    cur.execute("SELECT dicas_restantes FROM usuarios_registrados WHERE id_usuario = %s", (id_usuario,))
-    row = cur.fetchone()
-
-    if not row or row[0] <= 0:
-        cur.close()
-        conn.close()
-        return jsonify(success=False, message="Você não possui mais dicas."), 400
-
-    novas_dicas = row[0] - 1
-    cur.execute(
-        "UPDATE usuarios_registrados SET dicas_restantes = %s WHERE id_usuario = %s",
-        (novas_dicas, id_usuario)
-    )
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return jsonify(success=True, dicas_restantes=novas_dicas)
 
 @app.route("/register", methods=["POST"])
 def registrar():
@@ -1887,31 +1777,30 @@ def registrar():
         if id_visitante:
             if usar_dados_visitante:
                 cur.execute("""
-                    SELECT DISTINCT ON (id_pergunta, tipo_pergunta)
-                        id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, auto_chute, dificuldade
-                    FROM acesso_modo_visitante
+                    SELECT
+                        id_pergunta, tema, resposta_enviada, versao_pergunta, acertou, tempo_gasto, pontos_ganhos, pontos_usuario, auto_chute, dificuldade
+                    FROM respostas_visitantes
                     WHERE id_visitante = %s AND criado_em >= NOW() - INTERVAL '1 month'
-                    ORDER BY id_pergunta, tipo_pergunta, criado_em ASC
+                    ORDER BY id_pergunta, criado_em ASC
                 """, (id_visitante,))
                 
                 respostas = cur.fetchall()
 
                 # Obs: A data da resposta registrada é a data em que ocorreu a migração dos dados
-                for id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, auto_chute, dificuldade in respostas:
-                    tipo_pergunta = tipo_pergunta.capitalize()
+                for id_pergunta, tema, resposta_enviada, versao_pergunta, acertou, tempo_gasto, pontos_ganhos, pontos_usuario, auto_chute, dificuldade in respostas:
                     cur.execute("""
                         INSERT INTO respostas_usuarios (
-                            id_usuario, id_pergunta, tipo_pergunta, tema, resposta_usuario, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, data_resposta, dados_migrados, auto_chute, dificuldade
+                            id_usuario, id_pergunta, tema, resposta_usuario, versao_pergunta, acertou, tempo_gasto, pontos_ganhos, pontos_usuario, data_resposta, dados_migrados, auto_chute, dificuldade
                         )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        ON CONFLICT (id_usuario, id_pergunta, tipo_pergunta) DO NOTHING
-                    """, (id_usuario, id_pergunta, tipo_pergunta, tema, resposta_enviada, versao_pergunta, acertou, usou_dica, tempo_gasto, pontos_ganhos, pontos_usuario, agora_sp, True, auto_chute, dificuldade))
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (id_usuario, id_pergunta) DO NOTHING
+                    """, (id_usuario, id_pergunta, tema, resposta_enviada, versao_pergunta, acertou, tempo_gasto, pontos_ganhos, pontos_usuario, agora_sp, True, auto_chute, dificuldade))
 
                 app.logger.info(f"{len(respostas)} respostas migradas do visitante {id_visitante}")
 
                 # Limpeza das respostas do usuario no modo visitante
                 cur.execute("""
-                    DELETE FROM acesso_modo_visitante WHERE id_visitante = %s AND criado_em >= NOW() - INTERVAL '1 month'
+                    DELETE FROM respostas_visitantes WHERE id_visitante = %s AND criado_em >= NOW() - INTERVAL '1 month'
                 """, (id_visitante,))
 
             # Atualiza os feedbacks para as perguntas que o usuário fez como visitante
@@ -2036,17 +1925,15 @@ def registrar_resposta_usuario(user_id):
             # Registra a resposta do usuário
             cur.execute("""
                 INSERT INTO respostas_usuarios (
-                    id_usuario, id_pergunta, tipo_pergunta, versao_pergunta, resposta_usuario, acertou, usou_dica, pontos_ganhos, tempo_gasto, pontos_usuario, tema, dados_migrados, dificuldade, auto_chute
+                    id_usuario, id_pergunta, versao_pergunta, resposta_usuario, acertou,pontos_ganhos, tempo_gasto, pontos_usuario, tema, dados_migrados, dificuldade, auto_chute
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 id_usuario,
                 dados["id_pergunta"],
-                dados["tipo_pergunta"].lower().capitalize(),
                 dados["versao_pergunta"],
                 dados["resposta_usuario"],
                 dados["acertou"],
-                dados.get("usou_dica", False),
                 dados["pontos_ganhos"],
                 dados["tempo_gasto"],
                 dados["pontos_usuario"],
@@ -2066,43 +1953,21 @@ def registrar_resposta_usuario(user_id):
             nova_pontuacao = cur.fetchone()[0]
 
             # Atualiza a quantidade de perguntas restantes do usuário
-            if dados["tipo_pergunta"] == "Objetiva":
-                cur.execute("""
-                    UPDATE usuarios_registrados
-                    SET
-                        perguntas_restantes = GREATEST(perguntas_restantes - 1, 0)
-                    WHERE id_usuario = %s
-                    RETURNING perguntas_restantes, dicas_restantes
-                """, (id_usuario,))
-            else:
-                cur.execute("""
-                    UPDATE usuarios_registrados
-                    SET
-                        perguntas_restantes = GREATEST(perguntas_restantes - 1, 0),
+            cur.execute("""
+                UPDATE usuarios_registrados
+                SET
+                    perguntas_restantes = GREATEST(perguntas_restantes - 1, 0)
+                WHERE id_usuario = %s
+                RETURNING perguntas_restantes
+            """, (id_usuario,))
 
-                        dicas_restantes = CASE
-                            WHEN discursivas_respondidas + 1 >= 10
-                                THEN LEAST(dicas_restantes + 1, 20)
-                            ELSE dicas_restantes
-                        END,
-
-                        discursivas_respondidas = CASE
-                            WHEN discursivas_respondidas + 1 >= 10 THEN 0
-                            ELSE discursivas_respondidas + 1
-                        END
-
-                    WHERE id_usuario = %s
-                    RETURNING perguntas_restantes, dicas_restantes
-                """, (id_usuario,))
-
-            perguntas_restantes, dicas_restantes = cur.fetchone()
+            perguntas_restantes = cur.fetchone()
             conn.commit()
 
             return jsonify({
                 "sucesso": True,
                 "nova_pontuacao": nova_pontuacao,
                 "perguntas_restantes": perguntas_restantes,
-                "dicas_restantes": dicas_restantes
             })
     except Exception:
         if conn: conn.rollback()
@@ -2123,32 +1988,28 @@ def registrar_resposta_visitante():
         cur = conn.cursor()
 
         cur.execute("""
-            INSERT INTO acesso_modo_visitante (
+            INSERT INTO respostas_visitantes (
                 tema,
-                tipo_pergunta,
                 id_pergunta,
                 resposta_enviada,
                 acertou,
                 tempo_gasto,
                 id_visitante,
                 versao_pergunta,
-                usou_dica,
                 pontos_ganhos,
                 pontos_usuario,
                 modo_tela,
                 dificuldade,
                 auto_chute
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             dados.get("tema"),
-            dados.get("tipo_pergunta").lower().capitalize(),
             dados.get("id_pergunta"),
             dados.get("resposta_enviada"),
             dados.get("acertou"),
             dados.get("tempo_gasto"),
             id_visitante,
             dados.get("versao_pergunta"),
-            dados.get("usou_dica"),
             dados.get("pontos_ganhos"),
             dados.get("pontos_usuario"),
             dados.get("modo_tela"),

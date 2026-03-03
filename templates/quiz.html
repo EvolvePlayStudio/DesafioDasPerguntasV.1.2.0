@@ -229,7 +229,7 @@
     max-width: 38rem;
     position: relative;
   }
-  #perguntas-restantes-icon, #dica-icon {
+  #perguntas-restantes-icon {
     display: none;
     align-items: center;
     justify-content: center;
@@ -240,7 +240,7 @@
     justify-content: flex-start;
     cursor: default
   }
-  #perguntas-count, #contador-dicas {
+  #perguntas-count {
     font-weight: bold;
     margin-left: 6px;
     color: black;
@@ -254,7 +254,7 @@
     margin: 0;
     flex-grow: 1;
   }
-  .dica-icon {
+  .perguntas-restantes-icon {
     display: none;
     align-items: center;
     cursor: pointer;
@@ -262,7 +262,7 @@
     min-width: 0;
     flex-shrink: 1;
   }
-  .dica-icon img {
+  .perguntas-restantes-icon img {
     width: 1.5rem;
     height: 1.5rem;
     margin-right: 0.3rem;
@@ -358,11 +358,8 @@
     font-size: var(--fs-aux);
     color: var(--hint-text);
   }
-  #hint-pular, #hint-avaliacao {
-    margin-top: 0.3rem
-  }
-  #hint-dica {
-    margin-top: var(--small-vertical-margin); /* O ideal era salvar isto no window, pois é usado lá no js também */
+  #hint-avaliacao {
+    margin-top: 1rem;
   }
   .nota-box {
     font-weight: var(--peso-fonte-botoes);
@@ -420,7 +417,7 @@
   .btn-dislike.ativo .icon { fill: #c62828; }
   .btn-like:hover .icon { fill: #2e7d32; transform: scale(1.1); }
   .btn-dislike:hover .icon { fill: #c62828; transform: scale(1.1); }
-  #dica-box, #nota-box, #respostas-aceitas-box {
+  #nota-box, #respostas-aceitas-box {
     font-size: var(--fs-aux);
     display: none;
     margin-top: calc(var(--vertical-margin) - 0.2rem);
@@ -429,7 +426,7 @@
     border-radius: 8px;
     font-weight: var(--peso-fonte-padrao);
   }
-  #dica-box, #nota-box {
+  #nota-box {
     margin-top: var(--small-vertical-margin);
   }
   #avaliacao {
@@ -569,12 +566,8 @@
     .estrela {
       padding: 0 1.2rem;
     }
-    #dica-box, #nota-box, #respostas-aceitas-box {
+    #nota-box, #respostas-aceitas-box {
       padding: 0.75rem 0.5rem;
-    }
-    #dica-icon img {
-      width: 1rem;
-      height: 1rem;
     }
     #comentarios {
       max-width: 28rem;
@@ -622,24 +615,18 @@
 
       <!-- Grid layout com anúncios nas laterais e layout de quiz no centro -->
       <div class="quiz-grid-layout">
-        <!-- Layout contendo o enunciado, ícone de dica, etc -->
+        <!-- Layout contendo o enunciado, altenativas, etc -->
         <div class="quiz-container">
           <!-- Cabeçalho do quiz -->
           <div class="quiz-header">
             <!-- Ícone de perguntas restantes à esquerda -->
-            <div id="perguntas-restantes-icon" class="dica-icon" title="Perguntas restantes" style="display: flex;">
+            <div id="perguntas-restantes-icon" class="perguntas-restantes-icon" title="Perguntas restantes" style="display: flex;">
               <span>⚡</span>
               <span id="perguntas-count">0</span>
             </div>
 
             <!-- Tema e nível da pergunta no centro -->
             <h2 id="tema-nivel-pergunta"></h2>
-
-            <!-- Ícone de dica à direita -->
-            <div id="dica-icon" class="dica-icon" title="Usar dica" style="display: flex; visibility: hidden; pointer-events: none;">
-              <span>💡</span>
-              <span id="contador-dicas">0</span>
-            </div>
           </div>
           
           <!-- Parte central do quiz com enunciado, alternativas, botões, etc -->
@@ -678,20 +665,9 @@
               <strong>Respostas aceitas:</strong> <span id="lista-respostas"></span>
             </div>
 
-            <!-- Botões de hints para instruir o usuário -->
-            <div id="hint-dica" style="display: none">
-              💡 Algumas perguntas oferecem dica ao clicar no ícone de lâmpada
-            </div>
-            <div id="hint-pular" style="display: none">
-              ⏭ Pressione "Pular" caso não saiba a resposta para reduzir a penalidade
-            </div>
+            <!-- Hint-text para avaliar a pergunta -->
             <div id="hint-avaliacao" style="display: none">
               ⭐ Apoie a melhoria do conteúdo avaliando a pergunta no final
-            </div>
-
-            <!-- Box da dica -->
-            <div id="dica-box">
-              <strong>Dica:</strong> <span id="dica-texto"></span>
             </div>
             
             <!-- Box da nota -->

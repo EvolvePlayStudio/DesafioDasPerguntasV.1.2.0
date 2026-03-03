@@ -27,7 +27,6 @@ setInterval(() => {
 // Outras variáveis
 const MODO_VISITANTE = sessionStorage.getItem('modoVisitante') === "true";
 const perguntas_respondidas = JSON.parse(sessionStorage.getItem("perguntas_respondidas"));
-const tipo_pergunta = sessionStorage.getItem("tipo_pergunta").toLowerCase();
 const pontuacoes_jogador = MODO_VISITANTE ? JSON.parse(localStorage.getItem("pontuacoes_visitante")) : JSON.parse(sessionStorage.getItem("pontuacoes_usuario"));
 const rankings_jogador = JSON.parse(sessionStorage.getItem("rankings_jogador"));
 const pontuacao_anterior = sessionStorage.getItem("pontuacao_anterior");
@@ -123,59 +122,47 @@ resultado.perguntas_respondidas.forEach((p, i) => {
         cor_dificuldade = 'black'
     }
 
-    if (tipo_pergunta === 'discursiva') {
-      const texto_usou_dica = p.usou_dica? 'Sim': 'Não';
-      div.innerHTML = `
-      <p><strong>Dificuldade:</strong> <span style="color: ${cor_dificuldade}">${p.dificuldade}</span></p>
-      <p style="font-family: 'Noto Serif', 'Roboto', serif, sans-serif; font-weight: bold;"><strong>${i+1}-</strong> ${p.enunciado}</p>
-      <p><strong>Sua resposta:</strong> <span style="color:${cor_pontuacao}">${p.resposta_usuario}</span></p>
-      <p><strong>Respostas aceitas:</strong> ${p.respostas_aceitas.join(" / ")}</p>
-      <p><strong>Usou dica:</strong> ${texto_usou_dica} </p>
-      <p><strong>Pontos ganhos:</strong> <span style=color:${cor_pontuacao}>${str_pontos_ganhos}</span></p>
-      `;
+    
+    let cor_alternativa_a = 'black';
+    let cor_alternativa_b = 'black';
+    let cor_alternativa_c = 'black';
+    let cor_alternativa_d = 'black';
+    if (p.resposta_correta === 'A') {
+        cor_alternativa_a = 'lime'
     }
-    else {
-        let cor_alternativa_a = 'black';
-        let cor_alternativa_b = 'black';
-        let cor_alternativa_c = 'black';
-        let cor_alternativa_d = 'black';
-        if (p.resposta_correta === 'A') {
-            cor_alternativa_a = 'lime'
+    else if (p.resposta_correta === 'B') {
+        cor_alternativa_b = 'lime'
+    }
+    else if (p.resposta_correta === 'C') {
+        cor_alternativa_c = 'lime'
+    }
+    else if (p.resposta_correta === 'D') {
+        cor_alternativa_d = 'lime'
+    }
+    if (p.resposta_correta !== p.resposta_usuario) {
+        if (p.resposta_usuario === 'A') {
+            cor_alternativa_a = 'red'
         }
-        else if (p.resposta_correta === 'B') {
-            cor_alternativa_b = 'lime'
+        else if (p.resposta_usuario === 'B') {
+            cor_alternativa_b = 'red'
         }
-        else if (p.resposta_correta === 'C') {
-            cor_alternativa_c = 'lime'
+        else if (p.resposta_usuario === 'C') {
+            cor_alternativa_c= 'red'
         }
-        else if (p.resposta_correta === 'D') {
-            cor_alternativa_d = 'lime'
+        else if (p.resposta_usuario === 'D') {
+            cor_alternativa_d = 'red'
         }
-        if (p.resposta_correta !== p.resposta_usuario) {
-            if (p.resposta_usuario === 'A') {
-                cor_alternativa_a = 'red'
-            }
-            else if (p.resposta_usuario === 'B') {
-                cor_alternativa_b = 'red'
-            }
-            else if (p.resposta_usuario === 'C') {
-                cor_alternativa_c= 'red'
-            }
-            else if (p.resposta_usuario === 'D') {
-                cor_alternativa_d = 'red'
-            }
-        }
+    }
 
-        div.innerHTML = `
-        <p><strong>Dificuldade:</strong> <span style="color: ${cor_dificuldade}">${p.dificuldade}</span></p>
-        <p style="font-family: 'Noto Serif', 'Roboto', serif, sans-serif; font-weight: bold;"><strong>${i+1}-</strong> ${p.enunciado}</p>
-        <p style="font-weight: bold; color: ${cor_alternativa_a};"><strong>A)</strong> ${p.alternativa_a}</p>
-        <p style="font-weight: bold; color: ${cor_alternativa_b};"><strong>B)</strong> ${p.alternativa_b}</p>
-        <p style="font-weight: bold; color: ${cor_alternativa_c};"><strong>C)</strong> ${p.alternativa_c}</p>
-        <p style="font-weight: bold; color: ${cor_alternativa_d};"><strong>D)</strong> ${p.alternativa_d}</p>
-        <p><strong>Pontos ganhos:</strong> <span style="color:${cor_pontuacao}">${str_pontos_ganhos}</span></p>
-        `
-    }
+    div.innerHTML = `
+    <p><strong>Dificuldade:</strong> <span style="color: ${cor_dificuldade}">${p.dificuldade}</span></p>
+    <p style="font-family: 'Noto Serif', 'Roboto', serif, sans-serif; font-weight: bold;"><strong>${i+1}-</strong> ${p.enunciado}</p>
+    <p style="font-weight: bold; color: ${cor_alternativa_a};"><strong>A)</strong> ${p.alternativa_a}</p>
+    <p style="font-weight: bold; color: ${cor_alternativa_b};"><strong>B)</strong> ${p.alternativa_b}</p>
+    <p style="font-weight: bold; color: ${cor_alternativa_c};"><strong>C)</strong> ${p.alternativa_c}</p>
+    <p style="font-weight: bold; color: ${cor_alternativa_d};"><strong>D)</strong> ${p.alternativa_d}</p>
+    <p><strong>Pontos ganhos:</strong> <span style="color:${cor_pontuacao}">${str_pontos_ganhos}</span></p>
+    `
     lista.appendChild(div);
 });
 
@@ -242,11 +229,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const payload = {
         id_visitante: localStorage.getItem("id_visitante"),
         tema: document.getElementById("tema-perguntas").textContent,
-        tipo_pergunta: tipo_pergunta,
         pontuacao_saldo: valor_saldo,
         comentario: comentario,
         feedback_id: feedbackIdAtual
     };
+    console.log('tema: ', document.getElementById("tema-perguntas").textContent)
 
     try {
         const response = await fetch("/api/feedbacks/comentarios", {

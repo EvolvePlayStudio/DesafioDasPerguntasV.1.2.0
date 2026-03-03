@@ -396,7 +396,6 @@ document.addEventListener('DOMContentLoaded', function () {
       if (data.success) {
         // Grava informações no sessionStorage
         sessionStorage.setItem("id_usuario", data.id_usuario);
-        sessionStorage.setItem("dicas_restantes", JSON.stringify(data.dicas_restantes || 0));
         sessionStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes || 0));
         sessionStorage.setItem("nome_usuario", data.nome_usuario || '');
 
@@ -507,7 +506,6 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       if (lbl_mensagem_registro) {
         lbl_mensagem_registro.textContent = '';
-        //lbl_mensagem_registro.style.visibility = 'hidden';
         lbl_mensagem_registro.style.display = 'none';
       }
       btnEntrarSemLogin.style.display = "block"

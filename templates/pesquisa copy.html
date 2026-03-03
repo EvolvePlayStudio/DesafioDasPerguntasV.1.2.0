@@ -92,7 +92,7 @@
       margin: 0.5rem;
       gap: 2rem;
     }
-    .filtro-esquerda {
+    .filtro-esquerda, .filtro-direita {
       font-size: var(--fs-base);
       display: flex;
       flex-direction: row;
@@ -283,9 +283,11 @@
     }
     .filtro-esquerda {grid-area: tema; }
     #checks-dificuldades { grid-area: dificuldade; }
+    .filtro-direita { grid-area: tipo; }
     .subtemas-wrap { grid-area: topicos; }
     .filtro-esquerda { justify-self: start; }
     #checks-dificuldades {justify-self: center; }
+    .filtro-direita { justify-self: end; }
     /* Medidas para desktop */
     @media (min-width: 1200px) {
       .top-bar-inner {
@@ -328,11 +330,15 @@
         margin: 0;
         row-gap: 0.6rem;
       }
-      .filtro-esquerda {
+      .filtro-esquerda,
+      .filtro-direita {
         width: 100%;
       }
       .filtro-esquerda {
         justify-content: flex-start;
+      }
+      .filtro-direita {
+        justify-content: flex-end; 
       }
       .filtro-centro {
         width: 100%;
@@ -412,6 +418,14 @@
           <label><input type="checkbox" value="Médio" checked> Médio</label>
           <label><input type="checkbox" value="Difícil" checked> Difícil</label>
           <label><input type="checkbox" value="Extremo" checked> Extremo</label>
+        </div>
+        <!-- Filtro de tipo de pergunta -->
+        <div class="filtro-direita">
+          <label for="tipo-pergunta">Tipo:</label>
+          <select id="tipo-pergunta" disabled>
+          <option>Objetiva</option>
+          <option>Discursiva</option>
+        </select>
         </div>
       </div>
       <!-- Subtemas abaixo centralizado -->

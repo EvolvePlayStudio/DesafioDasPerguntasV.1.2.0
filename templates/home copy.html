@@ -202,6 +202,7 @@
     }
   </style>
 
+  
   <!-- CSS do corpo -->
   <style>
     html, body {
@@ -231,13 +232,13 @@
     main.layout-ready {
       visibility: visible;
     }
-    #escolha-tema {
-      align-items: center;
+    .opcoes-container {
+      display: flex;
       justify-content: center;
-      color: white;
-      font-weight: bold;
-      margin-top: 1rem;
-      font-size: var(--fs-title);
+      margin-top: 1.4rem;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
     }
     .bloco-opcao {
       display: flex;
@@ -495,6 +496,24 @@
         font-size: calc(var(--fs-emph-max) - ((550px - vw) * 0.2));
         font-size: clamp(0.5rem, calc(0.25rem + 1.70vw), var(--fs-base-max));
       }
+      /*
+      .bloco-opcao .opcoes {
+        font-size: calc(var(--fs-base-max) - 0.1rem);
+        font-size: calc(var(--fs-emph-max) - ((550px - vw) * 0.2));
+        font-size: clamp(0.5rem, calc(0.25rem + 1.70vw), var(--fs-base-max));
+      }
+      #tipo-de-resposta {
+        font-size: calc(var(--fs-base-max) - 0.1rem);
+        font-size: calc(var(--fs-emph-max) - ((550px - vw) * 0.2));
+        font-size: clamp(0.5rem, calc(0.25rem + 1.70vw), var(--fs-emph-max));
+      }
+      .opcoes input[type="radio"] {
+        height: calc(var(--fs-base-max) - 0.1rem);
+        width: calc(var(--fs-base-max) - 0.1rem);
+        height: clamp(0.5rem, calc(0.25rem + 1.70vw), var(--fs-base-max));
+        width: clamp(0.5rem, calc(0.25rem + 1.70vw), var(--fs-base-max));
+      }*/
+
       .card span {
         font-size: clamp(0.5rem, calc(0.25rem + 1.70vw), var(--fs-base-max));
       }
@@ -515,15 +534,8 @@
       .modo-teste-texto {
         font-size: var(--fs-base-min);
       }
-
-      #escolha-tema {
-        font-size: calc(var(--fs-title-max) - 0.12rem);
-      }
-      .header-mobile .header-up .user-name {
-        font-size: calc(var(--fs-emph-max) - 0.1rem);
-      }
-      .status-item {
-        font-size: calc(var(--fs-emph-max) - 0.1rem);
+      .opcoes input[type="radio"] {
+        margin-bottom: calc(0.26 * var(--fs-base-min));  
       }
     }
     @media (max-width: 460px) {
@@ -538,18 +550,35 @@
       nav {
         gap: 0.2rem;
       }
-      #escolha-tema {
-        font-size: calc(var(--fs-title-max) - 0.25rem);
+      .bloco-opcao .opcoes {
+        font-size: calc(var(--fs-base-max) - 0.1rem);
       }
+      #tipo-de-resposta {
+        font-size: calc(var(--fs-emph-max) - 0.1rem);
+      }
+      .opcoes input[type="radio"] {
+        height: calc(var(--fs-base-max) - 0.1rem);
+        width: calc(var(--fs-base-max) - 0.1rem);
+      }
+      /*
       .header-mobile .header-up .user-name {
         font-size: calc(var(--fs-emph-max) - 0.2rem);
       }
       .status-item {
         font-size: calc(var(--fs-emph-max) - 0.2rem);
       }
-      /*
       nav button {
         font-size: calc(var(--fs-base-max) - 0.2rem);
+      }
+      .bloco-opcao .opcoes {
+        font-size: calc(var(--fs-base-max) - 0.2rem);
+      }
+      #tipo-de-resposta {
+        font-size: calc(var(--fs-emph-max) - 0.2rem);
+      }
+      .opcoes input[type="radio"] {
+        height: calc(var(--fs-base-max) - 0.2rem);
+        width: calc(var(--fs-base-max) - 0.2rem);
       }*/
     }
     @media (max-width: 340px) {
@@ -687,8 +716,7 @@
           // ======= SEU CÓDIGO ATUAL =======
           const header = document.querySelector('header');
           const footer = document.querySelector('footer');
-          //const opcoes = document.querySelector('.bloco-opcao');
-          const titulo = document.querySelector('#escolha-tema');
+          const opcoes = document.querySelector('.bloco-opcao');
           const mensagem = document.querySelector('.mensagem');
           const main = document.querySelector('main');
 
@@ -700,12 +728,10 @@
 
           const headerH = header?.offsetHeight || 0;
           const footerH = footer?.offsetHeight || 0;
-          //const opcoesH = opcoes?.offsetHeight || 0;
-          const tituloH = titulo?.offsetHeight || 0;
+          const opcoesH = opcoes?.offsetHeight || 0;
           const mensagemH = mensagem?.offsetHeight || 0;
 
-          //const availableHeight = window.innerHeight - headerH - footerH - opcoesH - mensagemH;
-          const availableHeight = window.innerHeight - headerH - footerH - tituloH - mensagemH;
+          const availableHeight = window.innerHeight - headerH - footerH - opcoesH - mensagemH;
 
           const cardHeight = card.offsetHeight;
           const numRows = Math.ceil(cardsContainer.children.length / 3);
@@ -822,11 +848,6 @@
           <img src="" alt="Produto">
         </div>
       </a>
-    </div>
-
-    <!-- Label da escolha do tema -->
-    <div id="escolha-tema">
-      Escolha um Tema
     </div>
 
     <!-- Mensagem na tela -->

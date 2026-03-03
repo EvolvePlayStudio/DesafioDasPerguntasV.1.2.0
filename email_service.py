@@ -59,7 +59,7 @@ def enviar_email_recuperacao(destinatario, assunto, conteudo):
         server.login(remetente, senha)
         server.send_message(msg)
 
-def enviar_email_feedback_pergunta(id_feedback, id_pergunta, tema, tipo_pergunta, enunciado, comentario, estrelas, dificuldade, modo_visitante):
+def enviar_email_feedback_pergunta(id_feedback, id_pergunta, tema, enunciado, comentario, estrelas, dificuldade, modo_visitante):
     assunto = "Desafio das Perguntas - Comentário em Pergunta"
     
     link_lido = (
@@ -69,7 +69,7 @@ def enviar_email_feedback_pergunta(id_feedback, id_pergunta, tema, tipo_pergunta
 
     corpo = f"""
         ID da pergunta: {id_pergunta}
-        Tema: {tema} ({tipo_pergunta.lower()})
+        Tema: {tema}
         Enunciado: {enunciado}
         Dificuldade: {dificuldade}
         Estrelas: {estrelas if estrelas is not None else '—'}
@@ -86,7 +86,7 @@ def enviar_email_feedback_pergunta(id_feedback, id_pergunta, tema, tipo_pergunta
     if not enviado:
         logger.warning("Falha ao enviar email de feedback para pergunta (não crítico)")
 
-def enviar_email_feedback_site(id_feedback, tema, tipo_pergunta, comentario, pontuacao_saldo, modo_visitante
+def enviar_email_feedback_site(id_feedback, tema, comentario, pontuacao_saldo, modo_visitante
 ):
     assunto = "Desafio das Perguntas - Comentário Sobre o Site"
 
@@ -96,7 +96,7 @@ def enviar_email_feedback_site(id_feedback, tema, tipo_pergunta, comentario, pon
     )
 
     corpo = f"""
-        Tema: {tema} ({tipo_pergunta.lower()})
+        Tema: {tema}
         Pontos ganhos no quiz: {pontuacao_saldo}
         Modo visitante: {'Sim' if modo_visitante else 'Não'}
 

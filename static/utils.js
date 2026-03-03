@@ -68,6 +68,10 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
       else {
         if (bFrete) bFrete.style.display = 'none';
         if (bDesconto) bDesconto.style.display = 'none';
+        containerBadges.style.display = 'none';
+        logotipo.style.marginTop = '0.2rem';
+        logotipo.style.setProperty('margin-bottom', '1.2rem', 'important');
+        descricaoProduto.style.marginTop = '1.2rem';
       }
 
       container.style.visibility = 'visible';

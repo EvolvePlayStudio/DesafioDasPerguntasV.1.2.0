@@ -23,16 +23,13 @@ window.onerror = function (message) {
 const MODO_VISITANTE = getWithMigration("modoVisitante") === "true";
 let storagePontuacao;
 let STORAGE_KEY;
-let dicas;
 if (MODO_VISITANTE === true) {
   STORAGE_KEY = "pontuacoes_visitante";
   storagePontuacao = localStorage;
-  dicas =  JSON.parse(localStorage.getItem("dicas_restantes_visitante") ?? "20")
 }
 else {
   STORAGE_KEY = "pontuacoes_usuario";
   storagePontuacao = sessionStorage;
-  dicas = JSON.parse(getWithMigration("dicas_restantes") ?? "20");
 }
 const tema_atual = getWithMigration("tema_atual");
 const pontuacoes_jogador = JSON.parse(storagePontuacao.getItem(STORAGE_KEY) ?? "{}");
@@ -45,21 +42,14 @@ const perguntas_por_dificuldade = JSON.parse(getWithMigration("perguntas") ?? "n
 const regras_pontuacao = JSON.parse(getWithMigration("regras_pontuacao") ?? "[]");
 const rankings_jogador = JSON.parse(getWithMigration("rankings_jogador") ?? "{}");
 const modo_jogo = (getWithMigration("modo_jogo") ?? "").toLocaleLowerCase();
-const tipo_pergunta = (getWithMigration("tipo_pergunta") ?? "").toLocaleLowerCase();
-const opcoesUsuario = JSON.parse(sessionStorage.getItem("opcoes_usuario") ?? "null");
 
 // Elementos do HTML
-const contador_dicas_restantes = document.getElementById("contador-dicas");
 const lblRankingAnterior = document.getElementById("ranking-anterior");
 const lblProximoRanking = document.getElementById("proximo-ranking")
 const alternativasContainer = document.getElementById("alternativas-container");
 const resultado = document.getElementById('resultado');
 const caixa_para_resposta = document.getElementById('resposta-input');
-const dica_box = document.getElementById("dica-box");
-const dica_icon = document.getElementById("dica-icon");
 const barra = document.getElementById("barra-progresso");
-const hint_dica = document.getElementById("hint-dica");
-const hint_pular = document.getElementById("hint-pular");;
 const hint_avaliacao = document.getElementById("hint-avaliacao");
 const respostasAceitas = document.getElementById("respostas-aceitas-box");
 const estrelas_avaliacao = document.getElementById("avaliacao");
@@ -72,7 +62,6 @@ const botaoLikeNota = document.getElementById("avaliacao-positiva");
 const botaoDislikeNota = document.getElementById("avaliacao-negativa");
 
 // Outras variáveis
-let dica_gasta = false;
 let animacao_concluida = false;
 let haPerguntasDisponiveis = false;
 let aguardando_proxima = false; // quando estiver aguardando a próximo pergunta
@@ -89,8 +78,6 @@ let alternativaSelecionada; // guarda a letra selecionada (A, B, C, D)
 let respostasDesdeUltimaForcagem = 0; // para pegar a pergunta do nível que tem mais a cada 
 // x respondidas
 let info_ultimo_ranking = regras_pontuacao.at(-1) ?? null;
-const exibir_instrucoes_quiz = opcoesUsuario?.exibir_instrucoes_quiz ?? false;
-const contador_dicas = contador_dicas_restantes;
 const letrasAlternativas = ['A', 'B', 'C', 'D'];
 let autoChute = false;
 
@@ -131,8 +118,6 @@ const PAUSA_ANTES_DA_A              = 500;
 const GAP_ENTRE_ALTERNATIVAS        = 380;
 const VELOCIDADE_LETRA_ENUNCIADO    = 21;
 const VELOCIDADE_LETRA_ALTERNATIVAS = 16; // quanto menor, mais rápido
-
-if (tipo_pergunta === "objetiva" || !MODO_VISITANTE && !exibir_instrucoes_quiz) hint_avaliacao.style.marginTop = "1rem"; // ajuste no hint de avaliação caso os outros não estejam presentes (o de dica e o de pular pergunta)
 
 // Ids de perguntas que são selecionados primeiro
 let idsPrioritarios = JSON.parse(sessionStorage.getItem('ids_prioritarios') ?? "[]").map(Number);
@@ -363,17 +348,7 @@ function calcularPontuacao(acertou) {
       pontos_ganhos = 0
     }
     else {
-      if (tipo_pergunta === 'discursiva') {
-        if (resposta_usuario === "") { // Caso de resposta vazia
-          pontos_ganhos = regras_jogador.pontos_pular_pergunta;
-        }
-        else {
-          pontos_ganhos = regras_jogador.pontos_erro_discursiva ?? -100;
-        }
-      }
-      else {
-        pontos_ganhos = regras_jogador.pontos_erro ?? -100;
-      }
+      pontos_ganhos = regras_jogador.pontos_erro ?? -100;
       // Trata casos em que a pontuação do usuário ficaria negativa
       if (pontuacoes_jogador[tema_atual] + pontos_ganhos < 0) {
         pontos_ganhos = -pontuacoes_jogador[tema_atual]
@@ -402,18 +377,6 @@ function calcularPontuacao(acertou) {
       return 0;
   }
   let pontos_ganhos = pontosBase;
-
-  if (dica_gasta && tipo_pergunta === 'discursiva') {
-      const percentualPenalidade = regras_jogador.percentual_penalidade_dica / 100;
-      const inteiroPenalidade = Math.round((pontosBase * percentualPenalidade) / 10) * 10;
-      pontos_ganhos = pontosBase - inteiroPenalidade;
-      
-      // Fallback defensivo
-      if (pontos_ganhos < 0) {
-          console.warn("Penalidade excedeu a pontuação base. Aplicando pontuação base.");
-          pontos_ganhos = pontosBase;
-      }
-  }
   
   // Trata casos em que a pontuação do usuário ficaria acima do máximo permitido
   if (ranking_jogador === info_ultimo_ranking.ranking && pontuacoes_jogador[tema_atual] + pontos_ganhos > info_ultimo_ranking.pontos_maximos) {
@@ -443,8 +406,6 @@ function desativarBotoes() {
 }
 
 async function enviarResposta(pulando = false) {
-  hint_dica.style.display = "none";
-  hint_pular.style.display = "none";
   hint_avaliacao.style.display = "none";
 
   if (pulando) caixa_para_resposta.value = "";
@@ -474,15 +435,6 @@ async function enviarResposta(pulando = false) {
 
   function mostrarResultadoResposta(correto) {
     resultado.style.display = "block";
-    if (tipo_pergunta === 'discursiva') {
-
-      // Mostra as possibilidades de respostas corretas para a pergunta
-      const respostas_corretas = pergunta_selecionada.respostas_corretas
-      mostrarRespostasAceitas(respostas_corretas);
-
-      // Exibe dica
-      mostrarDica()
-    }
 
     // Exibe nota, curiosidade ou explicação
     if (pergunta_selecionada.nota?.trim()) {
@@ -496,12 +448,7 @@ async function enviarResposta(pulando = false) {
     
     // Exibe a mensagem que indica se a resposta foi correta, errada ou se o usuário pulou
     const resposta_usuario = caixa_para_resposta.value.trim();
-    if (tipo_pergunta === 'discursiva' && resposta_usuario.trim() === "") {
-      const svgEscolhido = svg1;
-      resultado.style.color = "#FFD700"
-      resultado.innerHTML = `${svgEscolhido} Não respondida`;
-    }
-    else if (correto) {
+    if (correto) {
       resultado.style.color = "lime";
       resultado.innerHTML = '✅ Resposta correta!';
     }
@@ -590,16 +537,14 @@ async function enviarResposta(pulando = false) {
     }
   }
 
-  async function registrarResposta(resposta_usuario, acertou, usou_dica, pontos_ganhos, tempo_gasto, id_pergunta, versao_pergunta) {
+  async function registrarResposta(resposta_usuario, acertou, pontos_ganhos, tempo_gasto, id_pergunta, versao_pergunta) {
     try {
       const response = await fetch('/registrar_resposta', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tipo_pergunta: tipo_pergunta,
           resposta_usuario: resposta_usuario,
           acertou: acertou,
-          usou_dica: usou_dica,
           pontos_ganhos: pontos_ganhos,
           tempo_gasto: tempo_gasto,
           id_pergunta: id_pergunta,
@@ -619,14 +564,8 @@ async function enviarResposta(pulando = false) {
         alterarPontuacaoUsuario(pontuacao_atual, pontuacoes_jogador[tema_atual]);
 
         // Atualiza as perguntas restantes do usuário no sessionStorage
-        sessionStorage.setItem("perguntas_restantes", data.perguntas_restantes)
-        contador_perguntas_restantes.textContent = data.perguntas_restantes
-
-        // Atualiza o número de dicas restantes do usuário no sessionStorage e no contador de dicas
-        if (tipo_pergunta === 'discursiva') {
-          contador_dicas_restantes.textContent = data.dicas_restantes;
-          sessionStorage.setItem("dicas_restantes", data.dicas_restantes);
-        }
+        sessionStorage.setItem("perguntas_restantes", data.perguntas_restantes);
+        contador_perguntas_restantes.textContent = data.perguntas_restantes;
 
         atualizarRankingVisual();
         return true;
@@ -643,14 +582,14 @@ async function enviarResposta(pulando = false) {
     }
   }
 
-  function registrarRespostaVisitante(resposta_usuario, acertou, dica_gasta, pontos_ganhos, tempo_gasto) {
-    let respondidas = JSON.parse(localStorage.getItem("visitante_respondidas") ?? '{"objetiva": [], "discursiva": []}');
+  function registrarRespostaVisitante(resposta_usuario, acertou, pontos_ganhos, tempo_gasto) {
+    let respondidas = JSON.parse(localStorage.getItem("visitante_respondidas") ?? "[]");
 
     // --- Lógica de Conversão Google Ads ---
     function analisarMetaConversao() {
       // if (id_visitante === idVisitanteAdmin) return;
       try {
-        const totalRespondidas = respondidas.objetiva.length + respondidas.discursiva.length;
+        const totalRespondidas = respondidas.length;
         if (totalRespondidas >= 5) {
           gtag('event', 'conversion', {
             'send_to': 'AW-17529321916/JTBvCKKkoeEbELzz0KZB'
@@ -675,13 +614,11 @@ async function enviarResposta(pulando = false) {
       },
       body: JSON.stringify({
         tema: tema_atual,
-        tipo_pergunta: tipo_pergunta,
         id_pergunta: pergunta_selecionada.id_pergunta,
         resposta_enviada: resposta_usuario,
         acertou: acertou,
         tempo_gasto: tempo_gasto,
         versao_pergunta: pergunta_selecionada.versao_pergunta,
-        usou_dica: dica_gasta,
         modo_tela_usuario: detectarModoTela(),
         pontos_ganhos: pontos_ganhos,
         pontos_usuario: pontuacao_atual,
@@ -693,8 +630,8 @@ async function enviarResposta(pulando = false) {
       });
 
     // Registra localmente a pergunta respondida pelo usuário para evitar repetição
-    if (!respondidas[tipo_pergunta].includes(pergunta_selecionada.id_pergunta)) {
-      respondidas[tipo_pergunta].push(pergunta_selecionada.id_pergunta);
+    if (!respondidas.includes(pergunta_selecionada.id_pergunta)) {
+      respondidas.push(pergunta_selecionada.id_pergunta);
       localStorage.setItem("visitante_respondidas", JSON.stringify(respondidas));
     };
     
@@ -715,21 +652,6 @@ async function enviarResposta(pulando = false) {
     const novas_perguntas_restantes = perguntas_restantes_anterior - 1;
     localStorage.setItem("perguntas_restantes_visitante", novas_perguntas_restantes);
     contador_perguntas_restantes.textContent = novas_perguntas_restantes;
-
-    // Atualiza o número de dicas restantes do usuário no localStorage e no contador de dicas
-    if (tipo_pergunta === 'discursiva') {
-      let dicas_restantes = localStorage.getItem("dicas_restantes_visitante") ?? 20;
-
-      const dadosRespondidas = JSON.parse(localStorage.getItem("visitante_respondidas") ?? "{objetiva: [], discursiva: []}");
-      const totalDiscursivas = dadosRespondidas.discursiva.length;
-      if (totalDiscursivas % 10 === 0 && dicas_restantes < 20) {
-        dicas_restantes ++;
-        contador_dicas_restantes.textContent = dicas_restantes;
-      }
-
-      contador_dicas_restantes.textContent = dicas_restantes;
-      localStorage.setItem("dicas_restantes_visitante", dicas_restantes);
-    }
   }
 
   resultado.style.display = "block";
@@ -746,80 +668,54 @@ async function enviarResposta(pulando = false) {
   let respostas_corretas;
   let letra_correta;
   const tempo_gasto = calcularTempoGasto();
-
-  if (tipo_pergunta === 'objetiva') {
     
-    let btnAlternativaSelecionada;
-    // Se o usuário optrou por chutar, escolhe uma aleatoriamente
-    if (!alternativaSelecionada) {
-      alternativaSelecionada = letrasAlternativas[Math.floor(Math.random() * 4)];
-      btnAlternativaSelecionada = document.querySelector(
-        `.alternativa-btn[data-letter="${alternativaSelecionada}"]`
-      );
-      autoChute = true;
-      selecionarAlternativa(btnAlternativaSelecionada);
-    }
-    else {
-      autoChute = false;
-      btnAlternativaSelecionada = document.querySelector('.alternativa-btn.selected');
-    }
-    resposta_usuario = alternativaSelecionada;
-    
-    // Marca a alternativa correta pelo data-letter
-    if (modo_jogo === 'revisao') {
-      letra_correta = pergunta_selecionada.resposta_correta;
+  let btnAlternativaSelecionada;
+  // Se o usuário optrou por chutar, escolhe uma aleatoriamente
+  if (!alternativaSelecionada) {
+    alternativaSelecionada = letrasAlternativas[Math.floor(Math.random() * 4)];
+    btnAlternativaSelecionada = document.querySelector(
+      `.alternativa-btn[data-letter="${alternativaSelecionada}"]`
+    );
+    autoChute = true;
+    selecionarAlternativa(btnAlternativaSelecionada);
+  }
+  else {
+    autoChute = false;
+    btnAlternativaSelecionada = document.querySelector('.alternativa-btn.selected');
+  }
+  resposta_usuario = alternativaSelecionada;
+  
+  // Marca a alternativa correta pelo data-letter
+  if (modo_jogo === 'revisao') {
+    letra_correta = pergunta_selecionada.resposta_correta;
+    acertou = respostaObjetivaCorreta();
+  }
+  else {
+    const response = await fetchAutenticado(`/pergunta/${pergunta_selecionada.id_pergunta}/gabarito`);
+    if (response.ok) {
+      const info_pergunta = await response.json();
+      letra_correta = pergunta_selecionada.resposta_correta = info_pergunta["resposta_correta"];
       acertou = respostaObjetivaCorreta();
     }
     else {
-      const response = await fetchAutenticado(`/pergunta/${pergunta_selecionada.id_pergunta}/${tipo_pergunta}/gabarito`);
-      if (response.ok) {
-        const info_pergunta = await response.json();
-        letra_correta = pergunta_selecionada.resposta_correta = info_pergunta["resposta_correta"];
-        acertou = respostaObjetivaCorreta();
-      }
-      else {
-        return;
-      }
-    }
-    
-    const correta = document.querySelector(`.alternativa-btn[data-letter="${letra_correta}"]`);
-    if (correta) {
-        correta.classList.add('correct');
-    }
-
-    // Se errou, marca a selecionada como errada
-    if (!acertou && btnAlternativaSelecionada && btnAlternativaSelecionada !== correta) {
-        btnAlternativaSelecionada.classList.add('wrong');
+      return;
     }
   }
-  else {
-    resposta_usuario = caixa_para_resposta.value.trim();
-    
-    if (modo_jogo === 'revisao') {
-      respostas_corretas = pergunta_selecionada.respostas_corretas;
-    }
-    else {
-      const response = await fetchAutenticado(`/pergunta/${pergunta_selecionada.id_pergunta}/${tipo_pergunta}/gabarito`);
-      if (response.ok) {
-        const info_pergunta = await response.json();
-        respostas_corretas = pergunta_selecionada.respostas_corretas = info_pergunta["respostas_corretas"];
-      }
-      // TALVEZ DEVA-SE TRATAR ERRO AQUI
-      else {
-        return;
-      }
-    }
-    acertou = respostaDiscursivaCorreta(resposta_usuario, respostas_corretas);
+  
+  const correta = document.querySelector(`.alternativa-btn[data-letter="${letra_correta}"]`);
+  if (correta) {
+      correta.classList.add('correct');
+  }
+
+  // Se errou, marca a selecionada como errada
+  if (!acertou && btnAlternativaSelecionada && btnAlternativaSelecionada !== correta) {
+    btnAlternativaSelecionada.classList.add('wrong');
   }
 
   // Calcula pontos ganhos toca áudio de acerto ou erro
   pontos_ganhos = calcularPontuacao(acertou);
-  if (acertou) {
-    playSound("correct")
-  }
-  else if (pontos_ganhos === regras_jogador.pontos_erro) {
-    playSound("error");
-  }
+  if (acertou) playSound("correct")
+  else if (pontos_ganhos === regras_jogador.pontos_erro) playSound("error");
 
   // Registra a resposta enviada no SQL
   if (modo_jogo === 'desafio' && !MODO_VISITANTE) {
@@ -829,7 +725,6 @@ async function enviarResposta(pulando = false) {
     prosseguir_com_resultado = await registrarResposta(
       resposta_usuario,
       acertou,
-      dica_gasta,
       pontos_ganhos,
       tempo_gasto,
       id_pergunta,
@@ -839,20 +734,14 @@ async function enviarResposta(pulando = false) {
   
   // Registra o envio da resposta no SQL caso esteja no modo visitante
   if (MODO_VISITANTE && modo_jogo === 'desafio') {
-    registrarRespostaVisitante(resposta_usuario, acertou, dica_gasta, pontos_ganhos, tempo_gasto)
+    registrarRespostaVisitante(resposta_usuario, acertou, pontos_ganhos, tempo_gasto)
   }
   
   // Armazena informações que serão úteis depois na tela de resultado
   if (prosseguir_com_resultado) {
     if (modo_jogo === "desafio") {
-      let info_resposta;
-      if (tipo_pergunta === 'discursiva') {
-        info_resposta = {"enunciado": pergunta_selecionada.enunciado, "respostas_aceitas": respostas_corretas, "resposta_usuario": resposta_usuario, "usou_dica": dica_gasta, "pontos_ganhos": pontos_ganhos, "dificuldade": pergunta_selecionada.dificuldade}
-      }
-      else {
-        info_resposta = {"enunciado": pergunta_selecionada.enunciado, "alternativa_a": pergunta_selecionada.alternativa_a, "alternativa_b": pergunta_selecionada.alternativa_b, "alternativa_c": pergunta_selecionada.alternativa_c, "alternativa_d": pergunta_selecionada.alternativa_d, "resposta_correta": letra_correta, "resposta_usuario": resposta_usuario, "pontos_ganhos": pontos_ganhos, "dificuldade": pergunta_selecionada.dificuldade}
-      }
-        perguntas_respondidas.push(info_resposta)
+      const info_resposta = {"enunciado": pergunta_selecionada.enunciado, "alternativa_a": pergunta_selecionada.alternativa_a, "alternativa_b": pergunta_selecionada.alternativa_b, "alternativa_c": pergunta_selecionada.alternativa_c, "alternativa_d": pergunta_selecionada.alternativa_d, "resposta_correta": letra_correta, "resposta_usuario": resposta_usuario, "pontos_ganhos": pontos_ganhos, "dificuldade": pergunta_selecionada.dificuldade}
+      perguntas_respondidas.push(info_resposta)
     }
     
     // Mostra se acertou a resposta e os botões "próxima" e "finalizar"
@@ -967,17 +856,6 @@ async function mostrarAlternativas() {
   btn_enviar.disabled = false;
 }
 
-function mostrarDica() {
-  if (pergunta_selecionada.dica?.trim()) {
-    document.getElementById("dica-texto").textContent = pergunta_selecionada.dica;
-    dica_box.style.display = "block";
-    dica_gasta = true;   
-  }
-  else {
-    dica_box.style.display = "none";
-  }
-}
-
 function mostrarEnunciado(texto, elemento) {
   return new Promise(resolve => {
     elemento.textContent = "";
@@ -992,26 +870,7 @@ function mostrarEnunciado(texto, elemento) {
       // Quando acaba a animação
       else {
         clearInterval(intervalo);
-        if (tipo_pergunta === 'discursiva') {
-          animacao_concluida = true;
-          inicio_pergunta = Date.now();
-          botoes_enviar_div.style.display = "flex";
-
-          // Exibe os hint-textos de instruções
-          if (MODO_VISITANTE || exibir_instrucoes_quiz) {
-            hint_dica.style.display = "";
-            hint_pular.style.display = "";
-          }
-          hint_avaliacao.style.display = "";
-
-          // Mostra e ativa botões
-          btn_enviar.style.display = "inline-flex";
-          btn_pular.style.display = "inline-flex";
-          ativarBotoes();
-        }
-        else {
-          mostrarAlternativas();
-        }
+        mostrarAlternativas();
         resolve();
       }
     }, VELOCIDADE_LETRA_ENUNCIADO);
@@ -1026,9 +885,6 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   estrelas_avaliacao.style.display = "none";
   respostasAceitas.style.display = "none";
   box_comentario.style.display = "none";
-  //dica_icon.style.display = "none";
-  dica_icon.style.visibility = 'hidden';
-  dica_icon.style.pointerEvents = 'none';
 
   // Reseta estrelas
   document.querySelectorAll(".estrela").forEach(e => {
@@ -1221,7 +1077,6 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   perguntas_disponiveis.splice(indicePergunta, 1);
   sessionStorage.setItem("perguntas", JSON.stringify(perguntas_por_dificuldade));
   
-  dica_gasta = false;
   window.avaliacaoAtual = 0;
 
   // Faz animação do enunciado da pergunta
@@ -1239,32 +1094,6 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   regras_jogador = regras_pontuacao.find(r => r.ranking === ranking_jogador);
 
   await mostrarEnunciado(pergunta_selecionada.enunciado, enunciadoElemento);
-  if (tipo_pergunta.toLowerCase() === 'discursiva') {
-    caixa_para_resposta.disabled = false;
-    caixa_para_resposta.focus();
-    caixa_para_resposta.value = "";
-  
-    // Decide se deve mostrar o ícone de dica
-    let dica_permitida = true
-    if (!regras_jogador) {
-      console.error("Ranking do usuário não encontrado nas regras de pontuação.");
-      return 0;
-    }
-    if (pergunta_selecionada.dificuldade === 'Fácil' && regras_jogador.pontos_acerto_facil <= 10 || pergunta_selecionada.dificuldade === 'Médio' && regras_jogador.pontos_acerto_medio <= 10 || !pergunta_selecionada.dica) {
-      dica_permitida = false
-    }
-
-    // Exibe o ícone de dica
-    if (dica_permitida) {
-      dica_icon.style.visibility = 'visible';
-      dica_icon.style.pointerEvents = 'auto';
-    } 
-    
-    // No modo revisão não exibe contador de dicas
-    if (modo_jogo === 'revisao') {
-      contador_dicas_restantes.textContent = ''
-    }
-    dica_box.styledificuldadesOrdenadas}
 }
 
 async function proximaPergunta() {
@@ -1291,21 +1120,12 @@ async function proximaPergunta() {
     el.classList.add("hide-inc");
   })
 
-  if (tipo_pergunta === 'objetiva') {
-    btn_enviar.textContent = 'Chutar';
-    btn_enviar.classList.add("chutar");
-    autoChute = false;
-  }
-  hint_dica.style.display = "none";
-  hint_pular.style.display = "none";
+  btn_enviar.textContent = 'Chutar';
+  btn_enviar.classList.add("chutar");
+  autoChute = false;
+
   if (haPerguntasDisponiveis) {
-    if (tipo_pergunta === 'objetiva') {
-      resetarAlternativas();
-    } 
-    else {
-      dica_box.style.display = "none"
-      caixa_para_resposta.value = "";
-    }
+    resetarAlternativas();
     document.getElementById('botoes-acao').style.display = "none";
     estrelas_avaliacao.style.display = "none";
     resultado.style.display = "none";
@@ -1345,7 +1165,6 @@ async function registrarFeedback() {
         atualizar_feedback_estrelas: mudouEstrelas || mudouComentario,
         id_pergunta: pergunta_selecionada.id_pergunta,
         tema: tema_atual,
-        tipo_pergunta: tipo_pergunta,
         enunciado: pergunta_selecionada.enunciado,
         versao_pergunta: pergunta_selecionada.versao_pergunta,
         aprovacao_nota: aprovacao_nota_atual,
@@ -1372,260 +1191,6 @@ function renderizarEstrelas(valor) {
   });
 }
 
-function respostaDiscursivaCorreta(resposta_usuario, respostas_aceitas) {
-  const stopwords = new Set(["a", "o", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "no", "na", "nos", "nas", "por", "pelo", "pela", "com", "para", "um", "uma", "uns", "umas", "ao", "aos", "à", "às", "the"]);
-
-  function aceitaPorDistancia(dist, lenOriginal, textoCorreto) {
-    if (lenOriginal <= 3) return false;
-
-    //const estrangeiro = temPadraoEstrangeiro(textoCorreto);
-    const estrangeiro = false
-
-    if (estrangeiro) {
-      if (lenOriginal <= 6) return dist <= 2;
-      if (lenOriginal <= 10) return dist <= 3;
-      return dist <= 4;
-    } 
-    else {
-      if (lenOriginal <= 6) return dist <= 1;
-      if (lenOriginal <= 10) return dist <= 2;
-      return dist <= 3;
-    }
-  }
-
-  // Remove os espaços do texto (nunca se deve fazer antes de remover as stopwords)
-  function colapsarEspacos(texto) {
-    return texto.replace(/\s+/g, "")
-  }
-
-  // Cria lista com possíveis respostas aceitas (com e sem stopwords)
-  function gerarVariantesResposta(respostas) {
-    const variantes = [];
-
-    for (const resposta of respostas) {
-      if (typeof resposta !== "string") continue;
-
-      const palavras = resposta
-        .toLowerCase()
-        .trim()
-        .split(/\s+/);
-
-      const temStopword = palavras.some(p => stopwords.has(p));
-
-      // Sempre inclui a original
-      variantes.push(resposta);
-
-      if (temStopword) {
-        const semStopwords = palavras
-          .filter(p => !stopwords.has(p))
-          .join(" ");
-
-        if (semStopwords && semStopwords !== resposta) {
-          variantes.push(semStopwords);
-        }
-      }
-    }
-
-    return variantes;
-  }
-
-  // Trata os casos dos dígrafos (ex: x no lugar de ch)
-  function normalizarDigrafos(texto) {
-    const regras = [
-      // Trigramas / padrões fortes
-      [/chr/g, "cr"],
-      [/sch/g, "x"],
-      [/zh/g, "j"],
-      [/tz/g, "ts"],
-      [/ph/g, "f"],
-      [/th/g, "t"],
-
-      // Dígrafos
-      [/ch/g, "x"],
-      [/sh/g, "x"],
-      [/lh/g, "l"],
-      [/nh/g, "n"],
-      [/qu/g, "k"],
-      [/ck/g, "k"],
-
-      // Vogais alemãs
-      [/ae/g, "a"],
-      [/oe/g, "o"],
-      [/ue/g, "u"],
-
-      // Letras mudas / simplificações
-      [/h/g, ""],
-      [/w/g, "v"],
-      [/y/g, "i"],
-
-      // Duplicações
-      [/ll/g, "l"],
-      [/rr/g, "r"],
-      [/ss/g, "s"],
-      [/mm/g, "m"],
-      [/nn/g, "n"],
-
-      // Trocas fonéticas soltas
-      [/c(?=[ei])/g, "s"],
-      [/z/g, "s"],
-      [/g/g, "j"]
-    ];
-
-    let resultado = texto;
-    for (const [regex, token] of regras) {
-      resultado = resultado.replace(regex, token);
-    }
-    return resultado;
-  }
-
-  // Ignora diferenças de acentuação
-  function removerAcentos(texto) {
-    return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  }
-
-  // Normalização que não distorce tanto a resposta correta
-  function normalizarLeve(texto = "", removerStopWords = true) {
-    let textoNormalizado = texto
-      .toLowerCase() // Deixa as letras minúsculas
-      .trim() // Remove espaços no ínicio e no final
-      .replace(/[.\-:!;?]/g, "") // Remove caracteres especiais
-      .split(/\s+/) // Transforma em array com cada palavra como um item
-      .map(removerAcentos) // Remove os acentos
-
-    if (removerStopWords) {
-      textoNormalizado = textoNormalizado.filter(p => !stopwords.has(p)) // Remove as stopwords
-    }
-    textoNormalizado = textoNormalizado.join(""); // Transforma de array em string novamente
-    return textoNormalizado
-  }
-
-  // Converte subscritos e sobrescritos para dígitos normais e sinais normais
-  function normalizarNotacaoQuimica(texto) {
-    const mapa = {
-      "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9",
-      "₀": "0", "₁": "1", "₂": "2", "₃": "3", "₄": "4", "₅": "5", "₆": "6", "₇": "7", "₈": "8", "₉": "9",
-      "⁺": "+", "₊": "+", "⁻": "-", "₋": "-"
-    };
-    return texto.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉⁺₊⁻₋]/g, c => mapa[c] || c);
-  }
-
-  function normalizarResposta(texto = "", removerStopWords = true) {
-    let t = texto.toLowerCase().trim();
-
-    // Normaliza notações químicas
-    t = normalizarNotacaoQuimica(t);
-
-    // Remove stopwords e normaliza pontuações e acentos
-    t = normalizarLeve(t, removerStopWords);
-
-    // Aplica regras fonéticas gerais
-    t = normalizarDigrafos(t);
-
-    // Normaliza nasalizações
-    t = normalizarNasalizacao(t);
-
-    // Aplica apenas equivalências finais controladas
-    t = normalizarSufixosFinais(t);
-
-    // Remove espaços
-    t = colapsarEspacos(t);
-
-    return t;
-  }
-
-  function normalizarNasalizacao(texto) {
-    return texto
-    // Variações comuns de /in/
-    .replace(/em$/, "in")
-    .replace(/en$/, "in")
-    .replace(/im$/, "in");
-  }
-
-  function normalizarSufixosFinais(texto) {
-    return texto
-    .replace(/ur$/, "o")   // fêmur → femo
-    .replace(/us$/, "os")  // humerus → humeros
-    .replace(/is$/, "es")  // metatarsis → metatarses
-    .replace(/um$/, "o");  // datum → dato
-  }
-
-  function distanciaDamerauLevenshtein(a, b) {
-    const matrix = Array.from({ length: a.length + 1 }, () =>
-      Array(b.length + 1).fill(0)
-    );
-
-    for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
-    for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
-
-    for (let i = 1; i <= a.length; i++) {
-      for (let j = 1; j <= b.length; j++) {
-        const custo = a[i - 1] === b[j - 1] ? 0 : 1;
-
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j] + 1,        // Remoção de letra
-          matrix[i][j - 1] + 1,        // Inserção de letra
-          matrix[i - 1][j - 1] + custo // Substituição de letra
-        );
-
-        // 🔥 Transposição adjacente (quando troca as posições da letra)
-        if (
-          i > 1 &&
-          j > 1 &&
-          a[i - 1] === b[j - 2] &&
-          a[i - 2] === b[j - 1]
-        ) {
-          matrix[i][j] = Math.min(
-            matrix[i][j],
-            matrix[i - 2][j - 2] + 1
-          );
-        }
-      }
-    }
-
-    return matrix[a.length][b.length];
-  }
-
-  const textoUsuarioLeve = normalizarLeve(resposta_usuario);
-  const textoUsuarioPesado = normalizarResposta(resposta_usuario);
-
-  const tot_respostas_aceitas = gerarVariantesResposta(respostas_aceitas);
-  return tot_respostas_aceitas.some(resposta => {
-    const lenOriginal = resposta.length;
-
-    const textoUsuarioOriginal = normalizarLeve(resposta_usuario, false);
-    const textoCorretoOriginal = normalizarLeve(resposta, false);
-    const textoCorretoLeve = normalizarLeve(resposta, false);
-    const textoCorretoPesado = normalizarResposta(resposta, false);
-    
-    /*
-    console.log("Texto original da resposta do usuário: ", resposta_usuario);
-    console.log("Texto original da resposta aceita: ", resposta);*/
-
-    // 1. Igualdade forte
-    if (textoUsuarioOriginal === textoCorretoOriginal || textoUsuarioPesado === textoCorretoPesado) return true;
-
-    // 2. Comparação entre textos originais
-    const distOriginal = distanciaDamerauLevenshtein(textoUsuarioOriginal, textoCorretoOriginal);
-    if (aceitaPorDistancia(distOriginal, lenOriginal, textoCorretoOriginal)) return true;
-
-    // 3. Comparação entre textos com modificações leves
-    const distLeve = distanciaDamerauLevenshtein(textoUsuarioLeve, textoCorretoLeve);
-    /*
-    console.log("Texto leve do usuário: ", textoUsuarioLeve);
-    console.log("Texto leve da resposta: ", textoCorretoLeve);
-    console.log("Distância leve: ", distLeve);*/
-    if (aceitaPorDistancia(distLeve, lenOriginal, textoCorretoPesado)) return true;
-
-    // 4. Comparação entre textos com modificações pesadas
-    const distPesado = distanciaDamerauLevenshtein(textoUsuarioPesado, textoCorretoPesado);
-    /*
-    console.log("Texto pesado do usuário: ", textoUsuarioPesado);
-    console.log("Texto pesado da resposta: ", textoCorretoPesado);
-    console.log("Distância pesada: ", distPesado);*/
-    return aceitaPorDistancia(distPesado, lenOriginal, textoCorretoPesado);
-  });
-}
-
 function respostaObjetivaCorreta() {
   if (!alternativaSelecionada) return false;
   return alternativaSelecionada === pergunta_selecionada.resposta_correta;
@@ -1644,39 +1209,6 @@ function selecionarAlternativa(btn) {
 
   // Estado
   alternativaSelecionada = btn.dataset.letter || null;
-}
-
-async function usarDica() {
-  if (aguardando_proxima || dica_gasta) return;
-  if (modo_jogo == 'desafio') {
-    let dicas_restantes;
-    if (!MODO_VISITANTE) {
-      dicas_restantes = parseInt(getWithMigration("dicas_restantes") ?? "0");
-      if (dicas_restantes <= 0) {
-        return;
-      }
-      const response = await fetchAutenticado("/usar_dica")
-      if (response.ok) {
-        dicas_restantes -= 1;
-        sessionStorage.setItem("dicas_restantes", dicas_restantes);
-        contador_dicas_restantes.textContent = dicas_restantes;
-        mostrarDica();
-      }
-    }
-    else {
-      dicas_restantes = parseInt(getWithMigration("dicas_restantes_visitante") ?? "0")
-      if (dicas_restantes <= 0) {
-        return;
-      }
-      dicas_restantes -= 1
-      localStorage.setItem("dicas_restantes_visitante", dicas_restantes)
-      contador_dicas_restantes.textContent = dicas_restantes;
-      mostrarDica();
-    }
-  }
-  else {
-    mostrarDica();
-  }
 }
 
 async function definirRankingAnterior() {
@@ -1700,11 +1232,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (box_comentario) {
     box_comentario.addEventListener("keydown", (e) => {playKeySound(e)});
   }
-  
-  // Exibe a contagem de dicas restantes
-  if (contador_dicas && dicas !== null) {
-    contador_dicas.textContent = dicas;
-  }
 
   if (modo_jogo === 'desafio') {
     const num_perguntas_restantes = contador_perguntas_restantes
@@ -1720,31 +1247,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       icone_perguntas_restantes.style.visibility = 'hidden';
   }
 
-  if (tipo_pergunta === 'discursiva') {
-    // Implementa a função para usar dica
-    caixa_para_resposta.style.display = ''
-    if (dica_icon) {
-      dica_icon.addEventListener("click", () => {
-        usarDica()
-      })
-    }
-
-    // Implementa a função para pular a resposta
-    if (btn_pular) {
-      btn_pular.addEventListener("click", () => {
-        if (modo_jogo === 'desafio') {playSound("click")};
-        enviarResposta(true);
-      })
-    }
-  }
-  else {
-    btn_enviar.classList.add("chutar");
-    btn_enviar.textContent = 'Chutar';
-    // Implementa a função de marcar alternativas
-    alternativaBtns.forEach(btn => {
-      btn.addEventListener('click', () => selecionarAlternativa(btn));
-    });
-  }
+  btn_enviar.classList.add("chutar");
+  btn_enviar.textContent = 'Chutar';
+  // Implementa a função de marcar alternativas
+  alternativaBtns.forEach(btn => {
+    btn.addEventListener('click', () => selecionarAlternativa(btn));
+  });
 
   // Implementa a função de chamar próxima pergunta
   if (btn_proxima) {
