@@ -25,9 +25,8 @@
   <!-- Variáveis do CSS -->
   <style>
     :root {
-      --ads-container-width: 460px; /* padrão */
+      --ads-container-width: 460px;
       --ads-container-height: 80px;
-      --ads-container-width: 410px;
       --fs-min:   var(--fs-min-max);
       --fs-aux:   var(--fs-aux-max);
       --fs-base:  var(--fs-base-max);
@@ -223,18 +222,7 @@
     main.layout-ready {
       visibility: visible;
     }
-    #topo-corpo-pagina {
-      display: grid;
-      grid-template-columns: 1.15fr 0.7fr 1.15fr; /* padrão */
-      grid-template-columns: 1.05fr 0.9fr 1.05fr;
-      flex-direction: row;
-      align-items: center;
-      justify-content: center;
-      height: 4.6rem;
-      margin-right: 0.8rem;
-    }
     #escolha-tema {
-      grid-column: 2;
       color: white;
       font-weight: bold;
       font-size: var(--fs-title);
@@ -242,13 +230,14 @@
       justify-content: center;
       white-space: nowrap;
     }
-    #banner-lateral-esquerda {
-      grid-column: 1;
-      justify-self: end;
-    }
-    #banner-lateral-direita {
-      grid-column: 3;
-      justify-self: start;
+    #topo-corpo-pagina {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      height: 4.6rem;
+      gap: 4rem;
+      margin-right: 0.8rem;
     }
     .ad-sidebar {
       flex: 0 1 auto;
@@ -267,8 +256,7 @@
       overflow: hidden;
     }
     .logo-container {
-      flex: 0 0 25%; /* Ocupa exatamente 20% e não encolhe (padrão)*/
-      flex: 0 0 33%;
+      flex: 0 0 25%; /* Ocupa exatamente 20% e não encolhe */
       display: flex;
       align-items: center;
       justify-content: center;
