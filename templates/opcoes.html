@@ -1,0 +1,378 @@
+<!DOCTYPE html><html lang="pt-BR">
+<head>
+  {% include 'cabecalho_comum.html' %}
+  <title>Opções - Desafio das Perguntas</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <style>
+    *, *:before, *:after {
+      box-sizing: border-box;
+    }
+    :root {
+      --header-height: 3.35rem;
+      --padding-lateral: 1.4rem;
+    }
+    @media (max-width: 1200px) { 
+      :root {
+        --padding-lateral: 0.7rem;
+      }
+    }
+    /* Botão voltar */
+    .btn-voltar-menu {
+      width: 40%;
+      min-width: 220px;
+      max-width: 420px;
+      padding: 0.7rem 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: var(--bg-botao-login);
+      color: #fff;
+      transition: background 0.2s ease, transform 0.15s ease;
+    }
+    .btn-voltar-menu:hover {
+      background: var(--bg-hover-botao-login);
+      transform: translateY(-1px);
+    }
+    /* ===== BASE ===== */
+    body {
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      color: #ffffff;
+      width: 100%;
+      margin: 0;
+      background: var(--cor-fundo-padrao);
+      height: 100dvh;
+    }
+    main {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.5rem calc(var(--padding-lateral));
+      padding-bottom: calc(var(--major-footer-h) + 1.5rem);
+      gap: 1.6rem;
+      flex: 1;
+      overflow-y: auto;
+      /* -webkit-overflow-scrolling: touch; Melhora o scroll no iOS */
+    }
+    /* ===== HEADER OPÇÕES ===== */
+    .opcoes-header {
+      display: flex;
+      align-items: center;
+      padding: 0.6rem var(--padding-lateral);
+      background-color: var(--cor-fundo-escuro);
+      height: var(--header-height);
+    }
+    .opcoes-header-conteudo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .opcoes-icon {
+      width: 2rem;
+      height: 2rem;
+    }
+    .header-titulo {
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+    /* ===== RESPONSIVO ===== 
+    @media (max-width: 600px) {
+      main {
+        padding: 1.2rem 0.8rem 2rem;
+      }
+    }*/
+
+    /* ===== OPÇÕES ===== */
+    #input-email {
+      width: 260px;
+      max-width: 90dvw;
+      padding: 0.6rem;
+      border-radius: 6px;
+      border: none;
+      margin-top: 0.6rem;
+      margin-bottom: 0.2rem;
+    }
+    .opcoes-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .opcoes-titulo {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      color: #ffffff;
+    }
+    .opcoes-grupo + .opcoes-grupo {
+      margin-top: 0.8rem;
+      padding-top: 0.6rem;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .opcao-descricao {
+      margin-left: 1.6rem;
+      margin-top: 0.35rem;
+      font-size: 0.82rem;              /* menor */
+      color: rgba(255,255,255,0.65);   /* mais suave */
+      line-height: 1.35;
+    }
+    .opcao-descricao-sem-recuo {
+      margin-left: 0;
+    }
+    .temas-grid {
+      margin-top: 0.6rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 0.5rem 0.8rem;
+      font-size: 0.9rem;
+    }
+    .temas-grid label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+    }
+    .temas-interesse {
+      max-width: 47rem;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr); /* 6 por linha */
+      gap: 0.9rem;    /* espaço vertical */
+      font-size: var(--fs-aux-max);
+      margin-top: 0.8rem;
+    }
+    .temas-interesse label {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem; /* espaço entre checkbox e texto */
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    @media (max-width: 900px) {
+    .temas-interesse {
+      grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    @media (max-width: 650px) {
+      .temas-interesse {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    .opcoes-acoes {
+      margin-top: 1.2rem;
+      display: flex;
+      justify-content: center;
+    }
+    .opcoes-status {
+      position: fixed;
+      left: 50%;
+      bottom: calc(var(--major-footer-h) + 0.75rem);
+      transform: translateX(-50%);
+      padding: 0.45rem 0.9rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-align: center;
+      background: transparent;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    .opcoes-status.visivel {
+      opacity: 1;
+      visibility: visible;
+    }
+    .opcao-item-coluna { /* Parece que não está sendo usado */
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .opcoes-acoes-esquerda {
+      display: flex;
+      justify-content: flex-start;
+      margin-top: 1rem;
+    }
+    .opcoes-status.sucesso {
+      color: green;
+    }
+    .opcoes-status.loading {
+      color: orange;
+    }
+    .opcoes-status.erro {
+      color: red;
+    }
+    body.tela-bloqueada {
+      pointer-events: none;
+      opacity: 0.65;
+    }
+    body.tela-bloqueada .footer,
+    body.tela-bloqueada #opcoes-status {
+      pointer-events: auto; /* mantém leitura */
+      opacity: 1;
+    }
+    .footer-duplo {
+      gap: 1rem;
+      padding: 0 0.8rem;
+    }
+    .btn-footer {
+      flex: 1;
+      max-width: 420px;
+      padding: 0.7rem 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.15s ease;
+      background: var(--bg-botao-login);
+      transform: translateY(-1px);
+      color: white;
+    }
+    #btn-salvar-opcoes {
+      display: none;
+    }
+    .btn-footer:hover {
+      background: var(--bg-hover-botao-login)
+    } 
+  </style>
+<body>
+  <!-- Cabeçalho da página -->
+  <header class="opcoes-header">
+    <div class="opcoes-header-conteudo">
+      <img src="{{ url_for('static', filename='img/Opcoes.png') }}" alt="Opcoes" class="opcoes-icon">
+      <span class="header-titulo">Opções</span>
+    </div>
+  </header>
+
+  <!-- Corpo da página -->
+  <main>
+    <!-- Opções de conta -->
+    <section class="opcoes-grupo" style="margin-top: -0.5rem;">
+      <label class="opcoes-titulo">👤 Conta</label>
+
+      <div>
+        <div class="opcao-label">E-mail atual</div>
+        <div class="opcao-descricao opcao-descricao-sem-recuo" id="email-atual"></div>
+      </div>
+
+      <!-- Campo para digitar o novo e-mail -->
+      <div class="opcao-item opcao-item-coluna" style="margin-top: 0.8rem;">
+        <label class="opcao-label" for="novo-email">Novo e-mail</label>
+
+        <input id="input-email" type="email" id="novo-email" placeholder="Digite o novo e-mail" maxlength="40">
+
+        <div class="opcao-descricao opcao-descricao-sem-recuo">
+          Será necessário confirmar o novo e-mail após alteração
+        </div>
+      </div>
+      
+      <!-- Botão para salvar o novo e-mail -->
+      <div class="opcoes-acoes opcoes-acoes-esquerda">
+        <button id="btn-alterar-email" class="btn-footer" style="max-width: 260px; margin-top: -0.8rem; margin-bottom: -0.4rem;" disabled>Alterar e-mail</button>
+      </div>
+    </section>
+
+    <!-- Opções de jogo 
+    <section class="opcoes-grupo">
+      <h2 class="opcoes-titulo">🎮 Jogo</h2>
+
+      <div class="opcao-item">
+        <label class="opcao-label">
+        <input type="checkbox" id="check-mostrar-instrucoes-quiz" checked disabled>
+          Mostrar instruções durante o quiz
+        </label>
+
+        <div class="opcao-descricao">
+          Exibe orientações sobre uso de dicas e possibilidade de pular perguntas
+        </div>
+      </div>
+    </section>-->
+
+    <!-- Opções de notificações -->
+    <section class="opcoes-grupo">
+      <h2 class="opcoes-titulo">📩 Notificações</h2>
+        
+      <!-- Checkbox de notificações para bônus de energia -->
+      <div>
+        <label class="opcao-label">
+          <input type="checkbox" id="check-notificacoes-bonus-energia" checked disabled> Bônus de energia
+        </label>
+
+        <div class="opcao-descricao">
+          Seja avisado ao receber bônus de energia para responder novas perguntas com prazo de expiração para coletar
+        </div>
+      </div>
+      
+      <!-- Checkbox de notificações para alterações nas pontuacões -->
+      <div>
+        <label class="opcao-label">
+          <input type="checkbox" id="check-notificacoes-alteracoes-pontos" checked disabled> Alterações nas pontuacões
+        </label>
+
+        <div class="opcao-descricao">
+          Seja avisado quando sua pontuação em um dos temas for modificada devido a correções de respostas
+        </div>
+      </div>
+
+      <!-- Checkbox de notificações para atualizações no site -->
+      <div>
+        <label class="opcao-label">
+        <input type="checkbox" id="check-notificacoes-atualizacoes-site" checked disabled> Atualizações no site
+        </label>
+
+        <div class="opcao-descricao">
+          Seja avisado quando ocorrerem atualizações importantes no site
+        </div>
+      </div>
+
+      <!-- Checkbox de outras notificações -->
+      <div>
+        <label class="opcao-label">
+        <input type="checkbox" id="check-outras-notificacoes" disabled>
+          Outros assuntos
+        </label>
+
+        <div class="opcao-descricao">
+          Seja avisado a respeito de assuntos relacionados aos seus temas de interesse, entre outras coisas
+        </div>
+      </div>
+
+      <!-- Temas de interesse -->
+      <div>
+        <div class="opcao-label">Temas de interesse</div>
+        <div class="temas-interesse">
+          <label><input type="checkbox" name="temas-interesse" value="Artes" disabled> Artes</label>
+          <label><input type="checkbox" name="temas-interesse" value="Astronomia" disabled> Astronomia</label>
+          <label><input type="checkbox" name="temas-interesse" value="Biologia" disabled> Biologia</label>
+          <label><input type="checkbox" name="temas-interesse" value="Esportes" disabled> Esportes</label>
+          <label><input type="checkbox" name="temas-interesse" value="Filosofia" disabled> Filosofia</label>
+          <label><input type="checkbox" name="temas-interesse" value="Fisica" disabled> Física</label>
+          <label><input type="checkbox" name="temas-interesse" value="Geografia" disabled> Geografia</label>
+          <label><input type="checkbox" name="temas-interesse" value="Historia" disabled> História</label>
+          <label><input type="checkbox" name="temas-interesse" value="Midia" disabled> Mídia</label>
+          <label><input type="checkbox" name="temas-interesse" value="Musica" disabled> Música</label>
+          <label><input type="checkbox" name="temas-interesse" value="Quimica" disabled> Química</label>
+          <label><input type="checkbox" name="temas-interesse" value="Variedades" disabled> Variedades</label>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Mensagem de status -->
+  <div class="opcoes-status" id="opcoes-status"></div>
+
+  <!-- Rodapé com botões -->
+  <div class="footer footer-duplo">
+    <button id="btn-voltar-menu" class="btn-footer">Voltar ao menu</button>
+    <button id="btn-salvar-opcoes" class="btn-footer" disabled>Salvar alterações</button>
+  </div>
+</body>
+
+<script type="module" src="{{ url_for('static', filename='opcoes.js') }}?v=1.1.0"></script>
+</html>

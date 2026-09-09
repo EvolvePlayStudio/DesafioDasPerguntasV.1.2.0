@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="html-politica-de-privacidade">
+<head>
+  {% include 'cabecalho_comum.html' %}
+  <title>Sobre - Desafio das Perguntas</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="robots" content="noindex">
+
+  <!-- CSS -->
+  <style>
+    .points-table {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      text-align: center;
+      width: 100%;
+      max-width: 100%;
+    }
+    th, td {
+      font-weight: bold;
+      border: 2px solid var(--cor-fundo-escuro);
+      padding: 0.7rem;
+    }
+    td {
+      text-align: center;
+      background-color: #e7e0e0;
+      /*font-size: 0.95rem;*/
+      font-size: var(--fs-base);
+      white-space: nowrap;
+    }
+    .td-rankings {
+      min-width: 2.2rem;
+      min-width: 5dvw;
+    }
+    th {
+      /*font-size: 1.10rem;*/
+      font-size: var(--fs-emph);
+      background-color: var(--cor-fundo-padrao);
+      color: white;
+    }
+    
+    /*
+    @media (max-width: 1200px) {
+      td {
+        font-size: calc(var(--fs-aux) + 0.05rem);
+      }
+      th {
+        font-size: calc(var(--fs-base));
+      }
+    }
+    @media (max-width: 600px) {
+      td {
+        font-size: calc(var(--fs-min));
+      }
+      th {
+        font-size: calc(var(--fs-aux));
+      }
+    }
+    */
+    @media (max-width: 420px) {
+      td {
+        font-size: var(--fs-aux-min);
+      }
+      th {
+        font-size: var(--fs-aux-min);
+      }
+    }
+  </style>
+</head>
+<body class="body-politica-de-privacidade">
+  <main class="main-politica-de-privacidade">
+    <div class="content-politica-de-privacidade">
+
+      <!-- Título com data da última atualização -->
+      <div class="header-content-politica-de-privacidade">
+        <h1 class="h1-politica-de-privacidade">Sobre o App</h1>
+        <span class="last-update">Atualizado em: 18/02/2026</span>
+      </div>
+
+      <!-- Conteúdo -->
+      <h2 class="h2-politica-de-privacidade">1. Informações Gerais</h2>
+      <p class="p-politica-de-privacidade">
+        Desafio das Perguntas é um jogo educativo e gratuito que oferece um sistema de rankings para medir seu desempenho em cada tema. Também conta com um mecanismo de pesquisa por tópicos que possibilita a revisão do conteúdo das perguntas já respondidas.
+      </p>
+
+      <h2 class="h2-politica-de-privacidade">2. Regras do jogo</h2>
+      <ul class="ul-politica-de-privacidade">
+        <li class="li-politica-de-privacidade">Para responder uma pergunta nova, você precisa de energia (símbolo de raio amarelo). Você receberá um incremento de 10 a 20 no seu estoque de energia ao fazer login diariamente, dependendo de quantas perguntas já respondeu. Algumas vezes voce receberá bônus de energia com prazo de expiração para coleta, que é feita ao acessar a conta.</li>
+        <li class="li-politica-de-privacidade">Erros penalizam 100 pontos e perguntas de nível Fácil no ranking Lenda ou que já foram respondidas não valem pontos, tanto para acertos quanto para erros.</li>
+        <li class="li-politica-de-privacidade">Seu ranking atual dependerá da sua pontuação. Cada novo ranking exige 1000 pontos, sendo 4000 o necessário para chegar no último e 5000 a pontuação máxima que se pode obter.</li>
+        <li class="li-politica-de-privacidade">Veja abaixo a quantidade de pontos ganhos em cada ranking e nível de pergunta:</li>
+      </ul>
+      
+      <table class="points-table">
+        <thead>
+        <tr>
+          <th>Ranking</th>
+          <th>Fácil</th>
+          <th>Médio</th>
+          <th>Difícil</th>
+          <th id="nivel-extremo">Extremo</th>
+        </tr>
+        </thead>
+
+        <tbody>
+            <tr>
+              <td style="padding-right: 2.9ch;" class="td-rankings">🌱 Iniciante</td>
+              <td>+120</td>
+              <td>+200</td>
+              <td>---</td>
+              <td>---</td>
+            </tr>
+            <tr>
+              <td style="padding-right: 2.6ch;" class="td-rankings">🧩 Aprendiz</td>
+              <td>+80</td>
+              <td>+120</td>
+              <td>+200</td>
+              <td>---</td>
+            </tr>
+            <tr>
+              <td style="padding-right: 1.8ch;" class="td-rankings">🎓 Estudante</td>
+              <td>+40</td>
+              <td>+80</td>
+              <td>+120</td>
+              <td>+200</td>
+            </tr>
+            <tr>
+              <td style="padding-right: 5.1ch;" class="td-rankings">🧙‍♂️ Sábio</td>
+              <td>+20</td>
+              <td>+40</td>
+              <td>+80</td>
+              <td>+120</td>
+            </tr>
+            <tr>
+              <td style="padding-right: 4.9ch;" class='td-rankings'>🌟 Lenda</td>
+              <td>0</td>
+              <td>+20</td>
+              <td>+40</td>
+              <td>+80</td>
+            </tr>
+        </tbody>
+      </table>
+
+      <h2 class="h2-politica-de-privacidade">4. Contato</h2>
+      <p class="p-politica-de-privacidade">
+        Para dúvidas, sugestões ou suporte, entre em contato pelo e-mail: <a href="mailto:evolveplaystudio@gmail.com">evolveplaystudio@gmail.com</a>
+      </p>
+
+    </div>
+  </main>
+
+  <!-- Rodapé da página -->
+  <footer>
+    {% if session.get('from_login') %}
+      <a href="{{ url_for('login') }}">Início</a> |
+      <a href="{{ url_for('politica_privacidade_from_login') }}">Política de Privacidade</a> |
+      <a href="{{ url_for('termos_uso_from_login') }}">Termos de Uso</a> |
+      <a href="{{ url_for('sobre_app_from_login') }}" style="color: var(--cor-pagina-selecionada)">Sobre</a>
+    {% else %}
+      <a href="{{ url_for('home') }}">Home</a> |
+      <a href="{{ url_for('politica_privacidade') }}">Política de Privacidade</a> |
+      <a href="{{ url_for('termos_uso') }}">Termos de Uso</a> |
+      <a href="{{ url_for('sobre_app') }}" style="color: var(--cor-pagina-selecionada)">Sobre</a>
+    {% endif %}
+  </footer>
+
+  <script>
+    if (window.innerWidth <= 420) {
+      document.getElementById('nivel-extremo').textContent = 'Ext.'
+    }
+  </script>
+</body>
+</html>

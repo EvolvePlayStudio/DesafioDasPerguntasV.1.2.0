@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+ 
+  {% include 'cabecalho_comum.html' %}
+  <title>Resultado - Desafio das Perguntas</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <style>
+    *, *:before, *:after {
+      box-sizing: border-box;
+    }
+    :root {/* O IDEAL ERA SALVAR NO WINDOW ESTAS VARIÁVEIS, POIS SÃO UTILIZADAS EM SCRIOT MAIS ABAIXO */
+      --padding-top-body: 1.5rem;
+      --ads-container-width: 200px;
+      --ads-container-height: 420px;
+      --container-height: calc(100dvh - 4.5rem - 3rem);
+    }
+    @media(max-width: 1200px) {
+      :root {
+      --fs-aux: 0.75rem;
+      --fs-base: 0.85rem;
+      --fs-emph: 1.00rem;
+      --fs-title: 1.15rem;
+      }
+    }
+    body {
+      font-family: "Noto Serif", Roboto, serif, sans-serif;
+      background: var(--cor-fundo-padrao);
+      margin: 0;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .layout-horizontal {
+      display: grid;
+      grid-template-columns: 0.7fr 1.6fr 0.7fr;
+      width: 100%;
+      margin: 0 auto;
+      align-items: center;
+      justify-items: center;
+      justify-content: center;
+      padding: var(--padding-top-body) 0;
+    }
+    .container {
+      margin: auto;
+      background: var(--cor-fundo-claro);
+      border-radius: 12px;
+      padding: 0 2rem 0.3rem 2rem;
+      flex: 1;
+      overflow-y: auto;
+      height: var(--container-height);
+      min-width: 100%;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    }
+    h1 {
+      text-align: center;
+      color: black;
+    }
+    .pontuacao {
+      font-size: var(--fs-base);
+      margin: 20px 0;
+      padding: 0.6rem 0.8rem;
+      background: #f0f0f0;
+      border-radius: 8px;
+    }
+    .pontuacao p {
+      font-family: "Noto Serif", Roboto, serif, sans-serif;
+      margin: 5px 0;
+    }
+    .perguntas-revisao {
+      font-size: var(--fs-base);
+      margin-top: 30px;
+      font-family: "Noto Serif", Roboto, serif, sans-serif;
+      flex: 1;
+      overflow: auto;
+    }
+    .pergunta {
+      border-top: 1px solid #ddd;
+      padding: 10px 0;
+    }
+    .pergunta span {
+      font-weight: bold;
+    }
+    .ad-sidebar {
+      display: flex;
+      justify-content: center;
+      width: var(--ads-container-width);
+      max-height: var(--ads-container-height);
+      max-width: var(--ads-container-width);
+    }
+    .anuncio-banner {
+      position: relative;
+      background: var(--cor-fundo-claro);
+      padding: 1rem;
+      padding-bottom: 3.5rem; /* Para caber o botão de ver oferta */
+      border-radius: 0.5rem; 
+      text-align: center; 
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      width: 100%;
+      height: var(--ads-container-height);
+      transition: transform 0.3s ease;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    }
+    .ad-link {
+      min-width: 100%;
+      text-decoration: none;
+    }
+    .titulo-banner {
+      color: black;
+      font-size: var(--fs-emph);
+      font-weight: bold;
+      margin-bottom: 0.95rem;
+    }
+    .img-logotipo {
+      display: block;
+      object-fit: contain;
+      max-width: 100%;
+      margin: 0 auto;
+      max-height: 11rem;
+    }
+    .img-logotipo.amazon {
+      width: 70%;
+    }
+    .img-logotipo.mercado-livre {
+      width: 85%;
+    }
+    .img-produto {
+      width: 100% !important;
+      min-height: calc(0.34 * var(--ads-container-height));
+      max-height: calc(0.43 * var(--ads-container-height));
+      object-fit: contain;
+      margin: 0 auto;
+      display: block;
+    }
+    .container-badges {
+      display: none;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1.2rem;
+      min-height: 1.2rem;
+    }
+    .badge-promo {
+      display: none;
+      position: absolute;
+      top: 0.5em;
+      padding: 0.2rem 0.4rem;
+      /*font-size: calc(var(--fs-aux) - 0.05rem);*/
+      font-size: var(--fs-min);
+      font-weight: bold;
+      color: white;
+      border-radius: 0.2rem;
+      text-transform: uppercase;
+      z-index: 5;
+      box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.2);
+      white-space: nowrap;
+    }
+    .badge-verde {
+      left: 0.5rem;
+      background-color: #00a650;
+    }
+    .badge-vermelho {
+      right: 0.5rem;
+      background-color: #e44d26;
+    }
+    .anuncio-banner p {
+      /*font-size: calc(var(--fs-aux) - 0.05rem);*/
+      font-size: var(--fs-min);
+      font-weight: bold; 
+      color: black; 
+      margin: 10px 0; 
+      line-height: 1.4;
+    }
+    .btn-ver-oferta {
+      background: #FFD814; 
+      border: 1px solid #FCD200; 
+      border-radius: 1rem; 
+      padding: 10px 0; 
+      cursor: pointer;
+      font-size: var(--fs-base);
+      font-weight: bold;
+      color: black;
+      /* Fixa o botão no rodapé do card */
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      right: 1rem;
+      width: calc(100% - 2rem);
+    }
+    .btn-ver-oferta:hover { background: #f7ca00; }
+    .footer {
+      padding: 0 1rem;
+      gap: 3.5rem;
+    }
+    .btn {
+      flex: 1;
+      font-size: var(--fs-emph);
+      max-width: 220px;
+      text-align: center;
+      padding: 0.8rem;
+      background: var(--bg-botao-login);
+      color: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: var(--peso-fonte-botao);
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: var(--bg-hover-botao-login);
+      font-weight: var(--peso-fonte-botao);
+    }
+    #btn-feedback {
+      cursor: pointer;
+    }
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: #fff;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+      animation: modalFadeIn 0.25s ease-out;
+    }
+    .modal-content h2 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+    .feedback-hint {
+      font-size: 14px;
+      color: var(--hint-text);
+      margin-bottom: 12px;
+    }
+    /* Textarea */
+    #caixa-texto-feedback {
+      width: 100%;
+      min-height: 120px;
+      resize: vertical;
+      padding: 10px;
+      font-size: 15px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-bottom: 15px;
+      font-family: inherit;
+      resize: none;
+    }
+    /* Ações */
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    /* Estado escondido */
+    .hidden {
+      display: none;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    /* Animação suave */
+    @keyframes modalFadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    button.btn {
+      border: none;
+      outline: none;
+      box-shadow: none;
+      appearance: none;
+      -webkit-appearance: none;
+      background-clip: padding-box;
+    }
+    .feedback-mensagem {
+      margin-bottom: 1rem;
+      padding: 0.8rem;
+      border-radius: 6px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .feedback-mensagem.sucesso {
+      background: #e6f9ee;
+      color: #1e7f4d;
+    }
+    .feedback-mensagem.enviando {
+      background: #ebffa3;
+      color: #383838;
+    }
+    .feedback-mensagem.erro {
+      background: #fdecea;
+      color: #a12622;
+    }
+    @media (max-width: 1200px) {
+      .layout-horizontal {
+        grid-template-columns: 0.9fr;
+      }
+      .container {
+        max-width: 90%;
+      }
+      .ad-sidebar {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Áudio -->
+  <audio id="button-click-sound" src="/static/sounds/button_click.wav" preload="auto"></audio>
+  <audio id="key-sound" src="/static/sounds/key.wav" preload="auto"></audio>
+
+  <div id="main-element" class="main">
+    <!-- Anúncios nas laterais e layout de resultado no centro -->
+    <div class="layout-horizontal">
+      <!-- Banner de anúncio na lateral esquerda -->
+      <div class="ad-sidebar" id="banner-lateral-esquerda" style="visibility: hidden; pointer-events: none;">
+        <a href="" target="_blank" class="ad-link">
+          <div class="anuncio-banner">
+            <img id="logotipo-anuncio-esq" alt="Logotipo" class="img-logotipo">
+            <div class="container-badges" style="position: relative; width: 100%">
+              <span id="badge-frete-gratis" class="badge-promo badge-verde">Frete Grátis</span>
+              <span id="badge-desconto" class="badge-promo badge-vermelho"></span>
+            </div>
+            <img src="" alt="Produto" class="img-produto">
+            <p id="descricao-banner-esquerda"></p>
+            <div class="btn-ver-oferta">Ver Oferta</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Container das informações do quiz feito -->
+      <div id="container-resultado" class="container">
+        <h1>Resultado</h1>
+
+        <div class="pontuacao">
+          <p><strong>Tema:</strong> <span id="tema-perguntas"></span></p>
+          <p><strong>Ranking atual:</strong> <span id="ranking-atual"></span></p>
+          <p><strong>Pontuação inicial:</strong> <span id="pontuacao-anterior"></span></p>
+          <p><strong>Pontuação final:</strong> <span id="pontuacao-final"></span></p>
+          <p><strong>Saldo:</strong> <span id="pontuacao-saldo"></span></p>
+        </div>
+
+        <div class="perguntas-revisao">
+          <div id="lista-perguntas"></div>
+        </div>
+      </div>
+
+      <!-- Banner de anúncio na lateral direita -->
+      <div class="ad-sidebar" id="banner-lateral-direita" style="visibility: hidden; pointer-events: none;">
+        <a href="" target="_blank" class="ad-link">
+          <div class="anuncio-banner">
+            <img id="logotipo-anuncio-dir" alt="Logotipo" class="img-logotipo">
+            <div class="container-badges" style="position: relative; width: 100%">
+              <span id="badge-frete-gratis" class="badge-promo badge-verde">Frete Grátis</span>
+              <span id="badge-desconto" class="badge-promo badge-vermelho"></span>
+            </div>
+            <img src="" alt="Produto" class="img-produto">
+            <p id="descricao-banner-direita"></p>
+            <div class="btn-ver-oferta">Ver Oferta</div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Rodapé da página com os botões -->
+    <div class="footer">
+      <!-- Feedback -->
+      <a id="btn-feedback" class="btn">Enviar feedback</a>
+
+      <!-- Prosseguir -->
+      <a id="btn-prosseguir" class="btn">Prosseguir</a>
+    </div>
+    
+    <!-- Modal para envio de feedback -->
+    <div id="modal-feedback" class="modal hidden">
+      <div class="modal-content">
+        <h2>Envie seu feedback</h2>
+
+        <p class="feedback-hint">
+          Use este espaço para sugestões, críticas ou problemas gerais do site.
+          Não é necessário falar apenas sobre as perguntas respondidas recentemente.
+        </p>
+        
+        <textarea id="caixa-texto-feedback"
+          placeholder="Exemplo: tive dificuldade em entender o ranking, não concordo com a dificuldade das perguntas..."
+          maxlength="800"></textarea>
+
+        <div id="feedback-mensagem" class="feedback-mensagem hidden"></div>
+
+        <div class="modal-actions" id="feedback-actions-form">
+          <button id="cancelar-feedback" class="btn btn-neutro">Cancelar</button>
+          <button id="enviar-feedback" class="btn btn-primario">Enviar</button>
+        </div>
+
+        <div class="modal-actions hidden" id="feedback-actions-pos-envio">
+          <button id="voltar-feedback" class="btn btn-neutro">Voltar</button>
+          <button id="editar-feedback" class="btn btn-primario">Editar feedback</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="{{ url_for('static', filename='resultado.js')}}?v=1.1.0"></script>
+</body>
+</html>

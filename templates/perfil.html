@@ -1,0 +1,288 @@
+<!DOCTYPE html><html lang="pt-BR">
+<head>
+  {% include 'cabecalho_comum.html' %}
+  <title>Perfil - Desafio das Perguntas</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  
+  <style>
+    /* ===== BASE ===== */
+    body {
+      width: 100%;
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--cor-fundo-padrao);
+      color: #ffffff;
+      min-height: 100dvh;
+    }
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.6rem;
+      flex: 1;
+      padding-bottom: calc(var(--major-footer-h) + 12px);
+      margin-top: 0.5rem;
+    }
+    /* ===== HEADER PERFIL ===== */
+    .perfil-header {
+        width: 100%;
+        background: var(--cor-fundo-escuro);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .perfil-header-conteudo {
+        max-width: none;        /* REMOVE a centralização */
+        margin: 0;
+        padding: 0.9rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .perfil-icon {
+      width: 2rem;
+      height: 2rem;
+    }
+    .header-titulo {
+      font-size: var(--fs-title-max);
+      font-weight: 700;
+    }
+    /* ===== CONTROLES ===== */
+    #controles {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    #controles label {
+      font-size: var(--fs-base-max);
+      font-weight: 600;
+    }
+    #controles select {
+      border: none;
+      border-radius: 4px;
+      padding: 0.4rem 0.6rem;
+      font-size: var(--fs-aux-max);
+      cursor: pointer;
+    }
+    .linha-topo {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .secao-titulo {
+      font-size: var(--fs-emph-max);
+      font-weight: 700;
+      margin: 0;
+    }
+    /* ===== LISTA DE TEMAS ===== */
+    #lista-temas {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      margin-bottom: 1.2rem;
+    }
+    /* ===== ITEM DO TEMA ===== */
+    .tema-item {
+      background: var(--cor-fundo-escuro);
+      padding: 0.9rem 1rem 1rem;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    /* Linha superior */
+    .tema-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tema-label, .progresso-label {
+      font-weight: 700;
+      font-size: var(--fs-base-max);
+    }
+    .tema-label {
+      opacity: 0;
+    }
+    .tema-pontos {
+      font-size: var(--fs-base-max);
+      font-weight: 600;
+    }
+    .barra-container {
+      position: relative;
+    }
+    .barra-marco {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: rgba(0, 0, 0, 1);
+    }
+    /* ===== BARRA DE PROGRESSO ===== */
+    .barra-container {
+      width: 100%;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .barra-progresso {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(to right, #f9a825, #fdd835);
+      border-radius: 999px;
+      transition: width 0.9s cubic-bezier(0.4, 0.0, 0.2, 1);
+    }
+    #barra-progresso-total {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(to right, #f9a825, #fdd835);
+      border-radius: 999px;
+      transition: width 7s cubic-bezier(0.4, 0.0, 0.2, 1);
+    }
+    /* ===== ESCALA DE RANKING ===== */
+    .escala-ranking {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      margin-top: 0.4rem;
+      padding-top: 0.3rem;
+      margin-bottom: 0.8rem;
+    }
+    .escala-labels {
+      position: relative;
+      height: 14px;
+      margin-bottom: 0.4rem;
+    }
+    .escala-labels span {
+      position: absolute;
+      transform: translateX(-50%);
+      font-size: var(--fs-min-max);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .barra-referencia {
+      height: 10px;
+      background: rgba(255,255,255,0.08);
+    }
+    .btn-voltar-menu {
+      font-size: var(--fs-emph-max);
+      font-weight: 700;
+      width: 40%;
+      min-width: 220px;
+      max-width: 420px;
+      padding: 0.7rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: var(--bg-botao-login);
+      color: #fff;
+      transition: background 0.2s ease, transform 0.15s ease;
+    }
+    .btn-voltar-menu:hover {
+      background: var(--bg-hover-botao-login);
+    }
+    #controles {
+      justify-content: center;
+    }
+    @media (max-width: 550px) {
+      .escala-labels span {
+        font-size: calc(var(--fs-min-max) - 0.08rem);
+      }
+    }
+    @media (max-width: 450px) {
+      .escala-labels span {
+        font-size: calc(var(--fs-min-max) - 0.18rem);
+      }
+    }
+  </style>
+
+    <!-- Cabeçalho da página -->
+    <header class="perfil-header">
+      <div class="perfil-header-conteudo">
+        <img src="{{ url_for('static', filename='img/Perfil.png') }}" 
+            alt="Perfil" 
+            class="perfil-icon">
+        <span class="header-titulo">Perfil</span>
+      </div>
+    </header>
+
+    <!-- Parte do meio da página (corpo principal)-->
+    <main>
+      <!-- Título e Combobox da ordem em que os temas devem aparecer -->
+      <section class="linha-topo">
+        <h2 class="secao-titulo">📊 Rankings Atuais</h2>
+        <div id="controles">
+          <label for="ordenacao">Ordenar por:</label>
+          <select id="ordenacao" disabled>
+            <option value="pontuacao-desc" selected>Pontuação</option>
+            <option value="nome-tema">Tema</option>
+          </select>
+        </div>
+      </section>
+      
+      <!-- Progresso total -->
+      <section class="lista-temas" style="margin-bottom: -0.5rem;">
+        <div class="tema-item">
+          <div class="tema-info">
+            <span class="progresso-label" style="margin-bottom: 0.4rem;">🚀 Progresso</span>
+            <span id="pontos-totais" class="tema-pontos">0 / 60000 pts</span>
+          </div>
+          <div class="barra-container barra-referencia">
+            <div id="barra-progresso-total" class="barra-progresso"></div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Progresso nos temas -->
+      <section id="lista-temas" class="lista-temas"></section>
+      <script type="module">
+        import { simbolosTemas, temas_disponiveis } from '../static/utils.js'
+        const container = document.getElementById("lista-temas");
+        const fragment = document.createDocumentFragment();
+        
+        temas_disponiveis.forEach(tema => {
+          const div = document.createElement("div");
+          div.className = "tema-item";
+          div.dataset.tema = tema;
+          const emoji_tema = simbolosTemas[tema] ?? "";
+          div.innerHTML = `
+            <div class="tema-info">
+              <span class="tema-label">${emoji_tema} ${tema}</span>
+              <span class="tema-pontos">0 / 5000 pts</span>
+            </div>
+            <section class="escala-ranking">
+              <div class="escala-labels">
+                <span style="left: 10%">Iniciante</span>
+                <span style="left: 30%">Aprendiz</span>
+                <span style="left: 50%">Estudante</span>
+                <span style="left: 70%">Sábio</span>
+                <span style="left: 90%">Lenda</span>
+              </div>
+              <div class="barra-container barra-referencia">
+                <div class="barra-progresso"></div>
+                <span class="barra-marco" style="left: 20%"></span>
+                <span class="barra-marco" style="left: 40%"></span>
+                <span class="barra-marco" style="left: 60%"></span>
+                <span class="barra-marco" style="left: 80%"></span>
+              </div>
+            </section>
+          `;
+
+          fragment.appendChild(div);
+        });
+
+        container.appendChild(fragment);
+      </script>
+    </main>
+
+    <!-- Rodapé com botões -->
+    <div class="footer">
+      <button id="btn-voltar-menu" class="btn-voltar-menu">Voltar ao menu</button>
+    </div>
+  </body>
+
+  <script type="module" src="{{ url_for('static', filename='perfil.js') }}?v=1.2.2"></script>
+</html>

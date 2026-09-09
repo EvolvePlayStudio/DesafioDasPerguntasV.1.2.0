@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <!--
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/Favicon.png') }}">
+    <meta name="description" content="Experimente mais de 1000 perguntas em inúmeros temas científicos e populares, acumule pontos e suba de ranking">
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17529321916"></script> <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'AW-17529321916'); </script>-->
+    
+    {% include 'cabecalho_comum.html' %}
+    <title>{{ titulo }}</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            padding: 40px;
+            text-align: center;
+        }
+        .mensagem {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            margin: auto;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        p {
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="mensagem">
+        <h1>{{ titulo }}</h1>
+        <p>{{ mensagem }}</p>
+    </div>
+</body>
+</html>

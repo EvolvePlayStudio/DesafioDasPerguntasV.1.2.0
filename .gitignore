@@ -1,0 +1,9 @@
+__pycache__
+ArquivosAntigos/
+PerguntasParaCriar/
+venv/
+.env
+*.pyc
+anotacoesImportantes.text
+constantes.py
+ideias.py

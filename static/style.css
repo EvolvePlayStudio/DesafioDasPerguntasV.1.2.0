@@ -1,0 +1,219 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Noto+Serif&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+:root {
+    /* Cores */
+    --cor-fundo-escuro: #111109;
+    --cor-fundo-padrao: #1E1E14;
+    --cor-fundo-claro: #7f7f47;
+    --bg-botao-login: #007BFF;
+    --bg-botao-login: #5623e0;
+    --bg-hover-botao-login: #0056b3;
+    --bg-hover-botao-login: #3e13b4;
+    --bg-botao-vermelho: #e53935;
+    --bg-hover-botao-vermelho: #b71c1c;
+    --hint-text: #333333;
+    --cor-pagina-selecionada: gold;
+    --cor-textos-pequenos: rgb(36, 36, 36);
+    --vermelho-tela-quiz: rgb(255, 51, 15);
+    --config-sombra: 0 0 15px rgba(0,0,0,0.3);
+    /* Tamanhos */
+    --header-height: 3.35rem;
+    --major-footer-h: 4.5rem;
+    --peso-fonte-padrao: 500;
+    --peso-fonte-botoes: 700;
+    /*
+    --fs-min: 0.75rem;
+    --fs-aux: 0.85rem;
+    --fs-base: 0.95rem;
+    --fs-emph: 1.10rem;
+    --fs-title: 1.25rem;*/
+
+    /* Valores mínimos de fontes */
+    --fs-min-min:   0.50rem;
+    --fs-aux-min:   0.55rem;
+    --fs-base-min:  0.60rem;
+    --fs-emph-min:  0.70rem;
+    --fs-title-min: 0.95rem;
+    --fs-max-min:   1.20rem;
+
+    /* Valores padrões de fontes */
+    --fs-min-standard:       1.00dvw;
+    --fs-aux-standard:       1.50dvw;
+    --fs-base-standard:      1.80dvw;
+    --fs-emph-standard:      2.20dvw;
+    --fs-title-standard:     2.70dvw;
+    --fs-max-standard:       3.30dvw;
+
+    /* Valores máximos de fontes */
+    --fs-min-max:   0.75rem;
+    --fs-aux-max:   0.85rem;
+    --fs-base-max:  0.95rem;
+    --fs-emph-max:  1.05rem;
+    --fs-title-max: 1.20rem;
+    --fs-max-max:   1.60rem;
+
+    /* Intervalo para os valores de fontes */
+    --fs-min:   clamp(var(--fs-min-min), var(--fs-min-standard), var(--fs-min-max));
+    --fs-aux:   clamp(var(--fs-aux-min), var(--fs-aux-standard), var(--fs-aux-max));
+    --fs-base:  clamp(var(--fs-base-min), var(--fs-base-standard), var(--fs-base-max));
+    --fs-emph:  clamp(var(--fs-emph-min), var(--fs-emph-standard), var(--fs-emph-max));
+    --fs-title: clamp(var(--fs-title-min), var(--fs-title-standard), var(--fs-title-max));
+    --fs-max:   clamp(var(--fs-max-min), var(--fs-max-standard), var(--fs-max-max));
+
+}
+.mensagem {
+    color: red;
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.5s;
+    text-align: center;
+}
+body {
+  margin: 0;
+  padding: 0;
+}
+/* Footer com links */
+footer {
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  text-align: center;
+  justify-content: center;
+  font-weight: bold;
+  padding: 1rem;
+  color: white;
+  background-color: var(--cor-fundo-escuro);
+  font-size: var(--fs-aux-max);
+  white-space: nowrap;
+}
+/* Footer com botões */
+.footer {
+  box-sizing: border-box;
+  display: flex;
+  background: var(--cor-fundo-escuro); 
+  position: fixed;
+  align-items: center;
+  justify-content: center;
+  height: var(--major-footer-h);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+}
+footer a {
+  font-size: var(--fs-aux-max);
+  text-decoration: none;
+  color: white;
+}
+footer a:hover {
+    text-decoration: underline;
+}
+.main-politica-de-privacidade {
+  padding: 2rem;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+.content-politica-de-privacidade {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: var(--cor-fundo-claro);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+}
+.header-content-politica-de-privacidade {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: -0.5rem;
+  margin-bottom: -0.5rem;
+}
+.h1-politica-de-privacidade {
+  font-size: var(--fs-max);
+}
+.last-update {
+  font-size: var(--fs-aux);
+  color: var(--cor-textos-pequenos);
+  font-weight: 500;
+  margin-top: 0.18rem;
+  white-space: nowrap;
+}
+.h2-politica-de-privacidade {
+  margin-top: 20px;
+  font-size: 1.05rem;
+  font-size: var(--fs-emph);
+}
+.p-politica-de-privacidade {
+  font-size: var(--fs-base);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: var(--peso-fonte-padrao);
+}
+.li-politica-de-privacidade {
+  font-size: var(--fs-base);
+  margin-left: -40px;
+  margin-top: 5px;
+  font-weight: var(--peso-fonte-padrao);
+}
+.ul-politica-de-privacidade {
+  font-size: var(--fs-base);  
+  margin: 8px 0 16px 20px;
+}
+.html-politica-de-privacidade, .body-politica-de-privacidade {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  font-family: Inter, Arial, sans-serif;
+  color: black;
+  background: var(--cor-fundo-padrao);
+  overflow: hidden;
+}
+@media(max-width: 1200px) {
+  /*
+  .h1-politica-de-privacidade {
+    font-size: 1.4rem;
+  }
+  .h2-politica-de-privacidade {
+    font-size: calc(var(--fs-base) + 0.05rem);
+  }
+  .li-politica-de-privacidade, .p-politica-de-privacidade, .ul-politica-de-privacidade {
+    font-size: calc(var(--fs-aux) + 0.05rem);
+  }*/
+  .main-politica-de-privacidade {
+    padding: 1.8dvw;
+  }
+  .content-politica-de-privacidade {
+    padding: 1rem;
+  }
+}
+@media (max-width: 420px) {
+  .h1-politica-de-privacidade {
+    font-size: var(--fs-emph-max);
+  }
+  .h2-politica-de-privacidade {
+    font-size: var(--fs-base-min);
+  }
+  .li-politica-de-privacidade, .p-politica-de-privacidade, .ul-politica-de-privacidade {
+    font-size: var(--fs-aux-min);
+  }
+  .last-update {
+    font-size: var(--fs-min-min);
+  }
+  footer {
+    padding-left: 0.15rem;
+    padding-right: 0.15rem;
+  }
+  .content-politica-de-privacidade {
+    padding: 0.4rem;
+  }
+  footer {
+    font-size: var(--fs-aux-min);
+  }
+  footer a {
+  font-size: var(--fs-aux-min);
+  text-decoration: none;
+  color: white;
+}
+}
+/* Menor valor de largura de smartphone para testar no desktop: 305px */
+
