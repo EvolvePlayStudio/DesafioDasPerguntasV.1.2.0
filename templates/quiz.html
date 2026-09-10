@@ -213,7 +213,7 @@
   }
   .quiz-header {
     display: grid;
-    grid-template-columns: minmax(0, auto) 1fr minmax(0, auto);
+    grid-template-columns: 7rem 1fr 7rem;
     align-items: center;
     gap: 12px;
     margin-top: -10px;
@@ -627,6 +627,9 @@
 
             <!-- Tema e nível da pergunta no centro -->
             <h2 id="tema-nivel-pergunta"></h2>
+
+            <!-- Widget invisível para ocupar a terceira coluna do grid (antes era usado para dicas) -->
+            <div style="visibility: hidden;" aria-hidden="true"></div>
           </div>
           
           <!-- Parte central do quiz com enunciado, alternativas, botões, etc -->
