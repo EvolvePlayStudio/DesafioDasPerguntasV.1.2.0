@@ -226,7 +226,7 @@
     #topo-corpo-pagina {
       display: grid;
       grid-template-columns: 1.05fr 0.9fr 1.05fr; /* Antigo, qunado tinha anúncios */
-      grid-template-columns: 0fr 3fr 0fr;
+      grid-template-columns: 1fr 1fr 1fr;
       flex-direction: row;
       align-items: center;
       justify-content: center;
@@ -245,10 +245,14 @@
     #banner-lateral-esquerda {
       grid-column: 1;
       justify-self: end;
+      visibility: hidden;
+      display: flex;
     }
     #banner-lateral-direita {
       grid-column: 3;
       justify-self: start;
+      visibility: hidden;
+      display: flex;
     }
     .ad-sidebar {
       flex: 0 1 auto;

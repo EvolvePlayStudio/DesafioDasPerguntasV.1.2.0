@@ -190,10 +190,10 @@ async function exibirAnuncios() {
       document.getElementById("topo-corpo-pagina").style.height = 'calc(80px + 1.5rem)';
       const aleatorioAmazon = anunciosAmazon[Math.floor(Math.random() * anunciosAmazon.length)];
       configurarBanner(anuncioBannerEsquerda, aleatorioAmazon);
-      anuncioBannerEsquerda.style.display = "flex";
+      anuncioBannerEsquerda.style.visibility = "visible";
     }
     else {
-      anuncioBannerEsquerda.style.display = "none";
+      anuncioBannerEsquerda.style.visibility = "hidden";
     }
 
     // 4. Exibição Mercado Livre (Direita)
@@ -201,10 +201,10 @@ async function exibirAnuncios() {
       document.getElementById("topo-corpo-pagina").style.height = 'calc(80px + 1.5rem)';
       const aleatorioML = anunciosML[Math.floor(Math.random() * anunciosML.length)];
       configurarBanner(anuncioBannerDireita, aleatorioML);
-      anuncioBannerDireita.style.display = "flex";
+      anuncioBannerDireita.style.visibility = "visible";
     }
     else {
-      anuncioBannerDireita.style.display = "none";
+      anuncioBannerDireita.style.visibility = "hidden";
     }
 
     if (anunciosML.length === 0 && anunciosAmazon.length === 0) {
@@ -242,6 +242,7 @@ function inserirBotaoModoTeste() {
 
 if (window.ADS_CONFIG.isAdmin && !MODO_VISITANTE) inserirBotaoModoTeste();
 else if (!window.ADS_CONFIG.isMobile) exibirAnuncios();
+if (!window.ADS_CONFIG.isMobile) exibirAnuncios(); // ATENÇÃO: REMOVER ESTA LINHA DEPOIS
 
 async function iniciarQuiz(event) {
   function desbloquearBotoes() {
