@@ -242,7 +242,6 @@ function inserirBotaoModoTeste() {
 
 if (window.ADS_CONFIG.isAdmin && !MODO_VISITANTE) inserirBotaoModoTeste();
 else if (!window.ADS_CONFIG.isMobile) exibirAnuncios();
-if (!window.ADS_CONFIG.isMobile) exibirAnuncios(); // ATENÇÃO: REMOVER ESTA LINHA DEPOIS
 
 async function iniciarQuiz(event) {
   function desbloquearBotoes() {

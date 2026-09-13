@@ -1,7 +1,7 @@
 export const pontuacaoTemaPadraoVisitantes = 1800;
 export const dificuldadesOrdenadas = ['Fácil', 'Médio', 'Difícil', 'Extremo'];
 export const temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"];
-export const idsReservados = [4, 6, 16];
+export const idsReservados = [6, 16];
 export const idVisitanteAdmin = '1bfbd5e9-db5f-45bf-bf86-1f1335e9d1cb';
 export const idsVisitantesReservados = ['1bfbd5e9-db5f-45bf-bf86-1f1335e9d1cb'];
 export const simbolosTemas = {Artes: "🎨", Astronomia: "🪐", Biologia: "🧬", Esportes: "⚽",
