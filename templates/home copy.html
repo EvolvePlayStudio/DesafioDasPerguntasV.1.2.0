@@ -25,8 +25,9 @@
   <!-- Variáveis do CSS -->
   <style>
     :root {
-      --ads-container-height: 73px;
-      --ads-container-width: 375px;
+      --ads-container-width: 460px; /* padrão */
+      --ads-container-height: 80px;
+      --ads-container-width: 410px;
       --fs-min:   var(--fs-min-max);
       --fs-aux:   var(--fs-aux-max);
       --fs-base:  var(--fs-base-max);
@@ -143,7 +144,16 @@
       margin: 0;
       align-items: center;
       justify-content: center;
+      /*
+      display: flex;
+      flex-direction: column;
+      ;
+      min-width: 0;*/
     }
+    /*
+    .btn-criar-conta, .btn-perfil, .btn-pesquisa, .btn-opcoes, .btn-doacoes, .btn-logout {
+      padding: 0.2rem ! important;
+    }*/
     .status-item {
       font-size: var(--fs-emph);
       display: flex;
@@ -213,66 +223,15 @@
     main.layout-ready {
       visibility: visible;
     }
-    #container-anuncios-topo {
-      display: none;
-      grid-template-columns: 1fr 1fr;
+    #topo-corpo-pagina {
+      display: grid;
+      grid-template-columns: 1.05fr 0.9fr 1.05fr; /* Antigo, qunado tinha anúncios */
+      grid-template-columns: 1fr 1fr 1fr;
       flex-direction: row;
       align-items: center;
       justify-content: center;
-      height: 6.6rem;
-    }
-    #banner-topo-esquerda {
-      grid-column: 1;
-      justify-self: start;
-      visibility: hidden;
-    }
-    #banner-topo-direita {
-      grid-column: 2;
-      justify-self: end;
-      visibility: hidden;
-    }
-    .ad-banner-block {
-      flex: 0 1 auto;
-      width: var(--ads-container-width);
-      height: var(--ads-container-height);
-      align-self: center;
-    }
-    .link-anuncio-geral {
-      display: flex; /* Alinha logo e produto lado a lado */
-      width: 100%;
-      height: 100%;
-      text-decoration: none;
-      background-color: #fff; /* Fundo branco para unir as duas imagens */
-      overflow: hidden;
-    }
-    .logo-container {
-      flex: 0 0 33%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      /*border-right: 1px solid #eee;  Linha sutil separando o logo do produto */
-    }
-    /* Container do Produto (Direita) */
-    .produto-container {
-      width: 100%;
-      height: 100%;
-      object-fit: fill;
-      display: block;
-      align-items: center;
-      justify-content: center;
-    }
-    .produto-container img {
-      width: 100%;
-      height: 100%;
-      object-fit: fill;
-      display: block;
-    }
-    /* Esconde o ícone de papel quebrado do navegador se o link da imagem estiver vazio ou carregando */
-    .produto-container img:not([src]), 
-    .produto-container img[src=""] {
-      opacity: 0 !important;
-      visibility: hidden !important;
+      height: 4.6rem;
+      margin-right: 0.8rem;
     }
     #escolha-tema {
       grid-column: 2;
@@ -283,18 +242,25 @@
       justify-content: center;
       white-space: nowrap;
     }
-    /* ==========================================
-    CONFIGURAÇÃO DE ANÚNCIOS PARA DESKTOP (Telas maiores que 800px)
-    ========================================== */
-    @media (min-width: 751px) {
-      /* Faz o segundo banner aparecer ao lado do primeiro no PC */
-      #banner-topo-direita {
-        display: block !important;
-      }
-      #banner-lateral-esquerda,
-      #banner-lateral-direita {
-        display: flex !important;
-      }
+    #banner-lateral-esquerda {
+      grid-column: 1;
+      justify-self: end;
+      visibility: hidden;
+      display: flex;
+    }
+    #banner-lateral-direita {
+      grid-column: 3;
+      justify-self: start;
+      visibility: hidden;
+      display: flex;
+    }
+    .ad-sidebar {
+      flex: 0 1 auto;
+      display: none;
+      /*position: absolute;*/
+      width: var(--ads-container-width);
+      height: var(--ads-container-height);
+      align-self: center;
     }
     .link-anuncio-duplo {
       display: flex; /* Alinha logo e produto lado a lado */
@@ -367,24 +333,24 @@
       font-weight: bold;
       padding: 0.3rem 0;
       background-color: var(--cor-fundo-claro);
+      font-size: 16px;
       font-size: var(--fs-base);
     }
     .hidden {
       display: none;
     }
     #mensagem {
+      grid-column: 2;
       font-size: var(--fs-base);
-      display: flex;
-      height: auto;
       width: 100%;
+      display: none;
       top: 0;
-      margin-top: 0.5rem;
-      margin-bottom: 0.7rem;
+      /*height: 1.2rem; height antigo*/
+      height: auto;
       align-self: center;
       align-content: center;
       justify-content: center;
       text-align: center;
-      opacity: 0;
     }
     .modo-teste-wrapper {
       display: none;
@@ -439,6 +405,9 @@
   <!-- CSS em dispositivos menores -->
   <style>
     @media (max-width: 1200px) {
+      .ad-sidebar {
+        display: none;
+      }
       .cards-container {
         grid-template-columns: repeat(3, 1fr);
         column-gap: 0.5rem;
@@ -471,12 +440,6 @@
       }
     }
     @media (max-width: 750px) {
-      #container-anuncios-topo {
-        grid-template-columns: 1fr;
-      }
-      #banner-topo-direita {
-        display: none !important; /* Esconde o segundo anúncio */
-      }
       .cards-container {
         grid-template-columns: repeat(2, 1fr);
         column-gap: 0.5rem;
@@ -490,12 +453,23 @@
         width: 38px;
         height: 38px;
       }
+      /*
+      .header-mobile .header-up .user-name {
+        font-size: calc(var(--fs-emph-max) - 0.1rem);
+        font-size: calc(var(--fs-emph-max) - ((550px - vw) * 0.2));
+        font-size: clamp(0.6rem, calc(0.25rem + 2.10vw), var(--fs-emph-max));
+      }
+      .status-item {
+        font-size: calc(var(--fs-emph-max) - 0.1rem);
+        font-size: calc(var(--fs-emph-max) - ((550px - vw) * 0.2));
+        font-size: clamp(0.6rem, calc(0.25rem + 2.10vw), var(--fs-emph-max));
+      }*/
       nav button {
         font-size: calc(var(--fs-base-max) - 0.1rem);
         font-size: calc(var(--fs-emph-max) - ((550px - vw) * 0.2));
         font-size: clamp(0.5rem, calc(0.25rem + 1.70vw), var(--fs-base-max));
       }
-      .card span, #mensagem {
+      .card span {
         font-size: clamp(0.5rem, calc(0.25rem + 1.70vw), var(--fs-base-max));
       }
       .switch {
@@ -515,6 +489,7 @@
       .modo-teste-texto {
         font-size: var(--fs-base-min);
       }
+
       #escolha-tema {
         font-size: calc(var(--fs-title-max) - 0.12rem);
       }
@@ -728,27 +703,6 @@
 </head>
 
 <body>
-
-  <body>
-  <!-- Área de Anúncios no Topo -->
-  <div id="container-anuncios-topo">
-    <!-- Banner 1 (Aparece no Celular e PC) -->
-    <div id="banner-topo-esquerda" class="ad-banner-block">
-      <a href="" target="_blank" class="link-anuncio-geral">
-        <div class="logo-container"><img src="" alt=""></div>
-        <div class="produto-container"><img src="" alt=""></div>
-      </a>
-    </div>
-
-    <!-- Banner 2 (Aparece APENAS no PC) -->
-    <div id="banner-topo-direita" class="ad-banner-block">
-      <a href="" target="_blank" class="link-anuncio-geral">
-        <div class="logo-container"><img src="" alt=""></div>
-        <div class="produto-container"><img src="" alt=""></div>
-      </a>
-    </div>
-  </div>
-
   <!-- Header em mobile -->
   <header class="header-mobile">
     <div class="header-up">
@@ -816,7 +770,35 @@
       <span class="modo-teste-texto">Modo Teste</span>
     </div>
 
-    <div id="mensagem" style="cursor: default">Mensagem</div>
+    <div id="topo-corpo-pagina">
+      <!-- Banner de anúncio na lateral esquerda -->
+      <div id="banner-lateral-esquerda" class="ad-sidebar">
+        <a href="" target="_blank" class="link-anuncio-duplo">
+          <div class="logo-container">
+            <img src="https://github.com/EvolvePlayStudio/assets-quiz/blob/main/logotipoAmazon.png?raw=true" alt="Logo Amazon">
+          </div>
+          <div class="produto-container">
+            <img src="" alt="Produto">
+          </div>
+        </a>
+      </div>
+
+      <!-- Label da mensagem que aparece acima dos cards de tema -->
+      <div id="mensagem" style="cursor: default">
+      </div>
+
+      <!-- Banner de anúncio na lateral direita -->
+      <div id="banner-lateral-direita" class="ad-sidebar">
+        <a href="" target="_blank" class="link-anuncio-duplo">
+          <div class="logo-container">
+            <img src="https://github.com/EvolvePlayStudio/assets-quiz/blob/main/logotipoMercadoLivre03.png?raw=true" alt="Logo ML">
+          </div>
+          <div class="produto-container">
+            <img src="" alt="Produto">
+          </div>
+        </a>
+      </div>
+    </div>
 
     <!-- Scroll com os cards de temas -->
     <!-- É possível simplificar aqui para os 12 talvez -->
@@ -916,7 +898,7 @@
     const idVisitante = localStorage.getItem("id_visitante");
     const idUsuarioHTML = parseInt(sessionStorage.getItem("id_usuario") ?? "0");
     sessionStorage.setItem("id_usuario", idUsuarioHTML);
-    const isMobile = window.innerWidth <= 750;
+    const isMobile = window.innerWidth <= 1000;
     const isAdmin = idsReservados.includes(idUsuarioHTML) || idsVisitantesReservados.includes(idVisitante);
     window.ADS_CONFIG = {
       isAdmin: isAdmin,

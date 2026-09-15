@@ -2,11 +2,17 @@ export const pontuacaoTemaPadraoVisitantes = 1800;
 export const dificuldadesOrdenadas = ['Fácil', 'Médio', 'Difícil', 'Extremo'];
 export const temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"];
 export const idsReservados = [6, 16];
-export const idVisitanteAdmin = '1bfbd5e9-db5f-45bf-bf86-1f1335e9d1cb';
-export const idsVisitantesReservados = ['1bfbd5e9-db5f-45bf-bf86-1f1335e9d1cb'];
+export const idVisitanteAdmin = 'cb1c55a4-df94-4098-b811-d13320877441';
+export const idsVisitantesReservados = ['cb1c55a4-df94-4098-b811-d13320877441'];
 export const simbolosTemas = {Artes: "🎨", Astronomia: "🪐", Biologia: "🧬", Esportes: "⚽",
 Filosofia: "🦉", Física: "⚛️", Geografia: "🌍", História: "📜", Mídia: "📺", Música: "🎵", Química: "🧪", Variedades: "🎲"}
 export const simbolosRankings = {Iniciante: "🌱", Aprendiz: "🧩", Estudante: "🎓", Sábio: "🧙‍♂️", Lenda: "🌟"}
+export const coresDificuldade = {
+    fácil: "lime",
+    médio: "yellow",
+    difícil: "red",
+    extremo: "#3e16d1"
+};
 let idUsuario;
 let idVisitante;
 let MODO_VISITANTE;
@@ -338,7 +344,7 @@ export function exibirMensagem(label, texto, cor, temporaria=true, remover_displ
   label.style.display = tipo_display;
   label.style.color = cor;
   label.textContent = texto;
-  label.style.opacity = 1
+  label.style.opacity = 1;
   if (temporaria) {
     setTimeout(() => {
         label.style.opacity = 0

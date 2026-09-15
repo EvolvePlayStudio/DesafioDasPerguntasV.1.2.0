@@ -1,5 +1,5 @@
 import { playSound, playKeySound } from "./sound.js";
-import { atualizarAnuncios, registrarInteracaoAnuncio, simbolosRankings, simbolosTemas} from "./utils.js";
+import { atualizarAnuncios, coresDificuldade, registrarInteracaoAnuncio, simbolosRankings, simbolosTemas} from "./utils.js";
 
 // Variáveis relacionadas aos anúncios
 const tema_atual = sessionStorage.getItem("tema_atual");
@@ -16,13 +16,14 @@ const bannerAnuncioDir = document.getElementById('banner-lateral-direita');
     registrarInteracaoAnuncio(this.querySelector('a'), "Clique", 'Resultado'); // Depois ver se é Resultado que deve passar sempre aqui
   });
 });
+/*
 let historicoExibicao = {};
 historicoExibicao = atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq, logotipoAnuncioDir, tema_atual, dadosAnuncios, historicoExibicao);
-    
+   
 setInterval(() => {
     historicoExibicao = atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq, logotipoAnuncioDir, tema_atual, dadosAnuncios, historicoExibicao
     );
-}, 14000);
+}, 14000);*/
 
 // Outras variáveis
 const MODO_VISITANTE = sessionStorage.getItem('modoVisitante') === "true";
@@ -103,25 +104,10 @@ resultado.perguntas_respondidas.forEach((p, i) => {
         correta = false;
     }
 
-    const cor_pontuacao = correta? 'lime': 'red'
-    let cor_dificuldade;
-    switch (p.dificuldade.toLowerCase()) {
-    case "fácil":
-        cor_dificuldade = 'green';
-        break;
-    case "médio":
-        cor_dificuldade = 'gold';
-        break;
-    case "difícil":
-        cor_dificuldade = 'red';
-        break;
-    case "extremo":
-        cor_dificuldade = '#3e16d1';
-        break;
-    default:
-        cor_dificuldade = 'black'
-    }
-
+    const cor_pontuacao = correta? 'lime': 'red'; // O ideal é que estas cores fossem variáveis globais
+    const cor_dificuldade = coresDificuldade[p.dificuldade.toLowerCase()];
+    console.log(`Cores das dificuldades: ${coresDificuldade}`)
+    console.log(`Dificuldade da pergunta: ${p.dificuldade}`)
     
     let cor_alternativa_a = 'black';
     let cor_alternativa_b = 'black';

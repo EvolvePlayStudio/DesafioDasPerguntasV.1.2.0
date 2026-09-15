@@ -1,4 +1,4 @@
-import { dificuldadesOrdenadas, detectarModoTela, deveEncerrarQuiz, idVisitanteAdmin,  idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings } from "./utils.js"
+import { coresDificuldade, dificuldadesOrdenadas, detectarModoTela, deveEncerrarQuiz, idVisitanteAdmin,  idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings } from "./utils.js"
 import { playSound, playKeySound } from "./sound.js"
 
 // Envia erros para a base de dados caso ocorram
@@ -97,21 +97,6 @@ const PROBABILIDADES_POR_RANKING = {
   Estudante: { Fácil: 0.20, Médio: 0.50, Difícil: 0.25, Extremo: 0.05 },
   Sábio:     { Fácil: 0.10, Médio: 0.45, Difícil: 0.35, Extremo: 0.10 },
   Lenda:     { Fácil: 0.02, Médio: 0.38, Difícil: 0.40, Extremo: 0.20 }
-};
-
-/*
-const coresDificuldade = {
-    fácil: "green",
-    médio: "gold",
-    difícil: "red",
-    extremo: "#3e16d1"
-};*/
-
-const coresDificuldade = {
-    fácil: "lime",
-    médio: "yellow",
-    difícil: "red",
-    extremo: "#3e16d1"
 };
 
 // Círculo amarelo com interrogação preta para símbolo de pergunta pulada
@@ -1097,7 +1082,12 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   titulo.textContent = `${tema_atual} - ${dificuldade}`;
 
   // Define a cor com base na dificuldade
-  titulo.style.color = coresDificuldade[dificuldade.toLowerCase()] ?? "#3b2f2f";
+  console.log(`Dificuldade em lowerCase: ${dificuldade.toLowerCase()}`)
+  Object.keys(coresDificuldade).forEach(d => {
+    console.log(`Dificuldade: ${d}`)
+  })
+  
+  titulo.style.color = coresDificuldade[dificuldade.toLowerCase()] ?? "#000000";
 
   let ranking_jogador = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking
   regras_jogador = regras_pontuacao.find(r => r.ranking === ranking_jogador);

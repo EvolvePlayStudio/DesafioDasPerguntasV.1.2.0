@@ -144,13 +144,9 @@ function abrirModal({titulo = "", corpoHTML = "", textoPrimario = null, textoSec
   modal.classList.remove("hidden");
 }
 
-const anuncioBannerEsquerda = document.getElementById("banner-lateral-esquerda");
-const anuncioBannerDireita = document.getElementById("banner-lateral-direita");
-[anuncioBannerEsquerda, anuncioBannerDireita].forEach(a => {
-  a.addEventListener('click', function() {
-    registrarInteracaoAnuncio(this.querySelector('a'), "Clique", "Banner horizontal");
-  });
-});
+const containerAnuncios = document.getElementById("container-anuncios-topo");
+const bannerTopoEsquerda = document.getElementById("banner-topo-esquerda");
+const bannerTopoDireita = document.getElementById("banner-topo-direita");
 
 const modoTesteWrapper = document.getElementById("modo-teste-wrapper");
 const checkModoTeste = document.getElementById("modo-teste-toggle");
@@ -161,14 +157,44 @@ async function exibirAnuncios() {
   const agoraSP = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
 
   function configurarBanner(container, produto) {
-    const link = container.querySelector(".link-anuncio-duplo");
+    const link = container.querySelector(".link-anuncio-geral");
     const imgProd = container.querySelector(".produto-container img");
-    link.setAttribute('data-id-anuncio', produto.id);
-    link.setAttribute('data-provedor-anuncio', produto.provedor);
-    link.setAttribute('data-tipo-midia-anuncio', produto.tipo_midia);
-    if (link) link.href = produto.link;
+    const imgLogo = container.querySelector(".logo-container img");
+
+    // Carrega o logotipo do provedor
+    if (produto.provedor === 'Amazon') {
+      imgLogo.src = "https://github.com/EvolvePlayStudio/assets-quiz/blob/main/logotipoAmazon.png?raw=true";
+    }
+    else if (produto.provedor === 'Mercado Livre'){
+      imgLogo.src = "https://github.com/EvolvePlayStudio/assets-quiz/blob/main/logotipoMercadoLivre03.png?raw=true"; 
+    }
+    else {
+      imgLogo.src = "";
+    }
+    
+    if (link) {
+      link.setAttribute('data-id-anuncio', produto.id);
+      link.setAttribute('data-provedor-anuncio', produto.provedor);
+      link.setAttribute('data-tipo-midia-anuncio', produto.tipo_midia);
+      link.href = produto.link;
+
+      // Chama função para registrar impressão
+      registrarInteracaoAnuncio(link, 'Impressão', produto.tema);
+
+      // Função para registrar clique (primeiro remove a do banner anterior)
+      if (link._clickhandler) {
+        link.removeEventListener('click', link._clickhandler);
+      }
+      link._clickhandler = function() {
+        registrarInteracaoAnuncio(link, 'Clique', produto.tema)
+      }
+      link.addEventListener('click', link._clickhandler);
+      link.addEventListener('auxclick', function(e) {
+        if (e.button === 1) { // 1 faz referência ao botão do meio do mouse
+          link._clickhandler();}
+      });
+    }
     if (imgProd) imgProd.src = produto.imagem;
-    registrarInteracaoAnuncio(link, 'Impressão', produto.tema);
   }
 
   try {
@@ -185,30 +211,46 @@ async function exibirAnuncios() {
     const anunciosAmazon = filtrarValidos(dados['Amazon']);
     const anunciosML = filtrarValidos(dados['Mercado Livre']);
 
-    // 3. Exibição Amazon (esquerda)
-    if (anunciosAmazon.length > 0) {
-      document.getElementById("topo-corpo-pagina").style.height = 'calc(80px + 1.5rem)';
-      const aleatorioAmazon = anunciosAmazon[Math.floor(Math.random() * anunciosAmazon.length)];
-      configurarBanner(anuncioBannerEsquerda, aleatorioAmazon);
-      anuncioBannerEsquerda.style.visibility = "visible";
-    }
-    else {
-      anuncioBannerEsquerda.style.visibility = "hidden";
+    // Juntamos todos os anúncios válidos disponíveis em uma única lista para sortear
+    const todosAnuncios = [...anunciosAmazon, ...anunciosML];
+
+    if (todosAnuncios.length > 0) {
+      containerAnuncios.style.display = 'grid';
     }
 
-    // 4. Exibição Mercado Livre (Direita)
-    if (anunciosML.length > 0) {
-      document.getElementById("topo-corpo-pagina").style.height = 'calc(80px + 1.5rem)';
-      const aleatorioML = anunciosML[Math.floor(Math.random() * anunciosML.length)];
-      configurarBanner(anuncioBannerDireita, aleatorioML);
-      anuncioBannerDireita.style.visibility = "visible";
+    if (!window.ADS_CONFIG.isMobile) {
+      // Exibição Amazon (esquerda)
+      if (anunciosAmazon.length > 0) {
+        const aleatorioAmazon = anunciosAmazon[Math.floor(Math.random() * anunciosAmazon.length)];
+        configurarBanner(bannerTopoEsquerda, aleatorioAmazon);
+        bannerTopoEsquerda.style.visibility = "visible";
+      }
+      else {
+        bannerTopoEsquerda.style.visibility = "hidden";
+      }
+
+      // Exibição Mercado Livre (Direita)
+      if (anunciosML.length > 0) {
+        const aleatorioML = anunciosML[Math.floor(Math.random() * anunciosML.length)];
+        configurarBanner(bannerTopoDireita, aleatorioML);
+        bannerTopoDireita.style.visibility = "visible";
+      }
+      else {
+        bannerTopoDireita.style.visibility = "hidden";
+      }
     }
     else {
-      anuncioBannerDireita.style.visibility = "hidden";
-    }
-
-    if (anunciosML.length === 0 && anunciosAmazon.length === 0) {
-      document.getElementById("topo-corpo-pagina").style.height = '4.3rem';
+      if (todosAnuncios.length > 0) {
+        const anuncioSorteado = todosAnuncios[Math.floor(Math.random() * todosAnuncios.length)];
+        configurarBanner(bannerTopoEsquerda, anuncioSorteado);
+        bannerTopoEsquerda.style.visibility = "visible";
+        bannerTopoDireita.style.visibility = "hidden";
+      } else {
+        bannerTopoEsquerda.style.visibility = "hidden"; 
+      }
+      bannerTopoEsquerda.style.justifySelf = "center";
+      bannerTopoDireita.style.visibility = "hidden";
+      bannerTopoDireita.style.display = "none";
     }
   }
   catch (erro) {
@@ -241,7 +283,7 @@ function inserirBotaoModoTeste() {
 }
 
 if (window.ADS_CONFIG.isAdmin && !MODO_VISITANTE) inserirBotaoModoTeste();
-else if (!window.ADS_CONFIG.isMobile) exibirAnuncios();
+else exibirAnuncios();
 
 async function iniciarQuiz(event) {
   function desbloquearBotoes() {
@@ -267,14 +309,14 @@ async function iniciarQuiz(event) {
 
   // Mensagem avisando que as perguntas acabaram
   const perguntas_restantes_atuais = parseInt(perguntas_restantes[0]?.textContent.split("/")[0] ?? "0", 10);
-  mensagem.style.display = 'flex';
+  // const perguntas_restantes_atuais = 0;
 
   if (perguntas_restantes_atuais <= 0) {
-    if (!MODO_VISITANTE) { 
-      exibirMensagem(mensagem, `Energia esgotada, retorne amanhã para poder responder novas perguntas`, corMensagemPerguntasEsgotadas, true, true, 'flex');
+    if (!MODO_VISITANTE) {
+      exibirMensagem(mensagem, `Energia esgotada, retorne amanhã para poder responder novas perguntas`, corMensagemPerguntasEsgotadas, true, false, 'flex');
     }
     else {
-      exibirMensagem(mensagem, `É necessário criar uma conta para ter acesso ao conteúdo completo do jogo`, corMensagemPerguntasEsgotadas, true, true, 'flex');
+      exibirMensagem(mensagem, `É necessário criar uma conta para ter acesso ao conteúdo completo do jogo`, corMensagemPerguntasEsgotadas, true, false, 'flex');
     }
     desbloquearBotoes();
     return;
@@ -313,7 +355,6 @@ async function iniciarQuiz(event) {
         const ha_perguntas_disponiveis = Object.values(perguntas_filtradas).some(arr => Array.isArray(arr) && arr.length > 0)
 
         if (ha_perguntas_disponiveis && !encerrar_quiz) {
-          //mensagem.style.opacity = 0;
           try {
               // 1. Faz a requisição
               const resposta = await fetch("/api/obter_todos_anuncios");
@@ -330,8 +371,7 @@ async function iniciarQuiz(event) {
           window.location.href = `/quiz/${encodeURIComponent(slugify(tema_atual))}`;
         }
         else {
-          mensagem.style.display = '';
-          exibirMensagem(mensagem, `Você não possui novas perguntas disponíveis para o tema ${tema_atual} no momento`, corMensagemPerguntasEsgotadas, true, true, 'flex'),
+          exibirMensagem(mensagem, `Você não possui novas perguntas disponíveis para o tema ${tema_atual} no momento`, corMensagemPerguntasEsgotadas, true, false, 'flex');
           desbloquearBotoes();
           return;
         }
@@ -355,9 +395,7 @@ async function iniciarQuiz(event) {
         const encerrar_quiz = deveEncerrarQuiz(data["perguntas"], MODO_VISITANTE);
         const haPerguntas = Object.values(data.perguntas).some(arr => arr.length > 0);
         if (!haPerguntas || encerrar_quiz) {
-          mensagem.style.display = '';
-          exibirMensagem(mensagem, `É necessário criar uma conta para ter aceso a mais perguntas no tema ${tema_atual}`, 'orange', true, true, 'flex'
-          )
+          exibirMensagem(mensagem, `É necessário criar uma conta para ter aceso a mais perguntas no tema ${tema_atual}`, corMensagemPerguntasEsgotadas, true, false, 'flex');
           desbloquearBotoes();
           return
         }
