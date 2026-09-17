@@ -9,28 +9,26 @@ const idUsuario = sessionStorage.getItem("id_usuario");
 const idVisitante = localStorage.getItem("id_visitante")
 console.log("ID de visitante: ", idVisitante);
 
-// 1. Função para ler as UTMs da URL (Google Ads / Microsoft Ads)
+// 1. Função para ler as UTMs ou os identificadores de anúncios
 const urlParams = new URLSearchParams(window.location.search);
 let origem = urlParams.get('utm_source');
 let midia = urlParams.get('utm_medium');
 
-// 2. Se NÃO tiver UTM, vamos descobrir se veio do mecanismo de pesquisa (Orgânico)
+// Se não achou UTM tradicional, verifica se existem os códigos automáticos de anúncios
 if (!origem) {
-    const vindoDe = document.referrer; // Descobre o site de onde o usuário clicou
-
-    if (vindoDe.includes('google.com')) {
-        origem = 'google';
-        midia = 'organic';
-    } else if (vindoDe.includes('bing.com') || vindoDe.includes('yahoo.com')) {
-        origem = 'bing';
-        midia = 'organic';
-    } else if (vindoDe === "") {
-        origem = 'direto'; // Usuário digitou o link direto no navegador
-        midia = 'nenhum';
-    } else {
-        origem = new URL(vindoDe).hostname; // Outro site qualquer
-        midia = 'referral';
+    if (urlParams.has('gclid')) {
+        origem = 'Google';
+        midia = 'cpc'; // Identifica como Google Ads real
+    } else if (urlParams.has('msclkid')) {
+        origem = 'Microsoft';
+        midia = 'cpc'; // Identifica como Microsoft Ads real
     }
+}
+// Salva no localStorage se identificou tráfego pago por qualquer um dos métodos
+if (origem || midia) {
+  localStorage.setItem('usuario_origem', origem);
+  localStorage.setItem('usuario_midia', midia);
+  console.log(`Rastro salvo: ${origem} / ${midia}`);
 }
 
 // Caso ocorra erro de não conseguir pegar id de usuário
@@ -60,7 +58,6 @@ const btn_logout = document.querySelectorAll(".btn-logout");
 let btnsHeader;
 
 const corMensagemPerguntasEsgotadas = 'yellow'
-
 if (MODO_VISITANTE) {
   btnsHeader = [btn_perfil, btn_pesquisa, btn_doacoes, btn_logout];
   permitir_escolher_tema = true;
@@ -561,29 +558,28 @@ function exibirModalRegistroVisitante(marco) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-    // Envia os dados para o app.py (Flask)
-    try {
-      if (idsReservados.includes(idUsuario) || idsVisitantesReservados.includes(idVisitante)) {
-        return;
-      }
+  // Envia os dados para o app.py (Flask)
+  try {
+    if (!idsReservados.includes(idUsuario) && !idsVisitantesReservados.includes(idVisitante)) {
       fetch('/api/registrar-acesso', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-              pagina: 'Home',
-              origem: origem,
-              midia: midia
-          })
-      })
-      .then(response => response.json())
-      .catch(error => console.error("Erro ao registrar acesso:", error));
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            pagina: 'Home',
+            origem: origem,
+            midia: midia,
+            id_visitante: idVisitante
+        })
+    })
+    .then(response => response.json())
+    .catch(error => console.error("Erro ao registrar acesso:", error));
     }
-    catch (e) {
-      console.error("Erro ao registrar acesso: ", e);
-    }
-
+  }
+  catch (e) {
+    console.error("Erro ao registrar acesso: ", e);
+  }
   // Adiciona áudio no clique dos botões
   if (btnModalPrimario) {
     btnModalPrimario.addEventListener("click", () => playSound("click"));
@@ -680,7 +676,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     card.addEventListener("click", iniciarQuiz);
   });
 
-  // Define o nome de usuário, as perguntas e dicas disponíveis e máximas
+  // Define o nome de usuário e a quantidade de perguntas restantes para responder
   if (MODO_VISITANTE) {
     userName.forEach(n => {
       n.textContent = "Visitante";

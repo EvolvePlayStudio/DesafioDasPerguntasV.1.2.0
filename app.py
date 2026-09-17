@@ -183,9 +183,10 @@ def api_registrar_acesso():
         pagina = dados.get('pagina', 'Não identificada')
         origem = dados.get('origem')
         midia = dados.get('midia')
+        id_visitante = dados.get('id_visitante')
         
         # Chama a sua função de banco de dados
-        registrar_pagina_visitada(pagina, origem, midia)
+        registrar_pagina_visitada(pagina, origem, midia, id_visitante)
         
         return jsonify({"status": "sucesso"}), 200
         
@@ -1903,10 +1904,11 @@ def registrar_modo_teste():
     session["modo_teste"] = bool(data.get("modo_teste", False))
     return jsonify({"ok": True})
 
-def registrar_pagina_visitada(pagina, origem=None, midia=None):
+def registrar_pagina_visitada(pagina, origem=None, midia=None, id_visitante=None):
     conn = cur = None
     id_usuario = session.get('id_usuario')
-    id_visitante = session.get('id_visitante')
+    if not id_visitante:
+        id_visitante = session.get('id_visitante')
 
     if id_usuario in privileged_ids or id_visitante == id_visitante_admin:
         return

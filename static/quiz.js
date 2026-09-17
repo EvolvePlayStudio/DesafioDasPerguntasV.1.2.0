@@ -1,11 +1,11 @@
-import { coresDificuldade, dificuldadesOrdenadas, detectarModoTela, deveEncerrarQuiz, idVisitanteAdmin,  idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings } from "./utils.js"
+import { coresDificuldade, dificuldadesOrdenadas, detectarModoTela, deveEncerrarQuiz, idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings, idsVisitantesReservados, idVisitanteAdmin } from "./utils.js"
 import { playSound, playKeySound } from "./sound.js"
 
 // Envia erros para a base de dados caso ocorram
 const id_visitante = localStorage.getItem("id_visitante");
 const idUsuario = Number(getWithMigration("id_usuario"));
 window.onerror = function (message) {
-  if (id_visitante !== idVisitanteAdmin && !idsReservados.includes(idUsuario)) {
+  if (!idsVisitantesReservados.includes(id_visitante) && !idsReservados.includes(idUsuario)) {
     fetch("/api/debug/frontend", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -20,6 +20,9 @@ window.onerror = function (message) {
 };
 
 // Variáveis do localStorage e sessionStorage
+//const origemUsuario = localStorage['usuario_origem'];
+//const midiaUsuario = localStorage['usuario_midia'];
+
 const MODO_VISITANTE = getWithMigration("modoVisitante") === "true";
 let storagePontuacao;
 let STORAGE_KEY;
@@ -519,18 +522,6 @@ async function enviarResposta(pulando = false) {
     }, 500);
   }
 
-  function mostrarRespostasAceitas(lista) {
-    try {
-      const container = respostasAceitas;
-      const lista_respostas_aceitas = document.getElementById("lista-respostas");
-      lista_respostas_aceitas.textContent = lista.join(" / ");
-      container.style.display = "block";
-    }
-    catch (err) {
-      console.error("Erro ocorrido ao tentar mostrar respostas aceitas:", err)
-    }
-  }
-
   async function registrarResposta(resposta_usuario, acertou, pontos_ganhos, tempo_gasto, id_pergunta, versao_pergunta) {
     try {
       const response = await fetch('/registrar_resposta', {
@@ -581,18 +572,22 @@ async function enviarResposta(pulando = false) {
 
     // --- Lógica de Conversão Google Ads ---
     function analisarMetaConversao() {
-      // if (id_visitante === idVisitanteAdmin) return;
+      if (idsVisitantesReservados.includes(id_visitante)) return;
       try {
         const totalRespondidas = respondidas.length;
-        if (totalRespondidas >= 5) {
-          gtag('event', 'conversion', {
-            'send_to': 'AW-17529321916/JTBvCKKkoeEbELzz0KZB'
-          });
-        };
+        const origemUsuario2 = 'googleAds';
         if (totalRespondidas >= 15) {
-          gtag('event', 'conversion', {
-            'send_to': 'AW-17529321916/Ydq3CL_hhfcbELzz0KZB'
-          });
+          // Registra conversão na GoogleAds
+          if (origemUsuario2 == 'googleAds') {
+            console.log("Registrando conversão na googleAds...")
+            gtag('event', 'conversion', {'send_to': 'AW-17529321916/Ydq3CL_hhfcbELzz0KZB'});
+          }
+        }
+        else if (totalRespondidas >= 5) {
+          if (origemUsuario2 == 'googleAds') {
+            console.log("Registrando conversão na googleAds...")
+            gtag('event', 'conversion', {'send_to': 'AW-17529321916/JTBvCKKkoeEbELzz0KZB'});
+          }
         };
       }
       catch (error) {
@@ -659,7 +654,6 @@ async function enviarResposta(pulando = false) {
   let acertou;
   let prosseguir_com_resultado = true;
   let pontos_ganhos = 0;
-  let respostas_corretas;
   let letra_correta;
   const tempo_gasto = calcularTempoGasto();
     
@@ -1082,7 +1076,6 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   titulo.textContent = `${tema_atual} - ${dificuldade}`;
 
   // Define a cor com base na dificuldade
-  console.log(`Dificuldade em lowerCase: ${dificuldade.toLowerCase()}`)
   Object.keys(coresDificuldade).forEach(d => {
     console.log(`Dificuldade: ${d}`)
   })
