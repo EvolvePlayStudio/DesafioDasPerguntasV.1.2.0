@@ -170,6 +170,30 @@ def api_pontuacoes(user_id):
     pontuacoes = buscar_pontuacoes_usuario(user_id)
     return jsonify(pontuacoes)
 
+# Certifique-se de ter importado o request e o jsonify no topo do arquivo!
+from flask import request, jsonify 
+
+@app.route('/api/registrar-acesso', methods=['POST'])
+def api_registrar_acesso():
+    try:
+        dados = request.get_json()
+        if not dados:
+            return jsonify({"status": "erro", "mensagem": "Dados inválidos"}), 400
+            
+        pagina = dados.get('pagina', 'Não identificada')
+        origem = dados.get('origem')
+        midia = dados.get('midia')
+        
+        # Chama a sua função de banco de dados
+        registrar_pagina_visitada(pagina, origem, midia)
+        
+        return jsonify({"status": "sucesso"}), 200
+        
+    except Exception as e:
+        app.logger.error(f"Erro na rota da API: {e}")
+        # Retorna um JSON mesmo se der erro, evitando enviar HTML para o JS
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
 @app.route("/api/regras_pontuacao")
 def api_regras_pontuacao():
     try:
@@ -1879,7 +1903,7 @@ def registrar_modo_teste():
     session["modo_teste"] = bool(data.get("modo_teste", False))
     return jsonify({"ok": True})
 
-def registrar_pagina_visitada(pagina):
+def registrar_pagina_visitada(pagina, origem=None, midia=None):
     conn = cur = None
     id_usuario = session.get('id_usuario')
     id_visitante = session.get('id_visitante')
@@ -1893,16 +1917,16 @@ def registrar_pagina_visitada(pagina):
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO acessos_paginas (pagina, id_usuario, dispositivo, id_visitante) 
-            VALUES (%s, %s, %s, %s)
-        """, (pagina, id_usuario, dispositivo, id_visitante))
+            INSERT INTO acessos_paginas (pagina, id_usuario, dispositivo, id_visitante, origem, midia) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (pagina, id_usuario, dispositivo, id_visitante, origem, midia))
         conn.commit()
     except Exception as e:
         if conn: conn.rollback()
         app.logger.error(f"Erro ao registrar página: {e}")
     finally:
         if cur: cur.close()
-        if conn: conn.close()  
+        if conn: conn.close()
 
 @app.route("/registrar_resposta", methods=["POST"])
 @token_required

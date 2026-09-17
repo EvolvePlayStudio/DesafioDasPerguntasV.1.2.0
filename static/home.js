@@ -1,13 +1,37 @@
-import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
+import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, idsReservados, idsVisitantesReservados, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
 import { playSound } from "./sound.js";
 
-console.log("ID de visitante: ", localStorage.getItem("id_visitante"));
-
-let permitir_escolher_tema = false
+let permitir_escolher_tema = false;
 let tema_atual = null;
 const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
 sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 const idUsuario = sessionStorage.getItem("id_usuario");
+const idVisitante = localStorage.getItem("id_visitante")
+console.log("ID de visitante: ", idVisitante);
+
+// 1. Função para ler as UTMs da URL (Google Ads / Microsoft Ads)
+const urlParams = new URLSearchParams(window.location.search);
+let origem = urlParams.get('utm_source');
+let midia = urlParams.get('utm_medium');
+
+// 2. Se NÃO tiver UTM, vamos descobrir se veio do mecanismo de pesquisa (Orgânico)
+if (!origem) {
+    const vindoDe = document.referrer; // Descobre o site de onde o usuário clicou
+
+    if (vindoDe.includes('google.com')) {
+        origem = 'google';
+        midia = 'organic';
+    } else if (vindoDe.includes('bing.com') || vindoDe.includes('yahoo.com')) {
+        origem = 'bing';
+        midia = 'organic';
+    } else if (vindoDe === "") {
+        origem = 'direto'; // Usuário digitou o link direto no navegador
+        midia = 'nenhum';
+    } else {
+        origem = new URL(vindoDe).hostname; // Outro site qualquer
+        midia = 'referral';
+    }
+}
 
 // Caso ocorra erro de não conseguir pegar id de usuário
 if (!MODO_VISITANTE && !idUsuario) {
@@ -537,6 +561,29 @@ function exibirModalRegistroVisitante(marco) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+    // Envia os dados para o app.py (Flask)
+    try {
+      if (idsReservados.includes(idUsuario) || idsVisitantesReservados.includes(idVisitante)) {
+        return;
+      }
+      fetch('/api/registrar-acesso', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+              pagina: 'Home',
+              origem: origem,
+              midia: midia
+          })
+      })
+      .then(response => response.json())
+      .catch(error => console.error("Erro ao registrar acesso:", error));
+    }
+    catch (e) {
+      console.error("Erro ao registrar acesso: ", e);
+    }
+
   // Adiciona áudio no clique dos botões
   if (btnModalPrimario) {
     btnModalPrimario.addEventListener("click", () => playSound("click"));
@@ -662,5 +709,4 @@ document.addEventListener("DOMContentLoaded", async () => {
       p.textContent = `${sessionStorage.getItem("perguntas_restantes")}/80`;
     });
   }
-  
 })
