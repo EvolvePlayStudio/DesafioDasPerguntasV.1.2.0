@@ -559,6 +559,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       midiaIdentificada = 'cpc';
     }
   }
+
+  plataformaIdentificada = 'Teste';
+  midiaIdentificada = 'Teste';
+  
   // 3. Se identificou tráfego pago, salva no localStorage
   if (plataformaIdentificada) {
       localStorage.setItem('usuario_origem', plataformaIdentificada);
@@ -566,7 +570,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   // Envia os dados para o app.py (Flask) caso o usuário não seja um admin
   try {
-    if (!idsReservados.includes(idUsuario) && !idsVisitantesReservados.includes(idVisitante)) {
+    if (idsReservados.includes(idUsuario) || idsVisitantesReservados.includes(idVisitante)) {
       fetch('/api/registrar-acesso', {
         method: 'POST',
         headers: {
@@ -574,8 +578,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         },
         body: JSON.stringify({
             pagina: 'Home',
-            origem: plataformaIdentificada,
-            midia: midiaIdentificada,
+            origem: utmSource,
+            midia: urlParams,
             id_visitante: idVisitante
         })
     })
