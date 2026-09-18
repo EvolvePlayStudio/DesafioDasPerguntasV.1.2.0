@@ -2,8 +2,8 @@ export const pontuacaoTemaPadraoVisitantes = 1800;
 export const dificuldadesOrdenadas = ['Fácil', 'Médio', 'Difícil', 'Extremo'];
 export const temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"];
 export const idsReservados = [6, 16];
-export const idVisitanteAdmin = 'cb1c55a4-df94-4098-b811-d13320877441';
-export const idsVisitantesReservados = ['cb1c55a4-df94-4098-b811-d13320877441'];
+export const idVisitanteAdmin = 'cb1c55a4-df94-4098-b811-d13320877441'; // Será deletado futuramente
+export const idsVisitantesReservados = ['cb1c55a4-df94-4098-b811-d13320877441', 'd103db0e-cd5d-4743-a67c-2cdf0f282892'];
 export const simbolosTemas = {Artes: "🎨", Astronomia: "🪐", Biologia: "🧬", Esportes: "⚽",
 Filosofia: "🦉", Física: "⚛️", Geografia: "🌍", História: "📜", Mídia: "📺", Música: "🎵", Química: "🧪", Variedades: "🎲"}
 export const simbolosRankings = {Iniciante: "🌱", Aprendiz: "🧩", Estudante: "🎓", Sábio: "🧙‍♂️", Lenda: "🌟"}

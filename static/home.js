@@ -9,26 +9,26 @@ const idUsuario = sessionStorage.getItem("id_usuario");
 const idVisitante = localStorage.getItem("id_visitante")
 console.log("ID de visitante: ", idVisitante);
 
-// 1. Função para ler as UTMs ou os identificadores de anúncios
+// 1. Lê os parâmetros brutos que o Google/Microsoft injetaram na URL
 const urlParams = new URLSearchParams(window.location.search);
-let origem = urlParams.get('utm_source');
-let midia = urlParams.get('utm_medium');
+const utmSource = urlParams.get('utm_source');
 
-// Se não achou UTM tradicional, verifica se existem os códigos automáticos de anúncios
-if (!origem) {
-    if (urlParams.has('gclid')) {
-        origem = 'Google';
-        midia = 'cpc'; // Identifica como Google Ads real
-    } else if (urlParams.has('msclkid')) {
-        origem = 'Microsoft';
-        midia = 'cpc'; // Identifica como Microsoft Ads real
-    }
+let plataformaIdentificada = null;
+let midiaIdentificada = null;
+
+// 2. Traduz os parâmetros brutos para os nomes limpos que você escolheu
+if (utmSource === 'google') {
+    plataformaIdentificada = 'GoogleAds';
+    midiaIdentificada = 'cpc';
+} else if (utmSource === 'microsoft' || utmSource === 'bing') {
+    plataformaIdentificada = 'MicrosoftAds';
+    midiaIdentificada = 'cpc';
 }
-// Salva no localStorage se identificou tráfego pago por qualquer um dos métodos
-if (origem || midia) {
-  localStorage.setItem('usuario_origem', origem);
-  localStorage.setItem('usuario_midia', midia);
-  console.log(`Rastro salvo: ${origem} / ${midia}`);
+
+// 3. Se identificou tráfego pago, salva no localStorage e envia pro Python
+if (plataformaIdentificada) {
+    localStorage.setItem('usuario_origem', plataformaIdentificada);
+    localStorage.setItem('usuario_midia', midiaIdentificada);
 }
 
 // Caso ocorra erro de não conseguir pegar id de usuário
@@ -558,7 +558,7 @@ function exibirModalRegistroVisitante(marco) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // Envia os dados para o app.py (Flask)
+  // Envia os dados para o app.py (Flask) caso o usuário não seja um admin
   try {
     if (!idsReservados.includes(idUsuario) && !idsVisitantesReservados.includes(idVisitante)) {
       fetch('/api/registrar-acesso', {
@@ -568,8 +568,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         },
         body: JSON.stringify({
             pagina: 'Home',
-            origem: origem,
-            midia: midia,
+            origem: plataformaIdentificada,
+            midia: midiaIdentificada,
             id_visitante: idVisitante
         })
     })
