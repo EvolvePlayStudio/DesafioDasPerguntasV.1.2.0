@@ -1076,10 +1076,6 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   titulo.textContent = `${tema_atual} - ${dificuldade}`;
 
   // Define a cor com base na dificuldade
-  Object.keys(coresDificuldade).forEach(d => {
-    console.log(`Dificuldade: ${d}`)
-  })
-  
   titulo.style.color = coresDificuldade[dificuldade.toLowerCase()] ?? "#000000";
 
   let ranking_jogador = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking

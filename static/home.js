@@ -9,28 +9,6 @@ const idUsuario = sessionStorage.getItem("id_usuario");
 const idVisitante = localStorage.getItem("id_visitante")
 console.log("ID de visitante: ", idVisitante);
 
-// 1. Lê os parâmetros brutos que o Google/Microsoft injetaram na URL
-const urlParams = new URLSearchParams(window.location.search);
-const utmSource = urlParams.get('utm_source');
-
-let plataformaIdentificada = null;
-let midiaIdentificada = null;
-
-// 2. Traduz os parâmetros brutos para os nomes limpos que você escolheu
-if (utmSource === 'google') {
-    plataformaIdentificada = 'GoogleAds';
-    midiaIdentificada = 'cpc';
-} else if (utmSource === 'microsoft' || utmSource === 'bing') {
-    plataformaIdentificada = 'MicrosoftAds';
-    midiaIdentificada = 'cpc';
-}
-
-// 3. Se identificou tráfego pago, salva no localStorage e envia pro Python
-if (plataformaIdentificada) {
-    localStorage.setItem('usuario_origem', plataformaIdentificada);
-    localStorage.setItem('usuario_midia', midiaIdentificada);
-}
-
 // Caso ocorra erro de não conseguir pegar id de usuário
 if (!MODO_VISITANTE && !idUsuario) {
   localStorage.setItem("auth_message", "Sessão expirada");
@@ -56,6 +34,14 @@ const btn_pesquisa = document.querySelectorAll(".btn-pesquisa");
 const btn_doacoes = document.querySelectorAll(".btn-doacoes");
 const btn_logout = document.querySelectorAll(".btn-logout");
 let btnsHeader;
+
+const containerAnuncios = document.getElementById("container-anuncios-topo");
+const bannerTopoEsquerda = document.getElementById("banner-topo-esquerda");
+const bannerTopoDireita = document.getElementById("banner-topo-direita");
+
+const modoTesteWrapper = document.getElementById("modo-teste-wrapper");
+const checkModoTeste = document.getElementById("modo-teste-toggle");
+const modoTeste = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
 
 const corMensagemPerguntasEsgotadas = 'yellow'
 if (MODO_VISITANTE) {
@@ -164,14 +150,6 @@ function abrirModal({titulo = "", corpoHTML = "", textoPrimario = null, textoSec
   // Exibe o modal
   modal.classList.remove("hidden");
 }
-
-const containerAnuncios = document.getElementById("container-anuncios-topo");
-const bannerTopoEsquerda = document.getElementById("banner-topo-esquerda");
-const bannerTopoDireita = document.getElementById("banner-topo-direita");
-
-const modoTesteWrapper = document.getElementById("modo-teste-wrapper");
-const checkModoTeste = document.getElementById("modo-teste-toggle");
-const modoTeste = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
 
 async function exibirAnuncios() {
   // 1. Obtém o horário atual de Brasília/São Paulo
@@ -558,6 +536,34 @@ function exibirModalRegistroVisitante(marco) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  // 1. Lê os parâmetros brutos que o Google/Microsoft injetaram na URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const utmSource = urlParams.get('utm_source');
+
+  let plataformaIdentificada = null;
+  let midiaIdentificada = null;
+
+  // 2. Traduz os parâmetros brutos para nomes limpos
+  if (utmSource === 'google') {
+    plataformaIdentificada = 'GoogleAds';
+    midiaIdentificada = 'cpc';
+  } else if (utmSource === 'microsoft' || utmSource === 'bing') {
+    plataformaIdentificada = 'MicrosoftAds';
+    midiaIdentificada = 'cpc';
+  } else {
+    if (urlParams.has('gclid')) {
+      plataformaIdentificada = 'GoogleAds';
+      midiaIdentificada = 'cpc';
+    } else if (urlParams.has('msclkid')) {
+      plataformaIdentificada = 'MicrosoftAds';
+      midiaIdentificada = 'cpc';
+    }
+  }
+  // 3. Se identificou tráfego pago, salva no localStorage
+  if (plataformaIdentificada) {
+      localStorage.setItem('usuario_origem', plataformaIdentificada);
+      localStorage.setItem('usuario_midia', midiaIdentificada);
+  }
   // Envia os dados para o app.py (Flask) caso o usuário não seja um admin
   try {
     if (!idsReservados.includes(idUsuario) && !idsVisitantesReservados.includes(idVisitante)) {
