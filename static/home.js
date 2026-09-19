@@ -394,7 +394,7 @@ async function iniciarQuiz(event) {
         const encerrar_quiz = deveEncerrarQuiz(data["perguntas"], MODO_VISITANTE);
         const haPerguntas = Object.values(data.perguntas).some(arr => arr.length > 0);
         if (!haPerguntas || encerrar_quiz) {
-          exibirMensagem(mensagem, `É necessário criar uma conta para ter aceso a mais perguntas no tema ${tema_atual}`, corMensagemPerguntasEsgotadas, true, false, 'flex');
+          exibirMensagem(mensagem, `É necessário criar uma conta para acessar mais perguntas no tema ${tema_atual}`, corMensagemPerguntasEsgotadas, true, false, 'flex');
           desbloquearBotoes();
           return
         }
