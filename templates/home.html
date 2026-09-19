@@ -219,7 +219,6 @@
       flex-direction: row;
       align-items: center;
       justify-content: center;
-      height: 6.6rem;
     }
     #banner-topo-esquerda {
       grid-column: 1;
@@ -265,6 +264,7 @@
     .produto-container img {
       width: 100%;
       height: 100%;
+      max-height: 100%;
       object-fit: fill;
       display: block;
     }
@@ -287,6 +287,9 @@
     CONFIGURAÇÃO DE ANÚNCIOS PARA DESKTOP (Telas maiores que 800px)
     ========================================== */
     @media (min-width: 751px) {
+      #container-anuncios-topo {
+        height: 6.6rem;
+      }
       /* Faz o segundo banner aparecer ao lado do primeiro no PC */
       #banner-topo-direita {
         display: block !important;
@@ -471,6 +474,21 @@
       }
     }
     @media (max-width: 750px) {
+      #container-anuncios-topo {
+        width: 100%;
+        height: calc((var(--ads-container-height) / var(--ads-container-width)) * 100vw);
+      }
+      .ad-banner-block {
+        width: 100%;
+        height: 100%;
+        align-self: center;
+      }
+      .logo-container {
+        max-width: 33%;
+      }
+      .logo-container img {
+        max-width: 100%;
+      }
       #container-anuncios-topo {
         grid-template-columns: 1fr;
       }

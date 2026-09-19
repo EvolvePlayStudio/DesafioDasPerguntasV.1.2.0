@@ -282,7 +282,7 @@ function inserirBotaoModoTeste() {
 }
 
 if (window.ADS_CONFIG.isAdmin && !MODO_VISITANTE) inserirBotaoModoTeste();
-else exibirAnuncios();
+exibirAnuncios();
 
 async function iniciarQuiz(event) {
   function desbloquearBotoes() {
