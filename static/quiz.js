@@ -575,17 +575,15 @@ async function enviarResposta(pulando = false) {
       if (idsVisitantesReservados.includes(id_visitante)) return;
       try {
         const totalRespondidas = respondidas.length;
-        const origemUsuario2 = 'googleAds';
+        const origemUsuario = localStorage['usuario_origem']
         if (totalRespondidas >= 15) {
           // Registra conversão na GoogleAds
-          if (origemUsuario2 == 'googleAds') {
-            console.log("Registrando conversão na googleAds...")
+          if (origemUsuario.toLowerCase() === 'googleads') {
             gtag('event', 'conversion', {'send_to': 'AW-17529321916/Ydq3CL_hhfcbELzz0KZB'});
           }
         }
         else if (totalRespondidas >= 5) {
-          if (origemUsuario2 == 'googleAds') {
-            console.log("Registrando conversão na googleAds...")
+          if (origemUsuario.toLowerCase() === 'googleads') {
             gtag('event', 'conversion', {'send_to': 'AW-17529321916/JTBvCKKkoeEbELzz0KZB'});
           }
         };

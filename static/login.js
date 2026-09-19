@@ -330,8 +330,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const data = await response.json();
         if (data.success) {
           // Registra meta de conversão de registro no GoogleAds
-          if (typeof gtag_report_conversion === 'function') {
-              gtag_report_conversion(); 
+          const origemUsuario = localStorage['usuario_origem'];
+          if (origemUsuario && origemUsuario.toLowerCase() === 'googleads') {
+            if (typeof gtag_report_conversion === 'function') {gtag_report_conversion()};
           }
           
           // Chama novamente a tela de login
