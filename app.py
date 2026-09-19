@@ -29,7 +29,8 @@ app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 
 SITE_EM_MANUTENCAO = False
-id_visitante_admin = "605720b7-c72f-4b18-9b73-c3615bfce897"
+id_visitante_admin = "cb1c55a4-df94-4098-b811-d13320877441"
+ids_visitante_admin = ["cb1c55a4-df94-4098-b811-d13320877441", "e67d17c3-f822-40ee-bb33-08319970b54d"] # Substituir por id_visitante_admin depois
 
 # Código copia e cola gerado pelo Nubank
 codigo_pix = os.getenv("QR_CODE")
@@ -170,9 +171,6 @@ def api_pontuacoes(user_id):
     pontuacoes = buscar_pontuacoes_usuario(user_id)
     return jsonify(pontuacoes)
 
-# Certifique-se de ter importado o request e o jsonify no topo do arquivo!
-from flask import request, jsonify 
-
 @app.route('/api/registrar-acesso', methods=['POST'])
 def api_registrar_acesso():
     try:
@@ -181,12 +179,10 @@ def api_registrar_acesso():
             return jsonify({"status": "erro", "mensagem": "Dados inválidos"}), 400
             
         pagina = dados.get('pagina', 'Não identificada')
-        origem = dados.get('origem')
-        midia = dados.get('midia')
         id_visitante = dados.get('id_visitante')
         
         # Chama a sua função de banco de dados
-        registrar_pagina_visitada(pagina, origem, midia, id_visitante)
+        registrar_pagina_visitada(pagina, id_visitante)
         
         return jsonify({"status": "sucesso"}), 200
         
@@ -263,12 +259,30 @@ def carregar_regras_pontuacao():
         if cur: cur.close()
         if conn: conn.close()
 
-@app.route("/entrar_visitante")
+@app.route('/entrar_visitante')
 def entrar_visitante():
     session.clear()
+    # 1. Pega os parâmetros diretamente da URL que o Google Ads enviou
+    utm_source = request.args.get('utm_source')
+    # utm_medium = request.args.get('utm_medium') Não utilizado por enquanto
+    gclid = request.args.get('gclid') # Fallback essencial para cliques reais do Google
+    msclkid = request.args.get('msclkid')
+
+    # 2. Traduz e padroniza os nomes antes de salvar na session
+    if utm_source == 'google' or gclid:
+        session['usuario_origem'] = 'GoogleAds'
+        session['usuario_midia'] = 'cpc'
+    elif utm_source in ['microsoft', 'bing'] or msclkid:
+        session['usuario_origem'] = 'MicrosoftAds'
+        session['usuario_midia'] = 'cpc'
+    else:
+        # Se não veio de anúncios, você define um padrão ou mantém o que já tinha
+        session['usuario_origem'] = session.get('usuario_origem', 'Desconhecida')
+        session['usuario_midia'] = session.get('usuario_midia', 'Desconhecida')
+
     session["visitante"] = True
     return redirect("/home")
-
+    
 @app.route("/enviar_feedback", methods=["POST"])
 @token_required
 def enviar_feedback(user_id):
@@ -1904,11 +1918,14 @@ def registrar_modo_teste():
     session["modo_teste"] = bool(data.get("modo_teste", False))
     return jsonify({"ok": True})
 
-def registrar_pagina_visitada(pagina, origem=None, midia=None, id_visitante=None):
+def registrar_pagina_visitada(pagina, id_visitante=None):
     conn = cur = None
     id_usuario = session.get('id_usuario')
     if not id_visitante:
         id_visitante = session.get('id_visitante')
+
+    origem = session.get('usuario_origem', 'Desconhecida')
+    midia = session.get('usuario_midia', 'Desconhecida')
 
     if id_usuario in privileged_ids or id_visitante == id_visitante_admin:
         return

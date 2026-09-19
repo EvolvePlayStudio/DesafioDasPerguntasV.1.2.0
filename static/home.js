@@ -535,42 +535,12 @@ function exibirModalRegistroVisitante(marco) {
   });
 }
 
+// utm_source=google&utm_medium=cpc&utm_campaign={campaignid}&utm_term={keyword}
+
 document.addEventListener("DOMContentLoaded", async () => {
-  // 1. Lê os parâmetros brutos que o Google/Microsoft injetaram na URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const utmSource = urlParams.get('utm_source');
-
-  let plataformaIdentificada = null;
-  let midiaIdentificada = null;
-
-  // 2. Traduz os parâmetros brutos para nomes limpos
-  if (utmSource === 'google') {
-    plataformaIdentificada = 'GoogleAds';
-    midiaIdentificada = 'cpc';
-  } else if (utmSource === 'microsoft' || utmSource === 'bing') {
-    plataformaIdentificada = 'MicrosoftAds';
-    midiaIdentificada = 'cpc';
-  } else {
-    if (urlParams.has('gclid')) {
-      plataformaIdentificada = 'GoogleAds';
-      midiaIdentificada = 'cpc';
-    } else if (urlParams.has('msclkid')) {
-      plataformaIdentificada = 'MicrosoftAds';
-      midiaIdentificada = 'cpc';
-    }
-  }
-
-  plataformaIdentificada = 'Teste';
-  midiaIdentificada = 'Teste';
-  
-  // 3. Se identificou tráfego pago, salva no localStorage
-  if (plataformaIdentificada) {
-      localStorage.setItem('usuario_origem', plataformaIdentificada);
-      localStorage.setItem('usuario_midia', midiaIdentificada);
-  }
-  // Envia os dados para o app.py (Flask) caso o usuário não seja um admin
+  // Registra na base de dados a origem e mídia do usuário (se veio do GoogleAds por exemplo)
   try {
-    if (idsReservados.includes(idUsuario) || idsVisitantesReservados.includes(idVisitante)) {
+    if (!idsReservados.includes(idUsuario) && !idsVisitantesReservados.includes(idVisitante)) {
       fetch('/api/registrar-acesso', {
         method: 'POST',
         headers: {
@@ -578,8 +548,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         },
         body: JSON.stringify({
             pagina: 'Home',
-            origem: utmSource,
-            midia: urlParams,
             id_visitante: idVisitante
         })
     })
