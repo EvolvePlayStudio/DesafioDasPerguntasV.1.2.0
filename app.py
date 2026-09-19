@@ -29,9 +29,7 @@ app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 
 SITE_EM_MANUTENCAO = False
-id_visitante_admin = "cb1c55a4-df94-4098-b811-d13320877441"
-ids_visitante_admin = ["cb1c55a4-df94-4098-b811-d13320877441", "e67d17c3-f822-40ee-bb33-08319970b54d"] # Substituir por id_visitante_admin depois
-
+ids_visitante_admin = ["cb1c55a4-df94-4098-b811-d13320877441", "d103db0e-cd5d-4743-a67c-2cdf0f282892"]
 # Código copia e cola gerado pelo Nubank
 codigo_pix = os.getenv("QR_CODE")
 img = qrcode.make(codigo_pix)
@@ -818,7 +816,7 @@ def home():
     id_visitante = session.get("id_visitante")
     visitante = session.get("visitante", False)
 
-    if id_usuario in privileged_ids or id_visitante == id_visitante_admin:
+    if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
         usuario_autorizado = True
     else:
         usuario_autorizado = False
@@ -1927,7 +1925,7 @@ def registrar_pagina_visitada(pagina, id_visitante=None):
     origem = session.get('usuario_origem', 'Desconhecida')
     midia = session.get('usuario_midia', 'Desconhecida')
 
-    if id_usuario in privileged_ids or id_visitante == id_visitante_admin:
+    if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
         return
 
     try:

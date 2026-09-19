@@ -106,9 +106,6 @@ resultado.perguntas_respondidas.forEach((p, i) => {
 
     const cor_pontuacao = correta? 'lime': 'red'; // O ideal é que estas cores fossem variáveis globais
     const cor_dificuldade = coresDificuldade[p.dificuldade.toLowerCase()];
-    console.log(`Cores das dificuldades: ${coresDificuldade}`)
-    console.log(`Dificuldade da pergunta: ${p.dificuldade}`)
-    
     let cor_alternativa_a = 'black';
     let cor_alternativa_b = 'black';
     let cor_alternativa_c = 'black';

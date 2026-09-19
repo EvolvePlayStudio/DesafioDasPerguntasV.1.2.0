@@ -230,7 +230,7 @@ export function detectarModoTela() {
 export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIGO=null) {
   // ATENÇÃO, APAGAR PARÂMETRO ACIMA QUE NÃO É UTILIZADO DEPOIS QUE REMOVER DE TODAS AS FUNÇÕES EM QUIZ.JS E HOME.JS
   const MODO_TESTE = sessionStorage.getItem('modo_teste') === 'true';
-  if (MODO_TESTE) return false;
+  if (MODO_TESTE) return false; // Depois deve ser revisto para caso não se esteja no ranking Estudante durante o modo teste
   const tema = sessionStorage.getItem("tema_atual");
   const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === 'true';
   const infoRanking = obterInfoRankingAtual(tema, MODO_VISITANTE)
@@ -249,7 +249,7 @@ export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIG
   const apenas_1_nivel = apenasFaceis || apenasMedias || apenasDificeis || apenasExtremas;
 
   // Não permite prosseguir se houver apenas 1 nível de dificuldade
-  if (ranking !== 'Iniciante' && apenas_1_nivel) return true;
+  if (ranking !== 'Iniciante' && apenas_1_nivel && !MODO_VISITANTE) return true;
   
   // 🧑‍🎓 APRENDIZ: encerra se SÓ houverem difíceis e extremas
   if (ranking === "Aprendiz" && apenasDificeisOuExtremas) return true;
