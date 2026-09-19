@@ -7,7 +7,7 @@ const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
 sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 const idUsuario = sessionStorage.getItem("id_usuario");
 const idVisitante = localStorage.getItem("id_visitante")
-console.log("ID de visitante: ", idVisitante);
+//console.log("ID de visitante: ", idVisitante);
 
 // Caso ocorra erro de não conseguir pegar id de usuário
 if (!MODO_VISITANTE && !idUsuario) {
@@ -370,7 +370,7 @@ async function iniciarQuiz(event) {
           window.location.href = `/quiz/${encodeURIComponent(slugify(tema_atual))}`;
         }
         else {
-          exibirMensagem(mensagem, `Você não possui novas perguntas disponíveis para o tema ${tema_atual} no momento`, corMensagemPerguntasEsgotadas, true, false, 'flex');
+          exibirMensagem(mensagem, `Você não possui perguntas disponíveis no tema ${tema_atual} no momento`, corMensagemPerguntasEsgotadas, true, false, 'flex');
           desbloquearBotoes();
           return;
         }
@@ -535,8 +535,6 @@ function exibirModalRegistroVisitante(marco) {
   });
 }
 
-// utm_source=google&utm_medium=cpc&utm_campaign={campaignid}&utm_term={keyword}
-
 document.addEventListener("DOMContentLoaded", async () => {
   // Registra na base de dados a origem e mídia do usuário (se veio do GoogleAds por exemplo)
   try {
@@ -565,9 +563,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (btnModalSecundario) {
     btnModalSecundario.addEventListener("click", () => playSound("click"));
   }
-  document.querySelectorAll('input[type="radio"]').forEach(cb => {
-    cb.addEventListener('change', () => playSound("checkbox"));
-  })
   
   // Carrega as regras de pontuações do jogo
   let data;
