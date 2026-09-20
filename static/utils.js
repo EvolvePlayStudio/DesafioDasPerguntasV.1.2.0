@@ -1,7 +1,7 @@
 export const pontuacaoTemaPadraoVisitantes = 1800;
 export const dificuldadesOrdenadas = ['Fácil', 'Médio', 'Difícil', 'Extremo'];
 export const temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"];
-export const idsReservados = [6, 16];
+export const idsReservados = [4, 6, 16];
 export const idVisitanteAdmin = 'cb1c55a4-df94-4098-b811-d13320877441'; // Será deletado futuramente
 export const idsVisitantesReservados = ['cb1c55a4-df94-4098-b811-d13320877441', 'd103db0e-cd5d-4743-a67c-2cdf0f282892'];
 export const simbolosTemas = {Artes: "🎨", Astronomia: "🪐", Biologia: "🧬", Esportes: "⚽",
@@ -358,7 +358,7 @@ export function exibirMensagem(label, texto, cor, temporaria=true, remover_displ
 export async function registrarInteracaoAnuncio(linkElement, tipoInteracao, temaAtual='Nenhum') {
   atualizarVariaveis();
   // Se for admin em modo visitante, não registra nada a interação
-  if (MODO_VISITANTE && idsVisitantesReservados.includes(idVisitante)) return;
+  if (MODO_VISITANTE && (idsVisitantesReservados.includes(idVisitante) || idsReservados.includes(idUsuario))) return;
 
   const idAnuncioSorteado = linkElement.getAttribute('data-id-anuncio');
   const provedorAnuncioSorteado = linkElement.getAttribute('data-provedor-anuncio');

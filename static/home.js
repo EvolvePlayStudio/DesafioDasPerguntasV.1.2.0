@@ -24,6 +24,11 @@ const btnModalPrimario = document.getElementById("btn-modal-primario");
 const btnModalSecundario = document.getElementById("btn-modal-secundario");
 const spanEmail = modal.querySelector("#email-usuario");
 
+// Widgets dos anúncios no topo
+const containerAnuncios = document.getElementById("container-anuncios-topo");
+const bannerTopoEsquerda = document.getElementById("banner-topo-esquerda");
+const bannerTopoDireita = document.getElementById("banner-topo-direita");
+
 // Widgets do cabeçalho da página
 const userName = document.querySelectorAll(".user-name");
 const perguntas_restantes = document.querySelectorAll(".perguntas-count");
@@ -35,10 +40,7 @@ const btn_doacoes = document.querySelectorAll(".btn-doacoes");
 const btn_logout = document.querySelectorAll(".btn-logout");
 let btnsHeader;
 
-const containerAnuncios = document.getElementById("container-anuncios-topo");
-const bannerTopoEsquerda = document.getElementById("banner-topo-esquerda");
-const bannerTopoDireita = document.getElementById("banner-topo-direita");
-
+// Widgets do modo teste (para desenvolvedor testar perguntas recém-lançadas)
 const modoTesteWrapper = document.getElementById("modo-teste-wrapper");
 const checkModoTeste = document.getElementById("modo-teste-toggle");
 const modoTeste = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
@@ -110,7 +112,6 @@ else {
 btnsHeader.forEach(conjuntoBtn => {conjuntoBtn.forEach(btn => {btn.style.display = ""})});
 
 function abrirModal({titulo = "", corpoHTML = "", textoPrimario = null, textoSecundario = null, onPrimario = null, onSecundario = null, modalReenvioEmail = false}) {
-
   // Bloqueia interação geral
   permitir_escolher_tema = false;
   btnModalPrimario.disabled = true;
