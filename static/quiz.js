@@ -595,6 +595,16 @@ async function enviarResposta(pulando = false) {
           if (origemUsuario.toLowerCase() === 'googleads') {
             gtag('event', 'conversion', {'send_to': 'AW-17529321916/JTBvCKKkoeEbELzz0KZB'});
           }
+          // 2. Registra conversão na Microsoft Ads
+          else if (origemUsuario.toLowerCase() === 'microsoftads') {
+            // Verifica se a Tag UET geral da Microsoft está carregada na página
+            if (typeof window.uetq !== 'undefined') {
+              // Dispara o evento exatamente com os nomes que você configurou no painel da Microsoft
+              window.uetq.push('event', 'Visitante_5_Perguntas_Respondidas', { 'event_category': 'responder_5_perguntas' });
+            } else {
+              console.error("[Erro] A Tag UET geral da Microsoft não foi encontrada nesta página.");
+            }
+          }
         };
       }
       catch (error) {
