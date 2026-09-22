@@ -93,15 +93,6 @@ const botoes_finalizar_div = document.getElementById("botoes-acao");
 const alternativaBtns = Array.from(alternativasContainer.querySelectorAll(".alternativa-btn"));
 
 // Variáveis relacionadas ao nível de dificuldade
-/*
-const PROBABILIDADES_POR_RANKING = {
-  Iniciante: { Fácil: 0.65, Médio: 0.35, Difícil: 0.00, Extremo: 0.00 },
-  Aprendiz:  { Fácil: 0.40, Médio: 0.45, Difícil: 0.15, Extremo: 0.00 },
-  Estudante: { Fácil: 0.20, Médio: 0.50, Difícil: 0.25, Extremo: 0.05 },
-  Sábio:     { Fácil: 0.10, Médio: 0.45, Difícil: 0.35, Extremo: 0.10 },
-  Lenda:     { Fácil: 0.02, Médio: 0.38, Difícil: 0.40, Extremo: 0.20 }
-};*/
-
 const PROBABILIDADES_POR_RANKING = {
   Iniciante: { Fácil: 0.55, Médio: 0.45, Difícil: 0.00, Extremo: 0.00 },
   Aprendiz:  { Fácil: 0.35, Médio: 0.45, Difícil: 0.20, Extremo: 0.00 },
@@ -374,7 +365,6 @@ function calcularPontuacao(acertou) {
       break;
     case "Extremo":
       pontosBase = regras_jogador.pontos_acerto_extremo;
-      console.log("POntos base no extremo: ", regras_jogador.pontos_acerto_extremo)
       break;
     default:
       console.warn("Dificuldade desconhecida:", dificuldade);

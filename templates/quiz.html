@@ -19,7 +19,8 @@
     }
     :root {
       --altura-barra: 1rem;
-      --largura-barra: 29.8rem;
+      /*--largura-barra: 29.8rem;*/
+      --largura-barra: 43vw;
       /*
       --fs-aux: 0.85rem;
       --fs-base: 0.95rem;
@@ -32,17 +33,58 @@
       --folga-anuncio-topo: 0.5rem;
       --vertical-margin: 1.5rem;
       --small-vertical-margin: 1rem;
+      --ajuste-vertical-widgets: -0.12rem; /* Para alinhar horizontalmente com a barra de progresso */
     }
     @media (max-width: 1200px) { 
       :root {
         --altura-barra: 0.9rem;
-        --largura-barra: 16rem;
+        /*--largura-barra: 16rem;*/
         --fs-aux: 0.75rem;
         --fs-base: 0.85rem;
         --fs-emph: 1.00rem;
         --fs-title: 1.15rem;
         --fs-icon-pular: 1.35rem;
         --fs-estrelas: 1.9rem;
+      }
+    }
+    @media (max-width: 955px) {
+      :root {
+        --largura-barra: 40vw;
+      }
+    }
+    @media (max-width: 905px) {
+      :root {
+        --largura-barra: 36vw;
+      }
+    }
+    @media (max-width: 850px) {
+      :root {
+        --largura-barra: 34vw;
+      }
+    }
+    @media (max-width: 812px) {
+      :root {
+        --largura-barra: 30vw;
+      }
+    }
+    @media (max-width: 759px) {
+      :root {
+        --largura-barra: 26vw;
+      }
+    }
+    @media (max-width: 719px) {
+      :root {
+        --largura-barra: 22vw;
+      }
+    }
+    @media (max-width: 679px) {
+      :root {
+        --largura-barra: 54vw;
+      }
+    }
+    @media (max-width: 500px) {
+      :root {
+        --largura-barra: 43vw;
       }
     }
     html, body {
@@ -100,23 +142,22 @@
       transition: width 1.1s linear; /* Isto também é alterado na função de atualizar baraar no js*/
     }
     #ranking-anterior, #proximo-ranking {
+      margin-top: var(--ajuste-vertical-widgets); /* Gambiarra */
       position: absolute;
       white-space: nowrap;
       z-index: 2;
     }
     #ranking-anterior {
-      margin-top: -0.12rem; /* Gambiarra */
-      left: calc(48% - var(--largura-barra) / 2);
-      transform: translateX(-100%); /* posiciona à esquerda da barra */
+      right: calc(50% + var(--largura-barra) / 2);
+      transform: none; /* posiciona à esquerda da barra */
       text-align: right;
-      margin-right: 0.4rem; /* distância da barra */
+      margin-right: calc(1vw + 0.2rem); /* distância da barra */
     }
     #proximo-ranking {
-      margin-top: -0.12rem; /* Gambiarra */
-      left: calc(52% + var(--largura-barra) / 2);
-      transform: translateX(0); /* colado à borda direita da barra */
+      left: calc(50% + var(--largura-barra) / 2);
+      transform: translateX(0); /* posiciona à direita da barra */
       text-align: left;
-      margin-left: 0.4rem; /* distância da barra */
+      margin-left: 1vw; /* distância da barra */
     }
     .status-wrapper-mobile {
       display: none;
@@ -133,17 +174,19 @@
       font-weight: bold;
       color: white;
       position: absolute;
-      top: 1.1rem;
+      top: 1.3rem;
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
     }
     .pontuacoes {
-      display: flex;
-      left: 1rem;
+      left: 1vw;
       align-items: center;
       gap: 0.4rem;
       white-space: nowrap;
     }
     .ranking-atual {
-      right: 1rem;
+      right: 1vw;
     }
     .pontuacoes-mobile, .ranking-atual-mobile {
       font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -155,19 +198,14 @@
       gap: 0.3rem;
     }
     .pontuacoes-mobile {
-      position: absolute;
-      display: inline-flex;
-      align-items: baseline;
-      justify-content: flex-start;
-      left: calc(50% - 0.75 * var(--largura-barra));
-      transform: translateX(0);
-      text-align: left;
+      display: flex;
+      left: 1vw;
+      align-items: center;
+      gap: 0.4rem;
+      white-space: nowrap;
     }
     .ranking-atual-mobile {
-      left: calc(50% + 0.75 * var(--largura-barra));
-      transform: translateX(-100%);
-      align-items: center;
-      text-align: right;
+      right: 1vw;
     }
     #pontuacao-mobile {
       position: relative;
@@ -202,6 +240,7 @@
       flex-direction: column;
       align-items: center;
       padding: 2rem 0;
+      /*overflow-x: scroll; Para testar scroll que fica em mobile*/
     }
     .quiz-grid-layout {
       display: grid;
@@ -520,7 +559,7 @@
       display: none;
     }
     /* Responsivo em smartphones */
-    @media (max-width: 1200px) {
+    @media (max-width: 800px) {
       body, .container-principal {
         overflow-x: hidden;
       }
@@ -529,27 +568,12 @@
         justify-content: center;
       }
       #alternativas-container {
-        grid-template-columns: 1fr; /* Uma por linha no celular */
-      }
-      .status-wrapper-mobile {
-        display: flex;
-      }
-      .pontuacoes,
-      .ranking-atual,
-      #incremento-pontuacao {
-        display: none;
-      }
-      #ranking-anterior {
-        left: calc(50% - var(--largura-barra) / 2 - 0.6rem);
-      }
-      #proximo-ranking {
-        left: calc(50% + var(--largura-barra) / 2 + 0.6rem);
+        grid-template-columns: 1fr; /* Uma por linha no smartphone */
       }
       .quiz-container {
         padding: 2rem 1.5rem; /* Depois ver a questão dos valores diferentes aqui, mas lembrar que no smartphones, muito padding horizontal pode fazer o layout de quiz expandir para as laterais quando vai mostrar as estrelas de avaliação */
         margin-top: -0.5rem;
-        width: 90%;
-        max-width: 90vw !important;
+        max-width: 93vw !important;
       }
       .alternativa-btn strong {
         display: inline-block;
@@ -567,6 +591,16 @@
       }
       #comentarios {
         max-width: 28rem;
+      }
+    }
+    @media (max-width: 679px) {
+      .pontuacoes,
+      .ranking-atual,
+      #incremento-pontuacao {
+        display: none;
+      }
+      .status-wrapper-mobile {
+        display: flex;
       }
     }
     .is-mobile-os .alternativa-btn {
@@ -592,8 +626,7 @@
       <header class="pontuacoes">Pontuação: 
         <span data-ui="pontuacao" id="pontuacao"></span>
       </header>
-      <header class="ranking-atual">Ranking: 
-        <span data-ui="ranking" id="ranking"></span>
+      <header class="ranking-atual">Ranking:<span data-ui="ranking" id="ranking"></span>
       </header>
 
       <div class="ranking-container">
