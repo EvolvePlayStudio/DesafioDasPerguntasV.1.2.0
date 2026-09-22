@@ -51,7 +51,6 @@ const lblRankingAnterior = document.getElementById("ranking-anterior");
 const lblProximoRanking = document.getElementById("proximo-ranking")
 const alternativasContainer = document.getElementById("alternativas-container");
 const resultado = document.getElementById('resultado');
-const caixa_para_resposta = document.getElementById('resposta-input');
 const barra = document.getElementById("barra-progresso");
 const hint_avaliacao = document.getElementById("hint-avaliacao");
 const respostasAceitas = document.getElementById("respostas-aceitas-box");
@@ -348,7 +347,6 @@ function calcularPontuacao(acertou) {
   const dificuldade = pergunta_selecionada.dificuldade;
   if (!acertou) {
     let pontos_ganhos = 0;
-    const resposta_usuario = caixa_para_resposta.value.trim()
     // Caso em que a pergunta não vale pontos nem para acertos nem para erros
     if (dificuldade === "Fácil" && regras_jogador.pontos_acerto_facil === 0 || dificuldade === "Médio" && regras_jogador.pontos_acerto_medio === 0) {
       pontos_ganhos = 0
@@ -413,8 +411,6 @@ function desativarBotoes() {
 
 async function enviarResposta(pulando = false) {
   hint_avaliacao.style.display = "none";
-
-  if (pulando) caixa_para_resposta.value = "";
   const pontuacao_atual = pontuacoes_jogador[tema_atual];
 
   function carregarComentarioAnterior() {
@@ -453,7 +449,6 @@ async function enviarResposta(pulando = false) {
     }
     
     // Exibe a mensagem que indica se a resposta foi correta, errada ou se o usuário pulou
-    const resposta_usuario = caixa_para_resposta.value.trim();
     if (correto) {
       resultado.style.color = "lime";
       resultado.innerHTML = '✅ Resposta correta!';
@@ -665,7 +660,6 @@ async function enviarResposta(pulando = false) {
   resultado.style.color = "#FFD700";
   resultado.innerHTML = 'Enviando resposta...';
   desativarBotoes();
-  caixa_para_resposta.disabled = true;
 
   let resposta_usuario;
   let acertou;
@@ -757,7 +751,6 @@ async function enviarResposta(pulando = false) {
     resultado.style.color = "red";
     resultado.innerHTML = 'Não foi possível se conectar com o servidor';
     ativarBotoes(); // Caso dê erro, ativa botões para o usuário fazer nova tentativa
-    caixa_para_resposta.disabled = false;
   }
 }
 
@@ -902,7 +895,6 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   animacao_concluida = false;
   botoes_enviar_div.style.display = "none";
   desativarBotoes();
-  caixa_para_resposta.disabled = true;
 
   function escolherProximaDificuldade() {
     const ranking = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking;
@@ -1231,9 +1223,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Adiciona som de tecla digitada nas caixas de texto
-  if (caixa_para_resposta) {
-    caixa_para_resposta.addEventListener("keydown", (e) => {playKeySound(e)});
-  }
   if (box_comentario) {
     box_comentario.addEventListener("keydown", (e) => {playKeySound(e)});
   }
