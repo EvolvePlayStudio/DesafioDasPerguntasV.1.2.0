@@ -569,19 +569,19 @@ async function enviarResposta(pulando = false) {
       if (idsVisitantesReservados.includes(id_visitante)) return;
       try {
         const totalRespondidas = respondidas.length;
-        const origemUsuario = localStorage['usuario_origem']
+        const origemUsuario = localStorage['usuario_origem'];
         if (totalRespondidas >= 15) {
           // Registra conversão na GoogleAds
-          if (origemUsuario.toLowerCase() === 'googleads') {
+          if (origemUsuario && origemUsuario.toLowerCase() === 'googleads') {
             gtag('event', 'conversion', {'send_to': 'AW-17529321916/Ydq3CL_hhfcbELzz0KZB'});
           }
         }
         else if (totalRespondidas >= 5) {
-          if (origemUsuario.toLowerCase() === 'googleads') {
+          if (origemUsuario && origemUsuario.toLowerCase() === 'googleads') {
             gtag('event', 'conversion', {'send_to': 'AW-17529321916/JTBvCKKkoeEbELzz0KZB'});
           }
           // 2. Registra conversão na Microsoft Ads
-          else if (origemUsuario.toLowerCase() === 'microsoftads') {
+          else if (origemUsuario && origemUsuario.toLowerCase() === 'microsoftads') {
             // Verifica se a Tag UET geral da Microsoft está carregada na página
             if (typeof window.uetq !== 'undefined') {
               // Dispara o evento exatamente com os nomes que você configurou no painel da Microsoft
