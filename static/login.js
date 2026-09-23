@@ -334,7 +334,13 @@ document.addEventListener('DOMContentLoaded', function () {
           if (origemUsuario && origemUsuario.toLowerCase() === 'googleads') {
             if (typeof gtag_report_conversion === 'function') {gtag_report_conversion()};
           }
-          
+          else if (origemUsuario && origemUsuario.toLowerCase() === 'microsoftads') {
+            if (typeof window.uetq !== 'undefined') {
+              window.uetq.push('event', 'Novo registro', { 'event_category': 'cadastrar_conta' });
+            } else {
+              console.error("[Erro] A Tag UET geral da Microsoft não foi encontrada nesta página.");
+            }
+          }
           // Chama novamente a tela de login
           if (btnRegister) btnRegister.disabled = true;
           if (lbl_mensagem_login) {
