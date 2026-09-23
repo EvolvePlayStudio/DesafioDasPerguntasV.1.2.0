@@ -571,20 +571,27 @@ async function enviarResposta(pulando = false) {
         const totalRespondidas = respondidas.length;
         const origemUsuario = localStorage['usuario_origem'];
         if (totalRespondidas >= 15) {
-          // Registra conversão na GoogleAds
+          // 1. Registra conversão na GoogleAds
           if (origemUsuario && origemUsuario.toLowerCase() === 'googleads') {
             gtag('event', 'conversion', {'send_to': 'AW-17529321916/Ydq3CL_hhfcbELzz0KZB'});
+          }
+          // 2. Registra conversão na Microsoft Ads
+          else if (origemUsuario && origemUsuario.toLowerCase() === 'microsoftads') {
+            // Verifica se a Tag UET geral da Microsoft está carregada na página
+            if (typeof window.uetq !== 'undefined') {
+              // Dispara o evento exatamente com os nomes que configurados no painel da Microsoft
+              window.uetq.push('event', 'Visitante_15_Perguntas_Respondidas', { 'event_category': 'responder_15_perguntas' });
+            } else {
+              console.error("[Erro] A Tag UET geral da Microsoft não foi encontrada nesta página.");
+            }
           }
         }
         else if (totalRespondidas >= 5) {
           if (origemUsuario && origemUsuario.toLowerCase() === 'googleads') {
             gtag('event', 'conversion', {'send_to': 'AW-17529321916/JTBvCKKkoeEbELzz0KZB'});
           }
-          // 2. Registra conversão na Microsoft Ads
           else if (origemUsuario && origemUsuario.toLowerCase() === 'microsoftads') {
-            // Verifica se a Tag UET geral da Microsoft está carregada na página
             if (typeof window.uetq !== 'undefined') {
-              // Dispara o evento exatamente com os nomes que você configurou no painel da Microsoft
               window.uetq.push('event', 'Visitante_5_Perguntas_Respondidas', { 'event_category': 'responder_5_perguntas' });
             } else {
               console.error("[Erro] A Tag UET geral da Microsoft não foi encontrada nesta página.");
