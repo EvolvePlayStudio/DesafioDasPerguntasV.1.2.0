@@ -35,6 +35,30 @@ codigo_pix = os.getenv("QR_CODE")
 img = qrcode.make(codigo_pix)
 img.save("static/qrcode.png")
 
+
+
+@app.route('/api/teste-conversao-ms', methods=['POST'])
+def api_teste_conversao_ms():
+    dados = request.get_json()
+    id_visitante = dados.get('id_visitante') or session.get('id_visitante')
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO teste_conversao_microsoft (id_visitante) VALUES (%s)", (id_visitante,))
+        conn.commit()
+    except Exception as e:
+        app.logger.error(f"Erro no log temporário: {e}")
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+        
+    return jsonify({"status": "ok"}), 200
+
+
+
+    
+
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):

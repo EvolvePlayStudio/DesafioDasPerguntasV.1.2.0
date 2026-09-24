@@ -566,6 +566,8 @@ async function enviarResposta(pulando = false) {
       try {
         const totalRespondidas = respondidas.length;
         const origemUsuario = localStorage['usuario_origem'];
+        //const origemUsuario = 'microsoftads'
+        
         if (totalRespondidas >= 15) {
           // 1. Registra conversão na GoogleAds
           if (origemUsuario && origemUsuario.toLowerCase() === 'googleads') {
@@ -577,6 +579,18 @@ async function enviarResposta(pulando = false) {
             if (typeof window.uetq !== 'undefined') {
               // Dispara o evento exatamente com os nomes que configurados no painel da Microsoft
               window.uetq.push('event', 'Visitantes_15_Perguntas_Respondidas', { 'event_category': 'responder_15_perguntas' });
+
+              
+              fetch('/api/teste-conversao-ms', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_visitante: id_visitante})
+              }).catch(e => console.error(e));
+
+
+
+
+
             } else {
               console.error("[Erro] A Tag UET geral da Microsoft não foi encontrada nesta página.");
             }
@@ -589,6 +603,18 @@ async function enviarResposta(pulando = false) {
           else if (origemUsuario && origemUsuario.toLowerCase() === 'microsoftads') {
             if (typeof window.uetq !== 'undefined') {
               window.uetq.push('event', 'Visitantes_5_Perguntas_Respondidas', { 'event_category': 'responder_5_perguntas' });
+
+
+
+
+              fetch('/api/teste-conversao-ms', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_visitante: id_visitante})
+              }).catch(e => console.error(e));
+
+
+
             } else {
               console.error("[Erro] A Tag UET geral da Microsoft não foi encontrada nesta página.");
             }
