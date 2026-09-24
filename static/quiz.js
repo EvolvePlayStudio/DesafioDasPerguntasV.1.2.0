@@ -19,10 +19,6 @@ window.onerror = function (message) {
   }
 };
 
-// Variáveis do localStorage e sessionStorage
-//const origemUsuario = localStorage['usuario_origem'];
-//const midiaUsuario = localStorage['usuario_midia'];
-
 const MODO_VISITANTE = getWithMigration("modoVisitante") === "true";
 let storagePontuacao;
 let STORAGE_KEY;
@@ -684,14 +680,14 @@ async function enviarResposta(pulando = false) {
   // Marca a alternativa correta pelo data-letter
   if (modo_jogo === 'revisao') {
     letra_correta = pergunta_selecionada.resposta_correta;
-    acertou = respostaObjetivaCorreta();
+    acertou = analisarRespostaEnviada();
   }
   else {
     const response = await fetchAutenticado(`/pergunta/${pergunta_selecionada.id_pergunta}/gabarito`);
     if (response.ok) {
       const info_pergunta = await response.json();
       letra_correta = pergunta_selecionada.resposta_correta = info_pergunta["resposta_correta"];
-      acertou = respostaObjetivaCorreta();
+      acertou = analisarRespostaEnviada();
     }
     else {
       return;
@@ -1185,7 +1181,7 @@ function renderizarEstrelas(valor) {
   });
 }
 
-function respostaObjetivaCorreta() {
+function analisarRespostaEnviada() {
   if (!alternativaSelecionada) return false;
   return alternativaSelecionada === pergunta_selecionada.resposta_correta;
 }

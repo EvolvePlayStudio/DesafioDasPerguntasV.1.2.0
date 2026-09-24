@@ -661,13 +661,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Decide se deve exibir modal para convidar a fazer registro
     const respondidas = JSON.parse(localStorage.getItem("visitante_respondidas"));
-    const totalRespondidas = (respondidas.objetiva?.length || 0) + (respondidas.discursiva?.length || 0);
+    const totalRespondidas = (respondidas?.length || 0);
 
-    const MARCO = 15;
+    const MARCO = 10;
     const marcoAtual = Math.floor(totalRespondidas / MARCO) * MARCO;
     const chaveRecusa = `modal_registro_fechado_${marcoAtual}`;
 
-    if (totalRespondidas >= 15 && !sessionStorage.getItem(chaveRecusa)) {
+    if (totalRespondidas >= 10 && !sessionStorage.getItem(chaveRecusa)) {
       exibirModalRegistroVisitante(marcoAtual);
     };
   }
