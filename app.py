@@ -202,8 +202,6 @@ def api_registrar_acesso():
             
         pagina = dados.get('pagina', 'Não identificada')
         id_visitante = dados.get('id_visitante')
-        
-        # Chama a sua função de banco de dados
         registrar_pagina_visitada(pagina, id_visitante)
         
         return jsonify({"status": "sucesso"}), 200

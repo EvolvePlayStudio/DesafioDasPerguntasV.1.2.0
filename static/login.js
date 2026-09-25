@@ -1,4 +1,5 @@
-import { playSound, playKeySound } from './sound.js'
+import { idsVisitantesReservados } from "./utils.js";
+import { playSound, playKeySound } from './sound.js';
 
 function gtag_report_conversion() { 
   gtag('event', 'conversion', {
@@ -246,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
-      // Se o CAPTCHA não está visível, primeiro valida o registro no backend
+      // Valida o registro no backend na primeira parte (antes do CAPTCHA aparecer)
       if (!captchaContainer || captchaContainer.hidden) {
         try {
           const validaResponse = await fetch('/register_validate', {
@@ -254,13 +255,15 @@ document.addEventListener('DOMContentLoaded', function () {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nome, email, senha })
           });
-
+          
+          // Erro 1
           if (!validaResponse.ok) {
             throw new Error(`Erro na validação: ${validaResponse.status}`);
           }
 
           const validaData = await validaResponse.json();
 
+          // Erro 2
           if (!validaData.success) {
             lbl_mensagem_registro.style.color = 'red';
             lbl_mensagem_registro.textContent = validaData.message || 'Erro na validação';
@@ -270,9 +273,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
           // Se passou na validação, exibe o CAPTCHA
           if (captchaContainer) {
+            // Registro na base de dados que o usuário foi para a parte de CAPTCHA
+            try {
+                if (!idsVisitantesReservados.includes(idVisitante)) {
+                  fetch('/api/registrar-acesso', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        pagina: 'Registro -> CAPTCHA',
+                        id_visitante: localStorage.getItem("id_visitante")
+                    })
+                })
+                .then(response => response.json())
+                .catch(error => console.error("Erro ao registrar acesso:", error));
+                }
+              }
+              catch (e) {
+                console.error("Erro ao registrar acesso: ", e);
+              }
+
             containersChecks.forEach(c => c.style.display = "none");
             captchaContainer.hidden = false;
-
             register_form.querySelectorAll('input, label, .form-group').forEach(el => {
               if (!el.closest('#captcha-container')) {
                 el.style.display = 'none';
@@ -289,11 +312,31 @@ document.addEventListener('DOMContentLoaded', function () {
           lbl_mensagem_registro.style.display = '';
           console.error('Erro validação registro:', error);
         }
-
         return; // Espera o usuário completar CAPTCHA e submeter de novo
       }
 
       // Aqui já está no passo do CAPTCHA
+      try {
+        // Registra na base de dados que o usuário tentou realizar um novo registro
+        if (!idsVisitantesReservados.includes(idVisitante)) {
+          fetch('/api/registrar-acesso', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                pagina: 'Tentativa de Registro',
+                id_visitante: localStorage.getItem("id_visitante")
+            })
+        })
+        .then(response => response.json())
+        .catch(error => console.error("Erro ao registrar acesso:", error));
+        }
+      }
+      catch (e) {
+        console.error("Erro ao registrar acesso: ", e);
+      }
+
       if (selecoes.length !== 3) {
         lbl_mensagem_registro.style.color = 'red';
         lbl_mensagem_registro.textContent = 'Selecione exatamente 3 imagens no CAPTCHA';
