@@ -387,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function () {
           // Chama novamente a tela de login
           if (btnRegister) btnRegister.disabled = true;
           if (lbl_mensagem_login) {
-            lbl_mensagem_login.style.color = 'green';
+            lbl_mensagem_login.style.color = 'lime';
             lbl_mensagem_login.textContent = data.message;
             lbl_mensagem_login.style.display = '';
           }

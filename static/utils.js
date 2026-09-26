@@ -1,4 +1,4 @@
-export const pontuacaoTemaPadraoVisitantes = 1800;
+export const pontuacaoTemaPadraoVisitantes = 0; // Aqui era 1800 na versão antiga
 export const dificuldadesOrdenadas = ['Fácil', 'Médio', 'Difícil', 'Extremo'];
 export const temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"];
 export const idsReservados = [4, 6, 16];
@@ -241,25 +241,30 @@ export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIG
   const qtdDificil = perguntas_por_dificuldade["Difícil"]?.length ?? 0;
   const qtdExtremo = perguntas_por_dificuldade["Extremo"]?.length ?? 0;
 
-  const apenasFaceis = qtdMedio === 0 && (qtdDificil === 0 || !infoRanking.pode_receber_dificil) && (qtdExtremo === 0 || !infoRanking.pode_receber_extremo);
-  const apenasMedias = qtdFacil === 0 && (qtdDificil === 0 || !infoRanking.pode_receber_dificil) && (qtdExtremo === 0 || !infoRanking.pode_receber_extremo);
-  const apenasDificeis = qtdFacil === 0 && qtdMedio === 0 && (qtdExtremo === 0 || !infoRanking.pode_receber_extremo);
-  const apenasExtremas = qtdFacil === 0 && qtdMedio === 0 && (qtdDificil === 0 || !infoRanking.pode_receber_dificil);
-  const apenasDificeisOuExtremas = qtdFacil === 0 && qtdMedio === 0;
-  const apenas_1_nivel = apenasFaceis || apenasMedias || apenasDificeis || apenasExtremas;
+  if (!MODO_VISITANTE) {
+    const apenasFaceis = qtdMedio === 0 && (qtdDificil === 0 || !infoRanking.pode_receber_dificil) && (qtdExtremo === 0 || !infoRanking.pode_receber_extremo);
+    const apenasMedias = qtdFacil === 0 && (qtdDificil === 0 || !infoRanking.pode_receber_dificil) && (qtdExtremo === 0 || !infoRanking.pode_receber_extremo);
+    const apenasDificeis = qtdFacil === 0 && qtdMedio === 0 && (qtdExtremo === 0 || !infoRanking.pode_receber_extremo);
+    const apenasExtremas = qtdFacil === 0 && qtdMedio === 0 && (qtdDificil === 0 || !infoRanking.pode_receber_dificil);
+    const apenasDificeisOuExtremas = qtdFacil === 0 && qtdMedio === 0;
+    const apenas_1_nivel = apenasFaceis || apenasMedias || apenasDificeis || apenasExtremas;
+    // Não permite prosseguir se houver apenas 1 nível de dificuldade
+    if (ranking !== 'Iniciante' && apenas_1_nivel) return true;
+    
+    // 🧑‍🎓 APRENDIZ: encerra se SÓ houverem difíceis e extremas
+    if (ranking === "Aprendiz" && apenasDificeisOuExtremas) return true;
 
-  // Não permite prosseguir se houver apenas 1 nível de dificuldade
-  if (ranking !== 'Iniciante' && apenas_1_nivel && !MODO_VISITANTE) return true;
-  
-  // 🧑‍🎓 APRENDIZ: encerra se SÓ houverem difíceis e extremas
-  if (ranking === "Aprendiz" && apenasDificeisOuExtremas) return true;
+    // 🧠 SÁBIO: encerra se Só houverem fáceis e extremas
+    if (ranking === "Sábio" && qtdMedio === 0 && qtdDificil === 0) return true;
 
-  // 🧠 SÁBIO: encerra se Só houverem fáceis e extremas
-  if (ranking === "Sábio" && qtdMedio === 0 && qtdDificil === 0) return true;
-
-  // 🔥 Lenda: encerra se NÃO houverem difíceis ou extremas
-  if (ranking === "Lenda" && qtdDificil === 0 && qtdExtremo === 0) return true;
-
+    // 🔥 Lenda: encerra se NÃO houverem difíceis ou extremas
+    if (ranking === "Lenda" && qtdDificil === 0 && qtdExtremo === 0) return true;
+  }
+  else {
+    if (ranking === 'Iniciante' && qtdFacil === 0 && qtdMedio === 0 && qtdDificil === 0) {
+      return true;
+    };
+  }
   return false;
 }
 
@@ -330,13 +335,22 @@ export function obterPerguntasDisponiveis(perguntas_por_dificuldade) {
 export function obterDificuldadesDisponiveis(tema=null, MODO_VISITANTE=null) {
   // Obtém a informação de ranking atual do usuário
   const info_ranking_atual = obterInfoRankingAtual();
+  const ranking = info_ranking_atual.ranking;
 
   // Define as dificuldades de perguntas disponíveis de acordo com o ranking atual
   const dificuldades_disponiveis = ['Fácil'];
-  if (info_ranking_atual.pode_receber_medio) dificuldades_disponiveis.push('Médio');
-  if (info_ranking_atual.pode_receber_dificil) dificuldades_disponiveis.push('Difícil');
-  if (info_ranking_atual.pode_receber_extremo) dificuldades_disponiveis.push('Extremo');
-
+  if (MODO_VISITANTE) {
+    dificuldades_disponiveis.push('Médio');
+    dificuldades_disponiveis.push('Difícil');
+    if (ranking === 'Aprendiz') {
+      dificuldades_disponiveis.push('Extremo');
+    }
+  }
+  else {
+    if (info_ranking_atual.pode_receber_medio) dificuldades_disponiveis.push('Médio');
+    if (info_ranking_atual.pode_receber_dificil) dificuldades_disponiveis.push('Difícil');
+    if (info_ranking_atual.pode_receber_extremo) dificuldades_disponiveis.push('Extremo');
+  }
   return dificuldades_disponiveis
 }
 

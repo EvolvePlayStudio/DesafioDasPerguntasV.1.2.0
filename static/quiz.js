@@ -447,7 +447,7 @@ async function enviarResposta(pulando = false) {
     aguardando_proxima = true;
     botoes_enviar_div.style.display = "none";
 
-    // Carrega a aprovaçãod e nota anterior enviada pelo usuário
+    // Carrega a aprovação de nota anterior enviada pelo usuário
     aprovacao_nota_inicial = pergunta_selecionada.aprovacao_nota;
     botaoLikeNota.classList.remove("ativo");
     botaoDislikeNota.classList.remove("ativo");
@@ -1080,6 +1080,7 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
 
   // Escolhe uma pergunta
   const dificuldade_selecionada = escolherProximaDificuldade();
+  console.log(`Dificuldade selecionada: ${dificuldade_selecionada}`)
   const perguntas_disponiveis = perguntas_por_dificuldade[dificuldade_selecionada];
   const indicePergunta = selecionarPergunta(perguntas_disponiveis);
   console.log(`Pergunta selecionada: (${pergunta_selecionada.id_pergunta}) ${pergunta_selecionada.enunciado}`)

@@ -28,6 +28,7 @@ app.logger.addHandler(handler)
 app.secret_key = os.getenv("SECRET_KEY")
 invite_token = os.getenv("TOKEN_CONVITE")
 
+# Algumas variáveis abaixo podem ir para o utils.py futuramente
 SITE_EM_MANUTENCAO = False
 ids_visitante_admin = ["cb1c55a4-df94-4098-b811-d13320877441", "d103db0e-cd5d-4743-a67c-2cdf0f282892"]
 # Código copia e cola gerado pelo Nubank
@@ -1040,7 +1041,7 @@ def listar_perguntas(user_id):
         elif not modo_teste:
             where_filter = "p.status = 'Ativa'"
         else:
-            where_filter = "p.status = 'Em teste'" if is_privileged else "p.status = 'Ativa'"
+            where_filter = "p.status = 'Teste fechado'" if is_privileged else "p.status = 'Ativa'"
 
         if modo_visitante:
             sql = f"""
