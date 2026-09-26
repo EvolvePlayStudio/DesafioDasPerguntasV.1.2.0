@@ -2,6 +2,11 @@
 <html lang="pt-br" style="height: 100%; box-sizing: border-box; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
 <head>
   {% include 'cabecalho_comum.html' %}
+  <!-- Função para registrar conversão na Microsoft para conta cadastrada -->
+  <script>
+    function registrar_conversao_cadastrar_conta() {window.uetq = window.uetq || [];window.uetq.push('event', 'cadastrar_conta', {});}
+  </script>
+
   <title>Login - Desafio das Perguntas</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 

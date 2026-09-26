@@ -379,7 +379,8 @@ document.addEventListener('DOMContentLoaded', function () {
           }
           else if (origemUsuario && origemUsuario.toLowerCase() === 'microsoftads') {
             if (typeof window.uetq !== 'undefined') {
-              window.uetq.push('event', 'Novo registro', { 'event_category': 'cadastrar_conta' });
+              // window.uetq.push('event', 'Novo registro', { 'event_category': 'cadastrar_conta' });
+              registrar_conversao_cadastrar_conta()
             } else {
               console.error("[Erro] A Tag UET geral da Microsoft não foi encontrada nesta página.");
             }

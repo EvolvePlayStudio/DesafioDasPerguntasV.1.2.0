@@ -217,6 +217,8 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
   return historicoExibicao;
 }
 
+
+// Função abaixo não é mais utilizada na tela de quiz, talvez seja removida futuramente
 export function detectarModoTela() {
   // Identifica se o usuário us modo site para computador
   const largura = window.innerWidth;

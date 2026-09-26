@@ -2057,10 +2057,9 @@ def registrar_resposta_visitante():
                 versao_pergunta,
                 pontos_ganhos,
                 pontos_usuario,
-                modo_tela,
                 dificuldade,
                 auto_chute
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             dados.get("tema"),
             dados.get("id_pergunta"),
@@ -2071,7 +2070,6 @@ def registrar_resposta_visitante():
             dados.get("versao_pergunta"),
             dados.get("pontos_ganhos"),
             dados.get("pontos_usuario"),
-            dados.get("modo_tela"),
             dados.get("dificuldade").lower().capitalize(),
             dados.get("auto_chute")
         ))
