@@ -64,13 +64,15 @@ if (MODO_VISITANTE) {
 
   })
   
+  let idVisitante = localStorage.getItem("id_visitante");
   /*
-  localStorage.removeItem("pontuacoes_visitante");
-  localStorage.removeItem("perguntas_restantes_visitante");
-  localStorage.removeItem("visitante_respondidas");*/
+  if (idsVisitantesReservados.includes(idVisitante)) {
+    localStorage.removeItem("pontuacoes_visitante");
+    localStorage.removeItem("perguntas_restantes_visitante");
+    localStorage.removeItem("visitante_respondidas");
+  }*/
  
   // Gera ID de visitante para o usuário caso não tenha
-  let idVisitante = localStorage.getItem("id_visitante");
   if (!idVisitante) {
     idVisitante = crypto.randomUUID();
     localStorage.setItem("id_visitante", idVisitante);

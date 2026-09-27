@@ -38,6 +38,16 @@ if (typeof pontuacoes_jogador[tema_atual] !== "number") {
 };
 sessionStorage.setItem("pontuacao_anterior", pontuacoes_jogador[tema_atual]);
 const perguntas_por_dificuldade = JSON.parse(getWithMigration("perguntas") ?? "null");
+
+// Ordena os IDs de forma crescente em cada nível de dificuldade (facilita coleta de dados)
+if (perguntas_por_dificuldade && MODO_VISITANTE) {
+  Object.keys(perguntas_por_dificuldade).forEach((dificuldade) => {
+    if (Array.isArray(perguntas_por_dificuldade[dificuldade])) {
+      perguntas_por_dificuldade[dificuldade].sort((a, b) => a.id_pergunta - b.id_pergunta);
+    }
+  });
+}
+
 const regras_pontuacao = JSON.parse(getWithMigration("regras_pontuacao") ?? "[]");
 const rankings_jogador = JSON.parse(getWithMigration("rankings_jogador") ?? "{}");
 const modo_jogo = (getWithMigration("modo_jogo") ?? "").toLocaleLowerCase();
@@ -1038,31 +1048,36 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
     if (!perguntasDisponiveis || perguntasDisponiveis.length === 0) {
       return -1;
     }
-
-    // ===============================
-    // 1. Seleciona um id dos prioritários
-    // ===============================
-    for (let i = 0; i < idsPrioritarios.length; i++) {
-      const idPrioritario = idsPrioritarios[i];
-
-      const indicePergunta = perguntasDisponiveis.findIndex(
-        p => p.id_pergunta === idPrioritario
-      );
-      
-      // Caso encontre um id de pergunta prioritária na lista de perguntas da dificuldade escolhida
-      if (indicePergunta !== -1) {
-        idsPrioritarios.splice(i, 1);
-        pergunta_selecionada = perguntasDisponiveis[indicePergunta];
-        return indicePergunta;
-      }
+    if (MODO_VISITANTE) {
+      pergunta_selecionada = perguntasDisponiveis[0];
+      return 0;
     }
+    else {
+      // ===============================
+      // 1. Seleciona um id dos prioritários
+      // ===============================
+      for (let i = 0; i < idsPrioritarios.length; i++) {
+        const idPrioritario = idsPrioritarios[i];
 
-    // ===============================
-    // 2. Fallback caso não tenha encontrado um id dentre os prioritários
-    // ===============================
-    const indice = Math.floor(Math.random() * perguntasDisponiveis.length);
-    pergunta_selecionada = perguntasDisponiveis[indice];
-    return indice;
+        const indicePergunta = perguntasDisponiveis.findIndex(
+          p => p.id_pergunta === idPrioritario
+        );
+        console.log(`Índice da pergunta: ${indicePergunta}`)
+        // Caso encontre um id de pergunta prioritária na lista de perguntas da dificuldade escolhida
+        if (indicePergunta !== -1) {
+          idsPrioritarios.splice(i, 1);
+          pergunta_selecionada = perguntasDisponiveis[indicePergunta];
+          console.log("3. Estou aqui")
+          return indicePergunta;
+        }
+      }
+      // ===============================
+      // 2. Fallback caso não tenha encontrado um id dentre os prioritários
+      // ===============================
+      const indice = Math.floor(Math.random() * perguntasDisponiveis.length);
+      pergunta_selecionada = perguntasDisponiveis[indice];
+      return indice;
+    }
   }
 
   // Escolhe uma pergunta
@@ -1070,6 +1085,7 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   console.log(`Dificuldade selecionada: ${dificuldade_selecionada}`)
   const perguntas_disponiveis = perguntas_por_dificuldade[dificuldade_selecionada];
   const indicePergunta = selecionarPergunta(perguntas_disponiveis);
+
   console.log(`Pergunta selecionada: (${pergunta_selecionada.id_pergunta}) ${pergunta_selecionada.enunciado}`)
 
   if (indicePergunta === -1) {
