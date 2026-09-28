@@ -1,10 +1,26 @@
 import { idsVisitantesReservados } from "./utils.js";
 import { playSound, playKeySound } from './sound.js';
 
-function gtag_report_conversion() { 
-  gtag('event', 'conversion', {
-    'send_to': 'AW-17529321916/TyLzCMyw5sobELzz0KZB'
-  });
+// Função para registrar conversão da Microsoft para conta cadastrada
+function dispararConversaoMicrosoft() {
+  try {
+    // Garante que o array de eventos da Microsoft exista
+    window.uetq = window.uetq || [];
+    window.uetq.push('event', 'cadastrar_conta', {});
+  } catch (erro) {
+    console.warn("[Microsoft Ads] Não foi possível registrar a conversão:", erro);
+  }
+}
+
+// Função para registrar conversão do GoogleAds para conta cadastrada
+function dispararConversaoGoogle() { // OBS: TALVEZ A FUNÇÃO gtag DEVA SER TIRADA DO cabecalho_comum.html
+  try {
+    if (typeof gtag_report_conversion === 'function') {
+      gtag_report_conversion();
+    }
+  } catch (erro) {
+    console.warn("[Google Ads] Não foi possível registrar a conversão:", erro);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -207,6 +223,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  
+
+
+
   // Submissão do formulário de registro
   if (register_form) {
     register_form?.addEventListener('submit', async function (event) {
@@ -256,14 +276,12 @@ document.addEventListener('DOMContentLoaded', function () {
             body: JSON.stringify({ nome, email, senha })
           });
           
-          // Erro 1
           if (!validaResponse.ok) {
             throw new Error(`Erro na validação: ${validaResponse.status}`);
           }
 
           const validaData = await validaResponse.json();
 
-          // Erro 2
           if (!validaData.success) {
             lbl_mensagem_registro.style.color = 'red';
             lbl_mensagem_registro.textContent = validaData.message || 'Erro na validação';
@@ -273,26 +291,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
           // Se passou na validação, exibe o CAPTCHA
           if (captchaContainer) {
-            // Registro na base de dados que o usuário foi para a parte de CAPTCHA
             try {
-                if (!idsVisitantesReservados.includes(idVisitante)) {
-                  fetch('/api/registrar-acesso', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        pagina: 'Registro -> CAPTCHA',
-                        id_visitante: localStorage.getItem("id_visitante")
-                    })
+              if (!idsVisitantesReservados.includes(idVisitante)) {
+                fetch('/api/registrar-acesso', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    pagina: 'Registro -> CAPTCHA',
+                    id_visitante: localStorage.getItem("id_visitante")
+                  })
                 })
                 .then(response => response.json())
                 .catch(error => console.error("Erro ao registrar acesso:", error));
-                }
               }
-              catch (e) {
-                console.error("Erro ao registrar acesso: ", e);
-              }
+            } catch (e) {
+              console.error("Erro ao registrar acesso: ", e);
+            }
 
             containersChecks.forEach(c => c.style.display = "none");
             captchaContainer.hidden = false;
@@ -305,8 +319,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (btnRegister) btnRegister.disabled = true;
             await carregarCaptcha();
           }
-        }
-        catch (error) {
+        } catch (error) {
           lbl_mensagem_registro.style.color = 'red';
           lbl_mensagem_registro.textContent = 'Erro na comunicação com o servidor';
           lbl_mensagem_registro.style.display = '';
@@ -315,25 +328,21 @@ document.addEventListener('DOMContentLoaded', function () {
         return; // Espera o usuário completar CAPTCHA e submeter de novo
       }
 
-      // Aqui já está no passo do CAPTCHA
+      // Etapa final do CAPTCHA
       try {
-        // Registra na base de dados que o usuário tentou realizar um novo registro
         if (!idsVisitantesReservados.includes(idVisitante)) {
           fetch('/api/registrar-acesso', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                pagina: 'Tentativa de Registro',
-                id_visitante: localStorage.getItem("id_visitante")
+              pagina: 'Tentativa de Registro',
+              id_visitante: localStorage.getItem("id_visitante")
             })
-        })
-        .then(response => response.json())
-        .catch(error => console.error("Erro ao registrar acesso:", error));
+          })
+          .then(response => response.json())
+          .catch(error => console.error("Erro ao registrar acesso:", error));
         }
-      }
-      catch (e) {
+      } catch (e) {
         console.error("Erro ao registrar acesso: ", e);
       }
 
@@ -344,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
-      // Envia dados para registrar usuário com CAPTCHA
+      // Envia dados para registrar usuário
       try {
         lbl_mensagem_registro.style.color = '#d1d1d1ff';
         lbl_mensagem_registro.textContent = 'Fazendo registro...';
@@ -372,20 +381,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const data = await response.json();
         if (data.success) {
-          // Registra meta de conversão de registro no GoogleAds
-          const origemUsuario = localStorage['usuario_origem'];
-          if (origemUsuario && origemUsuario.toLowerCase() === 'googleads') {
-            if (typeof gtag_report_conversion === 'function') {gtag_report_conversion()};
-          }
-          else if (origemUsuario && origemUsuario.toLowerCase() === 'microsoftads') {
-            if (typeof window.uetq !== 'undefined') {
-              // window.uetq.push('event', 'Novo registro', { 'event_category': 'cadastrar_conta' });
-              registrar_conversao_cadastrar_conta()
-            } else {
-              console.error("[Erro] A Tag UET geral da Microsoft não foi encontrada nesta página.");
+
+          // ========================================================
+          // REGISTRO DE CONVERSÃO ISOLADO E PROTEGIDO CONTRA ERROS
+          // ========================================================
+          try {
+            const origemUsuario = localStorage.getItem('usuario_origem');
+            if (origemUsuario) {
+              const origemLower = origemUsuario.toLowerCase();
+              if (origemLower === 'googleads') {
+                dispararConversaoGoogle();
+              } else if (origemLower === 'microsoftads') {
+                dispararConversaoMicrosoft();
+              }
             }
+          } catch (errConversion) {
+            // Captura qualquer erro de script de anúncio/AdBlock e evita que quebre o cadastro
+            console.error("Erro ao registrar conversão de conta cadastrada:", errConversion);
           }
-          // Chama novamente a tela de login
+
+          // ========================================================
+          // CONCLUSÃO DO CADASTRO NA INTERFACE (Sempre executado)
+          // ========================================================
           if (btnRegister) btnRegister.disabled = true;
           if (lbl_mensagem_login) {
             lbl_mensagem_login.style.color = 'lime';
@@ -395,24 +412,22 @@ document.addEventListener('DOMContentLoaded', function () {
           this.reset();
           if (captchaContainer) captchaContainer.hidden = true;
           showForm('login', true);
-        }
-        else { // registra a falha no CAPTCHA
+
+        } else {
+          // Registra falha no CAPTCHA
           const resposta_captcha = await fetch('/registrar_falha_captcha', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
           });
 
           const info_bloqueio = await resposta_captcha.json();
-          // Se já está bloqueado, manda para o login e mostra mensagem
           if (info_bloqueio.tentativas_registro > 0 && info_bloqueio.bloqueado_ate > 0) {
-            bloquearRegistro(info_bloqueio)
+            bloquearRegistro(info_bloqueio);
             return;
           }
-          // Caso não esteja bloqueado, apenas recarrega o CAPTCHA
           carregarCaptcha();
         }
-      }
-      catch (error) {
+      } catch (error) {
         lbl_mensagem_registro.style.color = 'red';
         lbl_mensagem_registro.textContent = 'Erro na comunicação com o servidor';
         lbl_mensagem_registro.style.display = '';
@@ -421,6 +436,26 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
   // Submissão do formulário de login
   if (login_form) {
   login_form?.addEventListener("submit", async function (event) {
