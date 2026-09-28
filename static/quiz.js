@@ -99,11 +99,19 @@ const botoes_finalizar_div = document.getElementById("botoes-acao");
 const alternativaBtns = Array.from(alternativasContainer.querySelectorAll(".alternativa-btn"));
 
 // Variáveis relacionadas ao nível de dificuldade
+/*
 const PROBABILIDADES_POR_RANKING = {
   Iniciante: { Fácil: 0.55, Médio: 0.45, Difícil: 0.00, Extremo: 0.00 },
   Aprendiz:  { Fácil: 0.35, Médio: 0.45, Difícil: 0.20, Extremo: 0.00 },
   Estudante: { Fácil: 0.15, Médio: 0.40, Difícil: 0.30, Extremo: 0.15 },
   Sábio:     { Fácil: 0.05, Médio: 0.30, Difícil: 0.40, Extremo: 0.25 },
+  Lenda:     { Fácil: 0.02, Médio: 0.28, Difícil: 0.40, Extremo: 0.30 }
+};*/
+const PROBABILIDADES_POR_RANKING = {
+  Iniciante: { Fácil: 0.60, Médio: 0.35, Difícil: 0.05, Extremo: 0.00 },
+  Aprendiz:  { Fácil: 0.35, Médio: 0.45, Difícil: 0.15, Extremo: 0.05 },
+  Estudante: { Fácil: 0.15, Médio: 0.40, Difícil: 0.30, Extremo: 0.15 },
+  Sábio:     { Fácil: 0.05, Médio: 0.25, Difícil: 0.45, Extremo: 0.25 },
   Lenda:     { Fácil: 0.02, Médio: 0.28, Difícil: 0.40, Extremo: 0.30 }
 };
 
