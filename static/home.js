@@ -514,9 +514,10 @@ function exibirModalRegistroVisitante(marco) {
     corpoHTML: `
     Considere se registrar para obter as seguintes vantagens:
       <ul>
-        <li>📚 Acesso a mais de 1500 perguntas</li>
+        <li>📚 Acesso a mais de 1000 perguntas</li>
         <li>🏆 Pontuações e rankings salvos</li>
         <li>⭐ Revisão inteligente com perguntas favoritadas</li>
+        <li>📩 Notificações por e-mail de novidades</li>
       </ul>
     `,
     textoPrimario: "Continuar como visitante",
