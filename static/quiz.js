@@ -1070,7 +1070,7 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
         const indicePergunta = perguntasDisponiveis.findIndex(
           p => p.id_pergunta === idPrioritario
         );
-        console.log(`Índice da pergunta: ${indicePergunta}`)
+
         // Caso encontre um id de pergunta prioritária na lista de perguntas da dificuldade escolhida
         if (indicePergunta !== -1) {
           idsPrioritarios.splice(i, 1);
@@ -1231,12 +1231,18 @@ function selecionarAlternativa(btn) {
     btn_enviar.classList.remove("chutar");
   };
 
-  // Visual
   alternativaBtns.forEach(b => b.classList.remove("selected"));
-  btn.classList.add("selected");
-
-  // Estado
-  alternativaSelecionada = btn.dataset.letter || null;
+  // Opção de desselecionar a alternativa marcada
+  if (alternativaSelecionada === btn.dataset.letter) {
+    alternativaSelecionada = null;
+    btn_enviar.classList.add("chutar");
+    btn_enviar.textContent = 'Chutar';
+  }
+  // Opção de selecionar nova alternativa
+  else {
+    btn.classList.add("selected");
+    alternativaSelecionada = btn.dataset.letter || null;
+  }
 }
 
 async function definirRankingAnterior() {
