@@ -1621,6 +1621,105 @@ def pesquisa_avancada():
 @app.route("/pesquisar_perguntas", methods=["POST"])
 def pesquisar_perguntas():
     data = request.get_json()
+    temas = data.get("temas", [])  # Lista de temas do frontend
+    palavras = data.get("palavras", [])
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    resultados = []
+
+    # Lógica de montagem da cláusula WHERE de temas:
+    # Se nenhum tema for passado, busca todos
+    if not temas:
+        condicao = "WHERE TRUE"
+        params_tema = []
+    else:
+        condicao = "WHERE (tema = ANY(%s))"
+        params_tema = [temas]
+
+    # -------- 1. OBJETIVAS --------
+    query_obj = f"""
+    SELECT id_pergunta, tema, subtemas, enunciado,
+        alternativa_a, alternativa_b, alternativa_c, alternativa_d,
+        resposta_correta, dificuldade, status
+    FROM perguntas_objetivas
+    {condicao}
+    AND EXISTS (
+        SELECT 1
+        FROM unnest(%s::text[]) p
+        WHERE
+            unaccent(LOWER(enunciado)) LIKE unaccent('%%' || p || '%%')
+            OR unaccent(LOWER(
+                CASE resposta_correta
+                    WHEN 'A' THEN alternativa_a
+                    WHEN 'B' THEN alternativa_b
+                    WHEN 'C' THEN alternativa_c
+                    WHEN 'D' THEN alternativa_d
+                END
+            )) LIKE unaccent('%%' || p || '%%')
+    )
+    """
+
+    cur.execute(query_obj, params_tema + [palavras])
+
+    for row in cur.fetchall():
+        alternativas = {
+            "A": row[4],
+            "B": row[5],
+            "C": row[6],
+            "D": row[7]
+        }
+        texto_correto = alternativas.get(row[8], "")
+
+        resultados.append({
+            "id_pergunta": row[0],
+            "tipo": "Objetiva",
+            "tema": row[1],
+            "subtemas": row[2],
+            "enunciado": row[3],
+            "resposta": texto_correto,
+            "dificuldade": row[9],
+            "status": row[10]
+        })
+
+    # -------- 2. DISCURSIVAS --------
+    query_disc = f"""
+    SELECT id_pergunta, tema, subtemas, enunciado, respostas_corretas, dificuldade, status
+    FROM perguntas_discursivas
+    {condicao}
+    AND EXISTS (
+        SELECT 1
+        FROM unnest(%s::text[]) p
+        WHERE
+            unaccent(LOWER(enunciado)) LIKE unaccent('%%' || p || '%%')
+            OR unaccent(LOWER(respostas_corretas::text)) LIKE unaccent('%%' || p || '%%')
+    )
+    """
+
+    cur.execute(query_disc, params_tema + [palavras])
+    
+    for row in cur.fetchall():
+        id_p, tema_p, subtemas, enunciado, respostas, dif, status = row
+
+        resultados.append({
+            "id_pergunta": id_p,
+            "tipo": "Discursiva",
+            "tema": tema_p,
+            "subtemas": subtemas,
+            "enunciado": enunciado,
+            "resposta": respostas,
+            "dificuldade": dif,
+            "status": status
+        })
+
+    cur.close()
+    conn.close()
+
+    return jsonify(resultados)
+
+def pesquisar_perguntas_antigo():
+    data = request.get_json()
     tema = data.get("tema")
     palavras = data.get("palavras", [])
 

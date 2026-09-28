@@ -195,7 +195,6 @@
     }
     table {
       width: 100%;
-      /*border-collapse: collapse;*/
       border-collapse: separate;
       border-spacing: 0;
       color: white;
@@ -441,18 +440,18 @@
       </table>
     </div>
 
-  <!-- Layout inferior com os botões -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Perguntas selecionadas: <span id="contador">0</span></span>
+    <!-- Layout inferior com os botões -->
+    <div class="footer">
+      <div class="footer-left">
+        <span>Perguntas selecionadas: <span id="contador">0</span></span>
+      </div>
+      <div class="footer-right">
+        <button id="btn-voltar">Voltar</button>
+        <button id="marcar-todas" disabled>Marcar Todas</button>
+        <button id="btn-pesquisar">Pesquisar</button>
+        <button id="btn-revisar">Revisar</button>
+      </div>
     </div>
-    <div class="footer-right">
-      <button id="btn-voltar">Voltar</button>
-      <button id="marcar-todas" disabled>Marcar Todas</button>
-      <button id="btn-pesquisar">Pesquisar</button>
-      <button id="btn-revisar">Revisar</button>
-    </div>
-  </div>
   </main>
 
   <script type="module" src="{{ url_for('static', filename='pesquisa.js') }}?v=1.1.0"></script>

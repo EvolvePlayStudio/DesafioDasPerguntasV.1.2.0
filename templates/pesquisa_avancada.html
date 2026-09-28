@@ -7,24 +7,37 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   
   <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
     :root {
-      --padding-lateral: 1.4rem;
+      --padding-lateral-menor: 1.4rem;
+      --padding-lateral-menor-menor: 1rem;
+      --fs-aux: 0.85rem;
+    }
+    @media (max-width: 1200px) { 
+      :root {
+        --padding-lateral-menor: 0.8rem;
+        --padding-lateral-menor-menor: 0.8rem;
+        --fs-aux: 0.75rem;
+      }
     }
     body {
       flex-shrink: 1;
       font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       width: 100%;
       overflow: hidden;
-      box-sizing: border-box;
+      /*box-sizing: border-box;*/
       background: var(--cor-fundo-padrao);
       display: flex;
       flex-direction: column;
+      height: 100dvh;
       max-height: 100dvh;
     }
     .pesquisa-header {
       display: flex;
       align-items: center;
-      padding: 0.6rem var(--padding-lateral);
+      padding: 0.6rem var(--padding-lateral-menor);
       background-color: var(--cor-fundo-escuro);
       height: var(--header-height);
     }
@@ -40,6 +53,7 @@
       align-items: center;
       min-height: 0;
       padding-top: 1rem;
+      -webkit-overflow-scrolling: touch;
     }
     .pesquisa-icon {
       width: 2.2rem;
@@ -120,6 +134,8 @@
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
+      margin-left: var(--padding-lateral-menor);
+      margin-right: var(--padding-lateral-menor);
     }
     .tag button {
       background: none;
@@ -128,39 +144,25 @@
       font-weight: bold;
       cursor: pointer;
     }
-    .subtemas-wrap {
+    #temas-container {
       display: grid;
-      grid-template-columns: auto 1fr;
-      column-gap: 0.75rem;
-      align-items: start;
-      margin-top: 0.5rem;
-      color: white;
-    }
-    .subtemas span {
-      margin-top: 1rem;
-    }
-    .subtemas-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-    }
-    .subtemas-label {
-      font-size: 1.25rem;
-      font-weight: var(--peso-fonte-botoes);
-      white-space: nowrap;
-      align-self: start;
-      margin-top: 0.5rem;
-    }
-    .subtemas-grid {
-      display: flex;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr);
+      width: 98%;
       flex-wrap: wrap;
-      grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-      gap: 0.5rem;
-      margin-top: 0.5rem;
+      justify-content: space-between;
+      row-gap: 1rem;
     }
-    .subtema-btn {
-      font-size: 0.85rem;
-      padding: 0.4rem 0.8rem;
+    .btn-tema {
+      font-size: var(--fs-aux);
+      font-weight: var(--peso-fonte-botoes);
+      width: 100%;
+      white-space: nowrap;
+      padding: 0.6rem 0;
+      align-items: center;
+      text-align: center;
+      align-self: center;
+      justify-self: center;
       margin-bottom: 0.3rem;
       border-radius: 6px;
       background: white;
@@ -168,14 +170,115 @@
       border: 2px solid black;
       background-color: #eee;
       cursor: pointer;
-      font-weight: bold;
     }
-    .subtema-btn:hover {
+    .filtros-linha {
+      display: grid;
+      grid-template-columns: auto auto;
+      gap: 1rem;
+      width: 100%;
+      align-items: center;
+      justify-content: start;
+      margin-top: 0.8rem;
+    }
+    .filtros-grupo {
+      /*
+      flex-wrap: wrap;
+      min-width: 0;*/
+      display: flex;
+      align-items: center;
+      justify-self: flex-start;
+      justify-content: flex-start;
+      gap: 0.4rem;
+      flex: 1 1 320px;
+    }
+    #texto-palavra-chave {
+      font-size: 1.2rem;
+      color: white;
+      font-weight: bold;
+      margin-left: 1rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+      flex: 0 0 auto;
+    }
+    #keyword-input {
+      padding: 0.4rem 0.6rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 2px solid black;
+      min-width: 180px;
+      width: 220px;
+      max-width: 50vw;
+      flex: 1;
+      min-width: 0;
+    }
+    .filtros-acoes {
+      display: flex !important;
+      gap: 0.8rem;
+      align-items: center;
+      min-width: 0;
+      margin-left: 0;
+      padding-left: 0;
+    }
+    .filtros-acoes button {
+      width: 160px;
+      max-width: 28vw;
+      flex: 1;
+      padding: 0.6rem 0;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    @media (min-width: 1301px) {
+      #temas-container {
+        column-gap: 0.5rem;
+      }
+    }
+    @media (max-width: 1300px) {
+      #temas-container {
+        grid-template-rows: repeat(2, auto);
+        column-gap: 1rem;
+      }
+      .btn-tema {
+        width: 85%;
+      }
+    }
+    @media (max-width: 816px) {
+      #temas-container {
+        column-gap: 0.2rem;
+      }
+    }
+    @media (max-width: 780px) {
+      .filtros-linha {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+        width: 100%;
+      }
+      .filtros-acoes {
+        justify-self: center !important;
+      }
+      #temas-container {
+        grid-template-rows: repeat(3, auto);
+        column-gap: 0.6rem;
+      }
+    }
+    @media (max-width: 520px) {
+      #temas-container {
+        grid-template-rows: repeat(4, auto);
+        column-gap: 0.2rem;
+      }
+    }
+    @media (max-width: 376px) {
+      #temas-container {
+        column-gap: 0.1rem;
+        row-gap: 0.6rem;
+      }
+    }
+    .btn-tema:hover {
       background-color: #eee;
       border-color: black;
       transform: scale(1.05);
     }
-    .subtema-btn.selected {
+    .btn-tema.active {
       background-color: goldenrod;
       border-color: black;
     }
@@ -185,7 +288,7 @@
       overflow: auto;
       margin-top: 0.8rem;
       align-self: stretch;
-      padding-bottom: 1rem;
+      padding-bottom: var(--major-footer-h);
     }
     table {
       width: 100%;
@@ -215,10 +318,10 @@
       font-weight: bold;
     }
     .tags {
-      margin-top: 0.6rem;
+      margin-top: 1rem;
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
+      gap: 0.7rem;
     }
     .bottom-bar {
       display: flex;
@@ -255,50 +358,34 @@
   <!-- Parte central da página -->
   <main>
     <!-- Campo para escolha do tema -->
-    <div class="top-bar">
-      <!-- Coluna Esquerda: Tema -->
-      <div class="filtro-esquerda">
-        <label for="tema">Tema:</label>
-        <select id="tema">
-        <option>Artes</option>
-        <option>Astronomia</option>
-        <option>Biologia</option>
-        <option>Esportes</option>
-        <option>Filosofia</option>
-        <option>Física</option>
-        <option>Geografia</option>
-        <option>História</option>
-        <option>Mídia</option>
-        <option>Música</option>
-        <option>Química</option>
-        <option>Variedades</option>
-        </select>
-      </div>
+    <div id="temas-container">
+      <button type="button" class="btn-tema" data-tema="Artes">Artes</button>
+      <button type="button" class="btn-tema" data-tema="Astronomia">Astronomia</button>
+      <button type="button" class="btn-tema" data-tema="Biologia">Biologia</button>
+      <button type="button" class="btn-tema" data-tema="Esportes">Esportes</button>
+      <button type="button" class="btn-tema" data-tema="Filosofia">Filosofia</button>
+      <button type="button" class="btn-tema" data-tema="Física">Física</button>
+      <button type="button" class="btn-tema" data-tema="Geografia">Geografia</button>
+      <button type="button" class="btn-tema" data-tema="História">História</button>
+      <button type="button" class="btn-tema" data-tema="Mídia">Mídia</button>
+      <button type="button" class="btn-tema" data-tema="Música">Música</button>
+      <button type="button" class="btn-tema" data-tema="Química">Química</button>
+      <button type="button" class="btn-tema" data-tema="Variedades">Variedades</button>
     </div>
 
-    <!-- Campo de Palavras-Chave -->
-    <div class="filtros-container" style="margin-top: 1rem; justify-content: flex-start; flex-wrap: wrap;">
-
-      <label style="font-size: 1.2rem; color: white; font-weight: bold;">Palavras-chave:
-      </label>
-
-      <input 
-        id="keyword-input" 
-        type="text" 
-        placeholder="Digite e clique em Adicionar"
-        style="
-          padding: 0.4rem 0.6rem;
-          font-size: 1rem;
-          border-radius: 6px;
-          border: 2px solid black;
-          width: 220px;
-        "
-      >
-
-      <button id="btn-adicionar">Adicionar</button>
-      <button id="btn-pesquisar">Pesquisar</button>
-      <button id="btn-limpar">Limpar tudo</button>
-
+    <div class="filtros-linha">
+      <!-- Bloco 1: Campo de Palavra-Chave -->
+      <div class="filtro-grupo">
+        <label id="texto-palavra-chave" for="keyword-input">Palavra-chave:</label>
+        <input id="keyword-input" type="text" placeholder="Ex: Brasil, Paris, etc">
+      </div>
+      
+      <!-- Bloco 2: Botões de Ação -->
+      <div class="filtros-acoes">
+        <button type="button" id="btn-adicionar">Adicionar</button>
+        <button type="button" id="btn-pesquisar">Pesquisar</button>
+        <button type="button" id="btn-limpar">Limpar tudo</button>
+      </div>
     </div>
 
     <!-- Área das TAGs -->
@@ -312,7 +399,6 @@
             <th>ID</th>
             <th>Tipo</th>
             <th>Tema</th>
-            <th>Subtemas</th>
             <th>Enunciado</th>
             <th>Resposta correta</th>
             <th>Dificuldade</th>
