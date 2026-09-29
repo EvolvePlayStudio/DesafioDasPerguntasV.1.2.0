@@ -13,13 +13,13 @@ function dispararConversaoMicrosoft() {
 }
 
 // Função para registrar conversão do GoogleAds para conta cadastrada
-function dispararConversaoGoogle() { // OBS: TALVEZ A FUNÇÃO gtag DEVA SER TIRADA DO cabecalho_comum.html
+function dispararConversaoGoogle() {
   try {
-    if (typeof gtag_report_conversion === 'function') {
-      gtag_report_conversion();
+    if (typeof gtag === 'function') {
+      gtag('event', 'conversion', {'send_to': 'AW-17529321916/TyLzCMyw5sobELzz0KZB'});
     }
   } catch (erro) {
-    console.warn("[Google Ads] Não foi possível registrar a conversão:", erro);
+    console.warn("[Google Ads] Falha ao enviar conversão Novo registro", erro);
   }
 }
 
@@ -436,26 +436,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
   // Submissão do formulário de login
   if (login_form) {
   login_form?.addEventListener("submit", async function (event) {
