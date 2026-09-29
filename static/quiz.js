@@ -51,6 +51,8 @@ if (perguntas_por_dificuldade && MODO_VISITANTE) {
 const regras_pontuacao = JSON.parse(getWithMigration("regras_pontuacao") ?? "[]");
 const rankings_jogador = JSON.parse(getWithMigration("rankings_jogador") ?? "{}");
 const modo_jogo = (getWithMigration("modo_jogo") ?? "").toLocaleLowerCase();
+let indicePerguntaGlobal = null;
+let perguntasDisponiveisGlobal = [];
 
 // Elementos do HTML
 const lblRankingAnterior = document.getElementById("ranking-anterior");
@@ -416,6 +418,9 @@ function desativarBotoes() {
 async function enviarResposta(pulando = false) {
   hint_avaliacao.style.display = "none";
   const pontuacao_atual = pontuacoes_jogador[tema_atual];
+  let acertou;
+  let letra_correta;
+  let btnAlternativaSelecionada;
 
   function carregarComentarioAnterior() {
     // Estado inicial: desativado
@@ -439,7 +444,17 @@ async function enviarResposta(pulando = false) {
     textarea_comentario.disabled = false;
   }
 
-  function mostrarResultadoResposta(correto) {
+  function revelarGabaritoVisual(acertou) {
+    const correta = document.querySelector(`.alternativa-btn[data-letter="${letra_correta}"]`);
+    if (correta) {
+      correta.classList.add('correct');
+    }
+    if (!acertou && btnAlternativaSelecionada && btnAlternativaSelecionada !== correta) {
+      btnAlternativaSelecionada.classList.add('wrong');
+    }
+  }
+
+  function mostrarResultadoResposta(acertou) {
     resultado.style.display = "block";
 
     // Exibe nota, curiosidade ou explicação
@@ -452,8 +467,8 @@ async function enviarResposta(pulando = false) {
       document.getElementById("nota-box").style.display = "none";
     }
     
-    // Exibe a mensagem que indica se a resposta foi correta, errada ou se o usuário pulou
-    if (correto) {
+    // Exibe a mensagem que indica se a resposta foi correta ou não
+    if (acertou) {
       resultado.style.color = "lime";
       resultado.innerHTML = '✅ Resposta correta!';
     }
@@ -484,9 +499,6 @@ async function enviarResposta(pulando = false) {
     
     // Carrega comentário de feedback anterior do usuário caso exista
     carregarComentarioAnterior();
-
-    // Exibe os comentários dos outros usuários
-    // document.getElementById('comentarios').style.display = 'block';
   }
 
   function mostrarBotoesAcao() {
@@ -686,13 +698,10 @@ async function enviarResposta(pulando = false) {
   desativarBotoes();
 
   let resposta_usuario;
-  let acertou;
   let prosseguir_com_resultado = true;
   let pontos_ganhos = 0;
-  let letra_correta;
   const tempo_gasto = calcularTempoGasto();
-    
-  let btnAlternativaSelecionada;
+  
   // Se o usuário optou por chutar, escolhe uma aleatoriamente
   if (!alternativaSelecionada) {
     alternativaSelecionada = letrasAlternativas[Math.floor(Math.random() * 4)];
@@ -724,16 +733,6 @@ async function enviarResposta(pulando = false) {
       return;
     }
   }
-  
-  const correta = document.querySelector(`.alternativa-btn[data-letter="${letra_correta}"]`);
-  if (correta) {
-      correta.classList.add('correct');
-  }
-
-  // Se errou, marca a selecionada como errada
-  if (!acertou && btnAlternativaSelecionada && btnAlternativaSelecionada !== correta) {
-    btnAlternativaSelecionada.classList.add('wrong');
-  }
 
   // Calcula pontos ganhos toca áudio de acerto ou erro
   pontos_ganhos = calcularPontuacao(acertou);
@@ -762,6 +761,10 @@ async function enviarResposta(pulando = false) {
   
   // Armazena informações que serão úteis depois na tela de resultado
   if (prosseguir_com_resultado) {
+    // Remove a pergunta do array para não repetir
+    perguntasDisponiveisGlobal.splice(indicePerguntaGlobal, 1);
+    sessionStorage.setItem("perguntas", JSON.stringify(perguntas_por_dificuldade));
+
     if (modo_jogo === "desafio") {
       const info_resposta = {"enunciado": pergunta_selecionada.enunciado, "alternativa_a": pergunta_selecionada.alternativa_a, "alternativa_b": pergunta_selecionada.alternativa_b, "alternativa_c": pergunta_selecionada.alternativa_c, "alternativa_d": pergunta_selecionada.alternativa_d, "resposta_correta": letra_correta, "resposta_usuario": resposta_usuario, "pontos_ganhos": pontos_ganhos, "dificuldade": pergunta_selecionada.dificuldade}
       perguntas_respondidas.push(info_resposta)
@@ -770,6 +773,7 @@ async function enviarResposta(pulando = false) {
     // Mostra se acertou a resposta e os botões "próxima" e "finalizar"
     mostrarResultadoResposta(acertou);
     mostrarBotoesAcao();
+    revelarGabaritoVisual();
   } 
   else {
     resultado.style.color = "red";
@@ -1075,7 +1079,6 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
         if (indicePergunta !== -1) {
           idsPrioritarios.splice(i, 1);
           pergunta_selecionada = perguntasDisponiveis[indicePergunta];
-          console.log("3. Estou aqui")
           return indicePergunta;
         }
       }
@@ -1088,23 +1091,47 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
     }
   }
 
-  // Escolhe uma pergunta
-  const dificuldade_selecionada = escolherProximaDificuldade();
-  console.log(`Dificuldade selecionada: ${dificuldade_selecionada}`)
-  const perguntas_disponiveis = perguntas_por_dificuldade[dificuldade_selecionada];
-  const indicePergunta = selecionarPergunta(perguntas_disponiveis);
+  // 1. Tenta recuperar o ID salvo no sessionStorage
+  const idPerguntaSalva = sessionStorage.getItem("id_pergunta_ativa");
+  let perguntaExistente = null;
 
-  console.log(`Pergunta selecionada: (${pergunta_selecionada.id_pergunta}) ${pergunta_selecionada.enunciado}`)
-
-  if (indicePergunta === -1) {
-    console.warn("Nenhuma pergunta disponível");
-    return;
+  if (idPerguntaSalva && modo_jogo === 'desafio') {
+    const idProcurado = Number(idPerguntaSalva);
+    
+    // Procura o ID em todas as dificuldades do dicionário
+    for (const diff in perguntas_por_dificuldade) {
+      const lista = perguntas_por_dificuldade[diff];
+      if (Array.isArray(lista)) {
+        const encontrada = lista.find(p => p.id_pergunta === idProcurado);
+        if (encontrada) {
+          console.log("Pergunta salva encontrada")
+          perguntaExistente = encontrada;
+          perguntasDisponiveisGlobal = lista;
+          indicePerguntaGlobal = lista.indexOf(encontrada);
+          break;
+        }
+      }
+    }
   }
 
-  // Remove a pergunta do array para não repetir
-  perguntas_disponiveis.splice(indicePergunta, 1);
-  sessionStorage.setItem("perguntas", JSON.stringify(perguntas_por_dificuldade));
-  
+  // 2. Se já existia uma pergunta ativa na sessão, usa ela 
+  if (perguntaExistente) {
+    pergunta_selecionada = perguntaExistente;
+  } else { // Caso contrário, seleciona a próxima normalmente
+    const dificuldade_selecionada = escolherProximaDificuldade();
+    perguntasDisponiveisGlobal = perguntas_por_dificuldade[dificuldade_selecionada];
+    indicePerguntaGlobal = selecionarPergunta(perguntasDisponiveisGlobal);
+
+    if (indicePerguntaGlobal === -1 || !pergunta_selecionada) {
+      console.warn("Nenhuma pergunta disponível");
+      return;
+    }
+    // Persiste o ID da nova pergunta selecionada no sessionStorage
+    sessionStorage.setItem("id_pergunta_ativa", pergunta_selecionada.id_pergunta);
+  }
+  console.log(`Dificuldade selecionada: ${pergunta_selecionada.dificuldade}`);
+  console.log(`Pergunta selecionada: (${pergunta_selecionada.id_pergunta}) ${pergunta_selecionada.enunciado}`);
+
   window.avaliacaoAtual = 0;
 
   // Faz animação do enunciado da pergunta
