@@ -458,7 +458,7 @@ function desativarBotoes() {
   btn_pular.disabled = true;
 }
 
-async function enviarResposta(pulando = false) {
+async function enviarResposta() {
   hint_avaliacao.style.display = "none";
   const pontuacao_atual = pontuacoes_jogador[tema_atual];
   let acertou;
@@ -639,7 +639,12 @@ async function enviarResposta(pulando = false) {
         if (idsVisitantesReservados.includes(id_visitante)) return;
         const totalRespondidas = respondidas.length;
         const origemUsuario = localStorage.getItem('usuario_origem');
-        //const origemUsuario = 'microsoftads'
+
+        /*
+        console.log(`Total respondidas: ${totalRespondidas}`)
+        const origemUsuario = 'microsoftads'
+        console.log(`Meta de 15 já enviada? ${sessionStorage.getItem('meta_15_perguntas_enviada')}`);
+        console.log(`Meta de 5 já enviada? ${sessionStorage.getItem('meta_5_perguntas_enviada')}`);*/
         
         if (!origemUsuario) return;
         const origemUsuarioLower = origemUsuario.toLowerCase();
@@ -927,6 +932,7 @@ function mostrarEnunciado(texto, elemento) {
 
 async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   // Remove widgets anteriores
+  alternativaSelecionada = null;
   aguardando_proxima = false;
   document.getElementById("nota-box").style.display = "none";
   resultado.style.display = "none";
@@ -1126,7 +1132,6 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
       if (Array.isArray(lista)) {
         const encontrada = lista.find(p => p.id_pergunta === idProcurado);
         if (encontrada) {
-          console.log("Pergunta salva encontrada")
           perguntaExistente = encontrada;
           perguntasDisponiveisGlobal = lista;
           indicePerguntaGlobal = lista.indexOf(encontrada);
@@ -1324,7 +1329,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     icone_perguntas_restantes.style.visibility = 'visible';
   }
   else {
-      icone_perguntas_restantes.style.visibility = 'hidden';
+    icone_perguntas_restantes.style.visibility = 'hidden';
   }
 
   btn_enviar.classList.add("chutar");
