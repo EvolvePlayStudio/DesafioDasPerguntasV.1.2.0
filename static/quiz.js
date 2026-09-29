@@ -453,6 +453,31 @@ function configurarEstrelas() {
   });
 }
 
+function converterNotacaoQuimica(texto) {
+  // Converte as notações químicas para textos normais para melhor visualização
+  if (!texto) return texto;
+
+  const mapaSubscritos = {
+    '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
+    '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
+  };
+
+  /*
+  const mapaSobrescritos = {
+    '⁺': '+', '⁻': '-', '⁰': '0', '¹': '1', '²': '2',
+    '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7',
+    '⁸': '8', '⁹': '9'
+  };*/
+
+  const mapaSobrescritos = {
+    '⁺': '+', '⁻': '-'
+  };
+
+  return texto
+    .replace(/[₀-₉]/g, char => mapaSubscritos[char])
+    .replace(/[⁺⁻⁰-⁹]/g, char => mapaSobrescritos[char]);
+}
+
 function desativarBotoes() {
   btn_enviar.disabled = true;
   btn_pular.disabled = true;
@@ -502,7 +527,7 @@ async function enviarResposta() {
 
     // Exibe nota, curiosidade ou explicação
     if (pergunta_selecionada.nota?.trim()) {
-      let textoFormatado = pergunta_selecionada.nota;
+      let textoFormatado = converterNotacaoQuimica(pergunta_selecionada.nota);
       document.getElementById("nota-texto").innerHTML = textoFormatado;
       document.getElementById("nota-box").style.display = "block";
     }
@@ -856,10 +881,10 @@ async function mostrarAlternativas() {
     const letra = btn.dataset.letter;
     let texto = '';
 
-    if (letra === 'A') texto = pergunta_selecionada.alternativa_a;
-    else if (letra === 'B') texto = pergunta_selecionada.alternativa_b;
-    else if (letra === 'C') texto = pergunta_selecionada.alternativa_c;
-    else if (letra === 'D') texto = pergunta_selecionada.alternativa_d;
+         if (letra === 'A') texto = converterNotacaoQuimica(pergunta_selecionada.alternativa_a);
+    else if (letra === 'B') texto = converterNotacaoQuimica(pergunta_selecionada.alternativa_b);
+    else if (letra === 'C') texto = converterNotacaoQuimica(pergunta_selecionada.alternativa_c);
+    else if (letra === 'D') texto = converterNotacaoQuimica(pergunta_selecionada.alternativa_d);
 
     btn.dataset.texto = texto || '';
 
@@ -1175,7 +1200,8 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   let ranking_jogador = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking
   regras_jogador = regras_pontuacao.find(r => r.ranking === ranking_jogador);
 
-  await mostrarEnunciado(pergunta_selecionada.enunciado, enunciadoElemento);
+  const enunciadoPerguntaFormatado = converterNotacaoQuimica(pergunta_selecionada.enunciado);
+  await mostrarEnunciado(enunciadoPerguntaFormatado, enunciadoElemento);
 }
 
 async function proximaPergunta() {
