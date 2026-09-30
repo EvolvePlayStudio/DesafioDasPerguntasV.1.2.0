@@ -223,9 +223,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  
-
-
 
   // Submissão do formulário de registro
   if (register_form) {
@@ -392,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function () {
               if (origemLower === 'googleads') {
                 dispararConversaoGoogle();
               } else if (origemLower === 'microsoftads') {
-                dispararConversaoMicrosoft();
+                // dispararConversaoMicrosoft();
               }
             }
           } catch (errConversion) {
