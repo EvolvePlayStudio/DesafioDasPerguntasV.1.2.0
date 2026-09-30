@@ -1,7 +1,16 @@
 import { idsVisitantesReservados } from "./utils.js";
 import { playSound, playKeySound } from './sound.js';
 
-
+// Função para registrar conversão da Microsoft para conta cadastrada
+function dispararConversaoMicrosoft() {
+  try {
+    // Garante que o array de eventos da Microsoft exista
+    window.uetq = window.uetq || [];
+    window.uetq.push('event', 'cadastrar_conta', {});
+  } catch (erro) {
+    console.warn("[Microsoft Ads] Não foi possível registrar a conversão:", erro);
+  }
+}
 
 // Função para registrar conversão do GoogleAds para conta cadastrada
 function dispararConversaoGoogle() {

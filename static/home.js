@@ -213,6 +213,11 @@ async function exibirAnuncios() {
     const anunciosAmazon = filtrarValidos(dados['Amazon']);
     const anunciosML = filtrarValidos(dados['Mercado Livre']);
 
+    if (idsReservados.includes(idUsuario) || idsVisitantesReservados.includes(idVisitante)) {
+      console.log(`Quantidade de anúncios da Amazon: ${anunciosAmazon.length}`);
+      console.log(`Quantidade de anúncios do ML: ${anunciosML.length}`);
+    }
+
     // Juntamos todos os anúncios válidos disponíveis em uma única lista para sortear
     const todosAnuncios = [...anunciosAmazon, ...anunciosML];
 
@@ -224,10 +229,17 @@ async function exibirAnuncios() {
       // Exibição Amazon (esquerda)
       if (anunciosAmazon.length > 0) {
         const aleatorioAmazon = anunciosAmazon[Math.floor(Math.random() * anunciosAmazon.length)];
+        if (idsReservados.includes(idUsuario) || idsVisitantesReservados.includes(idVisitante)) {
+          console.log("Configurando banner da Amazon...")
+        }  
+        
         configurarBanner(bannerTopoEsquerda, aleatorioAmazon);
         bannerTopoEsquerda.style.visibility = "visible";
       }
       else {
+        if (idsReservados.includes(idUsuario) || idsVisitantesReservados.includes(idVisitante)) {
+          console.log("Não há anúncios da Amazon para exibir");
+        }
         bannerTopoEsquerda.style.visibility = "hidden";
       }
 
