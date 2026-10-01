@@ -369,9 +369,10 @@ async function iniciarQuiz(event) {
         const ha_perguntas_disponiveis = Object.values(perguntas_filtradas).some(arr => Array.isArray(arr) && arr.length > 0)
 
         if (ha_perguntas_disponiveis && !encerrar_quiz) {
+          sessionStorage.removeItem("perguntas_respondidas");
           try {
               // 1. Faz a requisição
-              const resposta = await fetch("/api/obter_todos_anuncios");
+              const resposta = await fetch("/api/obter_todos_anuncios"); // Não serve para nada por enquanto, anúncios em quiz foram removidos
               // 2. Transforma em objeto JSON
               const dados = await resposta.json();
               // 3. Salva como STRING (o sessionStorage só aceita strings)

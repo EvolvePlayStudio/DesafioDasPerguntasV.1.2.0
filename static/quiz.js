@@ -76,6 +76,10 @@ let animacao_concluida = false;
 let haPerguntasDisponiveis = false;
 let aguardando_proxima = false; // quando estiver aguardando a próximo pergunta
 let perguntas_respondidas = [];
+if (sessionStorage.getItem("perguntas_respondidas")) {
+  console.log('1111')
+  perguntas_respondidas = JSON.parse(sessionStorage.getItem("perguntas_respondidas"));
+}
 let inicio_pergunta;  // horário inicial da pergunta
 let pergunta_selecionada;
 let regras_jogador; // Nome de variável alterado
@@ -819,7 +823,8 @@ async function enviarResposta() {
 
     if (modo_jogo === "desafio") {
       const info_resposta = {"enunciado": pergunta_selecionada.enunciado, "alternativa_a": pergunta_selecionada.alternativa_a, "alternativa_b": pergunta_selecionada.alternativa_b, "alternativa_c": pergunta_selecionada.alternativa_c, "alternativa_d": pergunta_selecionada.alternativa_d, "resposta_correta": letra_correta, "resposta_usuario": resposta_usuario, "pontos_ganhos": pontos_ganhos, "dificuldade": pergunta_selecionada.dificuldade}
-      perguntas_respondidas.push(info_resposta)
+      perguntas_respondidas.push(info_resposta);
+      sessionStorage.setItem("perguntas_respondidas", JSON.stringify(perguntas_respondidas));
     }
     
     // Mostra se acertou a resposta e os botões "próxima" e "finalizar"
@@ -838,7 +843,6 @@ async function finalizarQuiz() {
   // await registrarFeedback();
   registrarFeedback()
   if (modo_jogo === 'desafio') {
-    sessionStorage.setItem("perguntas_respondidas", JSON.stringify(perguntas_respondidas))
     sessionStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador ?? {}))
     window.location.href = "/resultado";
   }
