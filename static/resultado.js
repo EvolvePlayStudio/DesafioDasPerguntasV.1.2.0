@@ -1,14 +1,15 @@
 import { playSound, playKeySound } from "./sound.js";
-import { atualizarAnuncios, coresDificuldade, registrarInteracaoAnuncio, simbolosRankings, simbolosTemas} from "./utils.js";
+import { coresDificuldade, registrarInteracaoAnuncio, simbolosRankings, simbolosTemas} from "./utils.js";
 
 // Variáveis relacionadas aos anúncios
 const tema_atual = sessionStorage.getItem("tema_atual");
+/*
 const cacheAnuncios = sessionStorage.getItem('anuncios') || '{}';
 const dadosAnuncios = JSON.parse(cacheAnuncios);
 const containerEsq = document.getElementById('banner-lateral-esquerda');
 const containerDir = document.getElementById('banner-lateral-direita');
 const logotipoAnuncioEsq = document.getElementById('logotipo-anuncio-esq')
-const logotipoAnuncioDir = document.getElementById('logotipo-anuncio-dir');
+const logotipoAnuncioDir = document.getElementById('logotipo-anuncio-dir');*/
 const bannerAnuncioEsq = document.getElementById('banner-lateral-esquerda')
 const bannerAnuncioDir = document.getElementById('banner-lateral-direita');
 [bannerAnuncioEsq, bannerAnuncioDir].forEach(b => {

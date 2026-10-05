@@ -1,4 +1,4 @@
-import { coresDificuldade, dificuldadesOrdenadas, deveEncerrarQuiz, idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings, idsVisitantesReservados, idVisitanteAdmin } from "./utils.js"
+import { coresDificuldade, dificuldadesOrdenadas, deveEncerrarQuiz, idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings, idsVisitantesReservados } from "./utils.js"
 import { playSound, playKeySound } from "./sound.js"
 
 // Envia erros para a base de dados caso ocorram
@@ -36,7 +36,6 @@ if (typeof pontuacoes_jogador[tema_atual] !== "number") {
   pontuacoes_jogador[tema_atual] = 0;
   storagePontuacao.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes_jogador))
 };
-sessionStorage.setItem("pontuacao_anterior", pontuacoes_jogador[tema_atual]);
 const perguntas_por_dificuldade = JSON.parse(getWithMigration("perguntas") ?? "null");
 
 // Ordena os IDs de forma crescente em cada nível de dificuldade (facilita coleta de dados)
@@ -77,7 +76,6 @@ let haPerguntasDisponiveis = false;
 let aguardando_proxima = false; // quando estiver aguardando a próximo pergunta
 let perguntas_respondidas = [];
 if (sessionStorage.getItem("perguntas_respondidas")) {
-  console.log('1111')
   perguntas_respondidas = JSON.parse(sessionStorage.getItem("perguntas_respondidas"));
 }
 let inicio_pergunta;  // horário inicial da pergunta
@@ -105,14 +103,6 @@ const botoes_finalizar_div = document.getElementById("botoes-acao");
 const alternativaBtns = Array.from(alternativasContainer.querySelectorAll(".alternativa-btn"));
 
 // Variáveis relacionadas ao nível de dificuldade
-/*
-const PROBABILIDADES_POR_RANKING = {
-  Iniciante: { Fácil: 0.55, Médio: 0.45, Difícil: 0.00, Extremo: 0.00 },
-  Aprendiz:  { Fácil: 0.35, Médio: 0.45, Difícil: 0.20, Extremo: 0.00 },
-  Estudante: { Fácil: 0.15, Médio: 0.40, Difícil: 0.30, Extremo: 0.15 },
-  Sábio:     { Fácil: 0.05, Médio: 0.30, Difícil: 0.40, Extremo: 0.25 },
-  Lenda:     { Fácil: 0.02, Médio: 0.28, Difícil: 0.40, Extremo: 0.30 }
-};*/
 const PROBABILIDADES_POR_RANKING = {
   Iniciante: { Fácil: 0.60, Médio: 0.35, Difícil: 0.05, Extremo: 0.00 },
   Aprendiz:  { Fácil: 0.35, Médio: 0.45, Difícil: 0.15, Extremo: 0.05 },

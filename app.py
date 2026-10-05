@@ -30,14 +30,15 @@ invite_token = os.getenv("TOKEN_CONVITE")
 
 # Algumas variáveis abaixo podem ir para o utils.py futuramente
 SITE_EM_MANUTENCAO = False
-ids_visitante_admin = ["cb1c55a4-df94-4098-b811-d13320877441", "d103db0e-cd5d-4743-a67c-2cdf0f282892"]
+# O primeiro id é de desktop e o segundo de mobile
+ids_visitante_admin = ["b9e4cd53-bab5-42be-8e26-640a25b7591f", "d103db0e-cd5d-4743-a67c-2cdf0f282892"]
 # Código copia e cola gerado pelo Nubank
 codigo_pix = os.getenv("QR_CODE")
 img = qrcode.make(codigo_pix)
 img.save("static/qrcode.png")
 
 
-
+# A função abaixo será removida futuramente
 @app.route('/api/teste-conversao-ms', methods=['POST'])
 def api_teste_conversao_ms():
     dados = request.get_json()
@@ -55,10 +56,6 @@ def api_teste_conversao_ms():
         if conn: conn.close()
         
     return jsonify({"status": "ok"}), 200
-
-
-
-    
 
 def token_required(f):
     @wraps(f)
@@ -1709,102 +1706,6 @@ def pesquisar_perguntas():
             "subtemas": subtemas,
             "enunciado": enunciado,
             "resposta": respostas,
-            "dificuldade": dif,
-            "status": status
-        })
-
-    cur.close()
-    conn.close()
-
-    return jsonify(resultados)
-
-def pesquisar_perguntas_antigo():
-    data = request.get_json()
-    tema = data.get("tema")
-    palavras = data.get("palavras", [])
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    resultados = []
-
-    condicao = """WHERE (%s = 'Variedades' OR tema = %s OR tema = 'Variedades')"""
-
-    # -------- OBJETIVAS --------
-    query_obj = f"""
-    SELECT id_pergunta, tema, subtemas, enunciado,
-        alternativa_a, alternativa_b, alternativa_c, alternativa_d,
-        resposta_correta, dificuldade, status
-    FROM perguntas_objetivas
-    {condicao}
-    AND EXISTS (
-        SELECT 1
-        FROM unnest(%s::text[]) p
-        WHERE
-            unaccent(LOWER(enunciado)) LIKE unaccent('%%' || p || '%%')
-            OR unaccent(LOWER(
-                CASE resposta_correta
-                    WHEN 'A' THEN alternativa_a
-                    WHEN 'B' THEN alternativa_b
-                    WHEN 'C' THEN alternativa_c
-                    WHEN 'D' THEN alternativa_d
-                END
-            )) LIKE unaccent('%%' || p || '%%')
-    )
-    """
-
-    cur.execute(query_obj, (tema, tema, palavras))
-
-    for row in cur.fetchall():
-
-        # Mapeia letra -> texto
-        alternativas = {
-            "A": row[4],
-            "B": row[5],
-            "C": row[6],
-            "D": row[7]
-        }
-        texto_correto = alternativas.get(row[8], "")
-
-        resultados.append({
-            "id_pergunta": row[0],
-            "tipo": "Objetiva",
-            "tema": row[1],
-            "subtemas": row[2],
-            "enunciado": row[3],
-            "resposta": texto_correto,   # <<< AGORA ENVIA O TEXTO
-            "dificuldade": row[9],
-            "status": row[10]
-        })
-
-    # ================================
-    #   2. PERGUNTAS DISCURSIVAS
-    # ================================
-    query_disc = f"""
-    SELECT id_pergunta, tema, subtemas, enunciado, respostas_corretas, dificuldade, status
-    FROM perguntas_discursivas
-    {condicao}
-    AND EXISTS (
-        SELECT 1
-        FROM unnest(%s::text[]) p
-        WHERE
-            unaccent(LOWER(enunciado)) LIKE unaccent('%%' || p || '%%')
-            OR unaccent(LOWER(respostas_corretas::text)) LIKE unaccent('%%' || p || '%%')
-    )
-    """
-
-    cur.execute(query_disc, (tema, tema, palavras))
-    
-    for row in cur.fetchall():
-        id_p, tema, subtemas, enunciado, respostas, dif, status = row
-
-        resultados.append({
-            "id_pergunta": id_p,
-            "tipo": "Discursiva",
-            "tema": tema,
-            "subtemas": subtemas,
-            "enunciado": enunciado,
-            "resposta": respostas,  # array do banco
             "dificuldade": dif,
             "status": status
         })

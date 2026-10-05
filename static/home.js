@@ -6,8 +6,7 @@ let tema_atual = null;
 const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
 sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 const idUsuario = sessionStorage.getItem("id_usuario");
-const idVisitante = localStorage.getItem("id_visitante")
-//console.log("ID de visitante: ", idVisitante);
+const idVisitante = localStorage.getItem("id_visitante");
 
 // Caso ocorra erro de não conseguir pegar id de usuário
 if (!MODO_VISITANTE && !idUsuario) {
@@ -65,11 +64,13 @@ if (MODO_VISITANTE) {
   })
   
   let idVisitante = localStorage.getItem("id_visitante");
+  
   /*
   if (idsVisitantesReservados.includes(idVisitante)) {
     localStorage.removeItem("pontuacoes_visitante");
     localStorage.removeItem("perguntas_restantes_visitante");
     localStorage.removeItem("visitante_respondidas");
+    sessionStorage.removeItem("id_pergunta_ativa");
   }*/
  
   // Gera ID de visitante para o usuário caso não tenha
@@ -350,6 +351,14 @@ async function iniciarQuiz(event) {
 
         // Atualiza as pontuações do usuário no tema e as perguntas no sessionStorage
         sessionStorage.setItem("pontuacoes_usuario", JSON.stringify(data["pontuacoes_usuario"]));
+
+
+        
+        sessionStorage.setItem("pontuacao_anterior", JSON.parse(sessionStorage.getItem("pontuacoes_usuario"))[tema_atual]);
+        // console.log(`Pontuação anterior: ${sessionStorage.setItem("pontuacao_anterior", JSON.parse(sessionStorage.getItem("pontuacoes_usuario"))[tema_atual]);}`)
+
+
+
         sessionStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
 
         // Analisar se pode prosseguir com o quiz de acordo com o estoque de perguntas
@@ -415,9 +424,11 @@ async function iniciarQuiz(event) {
           return
         }
         
-        // Grava pontuações do usuário e perguntas no sessionStorage
+        // Grava as perguntas e a pontuação antes de inicar o quiz do visitante no sessionStorage
         sessionStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
-
+        sessionStorage.setItem("pontuacao_anterior", JSON.parse(localStorage.getItem("pontuacoes_visitante"))[tema_atual]);
+        sessionStorage.removeItem("perguntas_respondidas");
+        
         // Analisa os rankings atuais do usuário (AQUI NÃO É NECESSÁRIO OBTER INFORMAÇÃO DE RANKING PARA TODOS OS TEMAS, MAS SÓ PARA O DO QUIZ QUE SERÁ FEITO, MUDANÇA NO FUTURO SERÁ FEITA)
         const rankings_jogador = {};
         temas_disponiveis.forEach( tema => {
@@ -529,14 +540,14 @@ function exibirModalRegistroVisitante(marco) {
       <ul>
         <li>📚 Acesso a mais de 1000 perguntas</li>
         <li>🏆 Pontuações e rankings salvos</li>
-        <li>⭐ Revisão inteligente com perguntas favoritadas</li>
+        <li>⭐ Revisão com perguntas favoritadas</li>
         <li>📩 Notificações por e-mail de novidades</li>
       </ul>
     `,
     textoPrimario: "Continuar como visitante",
     textoSecundario: "Criar uma conta",
     onPrimario: () => {
-      sessionStorage.setItem(`modal_registro_fechado_${marco}`, "true");
+      localStorage.setItem(`modal_registro_fechado_${marco}`, "true");
       modal.classList.add("hidden");
       permitir_escolher_tema = true;
     },
@@ -683,7 +694,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const marcoAtual = Math.floor(totalRespondidas / MARCO) * MARCO;
     const chaveRecusa = `modal_registro_fechado_${marcoAtual}`;
 
-    if (totalRespondidas >= 10 && !sessionStorage.getItem(chaveRecusa)) {
+    if (totalRespondidas >= 10 && !localStorage.getItem(chaveRecusa)) {
       exibirModalRegistroVisitante(marcoAtual);
     };
   }
