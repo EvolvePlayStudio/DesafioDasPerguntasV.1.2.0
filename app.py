@@ -31,7 +31,7 @@ invite_token = os.getenv("TOKEN_CONVITE")
 # Algumas variáveis abaixo podem ir para o utils.py futuramente
 SITE_EM_MANUTENCAO = False
 # O primeiro id é de desktop e o segundo de mobile
-ids_visitante_admin = ["b9e4cd53-bab5-42be-8e26-640a25b7591f", "d103db0e-cd5d-4743-a67c-2cdf0f282892"]
+ids_visitante_admin = ["b9e4cd53-bab5-42be-8e26-640a25b7591f", "6fc3da72-b836-43eb-95e5-d18d438c733e", "d103db0e-cd5d-4743-a67c-2cdf0f282892"]
 # Código copia e cola gerado pelo Nubank
 codigo_pix = os.getenv("QR_CODE")
 img = qrcode.make(codigo_pix)
@@ -56,56 +56,6 @@ def api_teste_conversao_ms():
         if conn: conn.close()
         
     return jsonify({"status": "ok"}), 200
-
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-
-        # 🚧 BLOQUEIO GLOBAL DE MANUTENÇÃO
-        if SITE_EM_MANUTENCAO:
-            return jsonify({"message": "Site em manutenção"}), 503
-
-        # 👤 Modo visitante
-        if session.get("visitante"):
-            return f(user_id=None, *args, **kwargs)
-
-        token = None
-
-        # 1️⃣ Tenta extrair do header Authorization
-        auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            token = auth_header.split(" ")[1]
-
-        # 2️⃣ Se não tiver no header, tenta pegar do cookie
-        if not token:
-            token = request.cookies.get("token_sessao")
-        if not token:
-            return redirect("/login")
-
-        # 3️⃣ Verifica token no banco
-        conn = cur = None
-        try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            cur.execute("""
-                SELECT id_usuario, ativo
-                FROM sessoes 
-                WHERE token = %s AND ativo=TRUE AND expira_em > NOW()
-            """, (token,))
-            row = cur.fetchone()
-        except Exception:
-            return jsonify({"message": "Erro ao validar sessão"}), 500
-        finally:
-            if cur: cur.close()
-            if conn: conn.close()
-
-        if not row:
-            return jsonify({"message": "Sessão expirada"}), 401
-
-        # Passa o user_id para a rota
-        return f(user_id=row[0], *args, **kwargs)
-
-    return decorated
 
 @app.route("/alterar-email", methods=["POST"])
 def alterar_email_route():
@@ -186,9 +136,9 @@ def alterar_email_route():
         if conn: conn.close()
 
 @app.route("/api/pontuacoes")
-@token_required
-def api_pontuacoes(user_id):
-    pontuacoes = buscar_pontuacoes_usuario(user_id)
+def api_pontuacoes():
+    id_usuario = session.get(id_usuario)
+    pontuacoes = buscar_pontuacoes_usuario()
     return jsonify(pontuacoes)
 
 @app.route('/api/registrar-acesso', methods=['POST'])
@@ -302,8 +252,7 @@ def entrar_visitante():
     return redirect("/home")
     
 @app.route("/enviar_feedback", methods=["POST"])
-@token_required
-def enviar_feedback(user_id):
+def enviar_feedback():
     data = request.get_json()
     id_pergunta = data.get("id_pergunta")
     tema = data.get("tema").lower().capitalize()
@@ -397,8 +346,7 @@ def enviar_feedback(user_id):
         if conn: conn.close()
 
 @app.route("/api/feedbacks/comentarios", methods=["POST"])
-@token_required
-def enviar_feedback_comentario(user_id):
+def enviar_feedback_comentario():
     data = request.get_json()
 
     if not data:
@@ -833,13 +781,9 @@ def gerar_token_confirmacao(tamanho=32):
 @app.route("/home")
 def home():
     id_usuario = session.get("id_usuario")
-    id_visitante = session.get("id_visitante")
     visitante = session.get("visitante", False)
 
-    if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
-        usuario_autorizado = True
-    else:
-        usuario_autorizado = False
+    usuario_autorizado = True if id_usuario in privileged_ids else False
 
     return render_template(
         "home.html",
@@ -848,15 +792,13 @@ def home():
     )
 
 @app.route("/doações")
-@token_required
-def doacoes(user_id):
+def doacoes():
     chave_pix = os.getenv("CHAVE_PIX")
     registrar_pagina_visitada("Doações")
     return render_template("doacoes.html", chave_pix=chave_pix)
 
 @app.route("/pesquisa")
-@token_required
-def pesquisa(user_id):
+def pesquisa():
     registrar_pagina_visitada("Pesquisa")
     return render_template("pesquisa.html")
 
@@ -959,8 +901,7 @@ def pegar_email_confirmado():
     })
 
 @app.route("/pergunta/<int:id_pergunta>/gabarito", methods=["GET"])
-@token_required
-def get_gabarito(id_pergunta, user_id):
+def get_gabarito(id_pergunta):
     """Função para só pegar o gabarito e nota da pergunta após resposta enviada pelo usuário no modo desafio (evita expor o gabarito no localStorage)"""
     conn = cur = None
     try:
@@ -989,8 +930,7 @@ def get_gabarito(id_pergunta, user_id):
         if conn: conn.close()
 
 @app.route('/api/perguntas', methods=['GET'])
-@token_required
-def listar_perguntas(user_id):
+def listar_perguntas():
     """
     Retorna perguntas agrupadas por dificuldade conforme tipo (discursiva/objetiva) e modo (desafio/revisao).
     Retorna também as pontuações atuais do usuário em cada tema.
@@ -1005,16 +945,33 @@ def listar_perguntas(user_id):
     # Configurações locais
     limit = 150 if modo == 'desafio' else 1000
 
+    print("Parte 1")
+
     # Validações
     if not tema or modo not in ('desafio', 'revisao'):
+
+
+        if not tema:
+            print("Não há tema]")
+        else:
+            print("Modo está incorreto")
+
+
         app.logger.error("Parâmetros inválidos ou ausentes")
         return jsonify({'erro': 'Parâmetros inválidos ou ausentes'}), 400
     if not id_usuario and not modo_visitante:
+
+
+        print("Sem id de usuário e náoo está em modo visitante")
+
+
         app.logger.error("Usuário não autenticado")
         return jsonify({'erro': 'Usuário não autenticado'}), 401
     if not id_visitante and modo_visitante:
         app.logger.error("Visitante não autenticado")
         return jsonify({'erro': 'Visitante não autenticado'}), 401
+
+    print("Parte 2")
     
     # Conexão com servidor
     conn = cur = None
@@ -1115,6 +1072,8 @@ def listar_perguntas(user_id):
         if cur: cur.close()
         if conn: conn.close()
 
+    print("Parte 3")
+
     pontuacoes_usuario = buscar_pontuacoes_usuario(id_usuario) if not modo_visitante else {}
 
     return jsonify({
@@ -1180,13 +1139,14 @@ def login():
                 return jsonify(success=False, message="E-mail não registrado")
 
             id_usuario, senha_hash, nome_usuario, email_confirmado, p_restantes, u_sessao, b_energia, exp_bonus = usuario
+            
+            if not check_password_hash(senha_hash, senha):
+                return jsonify(success=False, message="Senha incorreta")
+
             session["id_usuario"] = id_usuario
             session["email"] = email
             session["email_confirmado"] = email_confirmado
             session["visitante"] = False
-
-            if not check_password_hash(senha_hash, senha):
-                return jsonify(success=False, message="Senha incorreta")
 
             # --- LÓGICA DE RECARGA DIÁRIA E BÔNUS (REVISADA) ---
             agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
@@ -1246,18 +1206,6 @@ def login():
                 outras_notificacoes = False
                 temas_interesse = []
 
-            # 🔒 Invalida sessões antigas
-            cur.execute("UPDATE sessoes SET ativo = FALSE WHERE id_usuario = %s", (id_usuario,))
-
-            # 🔑 Cria nova sessão/token
-            token = secrets.token_urlsafe(64)
-            expira_em = datetime.utcnow() + timedelta(hours=6)
-
-            cur.execute("""
-                INSERT INTO sessoes (id_usuario, token, expira_em, ativo)
-                VALUES (%s, %s, %s, TRUE)
-            """, (id_usuario, token, expira_em))
-
             # Lógica de ranking/pontuação
             cur.execute("SELECT tema FROM pontuacoes_usuarios WHERE id_usuario = %s", (id_usuario,))
             temas_ja_registrados = {row[0].strip().lower() for row in cur.fetchall()}
@@ -1282,22 +1230,12 @@ def login():
             resp = make_response(jsonify(
                 success=True,
                 message="Login realizado com sucesso",
-                token=token,
                 id_usuario=id_usuario,
                 email=email,
                 nome_usuario=nome_usuario,
                 perguntas_restantes=p_restantes,
                 opcoes_usuario=opcoes_usuario
             ), 200)
-
-            resp.set_cookie(
-                "token_sessao",
-                token,
-                httponly=True,
-                secure=False,   # True em produção com HTTPS
-                samesite="Lax",
-                max_age=6 * 3600
-            )
 
             return resp
         else:
@@ -1561,8 +1499,7 @@ def termos_uso():
     return render_template("termos_de_uso.html")
 
 @app.route("/api/favoritos", methods=["POST"])
-@token_required
-def salvar_favoritos(user_id):
+def salvar_favoritos():
     data = request.get_json(force=True)
 
     tema = data.get("tema_atual")
@@ -1741,14 +1678,13 @@ def sobre_app_from_login():
     registrar_pagina_visitada("Login -> Sobre")
     return render_template('sobre_o_app.html')
 
+# Aqui deve-se passar tema mesmo sem ser usado para que seja mostrado na URL durante o quiz
 @app.route("/quiz/<tema>")
-@token_required
-def quiz(user_id, tema):
+def quiz(tema):
     return render_template("quiz.html", AMAZON_TRACKING_ID=AMAZON_TRACKING_ID)
 
 @app.route("/revisao/<tema>")
-@token_required
-def revisao(user_id, tema):
+def revisao(tema):
     return render_template("quiz.html", AMAZON_TRACKING_ID=AMAZON_TRACKING_ID)
 
 @app.route("/register", methods=["POST"])
@@ -1969,8 +1905,7 @@ def registrar_pagina_visitada(pagina, id_visitante=None):
         if conn: conn.close()
 
 @app.route("/registrar_resposta", methods=["POST"])
-@token_required
-def registrar_resposta_usuario(user_id):
+def registrar_resposta_usuario():
     dados = request.get_json()
     id_usuario = session.get("id_usuario")
 
@@ -2094,8 +2029,7 @@ def registrar_visitante():
     return jsonify({"ok": True})
 
 @app.route("/api/salvar-opcoes", methods=["POST"])
-@token_required
-def salvar_opcoes(user_id):
+def salvar_opcoes():
     cur = conn = None
     try:
         data = request.get_json(silent=True) or {}

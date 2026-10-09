@@ -297,6 +297,7 @@ function inserirBotaoModoTeste() {
   };
 }
 
+console.log(`É admin? ${window.ADS_CONFIG.isAdmin}`)
 if (window.ADS_CONFIG.isAdmin && !MODO_VISITANTE) inserirBotaoModoTeste();
 exibirAnuncios();
 
@@ -342,7 +343,8 @@ async function iniciarQuiz(event) {
   try {
     if (!MODO_VISITANTE) {
       const response = await fetchAutenticado(`/api/perguntas?tema=${tema_atual}&modo=desafio`)
-
+      
+      // Pode ser bom tratar quase a resposta não seja ok
       if (response.ok) {
         const data = await response.json();
 
@@ -351,14 +353,7 @@ async function iniciarQuiz(event) {
 
         // Atualiza as pontuações do usuário no tema e as perguntas no sessionStorage
         sessionStorage.setItem("pontuacoes_usuario", JSON.stringify(data["pontuacoes_usuario"]));
-
-
-        
         sessionStorage.setItem("pontuacao_anterior", JSON.parse(sessionStorage.getItem("pontuacoes_usuario"))[tema_atual]);
-        // console.log(`Pontuação anterior: ${sessionStorage.setItem("pontuacao_anterior", JSON.parse(sessionStorage.getItem("pontuacoes_usuario"))[tema_atual]);}`)
-
-
-
         sessionStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
 
         // Analisar se pode prosseguir com o quiz de acordo com o estoque de perguntas
@@ -377,6 +372,7 @@ async function iniciarQuiz(event) {
         const perguntas_filtradas = obterPerguntasDisponiveis(data["perguntas"])
         const ha_perguntas_disponiveis = Object.values(perguntas_filtradas).some(arr => Array.isArray(arr) && arr.length > 0)
 
+        // Pega os anúncios que serão utilizados na tela de quiz
         if (ha_perguntas_disponiveis && !encerrar_quiz) {
           sessionStorage.removeItem("perguntas_respondidas");
           try {
@@ -392,6 +388,7 @@ async function iniciarQuiz(event) {
               // Opcional: define um objeto vazio para não quebrar o quiz
               sessionStorage.setItem("anuncios", JSON.stringify({}));
           }
+
           window.location.href = `/quiz/${encodeURIComponent(slugify(tema_atual))}`;
         }
         else {

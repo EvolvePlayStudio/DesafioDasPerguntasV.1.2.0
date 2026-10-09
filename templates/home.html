@@ -935,12 +935,11 @@
   <script type='module'>
     import { idsReservados, idsVisitantesReservados } from '../static/utils.js';
     const MODO_VISITANTE_HTML = document.body.dataset.modoVisitante === 'true';
-    // Trecho abaixo se repete no html de resultado e login
     const idVisitante = localStorage.getItem("id_visitante");
     const idUsuarioHTML = parseInt(sessionStorage.getItem("id_usuario") ?? "0");
     sessionStorage.setItem("id_usuario", idUsuarioHTML);
     const isMobile = window.innerWidth <= 750;
-    const isAdmin = idsReservados.includes(idUsuarioHTML) || idsVisitantesReservados.includes(idVisitante);
+    const isAdmin = idsReservados.includes(idUsuarioHTML) || (idsVisitantesReservados.includes(idVisitante) && MODO_VISITANTE_HTML);
     window.ADS_CONFIG = {
       isAdmin: isAdmin,
       isMobile: isMobile,

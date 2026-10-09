@@ -2,8 +2,8 @@ export const pontuacaoTemaPadraoVisitantes = 0; // Aqui era 1800 na versão anti
 export const dificuldadesOrdenadas = ['Fácil', 'Médio', 'Difícil', 'Extremo'];
 export const temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"];
 export const idsReservados = [4, 6, 16];
-// O primeiro id de visitante é de desktop e o segundo é de mobile
-export const idsVisitantesReservados = ['b9e4cd53-bab5-42be-8e26-640a25b7591f', 'd103db0e-cd5d-4743-a67c-2cdf0f282892'];
+// Os 2 primeiros ids de visitantes são de desktop e o segundo é de mobile
+export const idsVisitantesReservados = ['b9e4cd53-bab5-42be-8e26-640a25b7591f', '6fc3da72-b836-43eb-95e5-d18d438c733e', 'd103db0e-cd5d-4743-a67c-2cdf0f282892'];
 export const simbolosTemas = {Artes: "🎨", Astronomia: "🪐", Biologia: "🧬", Esportes: "⚽",
 Filosofia: "🦉", Física: "⚛️", Geografia: "🌍", História: "📜", Mídia: "📺", Música: "🎵", Química: "🧪", Variedades: "🎲"}
 export const simbolosRankings = {Iniciante: "🌱", Aprendiz: "🧩", Estudante: "🎓", Sábio: "🧙‍♂️", Lenda: "🌟"}
@@ -271,12 +271,9 @@ export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIG
 }
 
 export async function fetchAutenticado(url, options = {}) {
-  const token = sessionStorage.getItem("token_sessao");
-
   const config = {
     method: options.method || "GET",
     headers: {
-      "Authorization": `Bearer ${token}`,
       ...(options.body ? { "Content-Type": "application/json" } : {})
     },
     ...(options.body ? { body: JSON.stringify(options.body) } : {})
@@ -284,23 +281,21 @@ export async function fetchAutenticado(url, options = {}) {
 
   const response = await fetch(url, config);
 
-  // 🔐 Sessão expirada
   if (response.status === 401) {
-    localStorage.setItem("auth_message", "Sessão expirada");
     window.location.href = "/login";
-    return;
   }
 
   // 🚧 Site em manutenção
   if (response.status === 503) {
     localStorage.setItem("auth_message", "Site em manutenção");
+
     window.location.href = "/login";
-    return;
+    return response;
   }
 
-  // ❗ Erro interno → deixa o chamador decidir
   return response;
 }
+
 
 // ATENÇÃO: PARAMÊTRO NÃO UTILIZADO AQUI
 export function obterInfoRankingAtual(tema=null, MODO_VISITANTE_ANTIGO=null) {
