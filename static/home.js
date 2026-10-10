@@ -214,7 +214,7 @@ async function exibirAnuncios() {
     const anunciosAmazon = filtrarValidos(dados['Amazon']);
     const anunciosML = filtrarValidos(dados['Mercado Livre']);
 
-    if (idsReservados.includes(idUsuario) || idsVisitantesReservados.includes(idVisitante)) {
+    if (window.ADS_CONFIG.isAdmin) {
       console.log(`Quantidade de anúncios da Amazon: ${anunciosAmazon.length}`);
       console.log(`Quantidade de anúncios do ML: ${anunciosML.length}`);
     }
@@ -230,7 +230,7 @@ async function exibirAnuncios() {
       // Exibição Amazon (esquerda)
       if (anunciosAmazon.length > 0) {
         const aleatorioAmazon = anunciosAmazon[Math.floor(Math.random() * anunciosAmazon.length)];
-        if (idsReservados.includes(idUsuario) || idsVisitantesReservados.includes(idVisitante)) {
+        if (window.ADS_CONFIG.isAdmin) {
           console.log("Configurando banner da Amazon...")
         }  
         
@@ -238,7 +238,7 @@ async function exibirAnuncios() {
         bannerTopoEsquerda.style.visibility = "visible";
       }
       else {
-        if (idsReservados.includes(idUsuario) || idsVisitantesReservados.includes(idVisitante)) {
+        if (window.ADS_CONFIG.isAdmin) {
           console.log("Não há anúncios da Amazon para exibir");
         }
         bannerTopoEsquerda.style.visibility = "hidden";
@@ -297,7 +297,6 @@ function inserirBotaoModoTeste() {
   };
 }
 
-console.log(`É admin? ${window.ADS_CONFIG.isAdmin}`)
 if (window.ADS_CONFIG.isAdmin && !MODO_VISITANTE) inserirBotaoModoTeste();
 exibirAnuncios();
 
