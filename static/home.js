@@ -166,10 +166,10 @@ async function exibirAnuncios() {
 
     // Carrega o logotipo do provedor
     if (produto.provedor === 'Amazon') {
-      imgLogo.src = "https://github.com/EvolvePlayStudio/assets-quiz/blob/main/logotipoAmazon.png?raw=true";
+      imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoAmazon"
     }
     else if (produto.provedor === 'Mercado Livre'){
-      imgLogo.src = "https://github.com/EvolvePlayStudio/assets-quiz/blob/main/logotipoMercadoLivre03.png?raw=true"; 
+      imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoMercadoLivre03"
     }
     else {
       imgLogo.src = "";
