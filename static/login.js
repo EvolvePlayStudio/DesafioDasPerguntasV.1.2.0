@@ -63,7 +63,6 @@ document.addEventListener('DOMContentLoaded', function () {
   btnEntrarSemLogin.addEventListener("click", () => {
     playSound("click");
     sessionStorage.setItem("modoVisitante", "true");
-    sessionStorage.setItem("modoVisitante", "true");
     window.location.href = "/entrar_visitante";
   })
 
@@ -223,7 +222,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-
   // Submissão do formulário de registro
   if (register_form) {
     register_form?.addEventListener('submit', async function (event) {
@@ -352,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // Envia dados para registrar usuário
       try {
-        lbl_mensagem_registro.style.color = '#d1d1d1ff';
+        lbl_mensagem_registro.style.color = 'rgb(228, 228, 228)'; // Usada também na parte de reenvio de email de confirmação
         lbl_mensagem_registro.textContent = 'Fazendo registro...';
         lbl_mensagem_registro.style.display = '';
 
@@ -435,57 +433,57 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Submissão do formulário de login
   if (login_form) {
-  login_form?.addEventListener("submit", async function (event) {
-    playSound("click");
-    event.preventDefault();
+    login_form?.addEventListener("submit", async function (event) {
+      playSound("click");
+      event.preventDefault();
 
-    const email = document.getElementById("email")?.value;
-    const senha = document.getElementById("senha")?.value;
+      const email = document.getElementById("email")?.value;
+      const senha = document.getElementById("senha")?.value;
 
-    try {
-      const response = await fetch("/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, senha })
-      });
+      try {
+        const response = await fetch("/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, senha })
+        });
 
-      if (!response.ok) {
-        const text = await response.text().catch(() => null);
-        throw new Error(`Erro no login: ${response.status} ${text || ''}`);
-      }
+        if (!response.ok) {
+          const text = await response.text().catch(() => null);
+          throw new Error(`Erro no login: ${response.status} ${text || ''}`);
+        }
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (data.success) {
-        // Grava informações no sessionStorage
-        sessionStorage.setItem("id_usuario", data.id_usuario);
-        sessionStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes || 0));
-        sessionStorage.setItem("nome_usuario", data.nome_usuario || '');
+        if (data.success) {
+          // Grava informações no sessionStorage
+          sessionStorage.setItem("id_usuario", data.id_usuario);
+          sessionStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes || 0));
+          sessionStorage.setItem("nome_usuario", data.nome_usuario || '');
 
-        if (data.opcoes_usuario) sessionStorage.setItem('opcoes_usuario', JSON.stringify(data.opcoes_usuario));
-        sessionStorage.setItem("modal_confirmacao_email_exibido", false);
-        sessionStorage.setItem("email_usuario", data.email);
-        sessionStorage.setItem("token_sessao", data.token);
-        sessionStorage.setItem("modoVisitante", "false");
-        window.location.href = "/home";
-      } 
-      else {
-        if (lbl_mensagem_login) {
-          lbl_mensagem_login.style.color = 'red';
-          lbl_mensagem_login.textContent = data.message || 'Falha no login';
-          lbl_mensagem_login.style.display = '';
+          if (data.opcoes_usuario) sessionStorage.setItem('opcoes_usuario', JSON.stringify(data.opcoes_usuario));
+          sessionStorage.setItem("modal_confirmacao_email_exibido", false);
+          sessionStorage.setItem("email_usuario", data.email);
+          sessionStorage.setItem("token_sessao", data.token);
+          sessionStorage.setItem("modoVisitante", "false");
+          window.location.href = "/home";
+        } 
+        else {
+          if (lbl_mensagem_login) {
+            lbl_mensagem_login.style.color = 'red';
+            lbl_mensagem_login.textContent = data.message || 'Falha no login';
+            lbl_mensagem_login.style.display = '';
+          }
         }
       }
-    }
-    catch (error) {
-      if (lbl_mensagem_login) {
-        lbl_mensagem_login.style.color = 'red';
-        lbl_mensagem_login.textContent = 'Erro na comunicação com o servidor';
-        lbl_mensagem_login.style.display = '';
+      catch (error) {
+        if (lbl_mensagem_login) {
+          lbl_mensagem_login.style.color = 'red';
+          lbl_mensagem_login.textContent = 'Erro na comunicação com o servidor';
+          lbl_mensagem_login.style.display = '';
+        }
+        console.error('login submit error:', error);
       }
-      console.error('login submit error:', error);
-    }
-  });
+    });
   }
 
   // Submissão do formulário "esqueci a senha"

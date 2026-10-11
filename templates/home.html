@@ -37,81 +37,106 @@
     }
   </style>
 
-  <!-- CSS do header -->
+  <!-- CSS do header unificado e layout de anúncios -->
   <style>
-    .header-desktop {
-      background-color: var(--cor-fundo-escuro);
-      color: white;
+    /* Container mestre do topo: Grid estrito de 3 colunas para desktop */
+    .topo-layout-wrapper {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      /*grid-template-columns: 0.9fr 1.2fr 0.9fr;*/
       align-items: center;
-      padding: 0.6rem var(--padding-lateral);
+      gap: 0.8rem;
+      background-color: var(--cor-fundo-escuro);
+      box-sizing: border-box;
+      width: 100vw;
+      max-width: 100vw;
     }
-    .header-left,
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      flex: 0 0 auto;
-    }
-    .header-left {
-      justify-content: flex-start;
-    }
-    .header-right {
-      justify-content: flex-end;
-    }
-    .header-center {
-      display: flex;
-      justify-self: center;
-      justify-content: center;
+    /* Blocos de anúncio nas laterais */
+    .ad-banner-block {
       width: 100%;
+      height: 100%;
+      visibility: hidden;
     }
-    .header-mobile {
-      display: none;
+    #banner-topo-esquerda {
+      grid-column: 1;
+    }
+    #banner-topo-direita {
+      grid-column: 3;
+      display: block !important;
+    }
+    .link-anuncio-geral {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      text-decoration: none;
+      /*
+      Sugestões de cores
+      background-color: #fff;
+      background-color: #b6af9f;
+      background-color: #867d67;
+      background-color: #a19984;*/
+
+      background-color: #fff;  
+      overflow: hidden;
+    }
+    .logo-container {
+      flex: 0 0 33%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+    .logo-container img {
+      max-width: 100%;
+      max-height: 100%;
+    }
+    .produto-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .produto-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      display: block;
+    }
+    .produto-container img:not([src]), 
+    .produto-container img[src=""] {
+      opacity: 0 !important;
+      visibility: hidden !important;
+    }
+    /* Header que fica no centro com boões */
+    .header-principal {
+      grid-column: 2;
+      display: flex;
       flex-direction: column;
       background-color: var(--cor-fundo-escuro);
       color: white;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.7rem 0rem;
     }
-    .header-mobile .header-up {
+    /* Parte superior da coluna central do header, com nome de usuário e energia restante */
+    .header-up {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.8rem;
-      gap: 0.1rem;
-    }
-    .header-mobile .header-up .avatar {
-      flex-shrink: 0;
-    }
-    .header-mobile .header-up .user-name {
-      min-width: 8rem;
-      font-weight: 700;
-      font-size: var(--fs-emph);
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-    .header-mobile .header-up .status-item {
-      flex-shrink: 0;
-    }
-    .header-mobile .header-up .status-item:first-of-type {
-      margin-left: auto;
-    }
-    .header-mobile .header-down {
-      /*padding: 0.4rem 0.6rem 0.6rem;*/
-      padding: 0.4rem 0.8rem;
-    }
-    .header-desktop nav .header-mobile nav {
-      display: flex;
-      justify-content: center;
-      flex-direction: row;
-      flex-wrap: nowrap;
-      white-space: nowrap;
-      gap: 0;
       width: 100%;
-      margin: 0;
+      padding: 0.2rem 0.5rem 0.4rem 0.2vw;
+    }
+    /* Parte inferior da coluna central do header, com botões */
+    .header-down {
+      width: 100%;
+      padding: 0;
     }
     nav {
       display: flex;
-      gap: 2.5rem;
+      gap: 1rem;
+      justify-content: center;
+      width: 100%;
+      margin: 0;
     }
     nav button {
       display: flex;
@@ -120,29 +145,23 @@
       background: transparent;
       color: white;
       border: none;
-      padding: 0.4rem 0.7rem;
+      padding: 0.4rem 0rem;
       border-radius: 6px;
       cursor: pointer;
       font-size: var(--fs-base);
       font-weight: 700;
       transition: background-color 0.2s ease;
+      flex: 1 1 auto;
+      width: auto;
+      text-align: center;
+      white-space: nowrap;
+      justify-content: center;
     }
     nav button:hover {
       background: rgba(255, 255, 255, 0.12);
     }
     .btn-criar-conta, .btn-perfil, .btn-pesquisa, .btn-opcoes, .btn-doacoes, .btn-logout {
       white-space: nowrap;
-    }
-    .header-desktop nav button, .header-mobile nav button {
-      flex: 1 1 auto; /* 1: permite crescer para ocupar espaço vazio; 1: permite encolher se a tela for pequena; auto: baseia o tamanho inicial no tamanho do texto*/
-      width: auto;
-      padding: 0.6rem 0.2rem;
-      text-align: center;
-      white-space: nowrap;
-      border-radius: 0;
-      margin: 0;
-      align-items: center;
-      justify-content: center;
     }
     .status-item {
       font-size: var(--fs-emph);
@@ -152,10 +171,12 @@
       font-weight: 700;
       white-space: nowrap;
       user-select: none;
+      /*padding-right: 1.5rem;*/
+      padding-right: 0.2vw;
     }
     .avatar {
-      width: 44px;
-      height: 44px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
       overflow: hidden;
       flex-shrink: 0;
@@ -165,8 +186,9 @@
       width: 100%;
       height: 100%;
       align-self: center;
+      object-fit: cover;
     }
-    .header-left .user-name {
+    .user-name {
       font-weight: 700;
       font-size: var(--fs-emph);
       color: white;
@@ -180,15 +202,47 @@
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      margin-left: auto;
     }
+    /* Ajustes Responsivos (Mobile) 
+    @media (max-width: 750px) {
+      .topo-layout-wrapper {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        padding: 0.6rem;
+      }
+      #banner-topo-esquerda {
+        order: 1;
+        width: 100%;
+        max-width: 100%;
+      }
+      .header-principal {
+        order: 2;
+      }
+      #banner-topo-direita {
+        order: 3;
+        display: none !important;
+      }
+      .header-up {
+        padding: 0.8rem 0.4rem;
+      }
+      .header-down {
+        padding: 0.4rem 0;
+      }
+      nav {
+        flex-wrap: wrap;
+        gap: 0.3rem;
+      }
+      nav button {
+        font-size: clamp(0.5rem, calc(0.25rem + 1.70vw), var(--fs-base-max));
+        padding: 0.5rem 0.3rem;
+      }
+    }*/
   </style>
 
   <!-- CSS do corpo -->
   <style>
     html, body {
       height: 100%;
-      overflow: hidden;
       display: flex;
       flex-direction: column;
     }
@@ -213,67 +267,6 @@
     main.layout-ready {
       visibility: visible;
     }
-    #container-anuncios-topo {
-      display: none;
-      grid-template-columns: 1fr 1fr;
-      flex-direction: row;
-      align-items: center;
-      justify-content: center;
-    }
-    #banner-topo-esquerda {
-      grid-column: 1;
-      justify-self: start;
-      visibility: hidden;
-    }
-    #banner-topo-direita {
-      grid-column: 2;
-      justify-self: end;
-      visibility: hidden;
-    }
-    .ad-banner-block {
-      flex: 0 1 auto;
-      width: var(--ads-container-width);
-      height: var(--ads-container-height);
-      align-self: center;
-    }
-    .link-anuncio-geral {
-      display: flex; /* Alinha logo e produto lado a lado */
-      width: 100%;
-      height: 100%;
-      text-decoration: none;
-      background-color: #fff; /* Fundo branco para unir as duas imagens */
-      overflow: hidden;
-    }
-    .logo-container {
-      flex: 0 0 33%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      /*border-right: 1px solid #eee;  Linha sutil separando o logo do produto */
-    }
-    /* Container do Produto (Direita) */
-    .produto-container {
-      width: 100%;
-      height: 100%;
-      object-fit: fill;
-      display: block;
-      align-items: center;
-      justify-content: center;
-    }
-    .produto-container img {
-      width: 100%;
-      height: 100%;
-      max-height: 100%;
-      object-fit: fill;
-      display: block;
-    }
-    /* Esconde o ícone de papel quebrado do navegador se o link da imagem estiver vazio ou carregando */
-    .produto-container img:not([src]), 
-    .produto-container img[src=""] {
-      opacity: 0 !important;
-      visibility: hidden !important;
-    }
     #escolha-tema {
       grid-column: 2;
       color: white;
@@ -282,22 +275,6 @@
       align-items: center;
       justify-content: center;
       white-space: nowrap;
-    }
-    /* ==========================================
-    CONFIGURAÇÃO DE ANÚNCIOS PARA DESKTOP (Telas maiores que 800px)
-    ========================================== */
-    @media (min-width: 751px) {
-      #container-anuncios-topo {
-        height: 6.6rem;
-      }
-      /* Faz o segundo banner aparecer ao lado do primeiro no PC */
-      #banner-topo-direita {
-        display: block !important;
-      }
-      #banner-lateral-esquerda,
-      #banner-lateral-direita {
-        display: flex !important;
-      }
     }
     .link-anuncio-duplo {
       display: flex; /* Alinha logo e produto lado a lado */
@@ -343,7 +320,6 @@
       justify-items: center;
       align-content: space-between;
       column-gap: 1.5rem;
-      /*padding-top: 0.4rem;*/
       padding-bottom: 1.6rem;
     }
     .card {
@@ -442,16 +418,69 @@
     }
   </style>
 
-  <!-- CSS em dispositivos menores -->
+  <!-- CSS em outros tamanhos de dispositivos (especialmente os menores) -->
   <style>
     @media (max-width: 1200px) {
+      .header-up {
+        /*padding: 0.2rem 0.5rem 0.4rem 0.6vw;*/
+        padding-left: 0.15vw;
+      }
+      .status-item {
+        padding-right: 0.1vw;
+      }
       .cards-container {
         grid-template-columns: repeat(3, 1fr);
         column-gap: 0.5rem;
       }
       nav {
         display: flex;
-        gap: 1.7rem;
+      }
+    }
+    /* Abaixo de 1150 usa 2 anúncios no topo */
+    @media (min-width: 1151px) {
+      .topo-layout-wrapper {
+        grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.2fr) minmax(320px, 0.9fr);
+      }
+      nav {
+        gap: clamp(0rem, 1.5vw, 3.8rem);
+      }
+    }
+    @media (max-width: 1150px) {
+      /* Os dois anúncios vão para o topo lado a lado, e o header vai para a linha de baixo */
+      .topo-layout-wrapper {
+        grid-template-columns: 1fr 1fr; /* Duas colunas iguais para os anúncios */
+        grid-template-rows: auto auto;    /* Duas linhas: uma para os anúncios, outra para o header */
+        gap: 0;                /* Espaçamento vertical e horizontal entre os blocos */
+        justify-items: center;
+      }
+      /* 1º: Anúncio da Esquerda fica na Linha 1, Coluna 1 */
+      #banner-topo-esquerda {
+        grid-column: 1;
+        grid-row: 1;
+        width: 100%;
+        max-width: 100%;
+        justify-self: center;
+      }
+      /* 2º: Anúncio da Direita fica na Linha 1, Coluna 2 (totalmente visível e ativo!) */
+      #banner-topo-direita {
+        grid-column: 2;
+        grid-row: 1;
+        display: flex !important; /* Garante que ele continue aparecendo */
+        width: 100%;
+        max-width: 100%;
+        justify-self: center;
+      }
+      /* 3º: O Header Central vai para a Linha 2, esticando-se por baixo das duas colunas */
+      .header-principal {
+        grid-column: 1 / span 2; /* Ocupa a largura total da linha 2 */
+        grid-row: 2;
+        width: 100%;
+      }
+      .header-up {
+        padding-left: 1vw;
+      }
+      .status-item {
+        padding-right: 2.5vw;
       }
     }
     @media (max-width: 1000px) {
@@ -477,28 +506,12 @@
       }
     }
     @media (max-width: 750px) {
-      #container-anuncios-topo {
-        width: 100%;
-        height: calc((var(--ads-container-height) / var(--ads-container-width)) * 100vw);
-      }
-      .ad-banner-block {
-        width: 100%;
-        height: 100%;
-        align-self: center;
-        max-height: 100%;
-      }
       .logo-container {
         max-width: 33%;
       }
       .logo-container img {
         max-width: 100%;
         max-height: 100%;
-      }
-      #container-anuncios-topo {
-        grid-template-columns: 1fr;
-      }
-      #banner-topo-direita {
-        display: none !important; /* Esconde o segundo anúncio */
       }
       .cards-container {
         grid-template-columns: repeat(2, 1fr);
@@ -513,9 +526,10 @@
         width: 38px;
         height: 38px;
       }
+      .user-name, .perguntas-count {
+        font-size: var(--fs-base-max);
+      }
       nav button {
-        font-size: calc(var(--fs-base-max) - 0.1rem);
-        font-size: calc(var(--fs-emph-max) - ((550px - vw) * 0.2));
         font-size: clamp(0.5rem, calc(0.25rem + 1.70vw), var(--fs-base-max));
       }
       .card span, #mensagem {
@@ -547,6 +561,30 @@
       .status-item {
         font-size: calc(var(--fs-emph-max) - 0.1rem);
       }
+      /* Abaixo de 550px: Exibe apenas 1 anúncio centralizado ocupando a largura total, e oculta o da direita */
+      .topo-layout-wrapper {
+        grid-template-columns: 1fr; /* Volta para 1 única coluna */
+        grid-template-rows: auto auto;
+      }
+      /* 1º: O anúncio da esquerda ocupa a largura total no topo */
+      #banner-topo-esquerda {
+        grid-column: 1;
+        grid-row: 1;
+        width: 100%;
+        max-width: 100%;
+      }
+      /* 2º: O anúncio da direita some completamente sem ocupar espaço */
+      #banner-topo-direita { 
+        grid-column: 1;
+        grid-row: 2;
+        display: none !important; /* Se a largura definida para isto mudar, a variável is_mobile no script lá embaixo também deve */
+      }
+      /* 3º: O Header central vai para a linha inferior */
+      .header-principal {
+        grid-column: 1;
+        grid-row: 2;
+        width: 100%;
+      }
     }
     @media (max-width: 460px) {
       .card {
@@ -568,6 +606,11 @@
       }
       .status-item {
         font-size: calc(var(--fs-emph-max) - 0.2rem);
+      }
+    }
+    @media (max-width: 400px) {
+      .user-name, .perguntas-count {
+        font-size: var(--fs-aux-max);
       }
     }
     @media (max-width: 340px) {
@@ -749,13 +792,9 @@
   </script>
 
 </head>
-
-<body>
-
-  <body>
-  <!-- Área de Anúncios no Topo -->
-  <div id="container-anuncios-topo">
-    <!-- Banner 1 (Aparece no Celular e PC) -->
+<body data-modo-visitante="{{ session.get('visitante', False) | tojson }}">
+  <div class="topo-layout-wrapper">
+    <!-- Anúncio Esquerdo (Fica na Coluna 1 no PC, no Topo no Mobile) -->
     <div id="banner-topo-esquerda" class="ad-banner-block">
       <a href="" target="_blank" class="link-anuncio-geral">
         <div class="logo-container"><img src="" alt=""></div>
@@ -763,7 +802,34 @@
       </a>
     </div>
 
-    <!-- Banner 2 (Aparece APENAS no PC) -->
+    <!-- Header Unificado (Fica na Coluna do Meio no PC, abaixo do anúncio no Mobile) -->
+    <header id="header-principal" class="header-principal">
+      <div class="header-up">
+        <div class="user-block">
+          <div class="avatar">
+            <img src="{{ url_for('static', filename='img/Avatar.png') }}" alt="Avatar">
+          </div>
+          <div id="user-name" class="user-name"></div>
+        </div>
+        <div class="status-block">
+          <div class="status-item" title="Perguntas restantes">
+            ⚡ <span id="perguntas-count" class="perguntas-count">0/0</span>
+          </div>
+        </div>
+      </div>
+      <div class="header-down">
+        <nav>
+          <button id= "btn-criar-conta" class="btn-criar-conta" style="display: none;">📝 Criar conta</button>
+          <button id= "btn-perfil"      class="btn-perfil"      style="display: none;">🧑 Perfil</button>
+          <button id= "btn-pesquisa"    class="btn-pesquisa"    style="display: none;">🔍 Pesquisa</button>
+          <button id= "btn-opcoes"      class="btn-opcoes"      style="display: none;">⚙️ Opções</button>
+          <button id= "btn-doacoes"     class="btn-doacoes"     style="display: none;">💖 Doações</button>
+          <button id= "btn-logout"      class="btn-logout"      style="display: none;">🚪 Sair</button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Anúncio Direito (Fica na Coluna 3 no PC, Oculto no Mobile) -->
     <div id="banner-topo-direita" class="ad-banner-block">
       <a href="" target="_blank" class="link-anuncio-geral">
         <div class="logo-container"><img src="" alt=""></div>
@@ -771,63 +837,6 @@
       </a>
     </div>
   </div>
-
-  <!-- Header em mobile -->
-  <header class="header-mobile">
-    <div class="header-up">
-
-      <div class="user-block">
-        <div class="avatar">
-          <img src="{{ url_for('static', filename='img/Avatar.png') }}" alt="Avatar">
-        </div>
-        <div class="user-name"></div>
-      </div>
-
-      <div class="status-block">
-        <div class="status-item" title="Perguntas restantes">
-          ⚡ <span class="perguntas-count">0/0</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="header-down">
-      <nav>
-        <button class="btn-criar-conta" style="display: none;">📝 Criar conta</button>
-        <button class="btn-perfil" style="display: none;">🧑 Perfil</button>
-        <button class="btn-pesquisa" style="display: none;">🔍 Pesquisa</button>
-        <button class="btn-opcoes" style="display: none;">⚙️ Opções</button>
-        <button class="btn-doacoes" style="display: none;">💖 Doações</button>
-        <button class="btn-logout" style="display: none;">🚪 Sair</button>
-      </nav>
-    </div>
-  </header>
-  
-  <!-- Header em desktop -->
-  <header id="header-desktop" class="header-desktop">
-    <div class="header-left">
-      <div class="avatar">
-        <img src="{{ url_for('static', filename='img/Avatar.png') }}" alt="Avatar">
-      </div>
-      <div class="user-name"></div>
-    </div>
-
-    <div class="header-center">
-      <nav>
-        <button class="btn-criar-conta" style="display: none;">📝 Criar conta</button>
-        <button class="btn-perfil" style="display: none;">🧑 Perfil</button>
-        <button class="btn-pesquisa" style="display: none;">🔍 Pesquisa</button>
-        <button class="btn-opcoes" style="display: none;">⚙️ Opções</button>
-        <button class="btn-doacoes" style="display: none;">💖 Doações</button>
-        <button class="btn-logout" style="display: none;">🚪 Sair</button>
-      </nav>
-    </div>
-
-    <div class="header-right">
-      <div class="status-item" title="Perguntas restantes">
-        ⚡ <span id="perguntas-count" class="perguntas-count">0/0</span>
-      </div>
-    </div>
-  </header>
 
   <main>
     <!-- Modo testando perguntas -->
@@ -842,7 +851,6 @@
     <div id="mensagem" style="cursor: default">Mensagem</div>
 
     <!-- Scroll com os cards de temas -->
-    <!-- É possível simplificar aqui para os 12 talvez -->
     <div id="cards-scroll-wrapper" class="cards-scroll-wrapper">
       <div class="cards-container">
         <div class="card" data-tema="Artes">
@@ -885,7 +893,6 @@
           <img src="{{ url_for('static', filename='img/Musica.jpeg') }}" alt="Música">
           <span>Música</span>
         </div>
-        
         <div class="card" data-tema="Química">
           <img src="{{ url_for('static', filename='img/Quimica.jpeg') }}" alt="Química">
           <span>Quimíca</span>
@@ -894,7 +901,6 @@
           <img src="{{ url_for('static', filename='img/Variedades.jpeg') }}" alt="Variedades">
           <span>Variedades</span>
         </div>
-        
       </div>
     </div>
   </main>
@@ -911,34 +917,30 @@
     {% endif %}
   </footer>
 
+  <!-- Modal exibido em home -->
   <div id="modal" class="modal-overlay hidden">
     <div class="modal">
       <h3>Confirmação de e-mail pendente</h3>
-
       <p id="texto-modal">
         Confirme o e-mail <span id="email-usuario" class="email-destaque"></span> para garantir o acesso contínuo aos recursos do jogo e evitar bloqueios futuros
-        <br>
-        <br>
+        <br><br>
         <span style="font-size: 0.8rem">Obs: O e-mail da conta pode ser alterado na tela de opções</span>
       </p>
-
       <div class="modal-actions">
         <button id="btn-modal-primario" class="btn-modal-primario"></button>
         <button id="btn-modal-secundario" class="btn-modal-secundario"></button>
       </div>
-
       <p class="modal-feedback" id="modal-msg"></p>
     </div>
   </div>
 
-  <body data-modo-visitante="{{ session.get('visitante', False) | tojson }}">
   <script type='module'>
     import { idsReservados, idsVisitantesReservados } from '../static/utils.js';
     const MODO_VISITANTE_HTML = document.body.dataset.modoVisitante === 'true';
     const idVisitante = localStorage.getItem("id_visitante");
     const idUsuarioHTML = parseInt(sessionStorage.getItem("id_usuario") ?? "0");
     sessionStorage.setItem("id_usuario", idUsuarioHTML);
-    const isMobile = window.innerWidth <= 750;
+    const isMobile = window.innerWidth <= 550;
     const isAdmin = idsReservados.includes(idUsuarioHTML) || (idsVisitantesReservados.includes(idVisitante) && MODO_VISITANTE_HTML);
     window.ADS_CONFIG = {
       isAdmin: isAdmin,
@@ -946,26 +948,20 @@
       registrandoModoTeste: false,
       modoVisitante: MODO_VISITANTE_HTML
     }
-    const config = window.ADS_CONFIG;
   </script>
 
-  <!-- Script para salvar no localStorage origem do usuário com base em informação do backend -->
+  <!-- Script para salvar no localStorage origem do usuário -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // 1. O Flask (Python) injeta o valor da session direto no JavaScript
         const origemDoPython = "{{ session.get('usuario_origem', '') }}";
         const midiaDoPython = "{{ session.get('usuario_midia', '') }}";
-
-        // 2. Se o Python identificou tráfego pago (GoogleAds ou MicrosoftAds)
         if (origemDoPython === 'GoogleAds' || origemDoPython === 'MicrosoftAds') {
-            // 3. Gravamos permanentemente no localStorage do navegador
             localStorage.setItem('usuario_origem', origemDoPython);
             localStorage.setItem('usuario_midia', midiaDoPython);
         }
     });
   </script>
 
-  </body>
   <script type="module" src="{{ url_for('static', filename='home.js') }}?v=1.2.2"></script>
 </body>
 </html>

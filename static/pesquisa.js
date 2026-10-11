@@ -16,6 +16,7 @@ const box_tema = document.getElementById("tema");
 const mensagem = document.getElementById("mensagem");
 const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === "true";
 const TTL_ESTADO_PESQUISA = 7 * 24 * 60 * 60 * 1000; // 7 dias
+const corMensagemAlerta = 'yellow';
 let favoritosAlterados = 0;
 let permitirMarcarFavoritos = false;
 
@@ -306,7 +307,7 @@ async function pesquisar() {
   tema_atual = box_tema.value;
 
   if (!tema_atual) {
-    exibirMensagem(mensagem, "Selecione o tema das perguntas", "orange", true, true);
+    exibirMensagem(mensagem, "Selecione o tema das perguntas", corMensagemAlerta, true, true);
     btn_pesquisar.disabled = false;
     return;
   }
@@ -390,7 +391,7 @@ function salvarEstadoPesquisa(tema, dificuldades, subtemas) {
 function toggleFavorito(estrelaEl, id_pergunta)  {
   if (!permitirMarcarFavoritos) return;
   if (MODO_VISITANTE) {
-    exibirMensagem(mensagem, "É necessário criar uma conta para poder salvar perguntas nos favoritos", "orange", true, true);
+    exibirMensagem(mensagem, "É necessário criar uma conta para poder salvar perguntas nos favoritos", corMensagemAlerta, true, true);
     return;
   }
 

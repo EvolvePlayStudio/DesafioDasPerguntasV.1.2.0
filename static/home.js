@@ -4,9 +4,9 @@ import { playSound } from "./sound.js";
 let permitir_escolher_tema = false;
 let tema_atual = null;
 const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
-sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 const idUsuario = sessionStorage.getItem("id_usuario");
 const idVisitante = localStorage.getItem("id_visitante");
+sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 
 // Caso ocorra erro de não conseguir pegar id de usuário
 if (!MODO_VISITANTE && !idUsuario) {
@@ -24,19 +24,18 @@ const btnModalSecundario = document.getElementById("btn-modal-secundario");
 const spanEmail = modal.querySelector("#email-usuario");
 
 // Widgets dos anúncios no topo
-const containerAnuncios = document.getElementById("container-anuncios-topo");
 const bannerTopoEsquerda = document.getElementById("banner-topo-esquerda");
 const bannerTopoDireita = document.getElementById("banner-topo-direita");
 
 // Widgets do cabeçalho da página
-const userName = document.querySelectorAll(".user-name");
-const perguntas_restantes = document.querySelectorAll(".perguntas-count");
-const btn_criar_conta = document.querySelectorAll(".btn-criar-conta");
-const btn_perfil = document.querySelectorAll(".btn-perfil");
-const btn_opcoes = document.querySelectorAll(".btn-opcoes");
-const btn_pesquisa = document.querySelectorAll(".btn-pesquisa");
-const btn_doacoes = document.querySelectorAll(".btn-doacoes");
-const btn_logout = document.querySelectorAll(".btn-logout");
+const userName            = document.getElementById("user-name");
+const perguntas_restantes = document.getElementById("perguntas-count");
+const btn_criar_conta     = document.getElementById("btn-criar-conta");
+const btn_perfil          = document.getElementById("btn-perfil");
+const btn_opcoes          = document.getElementById("btn-opcoes");
+const btn_pesquisa        = document.getElementById("btn-pesquisa");
+const btn_doacoes         = document.getElementById("btn-doacoes");
+const btn_logout          = document.getElementById("btn-logout");
 let btnsHeader;
 
 // Widgets do modo teste (para desenvolvedor testar perguntas recém-lançadas)
@@ -48,23 +47,19 @@ const corMensagemPerguntasEsgotadas = 'yellow'
 if (MODO_VISITANTE) {
   btnsHeader = [btn_perfil, btn_pesquisa, btn_doacoes, btn_logout];
   permitir_escolher_tema = true;
-  btn_criar_conta.forEach(btn => {
-    btn.style.display = "";
-    btn.addEventListener("click", async () => {
-      sessionStorage.setItem("ir_para_aba_registro", true);
-      await fetch("/pagina_destino", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pagina_destino: "Home -> Registro" })
-      });
-
-      window.location.href = "/";
+  btn_criar_conta.style.display = "";
+  btn_criar_conta.addEventListener("click", async () => {
+    sessionStorage.setItem("ir_para_aba_registro", true);
+    await fetch("/pagina_destino", { // Registra na base acesso à aba de registro pelo botão de criar conta
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pagina_destino: "Home -> Registro" })
     });
-
+    window.location.href = "/";
   })
   
   let idVisitante = localStorage.getItem("id_visitante");
-  
+
   /*
   if (idsVisitantesReservados.includes(idVisitante)) {
     localStorage.removeItem("pontuacoes_visitante");
@@ -93,8 +88,7 @@ if (MODO_VISITANTE) {
   }
   permitir_escolher_tema = true;
 
-  // Registra o id de visitante em session no backend
-  fetch("/api/registrar_visitante", {
+  fetch("/api/registrar_visitante", { // Registra o id de visitante em session no backend
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id_visitante: idVisitante })
@@ -112,7 +106,7 @@ else {
 }
 
 // Renderiza os botões do header
-btnsHeader.forEach(conjuntoBtn => {conjuntoBtn.forEach(btn => {btn.style.display = ""})});
+btnsHeader.forEach(btn => {btn.style.display = ""});
 
 function abrirModal({titulo = "", corpoHTML = "", textoPrimario = null, textoSecundario = null, onPrimario = null, onSecundario = null, modalReenvioEmail = false}) {
   // Bloqueia interação geral
@@ -163,7 +157,6 @@ async function exibirAnuncios() {
     const link = container.querySelector(".link-anuncio-geral");
     const imgProd = container.querySelector(".produto-container img");
     const imgLogo = container.querySelector(".logo-container img");
-
     // Carrega o logotipo do provedor
     if (produto.provedor === 'Amazon') {
       imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoAmazon"
@@ -197,6 +190,7 @@ async function exibirAnuncios() {
           link._clickhandler();}
       });
     }
+
     if (imgProd) imgProd.src = produto.imagem;
   }
 
@@ -219,19 +213,15 @@ async function exibirAnuncios() {
       console.log(`Quantidade de anúncios do ML: ${anunciosML.length}`);
     }
 
-    // Juntamos todos os anúncios válidos disponíveis em uma única lista para sortear
+    // Junta todos os anúncios válidos disponíveis em uma única lista para sortear
     const todosAnuncios = [...anunciosAmazon, ...anunciosML];
-
-    if (todosAnuncios.length > 0) {
-      containerAnuncios.style.display = 'grid';
-    }
 
     if (!window.ADS_CONFIG.isMobile) {
       // Exibição Amazon (esquerda)
       if (anunciosAmazon.length > 0) {
         const aleatorioAmazon = anunciosAmazon[Math.floor(Math.random() * anunciosAmazon.length)];
         if (window.ADS_CONFIG.isAdmin) {
-          console.log("Configurando banner da Amazon...")
+          console.log("Configurando banner da Amazon...");
         }  
         
         configurarBanner(bannerTopoEsquerda, aleatorioAmazon);
@@ -263,7 +253,6 @@ async function exibirAnuncios() {
       } else {
         bannerTopoEsquerda.style.visibility = "hidden"; 
       }
-      bannerTopoEsquerda.style.justifySelf = "center";
       bannerTopoDireita.style.visibility = "hidden";
       bannerTopoDireita.style.display = "none";
     }
@@ -323,7 +312,7 @@ async function iniciarQuiz(event) {
   };
 
   // Mensagem avisando que as perguntas acabaram
-  const perguntas_restantes_atuais = parseInt(perguntas_restantes[0]?.textContent.split("/")[0] ?? "0", 10);
+  const perguntas_restantes_atuais = parseInt(perguntas_restantes?.textContent.split("/")[0] ?? "0", 10);
   // const perguntas_restantes_atuais = 0;
 
   if (perguntas_restantes_atuais <= 0) {
@@ -331,6 +320,7 @@ async function iniciarQuiz(event) {
       exibirMensagem(mensagem, `Energia esgotada, retorne amanhã para poder responder novas perguntas`, corMensagemPerguntasEsgotadas, true, false, 'flex');
     }
     else {
+      console.log("Sem eneria")
       exibirMensagem(mensagem, `É necessário criar uma conta para ter acesso ao conteúdo completo do jogo`, corMensagemPerguntasEsgotadas, true, false, 'flex');
     }
     desbloquearBotoes();
@@ -445,7 +435,6 @@ async function iniciarQuiz(event) {
         }
 
         // Chama a tela de quiz
-        //mensagem.style.opacity = 0
         window.location.href = `/quiz/${encodeURIComponent(slugify(tema_atual))}`;
       }
     }
@@ -486,13 +475,13 @@ async function exibirModalConfirmacaoEmail() {
         if (sessionStorage.getItem("email_reenviado_neste_login") === "true") {
           msgModal.innerText = "Um e-mail de confirmação já foi enviado recentemente";
           msgModal.style.display = "block";
-          msgModal.style.color = "orange";
+          msgModal.style.color = corMensagemPerguntasEsgotadas;
           return;
         }
 
         msgModal.innerText = "Enviando e-mail de confirmação...";
         msgModal.style.display = "block";
-        msgModal.style.color = "orange";
+        msgModal.style.color = 'rgb(228, 228, 228)';
 
         fetch("/reenviar-email-confirmacao", {
           method: "POST",
@@ -502,16 +491,16 @@ async function exibirModalConfirmacaoEmail() {
         .then(data => {
           if (data.success) {
             sessionStorage.setItem("email_reenviado_neste_login", "true");
-            msgModal.innerText = "E-mail de confirmação reenviado com sucesso";
-            msgModal.style.color = "green";
+            msgModal.innerText = "O e-mail de confirmação foi reenviado";
+            msgModal.style.color = "lime";
           }
           else {
-            msgModal.innerText = data.message || "Não foi possível reenviar o e-mail.";
+            msgModal.innerText = data.message || "Não foi possível reenviar o e-mail";
             msgModal.style.color = "red";
           }
         })
         .catch(() => {
-          msgModal.innerText = "Erro de comunicação com o servidor.";
+          msgModal.innerText = "Erro de comunicação com o servidor";
           msgModal.style.color = "red";
         });
       },
@@ -587,7 +576,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (btnModalSecundario) {
     btnModalSecundario.addEventListener("click", () => playSound("click"));
   }
-  
   // Carrega as regras de pontuações do jogo
   let data;
   try {
@@ -601,86 +589,60 @@ document.addEventListener("DOMContentLoaded", async () => {
   catch(e) {
     console.error("Erro ao carregar regras de pontuação", e);
   };
-
   // Implementa a função de clique no botão de perfil
   if (btn_perfil) {
-    btn_perfil.forEach(btn => {
-      btn.addEventListener("click", async () => {
-        playSound("click");
-        window.location.href = "/perfil";
-      });
+    btn_perfil.addEventListener("click", async () => {
+      playSound("click");
+      window.location.href = "/perfil";
     });
   };
-
   // Implementa a função de clique no botão de opções
   if (btn_opcoes) {
-    btn_opcoes.forEach(btn => {
-      btn.addEventListener("click", async () => {
-        playSound("click");
-        window.location.href = "/opcoes";
-      });
+    btn_opcoes.addEventListener("click", async () => {
+      playSound("click");
+      window.location.href = "/opcoes";
     });
   };
-
   // Implementa a função de clique no botão de pesquisa
   if (btn_pesquisa) {
-    btn_pesquisa.forEach(btn => {
-      btn.addEventListener("click", async () => {
-        playSound("click");
-        const response = await fetchAutenticado("/pesquisa");
-        if (response.ok) window.location.href = "/pesquisa";
-      });
+    btn_pesquisa.addEventListener("click", async () => {
+      playSound("click");
+      const response = await fetchAutenticado("/pesquisa");
+      if (response.ok) window.location.href = "/pesquisa";
     });
   };
-
   // Implementa a função de clique no botão de doações
   if (btn_doacoes) {
-    btn_doacoes.forEach(btn => {
-      btn.addEventListener("click", async () => {
-        playSound("click");
-        if (!MODO_VISITANTE) {
-          const response = await fetchAutenticado("/doações");
-          if (response.ok) window.location.href = "/doações";
-        }
-        else window.location.href = "/doações";
-      });
+    btn_doacoes.addEventListener("click", async () => {
+      playSound("click");
+      window.location.href = "/doações";
     });
   };
-
   // Implementa a função de clique no botão de logout
   if (btn_logout) {
-    btn_logout.forEach(btn => {
-      btn.addEventListener("click", async () => {
+    btn_logout.addEventListener("click", async () => {
         playSound("click");
-        await fetch("/pagina_destino", {
+        await fetch("/pagina_destino", { // Registra na base que o usuário foi para a tela de login
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pagina_destino: "Home -> Login" })
         });
         window.location.href = "/";
       });
-    });
   };
-
   // Implementa a função de ir para a página home
   document.getElementById("link-home").addEventListener("click", async (e) => {
     e.preventDefault();
     window.location.href = "/home";
   });
-
   // Implementa a função de clique nos temas
   document.querySelectorAll(".card").forEach(card => {
     card.addEventListener("click", iniciarQuiz);
   });
-
   // Define o nome de usuário e a quantidade de perguntas restantes para responder
   if (MODO_VISITANTE) {
-    userName.forEach(n => {
-      n.textContent = "Visitante";
-    });
-    perguntas_restantes.forEach(p => {
-      p.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/60`;
-    });
+    userName.textContent = "Visitante";
+    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/60`;
 
     // Decide se deve exibir modal para convidar a fazer registro
     const respondidas = JSON.parse(localStorage.getItem("visitante_respondidas"));
@@ -695,11 +657,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
   }
   else {
-    userName.forEach(n => {
-      n.textContent = sessionStorage.getItem("nome_usuario");
-    });
-    perguntas_restantes.forEach(p => {
-      p.textContent = `${sessionStorage.getItem("perguntas_restantes")}/80`;
-    });
+    userName.textContent = sessionStorage.getItem("nome_usuario");
+    perguntas_restantes.textContent = `${sessionStorage.getItem("perguntas_restantes")}/80`;
   }
 })
