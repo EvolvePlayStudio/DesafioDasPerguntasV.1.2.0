@@ -1,7 +1,7 @@
 import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, idsReservados, idsVisitantesReservados, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
 import { playSound } from "./sound.js";
 
-function validateAppVersionHome() {
+function validateAppVersionHome() { // Depois irá para o utils e isto deve ser feito em quiz.js também
   if (!localStorage.getItem('app_version')) {
     localStorage.setItem("auth_message", "Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente");
     window.location.href = '/login';
@@ -14,6 +14,7 @@ const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
 const idUsuario = localStorage.getItem("id_usuario");
 const idVisitante = localStorage.getItem("id_visitante");
 localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
+const maxEnergiaVisitantes = 80;
 
 if (!MODO_VISITANTE) { // Verifica se deve expirar a sessão
   if (!idUsuario) { // Caso o id de usuário não tenha sido identificado
@@ -23,7 +24,7 @@ if (!MODO_VISITANTE) { // Verifica se deve expirar a sessão
   validateAppVersionHome();
 }
 
-const mensagem = document.getElementById("mensagem");
+const mensagem            = document.getElementById("mensagem");
 
 // Widgets do modal
 const modal               = document.getElementById("modal");
@@ -51,8 +52,8 @@ let btnsHeader;
 const modoTesteWrapper    = document.getElementById("modo-teste-wrapper");
 const checkModoTeste      = document.getElementById("modo-teste-toggle");
 const modoTeste           = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
-
-const corMensagemPerguntasEsgotadas = 'yellow'
+console.log(`ID de visitante: ${idVisitante}`)
+const corMensagemAlerta   = 'yellow'
 if (MODO_VISITANTE) {
   btnsHeader = [btn_perfil, btn_pesquisa, btn_doacoes, btn_logout];
   permitir_escolher_tema = true;
@@ -85,7 +86,7 @@ if (MODO_VISITANTE) {
 
   // Cria as informações de perguntas restantes do usuário
   if (!localStorage.getItem("perguntas_restantes_visitante")) {
-    localStorage.setItem("perguntas_restantes_visitante", 60);
+    localStorage.setItem("perguntas_restantes_visitante", maxEnergiaVisitantes);
   }
 
   // Cria pontuações de usuário como visitante
@@ -324,10 +325,10 @@ async function iniciarQuiz(event) {
 
   if (perguntas_restantes_atuais <= 0) {
     if (!MODO_VISITANTE) {
-      exibirMensagem(mensagem, `Energia esgotada, retorne amanhã para poder responder novas perguntas`, corMensagemPerguntasEsgotadas, true, false, 'flex');
+      exibirMensagem(mensagem, `Energia esgotada, retorne amanhã para poder responder novas perguntas`, corMensagemAlerta, true, false, 'flex');
     }
     else {
-      exibirMensagem(mensagem, `É necessário criar uma conta para ter acesso ao conteúdo completo do jogo`, corMensagemPerguntasEsgotadas, true, false, 'flex');
+      exibirMensagem(mensagem, `É necessário criar uma conta para ter acesso ao conteúdo completo do jogo`, corMensagemAlerta, true, false, 'flex');
     }
     desbloquearBotoes();
     return;
@@ -387,7 +388,7 @@ async function iniciarQuiz(event) {
           window.location.href = `/quiz/${encodeURIComponent(slugify(tema_atual))}`;
         }
         else {
-          exibirMensagem(mensagem, `Você não possui perguntas disponíveis no tema ${tema_atual} no momento`, corMensagemPerguntasEsgotadas, true, false, 'flex');
+          exibirMensagem(mensagem, `Você não possui perguntas disponíveis no tema ${tema_atual} no momento`, corMensagemAlerta, true, false, 'flex');
           desbloquearBotoes();
           return;
         }
@@ -411,7 +412,7 @@ async function iniciarQuiz(event) {
         const encerrar_quiz = deveEncerrarQuiz(data["perguntas"], MODO_VISITANTE);
         const haPerguntas = Object.values(data.perguntas).some(arr => arr.length > 0);
         if (!haPerguntas || encerrar_quiz) {
-          exibirMensagem(mensagem, `É necessário criar uma conta para acessar mais perguntas no tema ${tema_atual}`, corMensagemPerguntasEsgotadas, true, false, 'flex');
+          exibirMensagem(mensagem, `É necessário criar uma conta para acessar mais perguntas no tema ${tema_atual}`, corMensagemAlerta, true, false, 'flex');
           desbloquearBotoes();
           return
         }
@@ -481,7 +482,7 @@ async function exibirModalConfirmacaoEmail() {
         if (localStorage.getItem("email_reenviado_neste_login") === "true") {
           msgModal.innerText = "Um e-mail de confirmação já foi enviado recentemente";
           msgModal.style.display = "block";
-          msgModal.style.color = corMensagemPerguntasEsgotadas;
+          msgModal.style.color = corMensagemAlerta;
           return;
         }
 
@@ -647,7 +648,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Define o nome de usuário e a quantidade de perguntas restantes para responder
   if (MODO_VISITANTE) {
     userName.textContent = "Visitante";
-    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/60`;
+    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/${maxEnergiaVisitantes}`;
 
     // Decide se deve exibir modal para convidar a fazer registro
     const respondidas = JSON.parse(localStorage.getItem("visitante_respondidas"));
