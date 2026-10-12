@@ -1,3 +1,4 @@
+export const APP_VERSION = '1.8.8';
 export const pontuacaoTemaPadraoVisitantes = 0; // Aqui era 1800 na versão antiga
 export const dificuldadesOrdenadas = ['Fácil', 'Médio', 'Difícil', 'Extremo'];
 export const temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"];
@@ -18,9 +19,9 @@ let idVisitante;
 let MODO_VISITANTE;
 
 function atualizarVariaveis() {
-  idUsuario = sessionStorage.getItem("id_usuario");
+  idUsuario = localStorage.getItem("id_usuario");
   idVisitante = localStorage.getItem("id_visitante");
-  MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === "true";
+  MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 }
 
 export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq, logotipoAnuncioDir, tema_atual, dadosAnuncios, historicoExibicao={}) {
@@ -217,7 +218,6 @@ export function atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq
   return historicoExibicao;
 }
 
-
 // Função abaixo não é mais utilizada na tela de quiz, talvez seja removida futuramente
 export function detectarModoTela() {
   // Identifica se o usuário us modo site para computador
@@ -232,9 +232,9 @@ export function detectarModoTela() {
 export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIGO=null) {
   // ATENÇÃO, APAGAR PARÂMETRO ACIMA QUE NÃO É UTILIZADO DEPOIS QUE REMOVER DE TODAS AS FUNÇÕES EM QUIZ.JS E HOME.JS
   const MODO_TESTE = sessionStorage.getItem('modo_teste') === 'true';
-  if (MODO_TESTE) return false; // Depois deve ser revisto para caso não se esteja no ranking Estudante durante o modo teste
-  const tema = sessionStorage.getItem("tema_atual");
-  const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === 'true';
+  if (MODO_TESTE) return false;
+  const tema = localStorage.getItem("tema_atual");
+  const MODO_VISITANTE = localStorage.getItem("modoVisitante") === 'true';
   const infoRanking = obterInfoRankingAtual(tema, MODO_VISITANTE)
   const ranking = infoRanking.ranking;
 
@@ -296,16 +296,15 @@ export async function fetchAutenticado(url, options = {}) {
   return response;
 }
 
-
 // ATENÇÃO: PARAMÊTRO NÃO UTILIZADO AQUI
 export function obterInfoRankingAtual(tema=null, MODO_VISITANTE_ANTIGO=null) {
   // Obtém informação de ranking de acordo com pontuação no tema indicado
-  const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === "true";
-  const pontuacoes_jogador = MODO_VISITANTE ? JSON.parse(localStorage.getItem("pontuacoes_visitante")) : JSON.parse(sessionStorage.getItem("pontuacoes_usuario"));
-  if (!tema) { tema = sessionStorage.getItem("tema_atual")};
+  const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
+  const pontuacoes_jogador = MODO_VISITANTE ? JSON.parse(localStorage.getItem("pontuacoes_visitante")) : JSON.parse(localStorage.getItem("pontuacoes_usuario"));
+  if (!tema) { tema = localStorage.getItem("tema_atual")};
   
   const pontuacao_no_tema = pontuacoes_jogador[tema] || 0;
-  const regras_pontuacao = JSON.parse(sessionStorage.getItem("regras_pontuacao")) || [];
+  const regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao")) || [];
 
   const info_ranking_atual = regras_pontuacao.find(regra =>
     pontuacao_no_tema >= regra.pontos_minimos && pontuacao_no_tema <= regra.pontos_maximos
@@ -427,4 +426,12 @@ export function slugify(texto) {
     .replace(/[^a-z0-9\s-]/g, "")        // remove caracteres inválidos
     .replace(/\s+/g, "-")                // espaços → hífen
     .replace(/-+/g, "-");                // remove hífens duplicados
+}
+
+// Verifica se a versão do app no localStorage do usuário é compatível com a atual
+export function validateAppVersion() {
+  if (!localStorage.getItem('app_version')) {
+    localStorage.setItem("auth_message", "Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente");
+    window.location.href = '/login';
+  }
 }

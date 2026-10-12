@@ -1,31 +1,33 @@
-import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, idsReservados, idsVisitantesReservados, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
+import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, idsReservados, idsVisitantesReservados, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis, validateAppVersion } from "./utils.js";
 import { playSound } from "./sound.js";
 
 let permitir_escolher_tema = false;
 let tema_atual = null;
 const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
-const idUsuario = sessionStorage.getItem("id_usuario");
+const idUsuario = localStorage.getItem("id_usuario");
 const idVisitante = localStorage.getItem("id_visitante");
-sessionStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
+localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 
-// Caso ocorra erro de não conseguir pegar id de usuário
-if (!MODO_VISITANTE && !idUsuario) {
-  localStorage.setItem("auth_message", "Sessão expirada");
-  window.location.href = "/login";
-};
+if (!MODO_VISITANTE) { // Verifica se deve expirar a sessão
+  if (!idUsuario) { // Caso o id de usuário não tenha sido identificado
+    localStorage.setItem("auth_message", "Sessão expirada");
+    window.location.href = "/login";
+  }
+  validateAppVersion();
+}
 
 const mensagem = document.getElementById("mensagem");
 
 // Widgets do modal
-const modal = document.getElementById("modal");
-const msgModal = document.getElementById("modal-msg");
-const btnModalPrimario = document.getElementById("btn-modal-primario");
-const btnModalSecundario = document.getElementById("btn-modal-secundario");
-const spanEmail = modal.querySelector("#email-usuario");
+const modal               = document.getElementById("modal");
+const msgModal            = document.getElementById("modal-msg");
+const btnModalPrimario    = document.getElementById("btn-modal-primario");
+const btnModalSecundario  = document.getElementById("btn-modal-secundario");
+const spanEmail           = modal.querySelector("#email-usuario");
 
 // Widgets dos anúncios no topo
-const bannerTopoEsquerda = document.getElementById("banner-topo-esquerda");
-const bannerTopoDireita = document.getElementById("banner-topo-direita");
+const bannerTopoEsquerda  = document.getElementById("banner-topo-esquerda");
+const bannerTopoDireita   = document.getElementById("banner-topo-direita");
 
 // Widgets do cabeçalho da página
 const userName            = document.getElementById("user-name");
@@ -39,9 +41,9 @@ const btn_logout          = document.getElementById("btn-logout");
 let btnsHeader;
 
 // Widgets do modo teste (para desenvolvedor testar perguntas recém-lançadas)
-const modoTesteWrapper = document.getElementById("modo-teste-wrapper");
-const checkModoTeste = document.getElementById("modo-teste-toggle");
-const modoTeste = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
+const modoTesteWrapper    = document.getElementById("modo-teste-wrapper");
+const checkModoTeste      = document.getElementById("modo-teste-toggle");
+const modoTeste           = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
 
 const corMensagemPerguntasEsgotadas = 'yellow'
 if (MODO_VISITANTE) {
@@ -97,7 +99,7 @@ if (MODO_VISITANTE) {
 else {
   btnsHeader = [btn_opcoes, btn_doacoes, btn_perfil, btn_pesquisa, btn_logout];
 
-  if (sessionStorage.getItem("modal_confirmacao_email_exibido") === "false") {
+  if (localStorage.getItem("modal_confirmacao_email_exibido") === "false") {
     exibirModalConfirmacaoEmail();
   }
   else {
@@ -290,9 +292,7 @@ if (window.ADS_CONFIG.isAdmin && !MODO_VISITANTE) inserirBotaoModoTeste();
 exibirAnuncios();
 
 async function iniciarQuiz(event) {
-  function desbloquearBotoes() {
-    permitir_escolher_tema = true;
-  };
+  function desbloquearBotoes() {permitir_escolher_tema = true};
 
   const config = window.ADS_CONFIG;
   if (config.registrandoModoTeste) return;
@@ -302,8 +302,8 @@ async function iniciarQuiz(event) {
 
   // Atualiza o tema atual, modo de jogo e tipo de pergunta no localStorage
   tema_atual = decodeURIComponent(event.currentTarget.dataset.tema);
-  sessionStorage.setItem("tema_atual", tema_atual);
-  sessionStorage.setItem("modo_jogo", 'desafio');
+  localStorage.setItem("tema_atual", tema_atual);
+  localStorage.setItem("modo_jogo", 'desafio');
 
   if (!tema_atual) {
     console.error("Tema não definidos na URL");
@@ -320,7 +320,6 @@ async function iniciarQuiz(event) {
       exibirMensagem(mensagem, `Energia esgotada, retorne amanhã para poder responder novas perguntas`, corMensagemPerguntasEsgotadas, true, false, 'flex');
     }
     else {
-      console.log("Sem eneria")
       exibirMensagem(mensagem, `É necessário criar uma conta para ter acesso ao conteúdo completo do jogo`, corMensagemPerguntasEsgotadas, true, false, 'flex');
     }
     desbloquearBotoes();
@@ -338,15 +337,15 @@ async function iniciarQuiz(event) {
         const data = await response.json();
 
         // Ids de perguntas que devem ser respondidas primeiro pelos usuários
-        sessionStorage.setItem("ids_prioritarios", JSON.stringify(data["ids_prioritarios"] ?? []));
+        localStorage.setItem("ids_prioritarios", JSON.stringify(data["ids_prioritarios"] ?? []));
 
-        // Atualiza as pontuações do usuário no tema e as perguntas no sessionStorage
-        sessionStorage.setItem("pontuacoes_usuario", JSON.stringify(data["pontuacoes_usuario"]));
-        sessionStorage.setItem("pontuacao_anterior", JSON.parse(sessionStorage.getItem("pontuacoes_usuario"))[tema_atual]);
-        sessionStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
+        // Atualiza as pontuações do usuário no tema e as perguntas no localStorage
+        localStorage.setItem("pontuacoes_usuario", JSON.stringify(data["pontuacoes_usuario"]));
+        localStorage.setItem("pontuacao_anterior", JSON.parse(localStorage.getItem("pontuacoes_usuario"))[tema_atual]);
+        localStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
 
         // Analisar se pode prosseguir com o quiz de acordo com o estoque de perguntas
-        const perguntas_por_dificuldade = JSON.parse(sessionStorage.getItem("perguntas"));
+        const perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas"));
         const encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE)
         
         // Analisa o ranking atual do usuário (ATENÇÃO, já procura ranking na função deveEncerrarQuiz, o que pode ser uma perda de eficiência aqui)
@@ -355,7 +354,7 @@ async function iniciarQuiz(event) {
           const ranking_no_tema = obterInfoRankingAtual(tema).ranking
           rankings_jogador[tema] = ranking_no_tema;
         });
-        sessionStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador))
+        localStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador))
       
         // Chama a tela de quiz ou exibe mensagem caso não haja perguntas disponíveis
         const perguntas_filtradas = obterPerguntasDisponiveis(data["perguntas"])
@@ -363,19 +362,19 @@ async function iniciarQuiz(event) {
 
         // Pega os anúncios que serão utilizados na tela de quiz
         if (ha_perguntas_disponiveis && !encerrar_quiz) {
-          sessionStorage.removeItem("perguntas_respondidas");
+          localStorage.removeItem("perguntas_respondidas");
           try {
               // 1. Faz a requisição
               const resposta = await fetch("/api/obter_todos_anuncios"); // Não serve para nada por enquanto, anúncios em quiz foram removidos
               // 2. Transforma em objeto JSON
               const dados = await resposta.json();
-              // 3. Salva como STRING (o sessionStorage só aceita strings)
-              sessionStorage.setItem("anuncios", JSON.stringify(dados));
+              // 3. Salva como STRING (o Storage só aceita strings)
+              localStorage.setItem("anuncios", JSON.stringify(dados));
           }
           catch (erro) {
               console.error("Falha ao carregar anúncios:", erro);
               // Opcional: define um objeto vazio para não quebrar o quiz
-              sessionStorage.setItem("anuncios", JSON.stringify({}));
+              localStorage.setItem("anuncios", JSON.stringify({}));
           }
 
           window.location.href = `/quiz/${encodeURIComponent(slugify(tema_atual))}`;
@@ -410,10 +409,10 @@ async function iniciarQuiz(event) {
           return
         }
         
-        // Grava as perguntas e a pontuação antes de inicar o quiz do visitante no sessionStorage
-        sessionStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
-        sessionStorage.setItem("pontuacao_anterior", JSON.parse(localStorage.getItem("pontuacoes_visitante"))[tema_atual]);
-        sessionStorage.removeItem("perguntas_respondidas");
+        // Grava as perguntas e a pontuação antes de inicar o quiz do visitante no localStorage
+        localStorage.setItem("perguntas", JSON.stringify(data["perguntas"]));
+        localStorage.setItem("pontuacao_anterior", JSON.parse(localStorage.getItem("pontuacoes_visitante"))[tema_atual]);
+        localStorage.removeItem("perguntas_respondidas");
         
         // Analisa os rankings atuais do usuário (AQUI NÃO É NECESSÁRIO OBTER INFORMAÇÃO DE RANKING PARA TODOS OS TEMAS, MAS SÓ PARA O DO QUIZ QUE SERÁ FEITO, MUDANÇA NO FUTURO SERÁ FEITA)
         const rankings_jogador = {};
@@ -421,17 +420,17 @@ async function iniciarQuiz(event) {
           const ranking_no_tema = obterInfoRankingAtual(tema).ranking;
           rankings_jogador[tema] = ranking_no_tema;
         })
-        sessionStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador));
+        localStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador));
         
         // Analisa os anúncios que tem apara exibir
         try {
           const resposta = await fetch("/api/obter_todos_anuncios");
           const dados = await resposta.json();
-          sessionStorage.setItem("anuncios", JSON.stringify(dados));
+          localStorage.setItem("anuncios", JSON.stringify(dados));
         }
         catch (erro) {
           console.error("Falha ao carregar anúncios:", erro);
-          sessionStorage.setItem("anuncios", JSON.stringify({}));
+          localStorage.setItem("anuncios", JSON.stringify({}));
         }
 
         // Chama a tela de quiz
@@ -468,11 +467,11 @@ async function exibirModalConfirmacaoEmail() {
       textoSecundario: "Reenviar e-mail",
       onPrimario: () => {
         modal.classList.add("hidden");
-        sessionStorage.setItem("modal_confirmacao_email_exibido", "true");
+        localStorage.setItem("modal_confirmacao_email_exibido", "true");
         permitir_escolher_tema = true;
       },
       onSecundario: () => {
-        if (sessionStorage.getItem("email_reenviado_neste_login") === "true") {
+        if (localStorage.getItem("email_reenviado_neste_login") === "true") {
           msgModal.innerText = "Um e-mail de confirmação já foi enviado recentemente";
           msgModal.style.display = "block";
           msgModal.style.color = corMensagemPerguntasEsgotadas;
@@ -490,7 +489,7 @@ async function exibirModalConfirmacaoEmail() {
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            sessionStorage.setItem("email_reenviado_neste_login", "true");
+            localStorage.setItem("email_reenviado_neste_login", "true");
             msgModal.innerText = "O e-mail de confirmação foi reenviado";
             msgModal.style.color = "lime";
           }
@@ -583,7 +582,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     data = await response.json();
 
     if (data.success) {
-      sessionStorage.setItem("regras_pontuacao", JSON.stringify(data.regras_pontuacao));
+      localStorage.setItem("regras_pontuacao", JSON.stringify(data.regras_pontuacao));
     };
   }
   catch(e) {
@@ -607,8 +606,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (btn_pesquisa) {
     btn_pesquisa.addEventListener("click", async () => {
       playSound("click");
-      const response = await fetchAutenticado("/pesquisa");
-      if (response.ok) window.location.href = "/pesquisa";
+      window.location.href = "/pesquisa";
     });
   };
   // Implementa a função de clique no botão de doações
@@ -657,7 +655,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
   }
   else {
-    userName.textContent = sessionStorage.getItem("nome_usuario");
-    perguntas_restantes.textContent = `${sessionStorage.getItem("perguntas_restantes")}/80`;
+    userName.textContent = localStorage.getItem("nome_usuario");
+    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}/80`;
   }
 })

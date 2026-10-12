@@ -14,7 +14,7 @@ const btn_revisar = document.getElementById("btn-revisar");
 const checksDificuldades = document.querySelectorAll(`#checks-dificuldades input[type="checkbox"]`);
 const box_tema = document.getElementById("tema");
 const mensagem = document.getElementById("mensagem");
-const MODO_VISITANTE = sessionStorage.getItem("modoVisitante") === "true";
+const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 const TTL_ESTADO_PESQUISA = 7 * 24 * 60 * 60 * 1000; // 7 dias
 const corMensagemAlerta = 'yellow';
 let favoritosAlterados = 0;
@@ -86,7 +86,7 @@ btn_revisar.addEventListener("click", async() => {
   playSound("click");
   salvarFavoritos();
   
-  const perguntas_totais = JSON.parse(sessionStorage.getItem("perguntas_para_revisar"));
+  const perguntas_totais = JSON.parse(localStorage.getItem("perguntas_para_revisar"));
   const perguntas_filtradas = {Fácil: [], Médio: [], Difícil: [], Extremo: []};
   tema_atual = box_tema.value;
 
@@ -101,19 +101,19 @@ btn_revisar.addEventListener("click", async() => {
   });
 
   if (perguntas_filtradas["Fácil"].length > 0 || perguntas_filtradas["Médio"].length > 0 || perguntas_filtradas["Difícil"].length > 0 || perguntas_filtradas["Extremo"].length > 0) {
-    sessionStorage.setItem("perguntas", JSON.stringify(perguntas_filtradas));
-    sessionStorage.setItem("modo_jogo", "revisao")
-    sessionStorage.setItem("tema_atual", tema_atual)
+    localStorage.setItem("perguntas", JSON.stringify(perguntas_filtradas));
+    localStorage.setItem("modo_jogo", "revisao")
+    localStorage.setItem("tema_atual", tema_atual)
 
     // Este trecho aparece mais 2 vezes em home.js, depois deve-se passar para utils.js
     try {
       const resposta = await fetch("/api/obter_todos_anuncios");
       const dados = await resposta.json();
-      sessionStorage.setItem("anuncios", JSON.stringify(dados));
+      localStorage.setItem("anuncios", JSON.stringify(dados));
     }
     catch (erro) {
       console.error("Falha ao carregar anúncios:", erro);
-      sessionStorage.setItem("anuncios", JSON.stringify({}));
+      localStorage.setItem("anuncios", JSON.stringify({}));
     }
 
     window.location.href = `/revisao/${encodeURIComponent(slugify(tema_atual))}`;
@@ -342,12 +342,12 @@ async function pesquisar() {
       perguntasPorDificuldade = filtrarPerguntasVisitante(data.perguntas);
     }
     else {
-      sessionStorage.setItem("pontuacoes_usuario", JSON.stringify(data.pontuacoes_usuario));
+      localStorage.setItem("pontuacoes_usuario", JSON.stringify(data.pontuacoes_usuario));
       perguntasPorDificuldade = data.perguntas;
     }
     
     salvarEstadoPesquisa(tema_atual, dificuldadesSelecionadas, subtemasSelecionados);
-    sessionStorage.setItem("perguntas_para_revisar", JSON.stringify(perguntasPorDificuldade));
+    localStorage.setItem("perguntas_para_revisar", JSON.stringify(perguntasPorDificuldade));
 
     // Renderiza tabela respeitando filtros
     renderizarPerguntas(perguntasPorDificuldade);
@@ -453,7 +453,7 @@ function identificarMudancaCheck (checkbox) {
 
 // HELPERS
 function getOwnerKey() {
-  return MODO_VISITANTE === true ? "visitante" : sessionStorage.getItem("id_usuario");
+  return MODO_VISITANTE === true ? "visitante" : localStorage.getItem("id_usuario");
 }
 
 function temaValido(tema) {

@@ -137,7 +137,6 @@ def alterar_email_route():
 
 @app.route("/api/pontuacoes")
 def api_pontuacoes():
-    id_usuario = session.get(id_usuario)
     pontuacoes = buscar_pontuacoes_usuario()
     return jsonify(pontuacoes)
 
@@ -170,12 +169,13 @@ def api_regras_pontuacao():
             message="Erro ao carregar regras de pontuação"
         ), 500
 
-def buscar_pontuacoes_usuario(id_usuario):
+def buscar_pontuacoes_usuario():
     """
     Busca pontuações do usuário para todos os temas ativos.
     Caso o usuário ainda não tenha pontuação em um tema, retorna 0.
     """
     pontuacoes_usuario = {}
+    id_usuario = session['id_usuario']
 
     conn = cur = None
     try:
@@ -782,7 +782,6 @@ def gerar_token_confirmacao(tamanho=32):
 def home():
     id_usuario = session.get("id_usuario")
     visitante = session.get("visitante", False)
-
     usuario_autorizado = True if id_usuario in privileged_ids else False
 
     return render_template(
@@ -945,33 +944,16 @@ def listar_perguntas():
     # Configurações locais
     limit = 150 if modo == 'desafio' else 1000
 
-    print("Parte 1")
-
     # Validações
     if not tema or modo not in ('desafio', 'revisao'):
-
-
-        if not tema:
-            print("Não há tema]")
-        else:
-            print("Modo está incorreto")
-
-
         app.logger.error("Parâmetros inválidos ou ausentes")
         return jsonify({'erro': 'Parâmetros inválidos ou ausentes'}), 400
     if not id_usuario and not modo_visitante:
-
-
-        print("Sem id de usuário e náoo está em modo visitante")
-
-
         app.logger.error("Usuário não autenticado")
         return jsonify({'erro': 'Usuário não autenticado'}), 401
     if not id_visitante and modo_visitante:
         app.logger.error("Visitante não autenticado")
         return jsonify({'erro': 'Visitante não autenticado'}), 401
-
-    print("Parte 2")
     
     # Conexão com servidor
     conn = cur = None
@@ -1072,9 +1054,7 @@ def listar_perguntas():
         if cur: cur.close()
         if conn: conn.close()
 
-    print("Parte 3")
-
-    pontuacoes_usuario = buscar_pontuacoes_usuario(id_usuario) if not modo_visitante else {}
+    pontuacoes_usuario = buscar_pontuacoes_usuario() if not modo_visitante else {}
 
     return jsonify({
         'perguntas': perguntas_por_dificuldade,
@@ -2039,6 +2019,7 @@ def salvar_opcoes():
         notificacoes_atualizacoes_site = bool(data.get("notificacoes_atualizacoes_site", True))
         outras_notificacoes = bool(data.get("outras_notificacoes", False))
         temas_interesse = data.get("temas_interesse", [])
+        id_usuario = session["id_usuario"]
 
         # Garantia defensiva
         if not isinstance(temas_interesse, list): temas_interesse = []
@@ -2064,7 +2045,7 @@ def salvar_opcoes():
             notificacoes_atualizacoes_site,
             outras_notificacoes,
             temas_interesse,
-            user_id
+            id_usuario
         ))
 
         conn.commit()

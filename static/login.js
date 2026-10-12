@@ -1,5 +1,7 @@
-import { idsVisitantesReservados } from "./utils.js";
+import { APP_VERSION, idsVisitantesReservados } from "./utils.js";
 import { playSound, playKeySound } from './sound.js';
+
+const mensagensAbaLogin = ['Sessão expirada', 'Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente'];
 
 // Função para registrar conversão da Microsoft para conta cadastrada
 function dispararConversaoMicrosoft() {
@@ -62,7 +64,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const btnEntrarSemLogin = document.getElementById("entrar-visitante")
   btnEntrarSemLogin.addEventListener("click", () => {
     playSound("click");
-    sessionStorage.setItem("modoVisitante", "true");
+    localStorage.setItem("modoVisitante", "true");
+    localStorage.setItem("app_version", APP_VERSION);
     window.location.href = "/entrar_visitante";
   })
 
@@ -123,10 +126,10 @@ document.addEventListener('DOMContentLoaded', function () {
   const inputCaptchaSelecoes = document.getElementById('captcha-selecoes');
 
   const msg = localStorage.getItem("auth_message");
-  if (msg) {
+  if (msg && lbl_mensagem_login) {
     lbl_mensagem_login.style.color = 'red';
     lbl_mensagem_login.textContent = msg;
-    lbl_mensagem_login.display = '';
+    lbl_mensagem_login.style.display = '';
     localStorage.removeItem("auth_message");
   }
 
@@ -455,16 +458,16 @@ document.addEventListener('DOMContentLoaded', function () {
         const data = await response.json();
 
         if (data.success) {
-          // Grava informações no sessionStorage
-          sessionStorage.setItem("id_usuario", data.id_usuario);
-          sessionStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes || 0));
-          sessionStorage.setItem("nome_usuario", data.nome_usuario || '');
+          // Grava informações no localStorage
+          localStorage.setItem("id_usuario", data.id_usuario);
+          localStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes || 0));
+          localStorage.setItem("nome_usuario", data.nome_usuario || '');
 
-          if (data.opcoes_usuario) sessionStorage.setItem('opcoes_usuario', JSON.stringify(data.opcoes_usuario));
-          sessionStorage.setItem("modal_confirmacao_email_exibido", false);
-          sessionStorage.setItem("email_usuario", data.email);
-          sessionStorage.setItem("token_sessao", data.token);
-          sessionStorage.setItem("modoVisitante", "false");
+          if (data.opcoes_usuario) localStorage.setItem('opcoes_usuario', JSON.stringify(data.opcoes_usuario));
+          localStorage.setItem("modal_confirmacao_email_exibido", false);
+          localStorage.setItem("email_usuario", data.email);
+          localStorage.setItem("modoVisitante", "false");
+          localStorage.setItem("app_version", APP_VERSION);
           window.location.href = "/home";
         } 
         else {
@@ -562,7 +565,7 @@ document.addEventListener('DOMContentLoaded', function () {
       login_tab.classList.add('active');
       register_tab.classList.remove('active');
       if (info_section) info_section.style.display = '';
-      if (lbl_mensagem_login && !registro_realizado && lbl_mensagem_login.textContent != "Sessão expirada") {
+      if (lbl_mensagem_login && !registro_realizado && !mensagensAbaLogin.includes(lbl_mensagem_login.textContent)) {
         lbl_mensagem_login.textContent = '';
       }
       if (lbl_mensagem_registro) {
@@ -684,12 +687,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   window.showForm = showForm;
-  if (sessionStorage.getItem("ir_para_aba_registro")) {
-    showForm('register', false, false);
-  }
-  else {
-    showForm('login');
-  }
+  if (sessionStorage.getItem("ir_para_aba_registro")) {showForm('register', false, false)}
+  else {showForm('login')};
   sessionStorage.removeItem("ir_para_aba_registro");
 });
-

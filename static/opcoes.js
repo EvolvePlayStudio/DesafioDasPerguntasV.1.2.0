@@ -52,7 +52,7 @@ btnAlterarEmail.addEventListener('click', async () => {
     }
 
     email_atual.textContent = inputNovoEmail.value.trim().toLowerCase();
-    sessionStorage.setItem('email_usuario', email_atual.textContent);
+    localStorage.setItem('email_usuario', email_atual.textContent);
     inputNovoEmail.value = '';
     mostrarStatus(
       'E-mail alterado. Verifique sua caixa de entrada para confirmar',
@@ -112,8 +112,8 @@ function atualizarBotaoSalvar() {
 // Carregar estado inicial
 // ===============================
 function carregarEstadoInicial() {
-  email_atual.textContent = sessionStorage.getItem("email_usuario");
-  const dados = sessionStorage.getItem('opcoes_usuario');
+  email_atual.textContent = localStorage.getItem("email_usuario");
+  const dados = localStorage.getItem('opcoes_usuario');
 
   if (dados) {
     const opcoes = JSON.parse(dados);
@@ -182,7 +182,7 @@ btnSalvar.addEventListener('click', async () => {
     if (!resp.ok) throw new Error();
 
     estadoInicial = payload;
-    sessionStorage.setItem('opcoes_usuario', JSON.stringify(payload));
+    localStorage.setItem('opcoes_usuario', JSON.stringify(payload));
 
     atualizarBotaoSalvar();
     mostrarStatus('Opções salvas com sucesso', 'sucesso');

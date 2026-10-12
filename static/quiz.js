@@ -1,9 +1,10 @@
-import { coresDificuldade, dificuldadesOrdenadas, deveEncerrarQuiz, idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings, idsVisitantesReservados } from "./utils.js"
+import { coresDificuldade, dificuldadesOrdenadas, deveEncerrarQuiz, idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings, idsVisitantesReservados, validateAppVersion} from "./utils.js"
 import { playSound, playKeySound } from "./sound.js"
 
 // Envia erros para a base de dados caso ocorram
 const id_visitante = localStorage.getItem("id_visitante");
-const idUsuario = Number(getWithMigration("id_usuario"));
+const idUsuario = Number(localStorage.getItem("id_usuario") ?? "0");
+const isAdmin = idsReservados.includes(idUsuario) || idsVisitantesReservados.includes(id_visitante);
 window.onerror = function (message) {
   if (!idsVisitantesReservados.includes(id_visitante) && !idsReservados.includes(idUsuario)) {
     fetch("/api/debug/frontend", {
@@ -19,24 +20,26 @@ window.onerror = function (message) {
   }
 };
 
-const MODO_VISITANTE = getWithMigration("modoVisitante") === "true";
-let storagePontuacao;
-let STORAGE_KEY;
-if (MODO_VISITANTE === true) {
-  STORAGE_KEY = "pontuacoes_visitante";
-  storagePontuacao = localStorage;
+const MODO_VISITANTE = localStorage.getItem("modoVisitante") === 'true';
+
+if (MODO_VISITANTE === undefined || idUsuario === 0) {
+  localStorage.setItem("auth_message", "Sessão expirada");
+  window.location.href = '/login';
+}
+let pontuacoes_jogador;
+if (MODO_VISITANTE) {
+  pontuacoes_jogador = JSON.parse(localStorage.getItem("pontuacoes_visitante") ?? "{}");
 }
 else {
-  STORAGE_KEY = "pontuacoes_usuario";
-  storagePontuacao = sessionStorage;
+  pontuacoes_jogador = JSON.parse(localStorage.getItem("pontuacoes_usuario") ?? "{}");
+  validateAppVersion();
 }
-const tema_atual = getWithMigration("tema_atual");
-const pontuacoes_jogador = JSON.parse(storagePontuacao.getItem(STORAGE_KEY) ?? "{}");
+const tema_atual = localStorage.getItem("tema_atual");
 if (typeof pontuacoes_jogador[tema_atual] !== "number") { 
   pontuacoes_jogador[tema_atual] = 0;
-  storagePontuacao.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes_jogador))
+  localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes_jogador))
 };
-const perguntas_por_dificuldade = JSON.parse(getWithMigration("perguntas") ?? "null");
+const perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas") ?? "null");
 
 // Ordena os IDs de forma crescente em cada nível de dificuldade (facilita coleta de dados)
 if (perguntas_por_dificuldade && MODO_VISITANTE) {
@@ -47,9 +50,9 @@ if (perguntas_por_dificuldade && MODO_VISITANTE) {
   });
 }
 
-const regras_pontuacao = JSON.parse(getWithMigration("regras_pontuacao") ?? "[]");
-const rankings_jogador = JSON.parse(getWithMigration("rankings_jogador") ?? "{}");
-const modo_jogo = (getWithMigration("modo_jogo") ?? "").toLocaleLowerCase();
+const regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao") ?? "[]");
+const rankings_jogador = JSON.parse(localStorage.getItem("rankings_jogador") ?? "{}");
+const modo_jogo        = (localStorage.getItem("modo_jogo") ?? "").toLocaleLowerCase();
 let indicePerguntaGlobal = null;
 let perguntasDisponiveisGlobal = [];
 
@@ -75,8 +78,8 @@ let animacao_concluida = false;
 let haPerguntasDisponiveis = false;
 let aguardando_proxima = false; // quando estiver aguardando a próximo pergunta
 let perguntas_respondidas = [];
-if (sessionStorage.getItem("perguntas_respondidas")) {
-  perguntas_respondidas = JSON.parse(sessionStorage.getItem("perguntas_respondidas"));
+if (localStorage.getItem("perguntas_respondidas")) {
+  perguntas_respondidas = JSON.parse(localStorage.getItem("perguntas_respondidas"));
 }
 let inicio_pergunta;  // horário inicial da pergunta
 let pergunta_selecionada;
@@ -111,13 +114,6 @@ const PROBABILIDADES_POR_RANKING = {
   Lenda:     { Fácil: 0.02, Médio: 0.28, Difícil: 0.40, Extremo: 0.30 }
 };
 
-// Círculo amarelo com interrogação preta para símbolo de pergunta pulada
-const svg1 = `<svg class="icon-pular" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="vertical-align: middle;">
-  <g transform="translate(0,-1)">
-    <circle cx="12" cy="12" r="11" fill="#FFD700"/>
-    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-weight="700" fill="#111">?</text>
-  </g>
-</svg>`;
 // Tempos para as alternativas
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 const PAUSA_ANTES_DA_A              = 500;
@@ -126,7 +122,7 @@ const VELOCIDADE_LETRA_ENUNCIADO    = 21;
 const VELOCIDADE_LETRA_ALTERNATIVAS = 16; // quanto menor, mais rápido
 
 // Ids de perguntas que são selecionados primeiro
-let idsPrioritarios = JSON.parse(sessionStorage.getItem('ids_prioritarios') ?? "[]").map(Number);
+let idsPrioritarios = JSON.parse(localStorage.getItem("ids_prioritarios") ?? "[]").map(Number);
 
 // Seleciona os botões
 botaoLikeNota.addEventListener("click", () => {
@@ -140,19 +136,6 @@ botaoDislikeNota.addEventListener("click", () => {
   botaoDislikeNota.classList.toggle("ativo", !jaAtivo);
   botaoLikeNota.classList.remove("ativo");
 });
-
-function getWithMigration(key) {
-  // Pega dado do sessionStorage, se não encontrar pega do localStorage
-  const sessionValue = sessionStorage.getItem(key);
-  if (sessionValue !== null) return sessionValue;
-
-  const localValue = localStorage.getItem(key);
-  if (localValue !== null) {
-    sessionStorage.setItem(key, localValue);
-    return localValue;
-  }
-  return null;
-}
 
 // --- Funções Auxiliares de Conversão ---
 function registrar_5_perguntas_respondidas_microsoft() {
@@ -625,13 +608,13 @@ async function enviarResposta() {
 
       const data = await response.json();
       if (data.sucesso) {
-        // Atualiza a pontuação do usuário para o tema no sessionStorage
+        // Atualiza a pontuação do usuário para o tema no Storage
         pontuacoes_jogador[tema_atual] = data.nova_pontuacao;
-        sessionStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_jogador));
+        localStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_jogador));
         alterarPontuacaoUsuario(pontuacao_atual, pontuacoes_jogador[tema_atual]);
 
-        // Atualiza as perguntas restantes do usuário no sessionStorage
-        sessionStorage.setItem("perguntas_restantes", data.perguntas_restantes);
+        // Atualiza as perguntas restantes do usuário no Storage
+        localStorage.setItem("perguntas_restantes", data.perguntas_restantes);
         contador_perguntas_restantes.textContent = data.perguntas_restantes;
 
         atualizarRankingVisual();
@@ -657,13 +640,7 @@ async function enviarResposta() {
       try {
         if (idsVisitantesReservados.includes(id_visitante)) return;
         const totalRespondidas = respondidas.length;
-        const origemUsuario = localStorage.getItem('usuario_origem');
-
-        /*
-        console.log(`Total respondidas: ${totalRespondidas}`)
-        const origemUsuario = 'microsoftads'
-        console.log(`Meta de 15 já enviada? ${sessionStorage.getItem('meta_15_perguntas_enviada')}`);
-        console.log(`Meta de 5 já enviada? ${sessionStorage.getItem('meta_5_perguntas_enviada')}`);*/
+        const origemUsuario = localStorage.getItem("usuario_origem");
         
         if (!origemUsuario) return;
         const origemUsuarioLower = origemUsuario.toLowerCase();
@@ -725,8 +702,6 @@ async function enviarResposta() {
     alterarPontuacaoUsuario(pontuacoes_jogador[tema_atual], pontuacoes_jogador[tema_atual] + pontos_ganhos)
     pontuacoes_jogador[tema_atual] = pontuacoes_jogador[tema_atual] + pontos_ganhos;
 
-    // Pontuações de usuário são usadas temporariamente (na prática é de visitante apesar do nome), enquanto a de visitante é para registro permanente
-    // sessionStorage.setItem("pontuacoes_usuario", JSON.stringify(pontuacoes_usuario));
     localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes_jogador));
     atualizarRankingVisual();
 
@@ -809,12 +784,12 @@ async function enviarResposta() {
   if (prosseguir_com_resultado) {
     // Remove a pergunta do array para não repetir
     perguntasDisponiveisGlobal.splice(indicePerguntaGlobal, 1);
-    sessionStorage.setItem("perguntas", JSON.stringify(perguntas_por_dificuldade));
+    localStorage.setItem("perguntas", JSON.stringify(perguntas_por_dificuldade));
 
     if (modo_jogo === "desafio") {
       const info_resposta = {"enunciado": pergunta_selecionada.enunciado, "alternativa_a": pergunta_selecionada.alternativa_a, "alternativa_b": pergunta_selecionada.alternativa_b, "alternativa_c": pergunta_selecionada.alternativa_c, "alternativa_d": pergunta_selecionada.alternativa_d, "resposta_correta": letra_correta, "resposta_usuario": resposta_usuario, "pontos_ganhos": pontos_ganhos, "dificuldade": pergunta_selecionada.dificuldade}
       perguntas_respondidas.push(info_resposta);
-      sessionStorage.setItem("perguntas_respondidas", JSON.stringify(perguntas_respondidas));
+      localStorage.setItem("perguntas_respondidas", JSON.stringify(perguntas_respondidas));
     }
     
     // Mostra se acertou a resposta e os botões "próxima" e "finalizar"
@@ -833,7 +808,7 @@ async function finalizarQuiz() {
   // await registrarFeedback();
   registrarFeedback()
   if (modo_jogo === 'desafio') {
-    sessionStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador ?? {}))
+    localStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador ?? {}))
     window.location.href = "/resultado";
   }
   else {
@@ -982,7 +957,7 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
       "Difícil": perguntas_por_dificuldade["Difícil"]?.length || 0,
       "Extremo": perguntas_por_dificuldade["Extremo"]?.length || 0
     };
-    console.log("Estoque: ", estoque)
+    if (isAdmin) {console.log("Estoque: ", estoque)};
     
     // Caso esteja no modo revisão ou visitante
     if (modo_jogo === "revisao" || MODO_VISITANTE) {
@@ -991,7 +966,7 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
 
     // 🔥 1. FORÇAGEM PELA DIFICULDADE COM MAIOR ESTOQUE
     if (respostasDesdeUltimaForcagem === 4) {
-      if (idsReservados.includes(idUsuario)) {
+      if (isAdmin) {
         console.log("Pegando a dificuldade com maior estoque...")
       }
       const ordenadas = [...disponiveis].sort(
@@ -1067,13 +1042,8 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
     const acima  = dificuldadesOrdenadas[idx + 1];
 
     const candidatos = [];
-
-    if (abaixo && disponiveis.includes(abaixo) && estoque[abaixo] > 0) {
-      candidatos.push(abaixo);
-    }
-    if (acima && disponiveis.includes(acima) && estoque[acima] > 0) {
-      candidatos.push(acima);
-    }
+    if (abaixo && disponiveis.includes(abaixo) && estoque[abaixo] > 0) {candidatos.push(abaixo)};
+    if (acima && disponiveis.includes(acima) && estoque[acima] > 0) {candidatos.push(acima)};
 
     if (candidatos.length === 0) {
       // Último recurso: qualquer disponível com estoque
@@ -1175,9 +1145,10 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
     // Persiste o ID da nova pergunta selecionada no sessionStorage
     sessionStorage.setItem("id_pergunta_ativa", pergunta_selecionada.id_pergunta);
   }
-  console.log(`Dificuldade selecionada: ${pergunta_selecionada.dificuldade}`);
-  console.log(`Pergunta selecionada: (${pergunta_selecionada.id_pergunta}) ${pergunta_selecionada.enunciado}`);
-
+  if (isAdmin) {
+    console.log(`Dificuldade selecionada: ${pergunta_selecionada.dificuldade}`);
+    console.log(`Pergunta selecionada: (${pergunta_selecionada.id_pergunta}) ${pergunta_selecionada.enunciado}`);
+  }
   window.avaliacaoAtual = 0;
 
   // Faz animação do enunciado da pergunta
@@ -1341,7 +1312,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (modo_jogo === 'desafio') {
     const num_perguntas_restantes = contador_perguntas_restantes
     if (!MODO_VISITANTE) {
-      num_perguntas_restantes.textContent = `${getWithMigration("perguntas_restantes")}`
+      num_perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}`
     }
     else {
       num_perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}`
