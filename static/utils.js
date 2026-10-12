@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.8.8';
+export const APP_VERSION = '1.8.9';
 export const pontuacaoTemaPadraoVisitantes = 0; // Aqui era 1800 na versão antiga
 export const dificuldadesOrdenadas = ['Fácil', 'Médio', 'Difícil', 'Extremo'];
 export const temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"];

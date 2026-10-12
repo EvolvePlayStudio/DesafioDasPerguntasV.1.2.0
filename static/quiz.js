@@ -1,6 +1,16 @@
 import { coresDificuldade, dificuldadesOrdenadas, deveEncerrarQuiz, idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings, idsVisitantesReservados, validateAppVersion} from "./utils.js"
 import { playSound, playKeySound } from "./sound.js"
 
+APP_VERSION_QUIZ = '1.8.9';
+const savedVersion = localStorage.getItem('app_version');
+
+if (savedVersion !== APP_VERSION_QUIZ) {
+  // Atualiza a versão salva
+  localStorage.setItem('app_version', APP_VERSION_QUIZ);
+  // Força o navegador a recarregar a página ignorando o cache local dos arquivos JS/CSS
+  window.location.reload(true);
+}
+
 // Envia erros para a base de dados caso ocorram
 const id_visitante = localStorage.getItem("id_visitante");
 const idUsuario = Number(localStorage.getItem("id_usuario") ?? "0");
