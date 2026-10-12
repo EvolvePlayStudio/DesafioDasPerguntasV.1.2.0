@@ -1,6 +1,13 @@
 import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, idsReservados, idsVisitantesReservados, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis, validateAppVersion } from "./utils.js";
 import { playSound } from "./sound.js";
 
+function validateAppVersionHome() {
+  if (!localStorage.getItem('app_version')) {
+    localStorage.setItem("auth_message", "Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente");
+    window.location.href = '/login';
+  }
+}
+
 let permitir_escolher_tema = false;
 let tema_atual = null;
 const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
@@ -13,7 +20,7 @@ if (!MODO_VISITANTE) { // Verifica se deve expirar a sessão
     localStorage.setItem("auth_message", "Sessão expirada");
     window.location.href = "/login";
   }
-  validateAppVersion();
+  validateAppVersionHome();
 }
 
 const mensagem = document.getElementById("mensagem");
