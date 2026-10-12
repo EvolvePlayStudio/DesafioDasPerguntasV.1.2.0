@@ -1,5 +1,7 @@
-import { APP_VERSION, idsVisitantesReservados } from "./utils.js";
+import { idsVisitantesReservados } from "./utils.js";
 import { playSound, playKeySound } from './sound.js';
+
+const APP_VERSION_LOGIN = '1.8.9';
 
 const mensagensAbaLogin = ['Sessão expirada', 'Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente'];
 
@@ -65,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
   btnEntrarSemLogin.addEventListener("click", () => {
     playSound("click");
     localStorage.setItem("modoVisitante", "true");
-    localStorage.setItem("app_version", APP_VERSION);
+    localStorage.setItem("app_version", APP_VERSION_LOGIN);
     window.location.href = "/entrar_visitante";
   })
 
@@ -467,7 +469,7 @@ document.addEventListener('DOMContentLoaded', function () {
           localStorage.setItem("modal_confirmacao_email_exibido", false);
           localStorage.setItem("email_usuario", data.email);
           localStorage.setItem("modoVisitante", "false");
-          localStorage.setItem("app_version", APP_VERSION);
+          localStorage.setItem("app_version", APP_VERSION_LOGIN);
           window.location.href = "/home";
         } 
         else {
