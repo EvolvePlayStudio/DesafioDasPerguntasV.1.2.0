@@ -52,8 +52,8 @@ let btnsHeader;
 const modoTesteWrapper    = document.getElementById("modo-teste-wrapper");
 const checkModoTeste      = document.getElementById("modo-teste-toggle");
 const modoTeste           = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
-console.log(`ID de visitante: ${idVisitante}`)
 const corMensagemAlerta   = 'yellow'
+
 if (MODO_VISITANTE) {
   btnsHeader = [btn_perfil, btn_pesquisa, btn_doacoes, btn_logout];
   permitir_escolher_tema = true;
