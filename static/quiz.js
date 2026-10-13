@@ -964,14 +964,25 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
 
   function escolherProximaDificuldade() {
     const ranking = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking;
-    const disponiveis = obterDificuldadesDisponiveis(tema_atual, MODO_VISITANTE);
+    let disponiveis = obterDificuldadesDisponiveis(tema_atual, MODO_VISITANTE);
+
+    // Quantidade de perguntas de cada nível de dificuldade disponíveis atualmente
+    const estoqueFacil   = perguntas_por_dificuldade["Fácil"]?.length || 0;
+    const estoqueMedio   = perguntas_por_dificuldade["Médio"]?.length || 0;
+    const estoqueDificil = perguntas_por_dificuldade["Difícil"]?.length || 0;
+    const estoqueExtremo = perguntas_por_dificuldade["Extremo"]?.length || 0;
+    
+    // Remove a dificuldade Difícil das opcões caso o usuário tenha menos de 300 pontos
+    if ((pontuacoes_jogador[tema_atual] || 0) <= 300 && estoqueFacil + estoqueMedio > 0) {
+      disponiveis = disponiveis.filter(dif => dif !== 'Difícil')
+    }
 
     const probsBase = PROBABILIDADES_POR_RANKING[ranking];
     const estoque = {
-      "Fácil": perguntas_por_dificuldade["Fácil"]?.length || 0,
-      "Médio": perguntas_por_dificuldade["Médio"]?.length || 0,
-      "Difícil": perguntas_por_dificuldade["Difícil"]?.length || 0,
-      "Extremo": perguntas_por_dificuldade["Extremo"]?.length || 0
+      "Fácil":   estoqueFacil,
+      "Médio":   estoqueMedio,
+      "Difícil": estoqueDificil,
+      "Extremo": estoqueExtremo
     };
     if (isAdmin) {console.log("Estoque: ", estoque)};
     
@@ -991,6 +1002,8 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
 
       let escolhida = ordenadas[0]; // Pega a que tem o maior estoque
 
+      // A probabilidade base deve ser maior do que 5% para pegar forçadamente por estoque
+      // Caso contrário, pega a segunda de maior estoque (ordenadas[1])
       if ((probsBase[escolhida] ?? 0) <= 0.05 && ordenadas[1]) {
         escolhida = ordenadas[1];
       }
