@@ -29,7 +29,7 @@ window.onerror = function (message) {
 
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === 'true';
 
-if (MODO_VISITANTE === undefined || idUsuario === 0) {
+if (MODO_VISITANTE === undefined || (!MODO_VISITANTE && idUsuario === 0)) {
   localStorage.setItem("auth_message", "Sessão expirada");
   window.location.href = '/login';
 }
