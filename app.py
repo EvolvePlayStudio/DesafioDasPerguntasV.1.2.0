@@ -31,7 +31,7 @@ invite_token = os.getenv("TOKEN_CONVITE")
 # Algumas variáveis abaixo podem ir para o utils.py futuramente
 SITE_EM_MANUTENCAO = False
 # O primeiro id é de desktop e o segundo de mobile
-ids_visitante_admin = ["b9e4cd53-bab5-42be-8e26-640a25b7591f", "6fc3da72-b836-43eb-95e5-d18d438c733e", "d103db0e-cd5d-4743-a67c-2cdf0f282892"]
+ids_visitante_admin = ['995f7fc7-9ae6-4f42-8e2f-bdc4f41fbb54', 'd103db0e-cd5d-4743-a67c-2cdf0f282892']
 # Código copia e cola gerado pelo Nubank
 codigo_pix = os.getenv("QR_CODE")
 img = qrcode.make(codigo_pix)
@@ -493,15 +493,22 @@ def identificar_dispositivo():
     if not ua:
         return "Indefinido"
 
-    # Mobile
+    # 1. Identifica Tablets (incluindo iPads que mandam User-Agent de Mac mas possuem suporte a toque ou menção explícita)
+    if "ipad" in ua or "tablet" in ua:
+        return "Tablet"
+    
+    # Alguns iPads modernos no iPadOS enviam 'macintosh' mas podemos tentar pegar se houver indício de toque ou deixar seguro.
+    # Como você pontuou que o modo desktop raramente é ativado neles, a checagem acima já captura a grande maioria.
+
+    # 2. Identifica Mobile (Smartphones)
     if any(x in ua for x in ["mobile", "android", "iphone", "ipod"]):
+        # Nota: Alguns tablets Android antigos vinham com 'android' sem a palavra 'mobile'. 
+        # Se contiver 'android' e NÃO contiver 'mobile', geralmente é um tablet Android!
+        if "android" in ua and "mobile" not in ua:
+            return "Tablet"
         return "Mobile"
 
-    # Tablet
-    if any(x in ua for x in ["ipad", "tablet"]):
-        return "Tablet"
-
-    # Desktop (apenas se houver indícios claros)
+    # 3. Identifica Desktop
     if any(x in ua for x in ["windows", "macintosh", "linux"]):
         return "Desktop"
 
@@ -1106,11 +1113,12 @@ def login():
                 return jsonify(success=False, message="Formato de e-mail inválido"), 400
 
             conn = get_db_connection()
+            # 1. USANDO O RealDictCursor PARA PERMITIR usuario['coluna']
             cur = conn.cursor()
 
             # Verifica usuário
             cur.execute("""
-                SELECT id_usuario, senha_hash, nome, email_confirmado, perguntas_restantes, ultima_sessao, bonus_energia, expiracao_bonus
+                SELECT id_usuario, senha_hash, nome, email_confirmado
                 FROM usuarios_registrados WHERE email = %s
             """, (email,))
             usuario = cur.fetchone()
@@ -1118,40 +1126,16 @@ def login():
             if not usuario:
                 return jsonify(success=False, message="E-mail não registrado")
 
-            id_usuario, senha_hash, nome_usuario, email_confirmado, p_restantes, u_sessao, b_energia, exp_bonus = usuario
-            
+            id_usuario, senha_hash, nome_usuario, email_confirmado = usuario
+
             if not check_password_hash(senha_hash, senha):
                 return jsonify(success=False, message="Senha incorreta")
 
-            session["id_usuario"] = id_usuario
-            session["email"] = email
+            # Configura a sessão do Flask
+            session["id_usuario"]       = id_usuario
+            session["email"]            = email
             session["email_confirmado"] = email_confirmado
-            session["visitante"] = False
-
-            # --- LÓGICA DE RECARGA DIÁRIA E BÔNUS (REVISADA) ---
-            agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
-            nova_energia = p_restantes
-
-            # 1. Recarga Diária Normal (+20 se for um novo dia)
-            if u_sessao and u_sessao.date() < agora_sp.date():
-                nova_energia = min(nova_energia + 20, 80)
-
-            # 2. Processamento do Bônus (soma ao total, respeitando o teto de 80)
-            if b_energia > 0 and (exp_bonus is None or agora_sp < exp_bonus):
-                nova_energia = min(nova_energia + b_energia, 80)
-
-            # 3. Atualiza o banco com a nova energia e o novo horário de sessão
-            cur.execute("""
-            UPDATE usuarios_registrados
-                SET ultima_sessao = date_trunc('second', NOW() AT TIME ZONE 'America/Sao_Paulo'),
-                perguntas_restantes = %s,
-                bonus_energia = 0,
-                expiracao_bonus = NULL
-            WHERE id_usuario = %s
-            """, (nova_energia, id_usuario))
-            
-            # Atualiza para o retorno do JSON
-            p_restantes = nova_energia
+            session["visitante"]        = False
 
             # Pega as informações de opções do usuário
             cur.execute("""
@@ -1169,8 +1153,7 @@ def login():
             opcoes = cur.fetchone()
 
             if opcoes:
-                (   
-                    exibir_instrucoes_quiz,
+                (   exibir_instrucoes_quiz,
                     notificacoes_bonus_energia,
                     notificacoes_alteracoes_pontos,
                     notificacoes_atualizacoes_site,
@@ -1178,32 +1161,31 @@ def login():
                     temas_interesse
                 ) = opcoes
             else:
-                # fallback defensivo (não deveria ocorrer)
-                exibir_instrucoes_quiz = True
-                notificacoes_bonus_energia = True
-                notificacoes_alteracoes_pontos = True
-                notificacoes_atualizacoes_site = True
-                outras_notificacoes = False
-                temas_interesse = []
+                # Fallback defensivo
+                exibir_instrucoes_quiz          = True
+                notificacoes_bonus_energia      = True
+                notificacoes_alteracoes_pontos  = True
+                notificacoes_atualizacoes_site  = True
+                outras_notificacoes             = False
+                temas_interesse                 = []
 
-            # Lógica de ranking/pontuação
+            # Cria as pontuações de usuário nos temas e registra na base de dados (iniciando com 0 pontos)
             cur.execute("SELECT tema FROM pontuacoes_usuarios WHERE id_usuario = %s", (id_usuario,))
             temas_ja_registrados = {row[0].strip().lower() for row in cur.fetchall()}
             temas_normalizados = {tema.strip().lower(): tema for tema in temas_disponiveis}
             temas_faltantes = [nome_original for chave, nome_original in temas_normalizados.items() if chave not in temas_ja_registrados]
-
             for tema in temas_faltantes:
                 cur.execute("INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao) VALUES (%s, %s, %s)", (id_usuario, tema, 0))
 
             conn.commit()
 
             opcoes_usuario = {
-                "exibir_instrucoes_quiz": exibir_instrucoes_quiz,
-                "notificacoes_bonus_energia": notificacoes_bonus_energia,
+                "exibir_instrucoes_quiz":         exibir_instrucoes_quiz,
+                "notificacoes_bonus_energia":     notificacoes_bonus_energia,
                 "notificacoes_alteracoes_pontos": notificacoes_alteracoes_pontos,
                 "notificacoes_atualizacoes_site": notificacoes_atualizacoes_site,
-                "outras_notificacoes": outras_notificacoes,
-                "temas_interesse": temas_interesse or []
+                "outras_notificacoes":            outras_notificacoes,
+                "temas_interesse":                temas_interesse or []
             }
 
             # 🔑 Retorna JSON e define cookie HttpOnly
@@ -1213,7 +1195,6 @@ def login():
                 id_usuario=id_usuario,
                 email=email,
                 nome_usuario=nome_usuario,
-                perguntas_restantes=p_restantes,
                 opcoes_usuario=opcoes_usuario
             ), 200)
 
@@ -1224,6 +1205,80 @@ def login():
         if conn: conn.rollback()
         app.logger.error("Erro no login:\n" + traceback.format_exc())
         return jsonify(success=False, message="Erro interno no servidor"), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+def atualizar_energia_usuario(cur, id_usuario, energia_atual, u_sessao, b_energia, exp_bonus):
+    """
+    Calcula a recarga de energia diária do usuário e atualiza no banco de dados
+    """
+    agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
+    nova_energia = energia_atual
+
+    # 1. Recarga Diária Normal (+20 se for um novo dia)
+    if u_sessao and u_sessao.date() < agora_sp.date():
+        nova_energia = min(nova_energia + 20, 80)
+
+    # 2. Processamento do Bônus (soma ao total, respeitando o teto de 80)
+    if b_energia > 0 and (exp_bonus is None or agora_sp < exp_bonus):
+        nova_energia = min(nova_energia + b_energia, 80)
+
+    # Atualiza o banco com a nova energia e o último horário da sessão
+    cur.execute("""
+        UPDATE usuarios_registrados
+        SET ultima_sessao = date_trunc('second', NOW() AT TIME ZONE 'America/Sao_Paulo'),
+            perguntas_restantes = %s,
+            bonus_energia = 0,
+            expiracao_bonus = NULL
+        WHERE id_usuario = %s
+    """, (nova_energia, id_usuario))
+
+    return nova_energia
+
+@app.route('/api/recarregar_energia_usuario', methods=['GET'])
+def recarregar_energia_home():
+    id_usuario = session.get('id_usuario')
+    if not id_usuario:
+        return jsonify(success=False, message="Sessão expirada"), 401
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        # 1. PEGAR APENAS AS INFORMAÇÕES NECESSÁRIAS NO BANCO
+        cur.execute("""
+            SELECT perguntas_restantes, ultima_sessao, bonus_energia, expiracao_bonus
+            FROM usuarios_registrados WHERE id_usuario = %s
+        """, (id_usuario,))
+        usuario = cur.fetchone()
+
+        if not usuario:
+            return jsonify(success=False, message="Usuário não encontrado"), 404
+
+        # 2. ATUALIZAR AS INFORMAÇÕES NO BANCO
+        nova_energia = atualizar_energia_usuario(
+            cur=cur,
+            id_usuario=id_usuario,
+            energia_atual=usuario['perguntas_restantes'],
+            u_sessao=usuario['ultima_sessao'],
+            b_energia=usuario['bonus_energia'],
+            exp_bonus=usuario['expiracao_bonus']
+        )
+
+        # 🔑 Salva de fato as alterações no banco de dados da Home
+        conn.commit()
+
+        # 3. RETORNAR PARA O FRONTEND A NOVA ENERGIA
+        return jsonify({
+            'success': True,
+            'perguntas_restantes': nova_energia
+        })
+
+    except Exception:
+        app.logger.exception("Erro ao recarregar energia na home")
+        return jsonify({'success': False, 'message': 'Erro interno'}), 500
     finally:
         if cur: cur.close()
         if conn: conn.close()

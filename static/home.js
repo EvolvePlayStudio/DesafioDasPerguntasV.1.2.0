@@ -15,6 +15,7 @@ const idUsuario = localStorage.getItem("id_usuario");
 const idVisitante = localStorage.getItem("id_visitante");
 localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
 const maxEnergiaVisitantes = 80;
+const maxEnergiaUsuarios = 80;
 
 if (!MODO_VISITANTE) { // Verifica se deve expirar a sessão
   if (!idUsuario) { // Caso o id de usuário não tenha sido identificado
@@ -300,6 +301,19 @@ if (window.ADS_CONFIG.isAdmin && !MODO_VISITANTE) inserirBotaoModoTeste();
 exibirAnuncios();
 
 async function iniciarQuiz(event) {
+  // Registra na base de dados tentativa de iniciar um quiz
+  // Este fetch está duplicado para investigação, será deletado ou editado futuramente
+  fetch('/api/registrar-acesso', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        pagina: 'Início de quiz',
+    })
+  })
+  .catch(error => console.error("Erro ao registrar acesso:", error));
+
   const modo_visitante_ja_acessado = localStorage.getItem("modo_visitante_ja_acessado") === 'true';
   if (!modo_visitante_ja_acessado) {
     localStorage.setItem("modo_visitante_ja_acessado", true);
@@ -324,6 +338,18 @@ async function iniciarQuiz(event) {
     desbloquearBotoes();
     return;
   };
+
+  // Registra na base de dados o tema escolhido para iniciar um quiz
+  fetch('/api/registrar-acesso', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        pagina: `Quiz de ${tema_atual}`,
+    })
+  })
+  .catch(error => console.error("Erro ao registrar acesso:", error));
 
   // Mensagem avisando que as perguntas acabaram
   const perguntas_restantes_atuais = parseInt(perguntas_restantes?.textContent.split("/")[0] ?? "0", 10);
@@ -562,26 +588,43 @@ function exibirModalRegistroVisitante(marco) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // Registra na base de dados a origem e mídia do usuário (se veio do GoogleAds por exemplo)
-  try {
-    if (!idsReservados.includes(idUsuario) && !idsVisitantesReservados.includes(idVisitante)) {
-      fetch('/api/registrar-acesso', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            pagina: 'Home',
-            id_visitante: idVisitante
-        })
+  // Faz a recarga diária de energia do usuário
+  if (!MODO_VISITANTE) {
+    fetch('/api/recarregar_energia_usuario', {
+      method: 'GET',
+      headers: {'Content-Type': 'application/json'}
     })
-    .then(response => response.json())
-    .catch(error => console.error("Erro ao registrar acesso:", error));
-    }
+    .then(response => response.json()) // Serve para acessar data.perguntas_restantes por exemplo
+    .then(data => {
+      if (data.success) {
+        if (perguntas_restantes) {
+          localStorage.setItem('perguntas_restantes', data.perguntas_restantes)
+          perguntas_restantes.textContent = `${data.perguntas_restantes}/${maxEnergiaUsuarios}`;
+          }
+      } else {
+        console.warn("Não foi possível atualizar a energia:", data.message);
+      }
+    })
+    .catch(error => {
+        console.error("Erro na requisição de energia:", error);
+    });
   }
-  catch (e) {
-    console.error("Erro ao registrar acesso: ", e);
-  }
+
+  // Registra acesso em home na base de dados junto com a origem e mídia do usuário
+  // (se vaio do Google Ads ou Microsoft Ads por exemplo)
+  fetch('/api/registrar-acesso', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        pagina: 'Home',
+        id_visitante: idVisitante
+    })
+  })
+  .then(response => response.json()) // Talvez não seja necessário este .then
+  .catch(error => console.error("Erro ao registrar acesso:", error));
+
   // Adiciona áudio no clique dos botões
   if (btnModalPrimario) {
     btnModalPrimario.addEventListener("click", () => playSound("click"));
@@ -670,6 +713,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   else {
     userName.textContent = localStorage.getItem("nome_usuario");
-    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}/80`;
+    // perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}/${maxEnergiaUsuarios}`;
   }
 })

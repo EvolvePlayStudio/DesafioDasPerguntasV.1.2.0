@@ -112,18 +112,8 @@ const botoes_enviar_div = document.getElementById("botoes-envio");
 const botoes_finalizar_div = document.getElementById("botoes-acao");
 const alternativaBtns = Array.from(alternativasContainer.querySelectorAll(".alternativa-btn"));
 
-// Variáveis relacionadas ao nível de dificuldade
-/*
 const PROBABILIDADES_POR_RANKING = {
-  Iniciante: { Fácil: 0.60, Médio: 0.35, Difícil: 0.05, Extremo: 0.00 },
-  Aprendiz:  { Fácil: 0.35, Médio: 0.45, Difícil: 0.15, Extremo: 0.05 },
-  Estudante: { Fácil: 0.15, Médio: 0.40, Difícil: 0.30, Extremo: 0.15 },
-  Sábio:     { Fácil: 0.05, Médio: 0.25, Difícil: 0.45, Extremo: 0.25 },
-  Lenda:     { Fácil: 0.02, Médio: 0.28, Difícil: 0.40, Extremo: 0.30 }
-};*/
-
-const PROBABILIDADES_POR_RANKING = {
-  Iniciante: { Fácil: 0.60, Médio: 0.35, Difícil: 0.05, Extremo: 0.00 },
+  Iniciante: { Fácil: 0.60, Médio: 0.30, Difícil: 0.10, Extremo: 0.00 },
   Aprendiz:  { Fácil: 0.35, Médio: 0.35, Difícil: 0.25, Extremo: 0.05 },
   Estudante: { Fácil: 0.15, Médio: 0.30, Difícil: 0.40, Extremo: 0.15 },
   Sábio:     { Fácil: 0.05, Médio: 0.20, Difícil: 0.50, Extremo: 0.25 },
@@ -973,7 +963,7 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
     const estoqueExtremo = perguntas_por_dificuldade["Extremo"]?.length || 0;
     
     // Remove a dificuldade Difícil das opcões caso o usuário tenha menos de 300 pontos
-    if ((pontuacoes_jogador[tema_atual] || 0) <= 300 && estoqueFacil + estoqueMedio > 0) {
+    if (!MODO_VISITANTE && (pontuacoes_jogador[tema_atual] || 0) < 300 && estoqueFacil + estoqueMedio > 0) {
       disponiveis = disponiveis.filter(dif => dif !== 'Difícil')
     }
 
@@ -996,15 +986,15 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
       if (isAdmin) {
         console.log("Pegando a dificuldade com maior estoque...")
       }
-      const ordenadas = [...disponiveis].sort(
+      const ordenadas = [...disponiveis].sort( // Ordena da que tem maior estoque para a que tem menor
         (a, b) => estoque[b] - estoque[a]
       );
 
       let escolhida = ordenadas[0]; // Pega a que tem o maior estoque
 
-      // A probabilidade base deve ser maior do que 5% para pegar forçadamente por estoque
+      // A probabilidade base deve ser maior do que 10% para pegar forçadamente por estoque
       // Caso contrário, pega a segunda de maior estoque (ordenadas[1])
-      if ((probsBase[escolhida] ?? 0) <= 0.05 && ordenadas[1]) {
+      if ((probsBase[escolhida] ?? 0) <= 0.10 && ordenadas[1]) {
         escolhida = ordenadas[1];
       }
 
@@ -1018,7 +1008,7 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
 
     for (const d of disponiveis) {
       acumulado += probsBase[d] ?? 0;
-      if (sorteio <= acumulado) {
+      if (sorteio <= acumulado) { // Analisa se o sorteio caiu na fácil, médio, difícil ou extremo (nesta ordem)
         respostasDesdeUltimaForcagem++;
         return resolverFallback(d, estoque, probsBase, disponiveis);
       }
@@ -1026,7 +1016,7 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
 
     // 🛟 3. SEGURANÇA ABSOLUTA
     respostasDesdeUltimaForcagem++;
-    const fallback = [...disponiveis].sort(
+    const fallback = [...disponiveis].sort( // Pega a de maior estoque em último caso
       (a, b) => estoque[b] - estoque[a]
     )[0];
 

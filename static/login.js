@@ -2,8 +2,10 @@ import { idsVisitantesReservados } from "./utils.js";
 import { playSound, playKeySound } from './sound.js';
 
 const APP_VERSION_LOGIN = '1.8.9';
+const mensagensAbaLogin = [
+'Sessão expirada', 
+'Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente'];
 
-const mensagensAbaLogin = ['Sessão expirada', 'Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente'];
 
 // Função para registrar conversão da Microsoft para conta cadastrada
 function dispararConversaoMicrosoft() {
@@ -56,6 +58,20 @@ document.addEventListener('DOMContentLoaded', function () {
     idVisitante = crypto.randomUUID();
     localStorage.setItem("id_visitante", idVisitante);
   }
+
+  // Registra no banco de dados que a página de login foi acessada
+  fetch('/api/registrar-acesso', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      pagina: 'Login',
+      id_visitante: idVisitante
+    })
+  })
+  .then(response => response.json()) // Talvez seja ramovido, o fetch mais abaixo não precisa disto
+  .catch(error => console.error("Erro ao registrar acesso:", error));
+  
+  // Registra no backend que o usuário está em modo visitante
   fetch("/api/registrar_visitante", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
