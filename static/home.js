@@ -301,8 +301,7 @@ if (window.ADS_CONFIG.isAdmin && !MODO_VISITANTE) inserirBotaoModoTeste();
 exibirAnuncios();
 
 async function iniciarQuiz(event) {
-  // Registra na base de dados tentativa de iniciar um quiz
-  // Este fetch está duplicado para investigação, será deletado ou editado futuramente
+  /*
   fetch('/api/registrar-acesso', {
     method: 'POST',
     headers: {
@@ -313,7 +312,7 @@ async function iniciarQuiz(event) {
     })
   })
   .catch(error => console.error("Erro ao registrar acesso:", error));
-
+  */
   /*
   const modo_visitante_ja_acessado = localStorage.getItem("modo_visitante_ja_acessado") === 'true';
   if (!modo_visitante_ja_acessado) {
@@ -321,7 +320,7 @@ async function iniciarQuiz(event) {
     window.location.href = '/login';
     return;
   }*/
- 
+
   function desbloquearBotoes() {permitir_escolher_tema = true};
 
   const config = window.ADS_CONFIG;
