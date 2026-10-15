@@ -314,12 +314,14 @@ async function iniciarQuiz(event) {
   })
   .catch(error => console.error("Erro ao registrar acesso:", error));
 
+  /*
   const modo_visitante_ja_acessado = localStorage.getItem("modo_visitante_ja_acessado") === 'true';
   if (!modo_visitante_ja_acessado) {
     localStorage.setItem("modo_visitante_ja_acessado", true);
     window.location.href = '/login';
     return;
-  }
+  }*/
+ 
   function desbloquearBotoes() {permitir_escolher_tema = true};
 
   const config = window.ADS_CONFIG;
