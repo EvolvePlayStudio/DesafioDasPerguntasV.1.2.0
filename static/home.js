@@ -619,7 +619,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
     body: JSON.stringify({
         pagina: 'Home',
-        id_visitante: idVisitante
+        id_visitante: idVisitante,
+        usuario_origem: localStorage.getItem('usuario_origem') ?? 'Desconhecida',
+        usuario_midia: localStorage.getItem('usuario_midia') ?? 'Desconhecida'
     })
   })
   .then(response => response.json()) // Talvez não seja necessário este .then

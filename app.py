@@ -149,7 +149,9 @@ def api_registrar_acesso():
             
         pagina = dados.get('pagina', 'Não identificada')
         id_visitante = dados.get('id_visitante')
-        registrar_pagina_visitada(pagina, id_visitante)
+        usuario_origem = dados.get('usuario_origem') or 'Desconhecida'
+        usuario_midia = dados.get('usuario_midia') or 'Desconhecida'
+        registrar_pagina_visitada(pagina, id_visitante, origem=usuario_origem, midia=usuario_midia)
         
         return jsonify({"status": "sucesso"}), 200
         
@@ -1910,15 +1912,12 @@ def registrar_modo_teste():
     session["modo_teste"] = bool(data.get("modo_teste", False))
     return jsonify({"ok": True})
 
-def registrar_pagina_visitada(pagina, id_visitante=None):
+def registrar_pagina_visitada(pagina, id_visitante=None, origem='Desconhecida', midia='Desconhecida'):
     conn = cur = None
     id_usuario = session.get('id_usuario')
     if not id_visitante:
         id_visitante = session.get('id_visitante')
-
-    origem = session.get('usuario_origem', 'Desconhecida')
-    midia = session.get('usuario_midia', 'Desconhecida')
-
+    
     if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
         return
 

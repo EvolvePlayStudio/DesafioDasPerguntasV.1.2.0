@@ -956,12 +956,16 @@
         const origemDoPython = "{{ session.get('usuario_origem', '') }}";
         const midiaDoPython = "{{ session.get('usuario_midia', '') }}";
         if (origemDoPython === 'GoogleAds' || origemDoPython === 'MicrosoftAds') {
-            localStorage.setItem('usuario_origem', origemDoPython);
-            localStorage.setItem('usuario_midia', midiaDoPython);
+          localStorage.setItem('usuario_origem', origemDoPython);
+          localStorage.setItem('usuario_midia', midiaDoPython);
+        }
+        else {
+          localStorage.setItem('usuario_origem', 'Desconhecida');
+          localStorage.setItem('usuario_midia', 'Desconhecida');
         }
     });
   </script>
 
-  <script type="module" src="{{ url_for('static', filename='home.js') }}?v=1.2.8"></script>
+  <script type="module" src="{{ url_for('static', filename='home.js') }}?v=1.2.9"></script>
 </body>
 </html>
