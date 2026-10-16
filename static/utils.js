@@ -9,11 +9,12 @@ export const simbolosTemas = {Artes: "🎨", Astronomia: "🪐", Biologia: "🧬
 Filosofia: "🦉", Física: "⚛️", Geografia: "🌍", História: "📜", Mídia: "📺", Música: "🎵", Química: "🧪", Variedades: "🎲"}
 export const simbolosRankings = {Iniciante: "🌱", Aprendiz: "🧩", Estudante: "🎓", Sábio: "🧙‍♂️", Lenda: "🌟"}
 export const coresDificuldade = {
-    fácil: "lime",
-    médio: "yellow",
-    difícil: "red",
-    extremo: "#3e16d1"
+  fácil: "lime",
+  médio: "yellow",
+  difícil: "red",
+  extremo: "#3e16d1"
 };
+
 let idUsuario;
 let idVisitante;
 let MODO_VISITANTE;

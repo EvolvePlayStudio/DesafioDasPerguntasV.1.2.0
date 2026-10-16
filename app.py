@@ -238,19 +238,24 @@ def entrar_visitante():
     gclid = request.args.get('gclid') # Fallback essencial para cliques reais do Google
     msclkid = request.args.get('msclkid')
 
+    origem = midia = None
     # 2. Traduz e padroniza os nomes antes de salvar na session
     if utm_source == 'google' or gclid:
-        session['usuario_origem'] = 'GoogleAds'
-        session['usuario_midia'] = 'cpc'
+        session['usuario_origem'] = origem = 'GoogleAds'
+        session['usuario_midia'] = midia = 'cpc'
     elif utm_source in ['microsoft', 'bing'] or msclkid:
-        session['usuario_origem'] = 'MicrosoftAds'
-        session['usuario_midia'] = 'cpc'
+        session['usuario_origem'] = origem = 'MicrosoftAds'
+        session['usuario_midia'] = midia = 'cpc'
     else:
         # Se não veio de anúncios, você define um padrão ou mantém o que já tinha
-        session['usuario_origem'] = session.get('usuario_origem', 'Desconhecida')
-        session['usuario_midia'] = session.get('usuario_midia', 'Desconhecida')
+        session['usuario_origem'] = origem = session.get('usuario_origem', 'Desconhecida')
+        session['usuario_midia'] = midia = session.get('usuario_midia', 'Desconhecida')
 
     session["visitante"] = True
+
+    # 🔑 REGISTRA NO BANCO DE DADOS DIRETO NO BACKEND
+    registrar_pagina_visitada('Home', 'Não definido', origem=origem, midia=midia)
+
     return redirect("/home")
     
 @app.route("/enviar_feedback", methods=["POST"])
