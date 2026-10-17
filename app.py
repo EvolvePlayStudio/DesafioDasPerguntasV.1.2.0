@@ -149,9 +149,8 @@ def api_registrar_acesso():
             
         pagina = dados.get('pagina', 'Não identificada')
         id_visitante = dados.get('id_visitante')
-        usuario_origem = dados.get('usuario_origem') or 'Desconhecida'
-        usuario_midia = dados.get('usuario_midia') or 'Desconhecida'
-        registrar_pagina_visitada(pagina, id_visitante, origem=usuario_origem, midia=usuario_midia)
+
+        registrar_pagina_visitada(pagina, id_visitante)
         
         return jsonify({"status": "sucesso"}), 200
         
@@ -240,13 +239,15 @@ def entrar_visitante():
     msclkid = request.args.get('msclkid')
 
     # Novas variáveis granulares do Sufixo da URL
-    utm_type = request.args.get('utm_type')        # 'search' ou 'display'
+    utm_type = request.args.get('utm_type')          # 'search' ou 'display'
     device_raw = request.args.get('device')          # 'm', 'c' ou 't'
-    keyword = request.args.get('utm_term')          # Palavra-chave (Pesquisa)
-    placement = request.args.get('utm_content')     # Canal/Site (Display)
-    matchtype_raw = request.args.get('matchtype')   # 'e', 'p', 'b'
+    keyword = request.args.get('utm_term')           # Palavra-chave (Pesquisa)
+    
+    # Fallback inteligente entre target_url e utm_content
+    placement = request.args.get('target_url') or request.args.get('utm_content')
+    matchtype_raw = request.args.get('matchtype')    # 'e', 'p', 'b'
 
-    # 2. Identificação da Origem e Mídia (Mantido na session por causa dos gatilhos de conversão)
+    # 2. Identificação da Origem e Mídia
     if utm_source == 'google' or gclid:
         origem = 'GoogleAds'
         midia = utm_medium or 'cpc'
@@ -257,16 +258,26 @@ def entrar_visitante():
         origem = session.get('usuario_origem', 'Desconhecida')
         midia = session.get('usuario_midia', 'Desconhecida')
 
-    # 3. Tratamento e tradução dos códigos curtos
-    dispositivos_map = {'m': 'Mobile', 'c': 'Desktop', 't': 'Tablet'}
-    matchtype_map = {'e': 'Exata', 'p': 'Frase', 'b': 'Ampla'}
+    # Dicionários de tradução para cobrir Google e Microsoft
+    dispositivos_map = {
+        'm': 'Mobile', 'c': 'Desktop', 't': 'Tablet', # Google
+        'Mobile': 'Mobile', 'Desktop': 'Desktop', 'Tablet': 'Tablet' # Microsoft
+    }
+    matchtype_map = {
+        'e': 'Exata', 'p': 'Frase', 'b': 'Ampla', # Google
+        'Exact': 'Exata', 'Phrase': 'Frase', 'Broad': 'Ampla' # Microsoft
+    }
 
     dispositivo = dispositivos_map.get(device_raw, 'Desconhecido')
+    
+    # Padronização do tipo de campanha
     tipo_campanha = utm_type or ('Display' if utm_medium == 'display' else 'Pesquisa' if utm_medium == 'cpc' else 'Desconhecido')
-    tipo_campanha = 'Pesquisa' if tipo_campanha == 'search' else tipo_campanha
+    if tipo_campanha == 'search':
+        tipo_campanha = 'Pesquisa'
+
     tipo_correspondencia = matchtype_map.get(matchtype_raw, 'Não aplicável')
 
-    # 3. Guarda tudo na session para que as PÁGINAS SEGUINTES mantenham os mesmos dados
+    # 4. Guarda tudo padronizado na session para todas as páginas do fluxo
     session['usuario_origem'] = origem
     session['usuario_midia'] = midia
     session['usuario_tipo_campanha'] = tipo_campanha
@@ -276,18 +287,8 @@ def entrar_visitante():
     session['usuario_correspondencia'] = tipo_correspondencia
     session["visitante"] = True
 
-    # 🔑 REGISTRA NO BANCO DE DADOS DIRETO NO BACKEND
-    registrar_pagina_visitada(
-        'Home',
-        id_visitante='Primeiro acesso',
-        origem=origem, 
-        midia=midia,
-        dispositivo=dispositivo,
-        tipo_campanha=tipo_campanha,
-        correspondencia=tipo_correspondencia,
-        palavra_chave=keyword,
-        canal_display=placement
-    )
+    # 🔑 REGISTRA A PRIMEIRA PÁGINA (Puxa automaticamente os dados da session)
+    registrar_pagina_visitada('Home', id_visitante='Primeiro acesso')
 
     return redirect("/home")
     
@@ -559,7 +560,7 @@ def pagina_visitada():
     data = request.get_json()
     pagina = data.get("pagina")
 
-    registrar_pagina_visitada(pagina=pagina)
+    registrar_pagina_visitada(pagina)
 
     if not pagina:
         return {"error": "Página não informada"}, 400
@@ -1950,8 +1951,8 @@ def registrar_modo_teste():
     session["modo_teste"] = bool(data.get("modo_teste", False))
     return jsonify({"ok": True})
 
-def registrar_pagina_visitada(pagina, id_visitante=None, origem='Desconhecida', midia='Desconhecida',
-dispositivo=None, tipo_campanha=None, correspondencia=None, palavra_chave=None, canal_display=None):
+
+def registrar_pagina_visitada(pagina, id_visitante=None):
     conn = cur = None
     id_usuario = session.get('id_usuario')
     if not id_visitante:
@@ -1960,14 +1961,14 @@ dispositivo=None, tipo_campanha=None, correspondencia=None, palavra_chave=None, 
     if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
         return
 
-    # Se não for passado explicitamente na chamada da função, busca da session!
-    origem          = origem or session.get('usuario_origem', 'Desconhecida')
-    midia           = midia or session.get('usuario_midia', 'Desconhecida')
-    dispositivo     = dispositivo or session.get('usuario_dispositivo') or identificar_dispositivo()
-    tipo_campanha   = tipo_campanha or session.get('usuario_tipo_campanha', 'Desconhecido')
-    correspondencia = correspondencia or session.get('usuario_correspondencia', 'Não aplicável')
-    palavra_chave   = palavra_chave or session.get('usuario_palavra_chave', 'Não aplicável')
-    canal_display   = canal_display or session.get('usuario_canal_display', 'Não aplicável')
+    # Se não for passado explicitamente na chamada da função, busca tudo padronizado da session!
+    origem          = session.get('usuario_origem', 'Desconhecida')
+    midia           = session.get('usuario_midia', 'Desconhecida')
+    dispositivo     = session.get('usuario_dispositivo') or identificar_dispositivo()
+    tipo_campanha   = session.get('usuario_tipo_campanha', 'Desconhecido')
+    correspondencia = session.get('usuario_correspondencia', 'Não aplicável')
+    palavra_chave   = session.get('usuario_palavra_chave', 'Não aplicável')
+    canal_display   = session.get('usuario_canal_display', 'Não aplicável')
 
     try:
         conn = get_db_connection()

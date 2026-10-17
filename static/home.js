@@ -321,19 +321,6 @@ async function iniciarQuiz(event) {
     return;
   };
 
-  // Registra na base de dados o tema escolhido para iniciar um quiz
-  /*
-  fetch('/api/registrar-acesso', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-        pagina: `Quiz de ${tema_atual}`,
-    })
-  })
-  .catch(error => console.error("Erro ao registrar acesso:", error));*/
-
   // Mensagem avisando que as perguntas acabaram
   const perguntas_restantes_atuais = parseInt(perguntas_restantes?.textContent.split("/")[0] ?? "0", 10);
   // const perguntas_restantes_atuais = 0;
@@ -602,9 +589,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
     body: JSON.stringify({
         pagina: 'Home',
-        id_visitante: idVisitante,
-        usuario_origem: localStorage.getItem('usuario_origem') ?? 'Desconhecida',
-        usuario_midia: localStorage.getItem('usuario_midia') ?? 'Desconhecida'
+        id_visitante: idVisitante
     })
   })
   .then(response => response.json()) // Talvez não seja necessário este .then
