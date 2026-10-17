@@ -301,25 +301,6 @@ if (window.ADS_CONFIG.isAdmin && !MODO_VISITANTE) inserirBotaoModoTeste();
 exibirAnuncios();
 
 async function iniciarQuiz(event) {
-  /*
-  fetch('/api/registrar-acesso', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-        pagina: 'Início de quiz',
-    })
-  })
-  .catch(error => console.error("Erro ao registrar acesso:", error));
-  */
-  /*
-  const modo_visitante_ja_acessado = localStorage.getItem("modo_visitante_ja_acessado") === 'true';
-  if (!modo_visitante_ja_acessado) {
-    localStorage.setItem("modo_visitante_ja_acessado", true);
-    window.location.href = '/login';
-    return;
-  }*/
 
   function desbloquearBotoes() {permitir_escolher_tema = true};
 
@@ -341,6 +322,7 @@ async function iniciarQuiz(event) {
   };
 
   // Registra na base de dados o tema escolhido para iniciar um quiz
+  /*
   fetch('/api/registrar-acesso', {
     method: 'POST',
     headers: {
@@ -350,7 +332,7 @@ async function iniciarQuiz(event) {
         pagina: `Quiz de ${tema_atual}`,
     })
   })
-  .catch(error => console.error("Erro ao registrar acesso:", error));
+  .catch(error => console.error("Erro ao registrar acesso:", error));*/
 
   // Mensagem avisando que as perguntas acabaram
   const perguntas_restantes_atuais = parseInt(perguntas_restantes?.textContent.split("/")[0] ?? "0", 10);
