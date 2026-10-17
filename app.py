@@ -232,29 +232,53 @@ def carregar_regras_pontuacao():
 @app.route('/entrar_visitante')
 def entrar_visitante():
     session.clear()
-    # 1. Pega os parâmetros diretamente da URL que o Google Ads enviou
+    
+    # 1. Captura dos parâmetros da URL
     utm_source = request.args.get('utm_source')
-    # utm_medium = request.args.get('utm_medium') Não utilizado por enquanto
-    gclid = request.args.get('gclid') # Fallback essencial para cliques reais do Google
+    utm_medium = request.args.get('utm_medium')
+    gclid = request.args.get('gclid')
     msclkid = request.args.get('msclkid')
 
-    origem = midia = None
-    # 2. Traduz e padroniza os nomes antes de salvar na session
+    # Novas variáveis granulares do Sufixo da URL
+    utm_type = request.args.get('utm_type')        # 'search' ou 'display'
+    device_raw = request.args.get('device')          # 'm', 'c' ou 't'
+    keyword = request.args.get('utm_term')          # Palavra-chave (Pesquisa)
+    placement = request.args.get('utm_content')     # Canal/Site (Display)
+    matchtype_raw = request.args.get('matchtype')   # 'e', 'p', 'b'
+
+    # 2. Identificação da Origem e Mídia (Mantido na session por causa dos gatilhos de conversão)
     if utm_source == 'google' or gclid:
         session['usuario_origem'] = origem = 'GoogleAds'
-        session['usuario_midia'] = midia = 'cpc'
+        session['usuario_midia'] = midia = utm_medium or 'cpc'
     elif utm_source in ['microsoft', 'bing'] or msclkid:
         session['usuario_origem'] = origem = 'MicrosoftAds'
-        session['usuario_midia'] = midia = 'cpc'
+        session['usuario_midia'] = midia = utm_medium or 'cpc'
     else:
-        # Se não veio de anúncios, você define um padrão ou mantém o que já tinha
         session['usuario_origem'] = origem = session.get('usuario_origem', 'Desconhecida')
         session['usuario_midia'] = midia = session.get('usuario_midia', 'Desconhecida')
+
+    # 3. Tratamento e tradução dos códigos curtos
+    dispositivos_map = {'m': 'Mobile', 'c': 'Desktop', 't': 'Tablet'}
+    matchtype_map = {'e': 'Exata', 'p': 'Frase', 'b': 'Ampla'}
+
+    dispositivo = dispositivos_map.get(device_raw, 'Desconhecido')
+    tipo_campanha = utm_type or ('Display' if utm_medium == 'display' else 'Pesquisa' if utm_medium == 'cpc' else 'Desconhecida')
+    tipo_correspondencia = matchtype_map.get(matchtype_raw, 'Não aplicável')
 
     session["visitante"] = True
 
     # 🔑 REGISTRA NO BANCO DE DADOS DIRETO NO BACKEND
-    registrar_pagina_visitada('Home', 'Não definido', origem=origem, midia=midia)
+    registrar_pagina_visitada(
+        'Home',
+        id_visitante='Primeiro acesso',
+        origem=origem, 
+        midia=midia,
+        dispositivo=dispositivo,
+        tipo_campanha=tipo_campanha,
+        correspondencia=tipo_correspondencia,
+        palavra_chave=keyword,
+        canal_display=placement
+    )
 
     return redirect("/home")
     
@@ -1917,24 +1941,26 @@ def registrar_modo_teste():
     session["modo_teste"] = bool(data.get("modo_teste", False))
     return jsonify({"ok": True})
 
-def registrar_pagina_visitada(pagina, id_visitante=None, origem='Desconhecida', midia='Desconhecida'):
+def registrar_pagina_visitada(pagina, id_visitante=None, origem='Desconhecida', midia='Desconhecida',
+dispositivo=None, tipo_campanha=None, correspondencia=None, palavra_chave=None, canal_display=None):
     conn = cur = None
     id_usuario = session.get('id_usuario')
     if not id_visitante:
         id_visitante = session.get('id_visitante')
-    
+
     if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
         return
 
     try:
-        dispositivo = identificar_dispositivo()
-
+        dispositivo = dispositivo or identificar_dispositivo()
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO acessos_paginas (pagina, id_usuario, dispositivo, id_visitante, origem, midia) 
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (pagina, id_usuario, dispositivo, id_visitante, origem, midia))
+            INSERT INTO acessos_paginas (pagina, id_usuario, dispositivo, id_visitante, origem, midia,
+            tipo_campanha, correspondencia, palavra_chave, canal_display) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (pagina, id_usuario, dispositivo, id_visitante, origem, midia, tipo_campanha,
+              correspondencia, palavra_chave, canal_display))
         conn.commit()
     except Exception as e:
         if conn: conn.rollback()
