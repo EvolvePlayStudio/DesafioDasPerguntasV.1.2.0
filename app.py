@@ -31,7 +31,7 @@ invite_token = os.getenv("TOKEN_CONVITE")
 # Algumas variáveis abaixo podem ir para o utils.py futuramente
 SITE_EM_MANUTENCAO = False
 # O primeiro id é de desktop e o segundo de mobile
-ids_visitante_admin = ['995f7fc7-9ae6-4f42-8e2f-bdc4f41fbb54', 'd103db0e-cd5d-4743-a67c-2cdf0f282892']
+ids_visitante_admin = ['53c3025c-d619-4d91-9913-96cc6651ef1a', 'd103db0e-cd5d-4743-a67c-2cdf0f282892']
 # Código copia e cola gerado pelo Nubank
 codigo_pix = os.getenv("QR_CODE")
 img = qrcode.make(codigo_pix)
@@ -274,6 +274,8 @@ def entrar_visitante():
     tipo_campanha = utm_type or ('Display' if utm_medium == 'display' else 'Pesquisa' if utm_medium == 'cpc' else 'Desconhecido')
     if tipo_campanha == 'search':
         tipo_campanha = 'Pesquisa'
+    if tipo_campanha == 'display':
+        tipo_campanha = 'Display'
 
     tipo_correspondencia = matchtype_map.get(matchtype_raw, 'Não aplicável')
 
@@ -1968,16 +1970,17 @@ def registrar_pagina_visitada(pagina, id_visitante=None):
     correspondencia = session.get('usuario_correspondencia', 'Não aplicável')
     palavra_chave   = session.get('usuario_palavra_chave', 'Não aplicável')
     canal_display   = session.get('usuario_canal_display', 'Não aplicável')
+    modo_visitante  = session.get('visitante')
 
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
             INSERT INTO acessos_paginas (pagina, id_usuario, dispositivo, id_visitante, origem, midia,
-            tipo_campanha, correspondencia, palavra_chave, canal_display) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            tipo_campanha, correspondencia, palavra_chave, canal_display, modo_visitante) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (pagina, id_usuario, dispositivo, id_visitante, origem, midia, tipo_campanha,
-              correspondencia, palavra_chave, canal_display))
+              correspondencia, palavra_chave, canal_display, modo_visitante))
         conn.commit()
     except Exception as e:
         if conn: conn.rollback()

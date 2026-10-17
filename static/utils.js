@@ -4,7 +4,7 @@ export const dificuldadesOrdenadas = ['Fácil', 'Médio', 'Difícil', 'Extremo']
 export const temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"];
 export const idsReservados = [4, 6, 16];
 // O primeiro id de visitantes é de desktop e o segundo é de mobile
-export const idsVisitantesReservados = ['995f7fc7-9ae6-4f42-8e2f-bdc4f41fbb54', 'd103db0e-cd5d-4743-a67c-2cdf0f282892'];
+export const idsVisitantesReservados = ['53c3025c-d619-4d91-9913-96cc6651ef1a', 'd103db0e-cd5d-4743-a67c-2cdf0f282892'];
 export const simbolosTemas = {Artes: "🎨", Astronomia: "🪐", Biologia: "🧬", Esportes: "⚽",
 Filosofia: "🦉", Física: "⚛️", Geografia: "🌍", História: "📜", Mídia: "📺", Música: "🎵", Química: "🧪", Variedades: "🎲"}
 export const simbolosRankings = {Iniciante: "🌱", Aprendiz: "🧩", Estudante: "🎓", Sábio: "🧙‍♂️", Lenda: "🌟"}
