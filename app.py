@@ -248,24 +248,32 @@ def entrar_visitante():
 
     # 2. Identificação da Origem e Mídia (Mantido na session por causa dos gatilhos de conversão)
     if utm_source == 'google' or gclid:
-        session['usuario_origem'] = origem = 'GoogleAds'
-        session['usuario_midia'] = midia = utm_medium or 'cpc'
+        origem = 'GoogleAds'
+        midia = utm_medium or 'cpc'
     elif utm_source in ['microsoft', 'bing'] or msclkid:
-        session['usuario_origem'] = origem = 'MicrosoftAds'
-        session['usuario_midia'] = midia = utm_medium or 'cpc'
+        origem = 'MicrosoftAds'
+        midia = utm_medium or 'cpc'
     else:
-        session['usuario_origem'] = origem = session.get('usuario_origem', 'Desconhecida')
-        session['usuario_midia'] = midia = session.get('usuario_midia', 'Desconhecida')
+        origem = session.get('usuario_origem', 'Desconhecida')
+        midia = session.get('usuario_midia', 'Desconhecida')
 
     # 3. Tratamento e tradução dos códigos curtos
     dispositivos_map = {'m': 'Mobile', 'c': 'Desktop', 't': 'Tablet'}
     matchtype_map = {'e': 'Exata', 'p': 'Frase', 'b': 'Ampla'}
 
     dispositivo = dispositivos_map.get(device_raw, 'Desconhecido')
-    tipo_campanha = utm_type or ('Display' if utm_medium == 'display' else 'Pesquisa' if utm_medium == 'cpc' else 'Desconhecida')
+    tipo_campanha = utm_type or ('Display' if utm_medium == 'display' else 'Pesquisa' if utm_medium == 'cpc' else 'Desconhecido')
     tipo_campanha = 'Pesquisa' if tipo_campanha == 'search' else tipo_campanha
     tipo_correspondencia = matchtype_map.get(matchtype_raw, 'Não aplicável')
 
+    # 3. Guarda tudo na session para que as PÁGINAS SEGUINTES mantenham os mesmos dados
+    session['usuario_origem'] = origem
+    session['usuario_midia'] = midia
+    session['usuario_tipo_campanha'] = tipo_campanha
+    session['usuario_dispositivo'] = dispositivo
+    session['usuario_palavra_chave'] = keyword or 'Não aplicável'
+    session['usuario_canal_display'] = placement or 'Não aplicável'
+    session['usuario_correspondencia'] = tipo_correspondencia
     session["visitante"] = True
 
     # 🔑 REGISTRA NO BANCO DE DADOS DIRETO NO BACKEND
@@ -1952,8 +1960,16 @@ dispositivo=None, tipo_campanha=None, correspondencia=None, palavra_chave=None, 
     if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
         return
 
+    # Se não for passado explicitamente na chamada da função, busca da session!
+    origem          = origem or session.get('usuario_origem', 'Desconhecida')
+    midia           = midia or session.get('usuario_midia', 'Desconhecida')
+    dispositivo     = dispositivo or session.get('usuario_dispositivo') or identificar_dispositivo()
+    tipo_campanha   = tipo_campanha or session.get('usuario_tipo_campanha', 'Desconhecido')
+    correspondencia = correspondencia or session.get('usuario_correspondencia', 'Não aplicável')
+    palavra_chave   = palavra_chave or session.get('usuario_palavra_chave', 'Não aplicável')
+    canal_display   = canal_display or session.get('usuario_canal_display', 'Não aplicável')
+
     try:
-        dispositivo = dispositivo or identificar_dispositivo()
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
