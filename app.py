@@ -263,6 +263,7 @@ def entrar_visitante():
 
     dispositivo = dispositivos_map.get(device_raw, 'Desconhecido')
     tipo_campanha = utm_type or ('Display' if utm_medium == 'display' else 'Pesquisa' if utm_medium == 'cpc' else 'Desconhecida')
+    tipo_campanha = 'Pesquisa' if tipo_campanha == 'search' else tipo_campanha
     tipo_correspondencia = matchtype_map.get(matchtype_raw, 'Não aplicável')
 
     session["visitante"] = True
