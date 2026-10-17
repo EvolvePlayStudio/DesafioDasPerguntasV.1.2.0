@@ -243,8 +243,8 @@ def entrar_visitante():
     device_raw = request.args.get('device')          # 'm', 'c' ou 't'
     keyword = request.args.get('utm_term')           # Palavra-chave (Pesquisa)
     
-    # Fallback inteligente entre target_url e utm_content
-    placement = request.args.get('target_url') or request.args.get('utm_content')
+    # Captura primeiro o targetid dedicado, depois o utm_content/placement como fallback
+    placement = request.args.get('targetid') or request.args.get('utm_content')
     matchtype_raw = request.args.get('matchtype')    # 'e', 'p', 'b'
 
     # 2. Identificação da Origem e Mídia
@@ -1951,13 +1951,12 @@ def registrar_modo_teste():
     session["modo_teste"] = bool(data.get("modo_teste", False))
     return jsonify({"ok": True})
 
-
 def registrar_pagina_visitada(pagina, id_visitante=None):
     conn = cur = None
     id_usuario = session.get('id_usuario')
     if not id_visitante:
         id_visitante = session.get('id_visitante')
-
+    
     if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
         return
 
