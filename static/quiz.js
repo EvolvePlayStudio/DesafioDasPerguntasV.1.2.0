@@ -97,7 +97,7 @@ let estrelas_iniciais;
 let comentario_inicial;
 let aprovacao_nota_inicial = null;
 let alternativaSelecionada; // guarda a letra selecionada (A, B, C, D)
-let respostasDesdeUltimaForcagem = 0; // para pegar a pergunta do nível que tem mais a cada 
+let respostasDesdeUltimaForcagem = 1; // para pegar a pergunta do nível que tem mais a cada 
 // x respondidas
 let info_ultimo_ranking = regras_pontuacao.at(-1) ?? null;
 const letrasAlternativas = ['A', 'B', 'C', 'D'];
