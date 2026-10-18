@@ -113,11 +113,11 @@ const botoes_finalizar_div = document.getElementById("botoes-acao");
 const alternativaBtns = Array.from(alternativasContainer.querySelectorAll(".alternativa-btn"));
 
 const PROBABILIDADES_POR_RANKING = {
-  Iniciante: { Fácil: 0.60, Médio: 0.30, Difícil: 0.10, Extremo: 0.00 },
-  Aprendiz:  { Fácil: 0.35, Médio: 0.35, Difícil: 0.25, Extremo: 0.05 },
-  Estudante: { Fácil: 0.15, Médio: 0.30, Difícil: 0.40, Extremo: 0.15 },
+  Iniciante: { Fácil: 0.50, Médio: 0.40, Difícil: 0.10, Extremo: 0.00 },
+  Aprendiz:  { Fácil: 0.30, Médio: 0.40, Difícil: 0.25, Extremo: 0.05 },
+  Estudante: { Fácil: 0.10, Médio: 0.30, Difícil: 0.45, Extremo: 0.15 },
   Sábio:     { Fácil: 0.05, Médio: 0.20, Difícil: 0.50, Extremo: 0.25 },
-  Lenda:     { Fácil: 0.02, Médio: 0.23, Difícil: 0.45, Extremo: 0.30 }
+  Lenda:     { Fácil: 0.02, Médio: 0.10, Difícil: 0.58, Extremo: 0.30 }
 };
 
 // Tempos para as alternativas
@@ -444,13 +444,6 @@ function converterNotacaoQuimica(texto) {
     '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
     '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
   };
-
-  /*
-  const mapaSobrescritos = {
-    '⁺': '+', '⁻': '-', '⁰': '0', '¹': '1', '²': '2',
-    '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7',
-    '⁸': '8', '⁹': '9'
-  };*/
 
   const mapaSobrescritos = {
     '⁺': '+', '⁻': '-'
@@ -963,8 +956,13 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
     const estoqueExtremo = perguntas_por_dificuldade["Extremo"]?.length || 0;
     
     // Remove a dificuldade Difícil das opcões caso o usuário tenha menos de 300 pontos
-    if (!MODO_VISITANTE && (pontuacoes_jogador[tema_atual] || 0) < 300 && estoqueFacil + estoqueMedio > 0) {
-      disponiveis = disponiveis.filter(dif => dif !== 'Difícil')
+    if (!MODO_VISITANTE) {
+      if ((pontuacoes_jogador[tema_atual] || 0) < 300 && estoqueFacil + estoqueMedio > 0) {
+        disponiveis = disponiveis.filter(dif => dif !== 'Difícil');
+      }
+      if ((pontuacoes_jogador[tema_atual] || 0) < 100 && estoqueFacil > 0) {
+        disponiveis = disponiveis.filter(dif => dif !== 'Médio');
+      }
     }
 
     const probsBase = PROBABILIDADES_POR_RANKING[ranking];
