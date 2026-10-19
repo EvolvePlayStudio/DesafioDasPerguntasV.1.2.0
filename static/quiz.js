@@ -955,8 +955,11 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
     const estoqueDificil = perguntas_por_dificuldade["Difícil"]?.length || 0;
     const estoqueExtremo = perguntas_por_dificuldade["Extremo"]?.length || 0;
     
-    // Remove a dificuldade Difícil das opcões caso o usuário tenha menos de 300 pontos
+    // Remove as dificuldades Extremo, Difícil e Médio para usuários que não atingiram uma determinada pontuação
     if (!MODO_VISITANTE) {
+      if ((pontuacoes_jogador[tema_atual] || 0) < 1300 && estoqueFacil + estoqueMedio + estoqueDificil > 0) {
+        disponiveis = disponiveis.filter(dif => dif !== 'Extremo');
+      }
       if ((pontuacoes_jogador[tema_atual] || 0) < 300 && estoqueFacil + estoqueMedio > 0) {
         disponiveis = disponiveis.filter(dif => dif !== 'Difícil');
       }
