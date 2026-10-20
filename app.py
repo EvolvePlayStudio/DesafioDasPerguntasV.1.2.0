@@ -168,28 +168,48 @@ def criar_pix():
 
 
 @app.route('/api/webhook/mercado-pago', methods=['POST', 'GET'])
+@app.route('/api/webhook/mercado-pago/', methods=['POST', 'GET'])
 def webhook_mercado_pago():
-    data = request.get_json() or {}
-    
+    print("🔔 Rota webhook chamada com sucesso!")
+
+    # Captura segura de dados para evitar o erro de Unsupported Media Type
+    data = {}
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+    else:
+        # Se não for JSON puro, tenta pegar de formulário ou dados da requisição
+        data = request.form.to_dict()
+        if not data and request.data:
+            import json
+            try:
+                data = json.loads(request.data.decode('utf-8'))
+            except:
+                data = {}
+
+    # Se ainda estiver vazio, tenta pegar pelos query parameters (muito comum em testes de painel)
+    if not data:
+        data = request.args.to_dict()
+
+    print(f"📦 Dados brutos recebidos no webhook: {data}")
+
     payment_id = None
-    if data.get('type') == 'payment' and 'data' in data:
-        payment_id = data['data'].get('id')
-    elif 'id' in data:
-        payment_id = data.get('id')
-    
+    if isinstance(data, dict):
+        if data.get('type') == 'payment' and 'data' in data:
+            payment_id = data['data'].get('id')
+        elif 'id' in data:
+            payment_id = data.get('id')
+
     if not payment_id:
         payment_id = request.args.get('id') or request.args.get('data.id') or request.args.get('topic')
 
-    print(f"🔔 WEBHOOK RECEBIDO! ID capturado: {payment_id}")
+    print(f"🆔 ID capturado: {payment_id}")
 
-    # PROTEÇÃO CONTRA O TESTE DO PAINEL DO MERCADO PAGO
-    # Se o ID for o de teste padrão (ex: '123456' ou vazio), apenas retorna 200 OK para o painel verdejar!
+    # Proteção contra o teste padrão do painel do Mercado Pago
     if not payment_id or str(payment_id) in ['123456', 'test', 'None']:
-        return jsonify({"status": "ok", "mensagem": "Teste de webhook recebido com sucesso"}), 200
+        return jsonify({"status": "ok", "mensagem": "Teste recebido com sucesso"}), 200
 
     conn = cur = None
     try:
-        # Consulta o status oficial na API do Mercado Pago
         payment_info = sdk.payment().get(payment_id)
         response_data = payment_info.get("response", {})
         status_mp = response_data.get("status")
@@ -229,8 +249,8 @@ def webhook_mercado_pago():
 
     except Exception as e:
         if conn: conn.rollback()
-        print(f"❌ Erro no webhook: {str(e)}")
-        # Mesmo se houver erro num pagamento real, é recomendado retornar 200 para o MP não floodar de tentativas
+        print(f"❌ Erro no processamento do webhook: {str(e)}")
+        # Sempre retorna 200 para o Mercado Pago não insistir em reenviar infinitamente caso dê algum ajuste
         return jsonify({"status": "ok"}), 200
     finally:
         if cur: cur.close()
