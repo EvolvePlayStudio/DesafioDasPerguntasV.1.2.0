@@ -17,7 +17,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   let idVisitante = localStorage.getItem("id_visitante");
   localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
   const maxEnergiaVisitantes = 80;
-  const maxEnergiaUsuarios = 80;
+  const maxEnergiaUsuarios = 500;
+  localStorage.setItem('limite_energia', maxEnergiaUsuarios);
 
   if (!MODO_VISITANTE) { // Verifica se deve expirar a sessão
     if (!idUsuario) { // Caso o id de usuário não tenha sido identificado
@@ -639,7 +640,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (btn_doacoes) {
     btn_doacoes.addEventListener("click", async () => {
       playSound("click");
-      window.location.href = "/doações";
+      window.location.href = "/recarga-de-energia";
     });
   };
   // Implementa a função de clique no botão de logout
@@ -682,6 +683,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   else {
     userName.textContent = localStorage.getItem("nome_usuario");
-    // perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}/${maxEnergiaUsuarios}`;
   }
 })

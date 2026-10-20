@@ -16,4 +16,5 @@ zipp==3.23.0
 gunicorn
 Pillow
 qrcode==8.2
+mercadopago
 tzdata

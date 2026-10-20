@@ -3,7 +3,7 @@
 <head>
 
   {% include 'cabecalho_comum.html' %}
-  <title>Doações - Desafio das Perguntas</title>
+  <title>Recarga de Energia - Desafio das Perguntas</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   
   <style>
@@ -18,172 +18,606 @@
       min-height: 100dvh;
     }
     .container {
-      max-width: 500px;
+      max-width: 520px;
+      width: 100%;
       background: var(--cor-fundo-claro);
       border-radius: 12px;
       box-shadow: var(--config-sombra);
-      padding: 1.6rem;
-      margin: 2rem;
+      padding: 1.8rem;
+      margin: 1.5rem;
+      box-sizing: border-box;
     }
     h2 {
-      color: black;
+      color: #111;
       margin-top: 0;
-      padding-top: 0;
-      margin-bottom: 1.2rem;
+      margin-bottom: 0.5rem;
       text-align: center;
-    }
-    p {
-      color: black;
-      line-height: 1.5;
-      margin-bottom: 20px;
-    }
-    .pix-box {
-      background: #f0f0f0;
-      border-radius: 8px;
-      padding: 15px;
-      font-weight: bold;
-      font-size: 1.1em;
-      color: #222;
-      margin-bottom: 15px;
-      word-break: break-all;
-    }
-    button {
-      margin-top: 0.5rem;
-      background: rgb(16, 133, 20);
-      color: #fff;
-      border: none;
-      padding: 12px 18px;
-      font-size: 1em;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.3s;
-      font-size: 0.95em;
-      font-weight: bold;
-    }
-    button:hover {
-      background: #09610c;
-    }
-    .success {
-      color: green;
-      margin-top: 1.5rem;
-      font-size: 1.05em;
-      display: none;
-      text-align: center;
-    }
-    #qrcode {
-      margin-top: 20px;
       display: flex;
+      align-items: center;
       justify-content: center;
+      gap: 0.5rem;
     }
-    .qrcode {
-      margin-top: 20px;
+    .subtitulo {
+      text-align: center;
+      color: #000000;
+      font-size: 0.95rem;
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+      line-height: 1.4;
+    }
+    /* Banner de Próxima Versão */
+    .aviso-breve {
+      background: #fff3cd;
+      border: 1px solid #ffe399;
+      color: #856404;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    /* Cards de Pacotes */
+    .pacotes-grid {
       display: flex;
       flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .pacote-card.destaque {
+      border-color: #2563eb;
+      background: #f8fafc;
+    }
+    .badge-desconto {
+      position: absolute;
+      top: -10px;
+      right: 15px;
+      background: #16a34a;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 12px;
+      text-transform: uppercase;
+    }
+    .pacote-card {
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
       align-items: center;
+      background: #fff;
+      transition: border-color 0.2s, transform 0.2s;
+      position: relative;
     }
-    .pix-box {
-      text-align: center;
+    .pacote-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
     }
-    .qrcode img {
-      border: 2px solid #ddd;
+
+    /* Coluna 1: Nome à esquerda */
+    .pacote-nome {
+      font-weight: bold;
+      font-size: 17px;
+      text-align: left;
+      color: #0f172a;
+    }
+    .pacote-qtd {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      margin-left: -0.4rem;
+    }
+    .pacote-preco {
+      text-align: right;
+    }
+    .valor-main {
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: #0f172a;
+    }
+    /* Botões dos pacotes */
+    .btn-comprar {
+      margin-top: 0.4rem;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      border-radius: 6px;
+      cursor: not-allowed;
+      opacity: 0.6;
+      font-weight: bold;
+    }
+    /* Regras e Observações */
+    .regras-lista {
+      background: #f8fafc;
       border-radius: 8px;
-      padding: 5px;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      color: #475569;
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+    }
+    .regras-lista ul {
+      margin: 0;
+      padding-left: 1.2rem;
+    }
+    .regras-lista li {
+      margin-bottom: 4px;
+    }
+    /* Card Selecionado */
+    .pacote-card {
+      cursor: pointer;
+      border: 2px solid #e2e8f0;
+      transition: all 0.2s ease;
+    }
+    .pacote-card:hover {
+      border-color: #94a3b8;
+    }
+    .pacote-card.selecionado {
+      border-color: #16a34a !important;
+      background-color: #f0fdf4 !important;
+      box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+    }
+    /* Botão de Checkout Principal */
+    .btn-checkout {
+      width: 100%;
+      background: #16a34a;
+      color: white;
+      font-size: 1.05rem;
+      font-weight: bold;
+      padding: 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      margin-bottom: 0.8rem;
+      transition: background 0.3s;
+    }
+    .btn-checkout:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+    }
+    .btn-checkout:not(:disabled):hover {
+      background: #15803d;
+    }
+    /* Estilos do Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
       background: white;
-      width: 15rem;
+      border-radius: 12px;
+      padding: 1.8rem;
+      max-width: 420px;
+      width: 90%;
+      position: relative;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    .modal-fechar {
+      position: absolute;
+      top: 12px; right: 16px;
+      font-size: 1.5rem;
+      border: none; background: none;
+      cursor: pointer; color: #64748b;
+    }
+    .resumo-pacote {
+      background: #f8fafc;
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+      font-weight: bold;
+      color: #1e293b;
+      margin-bottom: 1rem;
+    }
+    .opcoes-pagamento {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      margin: 1rem 0;
+    }
+    .opcao-pgto {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid #cbd5e1;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .opcao-pgto.ativa {
+      border-color: #16a34a;
+      background: #f0fdf4;
+    }
+    .opcao-pgto.desativada {
+      opacity: 0.5;
+    }
+    .btn-pagar {
+      width: 100%;
+      background: #16a34a;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
     }
     .btn-voltar {
-      display: inline-block;
       background: var(--bg-botao-login);
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      font-size: 0.95rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
     }
     .btn-voltar:hover {
       background: var(--bg-hover-botao-login);
     }
-    .acoes {
+    .resumo-energia-usuario {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+      color: #334155;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 15px;
+      flex-direction: column;
+      gap: 4px;
+      text-align: left;
     }
-    .pix-box {
-      font-size: var(--fs-emph-max);
-      max-width: 100%;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .li-politica-de-privacidade {
-      font-size: var(--fs-base-max) !important;
-    }
-    @media(max-width: 1200px) {
-      .pix-box {
-        font-size: calc(var(--fs-base-max) - 0.05rem);
-      }
-      .container {
-        margin: 1.8dvw;
-      }
-    }
-    @media(max-width: 600px) {
-      .pix-box {
-        font-size: calc(var(--fs-base-max) - 0.1rem);
-      }
+    .projecao-futura {
+      font-weight: bold;
     }
   </style>
 </head>
+
+
 <body>
   <div class="container">
-    <h2>Apoie nosso projeto</h2>
-    <p>
-      <strong>Desafio das Perguntas</strong> é gratuito e mantido com muito esforço. Sua doação apoia o desenvolvimento e melhoria contínua do projeto, além de nos ajudar a cobrir custos de manuntenção.
+
+    <h2>⚡ Recarga de Energia</h2>
+    <p class="subtitulo">
+      Adquira mais energia para continuar respondendo aos quizzes sem ter que esperar a recarga diária.
     </p>
 
-    <p><strong>Valores sugeridos:</strong></p>
-    <ul class="ul-politica-de-privacidade">
-      <li class="li-politica-de-privacidade">❤️ R$ 5/mês – ajuda simbólica </li>
-      <li class="li-politica-de-privacidade">☕ R$ 15/mês – apoio recorrente </li>
-      <li class="li-politica-de-privacidade">🚀 R$ 30/mês – incentivo ao projeto </li>
-    </ul>
-    
-    <p><strong>Outras contribuições:</strong></p>
-      <ul class="ul-politica-de-privacidade">
-        <li class="li-politica-de-privacidade">Envio de feedbacks e sugestões</li>
-        <li class="li-politica-de-privacidade">Indicação do site a outras pessoas</li>
-      </ul>
-
-    <p>Toda forma de apoio contribui para a evolução do projeto, seja por doações, feedbacks ou uso contínuo da plataforma.</p>
-
-    <!-- QR Code -->
-    <div class="qrcode">
-      <img src="/static/qrcode.png" alt="QR Code PIX">
-      <p>Escaneie o QR Code acima ou copie a chave PIX:</p>
+    {% if em_breve %}
+    <div style="margin-bottom: 1rem;">
+      🚀 Esta seção estará disponível oficialmente em breve.
     </div>
 
-    <div class="pix-box" id="pixKey">
-      {{ chave_pix }}
+    <!-- 1. Alertas e Avisos Condicionais -->
+    {% elif modo_visitante %}
+    <div class="alert alert-info text-center p-4 shadow-sm mb-4">
+        <h4 class="alert-heading">🔒 Área Exclusiva para Contas Registradas</h4>
+        <p class="mb-3">
+          Você está navegando como <strong>Visitante</strong>. Visitantes não possuem pacotes de recarga nem recebem a recarga diária gratuita de energia.
+        </p>
+        <p class="mb-3 text-muted">
+          Ao criar uma conta gratuita, você desbloqueia a recarga diária e tem acesso a pacotes de energia para jogar sem limites, além de outras vantagens.
+        </p>
+    </div>
+    {% elif not email_confirmado %}
+      <div class="alert alert-warning text-center p-4 shadow-sm mb-4">
+        <h4 class="alert-heading">📧 E-mail Não Confirmado</h4>
+        <p class="mb-2">
+          O e-mail <strong>{{ email_usuario }}</strong> ainda não foi verificado. Confirme seu e-mail para desbloquear a loja de energias.
+        </p>
+        <p class="text-muted small mb-0">
+          * Observação: Você pode alterar seu e-mail na tela de <strong>Opções</strong>.
+        </p>
+      </div>
+
+    {% elif erro_carregamento %}
+      <div class="alert alert-danger text-center mb-4">
+        {{ erro_carregamento }}
+      </div>
+
+    {% elif not pacotes %}
+      <div class="alert alert-info text-center mb-4">
+        Não foi possível carregar as opções de recarga no momento. Por favor, tente novamente em instantes.
+      </div>
+
+    {% else %}
+      <!-- 2. Lista de Pacotes (Apenas exibida se tudo estiver OK) -->
+      <div class="pacotes-grid" id="pacotesGrid">
+        {% for pacote in pacotes %}
+          <div class="pacote-card {% if pacote.bloqueado_por_excesso %}bloqueado{% endif %}" 
+               data-id="{{ pacote.id }}" 
+               data-qtd="{{ pacote.energia }}" 
+               data-preco="{{ '%.2f'|format(pacote.preco)|replace('.', ',') }}"
+               {% if not pacote.bloqueado_por_excesso %}onclick="selecionarPacote(this)"{% endif %}>
+            
+            {% if pacote.desconto_label %}
+              <span class="badge-desconto">{{ pacote.desconto_label }}</span>
+            {% endif %}
+            
+            <div class="pacote-info">
+              <span class="pacote-nome">{{ pacote.nome }}</span>
+              <span class="pacote-qtd">⚡{{ pacote.energia }}</span>
+            </div>
+            
+            <div class="pacote-preco">
+              <div class="valor-main">
+                R$ {{ "%.2f"|format(pacote.preco)|replace('.', ',') }}
+              </div>
+            </div>
+
+            {% if pacote.bloqueado_por_excesso %}
+              <div class="aviso-bloqueio-nivel">🔒 Indisponível (Perguntas esgotadas)</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Informações do Sistema -->
+      <div class="regras-lista mt-4">
+        <strong>Como funciona o reservatório:</strong>
+        <ul>
+          <li>A recarga diária gratuita é de <strong>10 de energia</strong>.</li>
+          <li>Pacotes maiores podem ser desativados temporariamente dependendo da quantidade de energia atual e das perguntas disponíveis no banco.</li>
+          <li>Preços e ofertas sujeitos a alterações sem aviso prévio.</li>
+        </ul>
+      </div>
+    {% endif %}
+
+    <!-- 3. Ações da Página (Sempre visíveis para o usuário não ficar preso) -->
+    <div class="acoes-loja mt-4">
+      {% if email_confirmado and pacotes and not em_breve %}
+        <button id="btnCheckout" class="btn-checkout" disabled onclick="abrirModalPagamento()">
+          Selecione um pacote
+        </button>
+      {% endif %}
+      <button onclick="voltarParaHome()" class="btn-voltar">Voltar ao Menu</button>
     </div>
 
-    <div class="acoes">
-      <button id="btn-voltar" onclick="voltarParaHome()" class="btn-voltar">Voltar ao menu</button>
-      <button onclick="copyPix()" class="btn-copiar">Copiar chave PIX</button>
+    <!-- MODAL DE PAGAMENTO -->
+    <div id="modalPagamento" class="modal-overlay" style="display: none;">
+      <div class="modal-content">
+        <button class="modal-fechar" onclick="fecharModalPagamento()">&times;</button>
+          
+        <h3>Forma de Pagamento</h3>
+        <div class="resumo-energia-usuario">
+          <span>⚡ Energia atual: <strong id="energiaAtualTexto">0</strong> / 500</span>
+          <span id="projecaoEnergia" class="projecao-futura"></span>
+        </div>
+
+        <p id="resumoPacote" class="resumo-pacote"></p>
+
+        <div class="opcoes-pagamento">
+          <div class="opcao-pgto ativa">
+            <span class="pgto-icone">📱</span>
+            <div class="pgto-detalhes">
+              <strong>PIX (Aprovação Instantânea)</strong>
+              <small>Gera QR Code e Chave Copia e Cola</small>
+            </div>
+          </div>
+
+          <div class="opcao-pgto desativada">
+            <span class="pgto-icone">💳</span>
+            <div class="pgto-detalhes">
+              <strong>Cartão de Crédito / PayPal</strong>
+              <small>Em breve</small>
+            </div>
+          </div>
+        </div>
+
+        <div id="containerPixResultado" style="display: none;"></div>
+
+        <button id="btnPagarAgora" class="btn-pagar" onclick="gerarCobrancaPix()">
+          Gerar PIX
+        </button>
+      </div>
     </div>
 
-    <div class="success" id="successMsg">Chave PIX copiada com sucesso!</div>
-  </div>
-    
+  </div> <!-- Fechamento da div.container -->
+
   <script type="module">
-    import { playSound } from "../static/sound.js"
-    window.copyPix = function () {
+    import { playSound } from "../static/sound.js";
+
+    // Recupera a energia do localStorage (com fallback para '0' se não existir)
+    const energiaSalva = localStorage.getItem('perguntas_restantes') || '0';
+    const energiaAtualUsuario = parseInt(energiaSalva, 10);
+    const LIMITE_RESERVATORIO = localStorage.getItem('limite_energia') || 500;
+    let pacoteSelecionadoInfo = null;
+    let intervalChecagemPix = null;
+
+    // Preenche o valor na tela ao carregar
+    document.addEventListener("DOMContentLoaded", () => {
+      const elEnergia = document.getElementById('energiaAtualTexto');
+      if (elEnergia) {
+        elEnergia.textContent = energiaAtualUsuario;
+      }
+    });
+
+    window.selecionarPacote = function (elementoCard) {
       playSound("click");
-      const pixKey = document.getElementById("pixKey").innerText;
-      
-      navigator.clipboard.writeText(pixKey).then(() => {
-        const msg = document.getElementById("successMsg");
-        msg.style.display = "block";
-        setTimeout(() => msg.style.display = "none", 4000);
+
+      document.querySelectorAll('.pacote-card').forEach(card => {
+        card.classList.remove('selecionado');
       });
+
+      elementoCard.classList.add('selecionado');
+
+      pacoteSelecionadoInfo = {
+        id: elementoCard.dataset.id,
+        qtd: parseInt(elementoCard.dataset.qtd),
+        preco: elementoCard.dataset.preco
+      };
+
+      const btnCheckout = document.getElementById('btnCheckout');
+      if (btnCheckout) {
+        btnCheckout.disabled = false;
+        btnCheckout.innerHTML = `Comprar +${pacoteSelecionadoInfo.qtd}⚡ por R$ ${pacoteSelecionadoInfo.preco}`;
+      }
+    };
+
+    window.abrirModalPagamento = function () {
+      if (!pacoteSelecionadoInfo) return;
+      playSound("click");
+
+      const resumo = document.getElementById('resumoPacote');
+      resumo.innerHTML = `Pacote: ⚡${pacoteSelecionadoInfo.qtd}<br>Total a pagar: R$ ${pacoteSelecionadoInfo.preco}`;
+
+      const novaEnergiaTotal = energiaAtualUsuario + pacoteSelecionadoInfo.qtd;
+      const projecao = document.getElementById('projecaoEnergia');
+      
+      if (novaEnergiaTotal > LIMITE_RESERVATORIO) {
+        projecao.innerHTML = `⚠️ Irá para <strong>${novaEnergiaTotal}</strong> (Ultrapassa o limite de 500!)`;
+        projecao.style.color = '#dc2626';
+      } else {
+        projecao.innerHTML = `➔ Após compra: <strong>${novaEnergiaTotal} / 500</strong>`;
+        projecao.style.color = '#16a34a';
+      }
+
+      document.getElementById('modalPagamento').style.display = 'flex';
+    };
+    
+    window.fecharModalPagamento = function () {
+      playSound("click");
+      document.getElementById('modalPagamento').style.display = 'none';
+    };
+
+    window.gerarCobrancaPix = async function () {
+      if (!pacoteSelecionadoInfo) return;
+
+      const btnPagar = document.getElementById('btnPagarAgora');
+      btnPagar.disabled = true;
+      btnPagar.textContent = "Gerando PIX...";
+
+      try {
+        const response = await fetch('/api/criar-pix', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pacote_id: pacoteSelecionadoInfo.id })
+        });
+
+        const data = await response.json();
+
+        if (data.sucesso) {
+          exibirTelaPix(data.qr_code_base64, data.qr_code_copia_cola, data.transacao_id);
+        } else {
+          alert("Erro ao gerar PIX: " + data.erro);
+          btnPagar.disabled = false;
+          btnPagar.textContent = "Gerar PIX";
+        }
+      } catch (err) {
+        console.error("Erro de conexão:", err);
+        alert("Erro de conexão com o servidor.");
+        btnPagar.disabled = false;
+        btnPagar.textContent = "Gerar PIX";
+      }
+    };
+
+    window.exibirTelaPix = function(qrCodeBase64, qrCodeCopiaCola, transacaoId) {
+      const areaAcao = document.getElementById('areaAcaoCheckout');
+      if (areaAcao) {
+        areaAcao.style.display = 'none';
+      }
+
+      const containerPix = document.getElementById('containerPixResultado');
+      if (!containerPix) return;
+
+      containerPix.innerHTML = `
+        <div class="pix-checkout-box text-center p-3">
+          <div class="badge bg-warning text-dark mb-3 px-3 py-2 fs-6">
+            ⏳ Aguardando Pagamento
+          </div>
+
+          <p class="text-muted small mb-3">
+            Abra o app do seu banco, escolha a opção <strong>PIX</strong> e escaneie o código abaixo ou copie a chave.
+          </p>
+
+          <div class="mb-3">
+            <img src="data:image/png;base64,${qrCodeBase64}" 
+                 alt="QR Code PIX" 
+                 style="max-width: 220px; width: 100%; border: 4px solid #fff; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label text-muted small">Código Copia e Cola:</label>
+            <div class="input-group">
+              <input type="text" id="inputCopiaCola" class="form-control form-control-sm" value="${qrCodeCopiaCola}" readonly />
+              <button id="btnCopiarPix" class="btn btn-outline-primary btn-sm" onclick="copiarChavePix()">
+                📋 Copiar
+              </button>
+            </div>
+          </div>
+
+          <div class="alert alert-info py-2 small">
+            ⚡ Sua energia será creditada automaticamente assim que o pagamento for confirmado.
+          </div>
+        </div>
+      `;
+
+      containerPix.style.display = 'block';
+      
+      /* Checa se o pagamento foi confirmado a cada 3 segundos */
+      if (intervalChecagemPix) clearInterval(intervalChecagemPix);
+        
+        intervalChecagemPix = setInterval(() => {
+          verificarStatusPagamento(transacaoId);
+        }, 3000);
     }
+
+    async function verificarStatusPagamento(transacaoId) {
+        try {
+            const response = await fetch(`/api/checar-status-pix/${transacaoId}`);
+            const data = await response.json();
+
+            if (data.status === 'APROVADO') {
+                clearInterval(intervalChecagemPix);
+                alert("⚡ Pagamento confirmado! Sua energia foi creditada.");
+                fecharModalPagamento();
+                window.location.reload(); // Recarrega a página para atualizar o saldo exibido
+            }
+        } catch (err) {
+            console.error("Erro ao verificar status:", err);
+        }
+    }
+
+    window.copiarChavePix = function () {
+      const input = document.getElementById('inputCopiaCola');
+      if (!input) return;
+
+      input.select();
+      input.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(input.value);
+
+      const btnCopiar = document.getElementById('btnCopiarPix');
+      if (btnCopiar) {
+        const textoOriginal = btnCopiar.innerHTML;
+        btnCopiar.classList.remove('btn-outline-primary');
+        btnCopiar.classList.add('btn-success');
+        btnCopiar.innerHTML = "✅ Copiado!";
+
+        setTimeout(() => {
+          btnCopiar.classList.remove('btn-success');
+          btnCopiar.classList.add('btn-outline-primary');
+          btnCopiar.innerHTML = textoOriginal;
+        }, 2500);
+      } else {
+        alert("Código PIX copiado com sucesso!");
+      }
+    }
+
     window.voltarParaHome = function () {
       playSound("click");
       window.location.href = '/home';
-    }
+    };
   </script>
 </body>
 </html>

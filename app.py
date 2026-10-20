@@ -10,10 +10,10 @@ import logging
 import sys
 import traceback
 import random, string, time
+import mercadopago
 from PIL import Image, ImageEnhance, ImageFilter
 from io import BytesIO
 import urllib.parse
-import qrcode
 from functools import wraps
 from psycopg2.extras import RealDictCursor
 from db import *
@@ -32,30 +32,273 @@ invite_token = os.getenv("TOKEN_CONVITE")
 SITE_EM_MANUTENCAO = False
 # O primeiro id é de desktop e o segundo de mobile
 ids_visitante_admin = ['53c3025c-d619-4d91-9913-96cc6651ef1a', 'd103db0e-cd5d-4743-a67c-2cdf0f282892']
-# Código copia e cola gerado pelo Nubank
-codigo_pix = os.getenv("QR_CODE")
-img = qrcode.make(codigo_pix)
-img.save("static/qrcode.png")
 
+sdk = mercadopago.SDK(ACCESS_TOKEN_MERCADO_PAGO)
+DIFERENCA_PERGUNTAS_RESTANTES = 30
 
-# A função abaixo será removida futuramente
-@app.route('/api/teste-conversao-ms', methods=['POST'])
-def api_teste_conversao_ms():
-    dados = request.get_json()
-    id_visitante = dados.get('id_visitante') or session.get('id_visitante')
-    
+@app.route('/api/criar-pix', methods=['POST'])
+def criar_pix():
+    dados = request.get_json() or {}
+    id_pacote = dados.get('pacote_id')
+
+    if not id_pacote:
+        return jsonify({"sucesso": False, "erro": "Pacote não informado."}), 400
+
+    conn = cur = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("INSERT INTO teste_conversao_microsoft (id_visitante) VALUES (%s)", (id_visitante,))
+
+        id_usuario = session.get('id_usuario')
+        if not id_usuario:
+            return jsonify({"sucesso": False, "erro": "Sessão expirada. Faça login novamente."}), 401
+
+        # 1. Busca dados do usuário logado e valida verificação de e-mail
+        cur.execute("""
+            SELECT id_usuario, email, email_confirmado, nome, perguntas_restantes 
+            FROM usuarios_registrados 
+            WHERE id_usuario = %s;
+        """, (id_usuario,))
+        usuario = cur.fetchone()
+
+        if not usuario:
+            return jsonify({"sucesso": False, "erro": "Usuário não encontrado."}), 401
+
+        id_usuario, email_usuario, email_confirmado, nome_usuario, perguntas_restantes = usuario
+
+        # Trava de e-mail verificado
+        if not email_confirmado:
+            return jsonify({"sucesso": False, "erro": "Sua conta precisa estar com o e-mail verificado para realizar compras."}), 403
+
+        # 2. Consulta o total de perguntas no sistema e as já respondidas pelo usuário
+        cur.execute("""
+            SELECT 
+                (SELECT COUNT(*) FROM perguntas_objetivas WHERE status = 'Ativa') - 
+                (SELECT COUNT(*) FROM respostas_usuarios WHERE id_usuario = %s) as perguntas_restantes
+        """, (id_usuario,))
+        resultado = cur.fetchone()
+        perguntas_restantes = max(0, resultado[0] if resultado and resultado[0] is not None else 0)
+
+        # 3. Busca as informações do pacote escolhido (id, nome, energia, preco)
+        cur.execute("""
+            SELECT id, nome, energia, preco 
+            FROM pacotes_energia 
+            WHERE id = %s AND ativo = TRUE;
+        """, (id_pacote,))
+        pacote = cur.fetchone()
+
+        if not pacote:
+            return jsonify({"sucesso": False, "erro": "Pacote inválido ou inativo."}), 404
+
+        pacote_id, nome_pacote, qtd_energia, preco_pacote = pacote
+        preco_float = float(preco_pacote)
+
+        # Validação da trava de perguntas restantes com a margem de segurança
+        if qtd_energia > (perguntas_restantes - DIFERENCA_PERGUNTAS_RESTANTES):
+            return jsonify({
+                "sucesso": False, 
+                "erro": "Você não possui perguntas suficientes no banco para adquirir este pacote de energia."
+            }), 403
+
+        # 4. Monta a requisição de pagamento PIX para o Mercado Pago (expiração em 30 min)
+        agora_sp = datetime.now(tz_sp) + timedelta(minutes=30)
+        expiracao = agora_sp.strftime('%Y-%m-%dT%H:%M:%S.000%z')
+
+        payment_data = {
+            "transaction_amount": preco_float,
+            "description": f"Recarga de Energia: +{qtd_energia}⚡ ({nome_pacote}) - Desafio das Perguntas",
+            "payment_method_id": "pix",
+            "payer": {
+                "email": email_usuario or "cliente@desafiodasperguntas.com.br",
+                "first_name": nome_usuario or "Jogador"
+            },
+            "date_of_expiration": expiracao
+        }
+
+        # Envia a requisição para a API do Mercado Pago
+        payment_response = sdk.payment().create(payment_data)
+        
+        response_status = payment_response.get("status")
+        payment_info = payment_response.get("response")
+
+        if response_status not in [200, 201] or not payment_info:
+            print(f"Erro Mercado Pago: {payment_response}")
+            return jsonify({"sucesso": False, "erro": "Erro ao comunicar com o gateway de pagamento."}), 500
+
+        transacao_id_mp = str(payment_info.get("id"))
+        ponto_interacao = payment_info.get("point_of_interaction", {})
+        dados_transacao = ponto_interacao.get("transaction_data", {})
+        
+        qr_code_copia_cola = dados_transacao.get("qr_code")
+        qr_code_base64 = dados_transacao.get("qr_code_base64")
+
+        # 5. Registra na tabela historico_compras como PENDENTE
+        cur.execute("""
+            INSERT INTO historico_compras 
+            (id_usuario, id_pacote, energia_creditada, valor_pago, status, gateway, transacao_id_gateway, qr_code_pix, energia_anterior)
+            VALUES (%s, %s, %s, %s, 'PENDENTE', 'MERCADO_PAGO', %s, %s, %s);
+        """, (
+            id_usuario, 
+            pacote_id, 
+            qtd_energia, 
+            preco_float, 
+            transacao_id_mp, 
+            qr_code_copia_cola,
+            perguntas_restantes
+        ))
         conn.commit()
+
+        return jsonify({
+            "sucesso": True,
+            "transacao_id": transacao_id_mp,
+            "qr_code_copia_cola": qr_code_copia_cola,
+            "qr_code_base64": qr_code_base64
+        }), 200
+
     except Exception as e:
-        app.logger.error(f"Erro no log temporário: {e}")
+        if conn:
+            conn.rollback()
+        print(f"Erro crítico ao gerar PIX: {e}")
+        return jsonify({"sucesso": False, "erro": "Erro interno ao processar a recarga."}), 500
+
     finally:
         if cur: cur.close()
         if conn: conn.close()
-        
+
+@app.route('/api/webhook/mercado-pago', methods=['POST'])
+def webhook_mercado_pago():
+    data = request.get_json() or {}
+    
+    # O Mercado Pago costuma enviar notificações no formato: {"type": "payment", "data": {"id": "12345678"}}
+    # ou acionado por query param ?data.id=...
+    action_type = data.get('type') or request.args.get('type')
+    payment_id = data.get('data', {}).get('id') or request.args.get('data.id')
+
+    if action_type == 'payment' and payment_id:
+        conn = cur = None
+        try:
+            # 1. Consulta o status atual do pagamento diretamente na API do Mercado Pago
+            payment_info = sdk.payment().get(payment_id)
+            status_mp = payment_info.get("response", {}).get("status")
+
+            # Se o pagamento foi aprovado pelo gateway:
+            if status_mp == 'approved':
+                conn = get_db_connection()
+                cur = conn.cursor(cursor_factory=RealDictCursor)
+
+                # 2. Busca a compra na base de dados (somente se ainda estiver PENDENTE para evitar duplicidade)
+                cur.execute("""
+                    SELECT id_compra, id_usuario, energia_creditada, status 
+                    FROM historico_compras 
+                    WHERE transacao_id_gateway = %s AND status = 'PENDENTE';
+                """, (str(payment_id),))
+                compra = cur.fetchone()
+
+                if compra:
+                    id_compra = compra['id_compra']
+                    id_usuario = compra['id_usuario']
+                    qtd_energia = compra['energia_creditada']
+
+                    # 3. Credita a energia no perfil do usuário
+                    cur.execute("""
+                        UPDATE usuarios_registrados 
+                        SET perguntas_restantes = perguntas_restantes + %s 
+                        WHERE id_usuario = %s;
+                    """, (qtd_energia, id_usuario))
+
+                    # 4. Atualiza o status da compra para APROVADO
+                    cur.execute("""
+                        UPDATE historico_compras 
+                        SET status = 'APROVADO', data_atualizacao = NOW() 
+                        WHERE id_compra = %s;
+                    """, (id_compra,))
+
+                    conn.commit()
+                    print(f"✅ Pagamento {payment_id} aprovado. +{qtd_energia}⚡ creditados ao usuário {id_usuario}.")
+
+        except Exception as e:
+            if conn: conn.rollback()
+            print(f"Erro ao processar Webhook Mercado Pago: {e}")
+            return jsonify({"status": "error"}), 500
+        finally:
+            if cur: cur.close()
+            if conn: conn.close()
+
     return jsonify({"status": "ok"}), 200
+
+@app.route('/api/checar-status-pix/<transacao_id>', methods=['GET'])
+def checar_status_pix(transacao_id):
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT status FROM historico_compras WHERE transacao_id_gateway = %s;", (str(transacao_id),))
+        res = cur.fetchone()
+        status = res['status'] if res else 'NAO_ENCONTRADO'
+        return jsonify({"status": status}), 200
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route('/api/pacotes-disponiveis', methods=['GET'])
+def obter_pacotes():
+    id_usuario = session.get('id_usuario')
+    if not id_usuario:
+        return jsonify({"sucesso": False, "erro": "Usuário não autenticado."}), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # 1. Busca dados do usuário (e-mail confirmado e contagem de respostas)
+    cur.execute("""
+        SELECT u.email_confirmado, 
+               (SELECT COUNT(*) FROM respostas_usuarios r WHERE r.id_usuario = u.id_usuario) as total_respostas
+        FROM usuarios_registrados u
+        WHERE u.id_usuario = %s;
+    """, (id_usuario,))
+    usuario_info = cur.fetchone()
+
+    if not usuario_info:
+        cur.close()
+        conn.close()
+        return jsonify({"sucesso": False, "erro": "Usuário não encontrado."}), 404
+
+    email_confirmado, total_respostas = usuario_info
+
+    # Regra 1: Bloqueia loja se e-mail não estiver verificado
+    if not email_confirmado:
+        cur.close()
+        conn.close()
+        return jsonify({
+            "sucesso": False,
+            "requer_confirmacao_email": True,
+            "erro": "Confirme seu e-mail para desbloquear a loja de energias."
+        }), 403
+
+    # 2. Busca pacotes no banco
+    cur.execute("SELECT id, nome, energia, preco, respostas_minimas FROM pacotes_energia WHERE ativo = TRUE ORDER BY preco ASC;")
+    pacotes = cur.fetchall()
+
+    lista_pacotes = []
+    for p in pacotes:
+        p_id, p_nome, p_energia, p_preco, p_respostas_min = p
+        
+        # Regra 2: Libera/Bloqueia pacotes baseando-se na contagem de respostas
+        bloqueado = total_respostas < (p_respostas_min or 0)
+
+        lista_pacotes.append({
+            "id": p_id,
+            "nome": p_nome,
+            "energia": p_energia,
+            "preco": float(p_preco),
+            "bloqueado": bloqueado,
+            "respostas_necessarias": p_respostas_min
+        })
+
+    cur.close()
+    conn.close()
+
+    return jsonify({"sucesso": True, "pacotes": lista_pacotes, "total_respostas": total_respostas}), 200
 
 @app.route("/alterar-email", methods=["POST"])
 def alterar_email_route():
@@ -840,11 +1083,89 @@ def home():
         visitante=visitante
     )
 
-@app.route("/doações")
+@app.route("/recarga-de-energia")
 def doacoes():
-    chave_pix = os.getenv("CHAVE_PIX")
-    registrar_pagina_visitada("Doações")
-    return render_template("doacoes.html", chave_pix=chave_pix)
+    pacotes = []
+    email_confirmado = False
+    total_respostas = 0
+    perguntas_restantes = 0
+    erro_carregamento = None
+    email_usuario = ''
+    id_usuario = session.get('id_usuario')
+    modo_visitante = session.get("visitante")
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        # Usa RealDictCursor para buscar os dados como dicionário usando os nomes das colunas
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        if id_usuario:
+            cur.execute("""
+                SELECT 
+                    u.email,
+                    u.email_confirmado,
+                    (SELECT COUNT(*) FROM respostas_usuarios r WHERE r.id_usuario = u.id_usuario) as total_respostas,
+                    (SELECT COUNT(*) FROM perguntas_objetivas WHERE status = 'Ativa') as total_perguntas_sistema  
+                FROM usuarios_registrados u
+                WHERE u.id_usuario = %s;
+            """, (id_usuario,))
+            usuario_info = cur.fetchone()
+
+            if usuario_info:
+                # Acessa diretamente pelo nome da coluna no banco, eliminando erros de índice
+                email_usuario = usuario_info.get('email') or ''
+                email_confirmado = bool(usuario_info.get('email_confirmado'))
+                total_respostas = usuario_info.get('total_respostas') or 0
+                total_perguntas_sistema = usuario_info.get('total_perguntas_sistema') or 0
+                
+                if not email_confirmado:
+                    erro_carregamento = "Você precisa confirmar seu e-mail para desbloquear as opções de recarga de energia."
+                
+                perguntas_restantes = max(0, total_perguntas_sistema - total_respostas)
+
+        # Só busca os pacotes se o e-mail estiver confirmado
+        if email_confirmado:
+            cur.execute("""
+                SELECT id, nome, energia, preco, desconto_label 
+                FROM pacotes_energia 
+                WHERE ativo = TRUE 
+                ORDER BY ordem ASC;
+            """)
+            linhas = cur.fetchall()
+
+            for linha in linhas:
+                p = dict(linha)
+                p['preco'] = float(p['preco'])
+                qtd_energia = p.get('energia') or 0
+
+                if id_usuario and (perguntas_restantes - DIFERENCA_PERGUNTAS_RESTANTES) < qtd_energia:
+                    p['bloqueado_por_excesso'] = True
+                else:
+                    p['bloqueado_por_excesso'] = False
+
+                pacotes.append(p)
+
+    except Exception as e:
+        print(f"Erro ao carregar pacotes de energia: {e}")
+        erro_carregamento = "Não foi possível carregar as opções de recarga no momento. Por favor, tente novamente em instantes."
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+    registrar_pagina_visitada("Recarga de energia")
+
+    return render_template(
+        "doacoes.html", 
+        pacotes=pacotes, 
+        email_confirmado=email_confirmado,
+        total_respostas=total_respostas,
+        perguntas_restantes=perguntas_restantes,
+        erro_carregamento=erro_carregamento,
+        email_usuario=email_usuario,
+        modo_visitante=modo_visitante,
+        em_breve=True
+    )
 
 @app.route("/pesquisa")
 def pesquisa():
@@ -1156,7 +1477,6 @@ def login():
                 return jsonify(success=False, message="Formato de e-mail inválido"), 400
 
             conn = get_db_connection()
-            # 1. USANDO O RealDictCursor PARA PERMITIR usuario['coluna']
             cur = conn.cursor()
 
             # Verifica usuário
@@ -1261,11 +1581,11 @@ def atualizar_energia_usuario(cur, id_usuario, energia_atual, u_sessao, b_energi
 
     # 1. Recarga Diária Normal (+10 se for um novo dia)
     if u_sessao and u_sessao.date() < agora_sp.date():
-        nova_energia = min(nova_energia + 10, 80)
+        nova_energia = min(nova_energia + 10, 500)
 
     # 2. Processamento do Bônus (soma ao total, respeitando o teto de 80)
     if b_energia > 0 and (exp_bonus is None or agora_sp < exp_bonus):
-        nova_energia = min(nova_energia + b_energia, 80)
+        nova_energia = min(nova_energia + b_energia, 500)
 
     # Atualiza o banco com a nova energia e o último horário da sessão
     cur.execute("""
@@ -1592,6 +1912,8 @@ def salvar_favoritos():
         conn = get_db_connection()
         cur = conn.cursor()
 
+        id_usuario = session['id_usuario']
+
         # Remover apenas os IDs explicitamente enviados
         if remover:
             cur.execute("""
@@ -1599,7 +1921,7 @@ def salvar_favoritos():
                 WHERE id_usuario = %s
                   AND tema = %s
                   AND id_pergunta = ANY(%s)
-            """, (user_id, tema, list(remover)))
+            """, (id_usuario, tema, list(remover)))
 
         # Inserir os IDs explicitamente enviados
         for id_pergunta in adicionar:
@@ -1607,14 +1929,14 @@ def salvar_favoritos():
                 INSERT INTO favoritos_usuarios (id_usuario, id_pergunta, tema)
                 VALUES (%s, %s, %s)
                 ON CONFLICT (id_usuario, id_pergunta) DO NOTHING
-            """, (user_id, id_pergunta, tema))
+            """, (id_usuario, id_pergunta, tema))
 
         conn.commit()
         return jsonify({"success": True, "msg": "Favoritos atualizados com sucesso."}), 200
 
     except Exception:
         if conn: conn.rollback()
-        app.logger.exception("Erro ao salvar favoritos do usuário %s", user_id)
+        app.logger.exception("Erro ao salvar favoritos do usuário %s", id_usuario)
         return jsonify({"success": False, "msg": "Erro ao salvar favoritos"}), 500
     finally:
         if cur: cur.close()
