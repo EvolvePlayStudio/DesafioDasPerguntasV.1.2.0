@@ -64,7 +64,7 @@ def criar_pix():
         if not usuario:
             return jsonify({"sucesso": False, "erro": "Usuário não encontrado."}), 401
 
-        id_usuario, email_usuario, email_confirmado, nome_usuario, perguntas_restantes = usuario
+        id_usuario, email_usuario, email_confirmado, nome_usuario, energia_inicial = usuario
 
         # Trava de e-mail verificado
         if not email_confirmado:
@@ -77,7 +77,9 @@ def criar_pix():
                 (SELECT COUNT(*) FROM respostas_usuarios WHERE id_usuario = %s) as perguntas_restantes
         """, (id_usuario,))
         resultado = cur.fetchone()
+        
         perguntas_restantes = max(0, resultado[0] if resultado and resultado[0] is not None else 0)
+        perguntas_e_energia_restantes = perguntas_restantes + energia_inicial
 
         # 3. Busca as informações do pacote escolhido (id, nome, energia, preco)
         cur.execute("""
@@ -94,7 +96,7 @@ def criar_pix():
         preco_float = float(preco_pacote)
 
         # Validação da trava de perguntas restantes com a margem de segurança
-        if qtd_energia > (perguntas_restantes - DIFERENCA_PERGUNTAS_RESTANTES):
+        if qtd_energia > (perguntas_e_energia_restantes - DIFERENCA_PERGUNTAS_RESTANTES):
             return jsonify({
                 "sucesso": False, 
                 "erro": "Você não possui perguntas suficientes no banco para adquirir este pacote de energia."
@@ -170,7 +172,6 @@ def criar_pix():
 @app.route('/api/webhook/mercado-pago/', methods=['POST', 'GET'])
 def webhook_mercado_pago():
     print("🔔 Rota webhook chamada com sucesso!")
-
     # Captura segura de dados para evitar o erro de Unsupported Media Type
     data = {}
     if request.is_json:
@@ -256,84 +257,11 @@ def webhook_mercado_pago():
 
     return jsonify({"status": "ok"}), 200
 
-
-
-@app.route('/api/checar-status-pix/<transacao_id>', methods=['GET'])
-def checar_status_pix_nova(transacao_id):
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-    
-    # Busca a compra diretamente pelo transacao_id_gateway que você já tem na tabela
-    cur.execute("""
-        SELECT transacao_id_gateway, status, id_usuario, energia_creditada 
-        FROM historico_compras 
-        WHERE transacao_id_gateway = %s;
-    """, (str(transacao_id),))
-    compra = cur.fetchone()
-    
-    if not compra:
-        cur.close()
-        conn.close()
-        print("Compra não encontrada")
-        return jsonify({"status": "nao_encontrado"})
-        
-    status_atual = compra['status']
-    
-    # Se já estiver aprovado, só retorna para o frontend festejar
-    if status_atual == 'APROVADO':
-        cur.close()
-        conn.close()
-        print("Status da compra já aprovado")
-        return jsonify({"status": "APROVADO"})
-        
-    # Se ainda estiver PENDENTE, consulta ativamente a API do Mercado Pago
-    if status_atual == 'PENDENTE':
-        try:
-            payment_info = sdk.payment().get(transacao_id)
-            response_data = payment_info.get("response", {})
-            status_mp = response_data.get("status")
-            
-            print(f"🔄 Verificação ativa para transação {transacao_id}: Status no MP = {status_mp}")
-            
-            if status_mp == 'approved':
-                id_usuario = compra['id_usuario']
-                qtd_energia = compra['energia_creditada']
-                
-                # Credita a energia na conta do usuário
-                cur.execute("""
-                    UPDATE usuarios_registrados 
-                    SET perguntas_restantes = perguntas_restantes + %s 
-                    WHERE id_usuario = %s;
-                """, (qtd_energia, id_usuario))
-                
-                # Atualiza o status na tabela historico_compras usando o transacao_id_gateway
-                cur.execute("""
-                    UPDATE historico_compras 
-                    SET status = 'APROVADO' 
-                    WHERE transacao_id_gateway = %s;
-                """, (str(transacao_id),))
-                
-                conn.commit()
-                status_atual = 'APROVADO'
-                print(f"✅ Aprovado via verificação ativa para a transação {transacao_id}!")
-        except Exception as e:
-            if conn: conn.rollback()
-            print(f"❌ Erro ao consultar status no MP: {str(e)}")
-            
-    cur.close()
-    conn.close()
-    return jsonify({"status": status_atual})
-
-
-
-
 def checar_status_pix(transacao_id):
     conn = cur = None
-    print("Função de checar status do pix chamada")
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        print(f"transacao_id_gateway é {transacao_id}")
         cur.execute("SELECT status FROM historico_compras WHERE transacao_id_gateway = %s;", (str(transacao_id),))
         res = cur.fetchone()
         status = res['status'] if res else 'NAO_ENCONTRADO'
@@ -353,7 +281,8 @@ def obter_pacotes():
 
     # 1. Busca dados do usuário (e-mail confirmado e contagem de respostas)
     cur.execute("""
-        SELECT u.email_confirmado, 
+        SELECT u.email_confirmado,
+        u.perguntas_restantes,
                (SELECT COUNT(*) FROM respostas_usuarios r WHERE r.id_usuario = u.id_usuario) as total_respostas
         FROM usuarios_registrados u
         WHERE u.id_usuario = %s;
@@ -365,7 +294,7 @@ def obter_pacotes():
         conn.close()
         return jsonify({"sucesso": False, "erro": "Usuário não encontrado."}), 404
 
-    email_confirmado, total_respostas = usuario_info
+    email_confirmado, perguntas_restantes, total_respostas = usuario_info
 
     # Regra 1: Bloqueia loja se e-mail não estiver verificado
     if not email_confirmado:
@@ -386,7 +315,7 @@ def obter_pacotes():
         p_id, p_nome, p_energia, p_preco, p_respostas_min = p
         
         # Regra 2: Libera/Bloqueia pacotes baseando-se na contagem de respostas
-        bloqueado = total_respostas < (p_respostas_min or 0)
+        bloqueado = perguntas_restantes + total_respostas < (p_respostas_min or 0)
 
         lista_pacotes.append({
             "id": p_id,
@@ -1187,7 +1116,6 @@ def home():
 
 @app.route("/recarga-de-energia")
 def doacoes():
-    print("Tela de energia chamada")
     pacotes = []
     email_confirmado = False
     total_respostas = 0

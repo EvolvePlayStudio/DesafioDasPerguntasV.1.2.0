@@ -204,7 +204,7 @@
       position: relative;
       box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     }
-    .modal-fechar {
+    .fechar-modal {
       position: absolute;
       top: 12px; right: 16px;
       font-size: 1.5rem;
@@ -265,6 +265,24 @@
     }
     .btn-voltar:hover {
       background: var(--bg-hover-botao-login);
+    }
+    .btn-voltar-sucesso {
+      background: var(--bg-botao-login);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 80%; /* Deixa o botão um pouco menor que 100% para ficar elegante e centralizado */
+      max-width: 250px;
+      margin: 0 auto; /* Centraliza horizontalmente */
+      display: block;
+      transition: background 0.2s ease;
+    }
+    .btn-voltar-sucesso:hover {
+        background: var(--bg-hover-botao-login);
     }
     .resumo-energia-usuario {
       background: #f8fafc;
@@ -372,6 +390,15 @@
           <li>Preços e ofertas sujeitos a alterações sem aviso prévio.</li>
         </ul>
       </div>
+      
+      <!-- Contato por e-mail -->
+      <div style="margin-bottom: 1rem;">
+        Dúvidas ou problemas com a compra? <br>
+        Entre em contato pelo e-mail: 
+        <a href="mailto:evolveplaystudio@gmail.com" style="color: var(--bs-primary, blue); text-decoration: none; font-weight: 500;">
+          evolveplaystudio@gmail.com
+        </a>
+      </div>
     {% endif %}
 
     <!-- 3. Ações da Página (Sempre visíveis para o usuário não ficar preso) -->
@@ -387,11 +414,11 @@
     <!-- MODAL DE PAGAMENTO -->
     <div id="modalPagamento" class="modal-overlay" style="display: none;">
       <div class="modal-content">
-        <button class="modal-fechar" onclick="fecharModalPagamento()">&times;</button>
+        <button id="btn-fechar-modal" class="fechar-modal" onclick="fecharModalPagamento()">&times;</button>
           
-        <h3>Forma de Pagamento</h3>
+        <h3 id="titulo-modal-pagamento">Forma de Pagamento</h3>
         <div class="resumo-energia-usuario">
-          <span>⚡ Energia atual: <strong id="energiaAtualTexto">0</strong> / 500</span>
+          <span id="energia-atual-span">⚡ Energia atual: <strong id="energiaAtualTexto">0</strong> / 500</span>
           <span id="projecaoEnergia" class="projecao-futura"></span>
         </div>
 
@@ -415,7 +442,7 @@
           </div>
         </div>
 
-        <div id="containerPixResultado" style="display: none;"></div>
+        <div id="containerPixResultado" style="margin-bottom: 1rem;"></div>
 
         <button id="btnPagarAgora" class="btn-pagar" onclick="gerarCobrancaPix()">
           Gerar PIX
@@ -423,7 +450,7 @@
       </div>
     </div>
 
-  </div> <!-- Fechamento da div.container -->
+  </div>
 
   <script type="module">
     import { playSound } from "../static/sound.js";
@@ -432,15 +459,17 @@
     const energiaSalva = localStorage.getItem('perguntas_restantes') || '0';
     const energiaAtualUsuario = parseInt(energiaSalva, 10);
     const LIMITE_RESERVATORIO = localStorage.getItem('limite_energia') || 500;
+    const projecao = document.getElementById('projecaoEnergia');
+    const containerPix = document.getElementById('containerPixResultado');
+    const btnPagar = document.getElementById('btnPagarAgora');
+    const elementoEnergia = document.getElementById('energia-atual-span');
     let pacoteSelecionadoInfo = null;
     let intervalChecagemPix = null;
 
     // Preenche o valor na tela ao carregar
     document.addEventListener("DOMContentLoaded", () => {
       const elEnergia = document.getElementById('energiaAtualTexto');
-      if (elEnergia) {
-        elEnergia.textContent = energiaAtualUsuario;
-      }
+      if (elEnergia) elEnergia.textContent = energiaAtualUsuario;
     });
 
     window.selecionarPacote = function (elementoCard) {
@@ -461,7 +490,7 @@
       const btnCheckout = document.getElementById('btnCheckout');
       if (btnCheckout) {
         btnCheckout.disabled = false;
-        btnCheckout.innerHTML = `Comprar +${pacoteSelecionadoInfo.qtd}⚡ por R$ ${pacoteSelecionadoInfo.preco}`;
+        btnCheckout.innerHTML = `Comprar +${pacoteSelecionadoInfo.qtd}⚡por R$ ${pacoteSelecionadoInfo.preco}`;
       }
     };
 
@@ -471,9 +500,7 @@
 
       const resumo = document.getElementById('resumoPacote');
       resumo.innerHTML = `Pacote: ⚡${pacoteSelecionadoInfo.qtd}<br>Total a pagar: R$ ${pacoteSelecionadoInfo.preco}`;
-
       const novaEnergiaTotal = energiaAtualUsuario + pacoteSelecionadoInfo.qtd;
-      const projecao = document.getElementById('projecaoEnergia');
       
       if (novaEnergiaTotal > LIMITE_RESERVATORIO) {
         projecao.innerHTML = `⚠️ Irá para <strong>${novaEnergiaTotal}</strong> (Ultrapassa o limite de 500!)`;
@@ -482,10 +509,10 @@
         projecao.innerHTML = `➔ Após compra: <strong>${novaEnergiaTotal} / 500</strong>`;
         projecao.style.color = '#16a34a';
       }
-
+      
       document.getElementById('modalPagamento').style.display = 'flex';
     };
-    
+
     window.fecharModalPagamento = function () {
       playSound("click");
       document.getElementById('modalPagamento').style.display = 'none';
@@ -494,7 +521,6 @@
     window.gerarCobrancaPix = async function () {
       if (!pacoteSelecionadoInfo) return;
 
-      const btnPagar = document.getElementById('btnPagarAgora');
       btnPagar.disabled = true;
       btnPagar.textContent = "Gerando PIX...";
 
@@ -528,7 +554,6 @@
         areaAcao.style.display = 'none';
       }
 
-      const containerPix = document.getElementById('containerPixResultado');
       if (!containerPix) return;
 
       containerPix.innerHTML = `
@@ -567,7 +592,6 @@
       
       /* Checa se o pagamento foi confirmado a cada 3 segundos */
       if (intervalChecagemPix) clearInterval(intervalChecagemPix);
-        
         intervalChecagemPix = setInterval(() => {
           verificarStatusPagamento(transacaoId);
         }, 3000);
@@ -577,15 +601,54 @@
         try {
             const response = await fetch(`/api/checar-status-pix/${transacaoId}`);
             const data = await response.json();
-
             if (data.status === 'APROVADO') {
-                clearInterval(intervalChecagemPix);
-                alert("⚡ Pagamento confirmado! Sua energia foi creditada.");
-                fecharModalPagamento();
-                window.location.reload(); // Recarrega a página para atualizar o saldo exibido
+              if (intervalChecagemPix) clearInterval(intervalChecagemPix);
+            
+              // 1. Remove o botão de fechar do modal, título do modal e resumo do pacote e opções de pagamento
+              const btnFecharModal      = document.getElementById('btn-fechar-modal');
+              const titulo_modal        = document.getElementById('titulo-modal-pagamento');
+              const resumoPacote        = document.getElementById('resumoPacote');
+              const opcoesPagamento     = document.querySelector('.opcoes-pagamento');
+              if (btnFecharModal)         btnFecharModal.style.display = 'none';
+              if (titulo_modal)           titulo_modal.style.display = 'none';
+              if (resumoPacote)           resumoPacote.style.display = 'none';
+              if (opcoesPagamento)        opcoesPagamento.style.display = 'none';
+
+              // 2. . Atualiza o texto da energia atual para "Energia anterior" ou similar
+              if (elementoEnergia) {
+                elementoEnergia.innerHTML = `⚡Energia anterior: <strong id="energiaAtualTexto">${localStorage.getItem('perguntas_restantes')}</strong> / 500`;
+              }
+
+              // 3. Ajusta a projeção para mostrar o final creditado
+              if (projecao) {
+                projecao.innerHTML = `➔ Energia atual: <strong>${novaEnergiaTotal} / 500</strong>`;
+                projecao.style.color = '#16a34a';
+              }
+
+              // 2. Atualiza o container com a mensagem de sucesso e o botão de voltar
+              if (containerPix) {
+                containerPix.innerHTML = `
+                  <div class="pix-checkout-box text-center p-4">
+                      <div class="badge bg-success text-white mb-3 px-3 py-2 fs-5">
+                        ✅ Pagamento Aprovado!
+                      </div>
+                  </div>
+                `;
+              }
+
+              if (btnPagar) {
+                // 1. Muda o texto para a ação de retorno
+                btnPagar.innerHTML = "Voltar ao Menu";
+                
+                // 2. Troca a classe ou estilo para combinar com o botão de sucesso/voltar
+                btnPagar.className = "btn-voltar-sucesso shadow-sm mt-3"; 
+                
+                // 3. Substitui a função de clique antiga (gerar PIX) pelo redirecionamento
+                btnPagar.onclick = voltarParaHome;
+              }
             }
         } catch (err) {
-            console.error("Erro ao verificar status:", err);
+          console.error("Erro ao verificar status:", err);
         }
     }
 
@@ -618,6 +681,7 @@
       playSound("click");
       window.location.href = '/home';
     };
+
   </script>
 </body>
 </html>
