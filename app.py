@@ -170,6 +170,7 @@ def criar_pix():
 @app.route('/api/webhook/mercado-pago', methods=['POST', 'GET'])
 def webhook_mercado_pago():
     # Captura dados tanto do JSON (POST) quanto de query parameters (GET/POST)
+    print("Rota webhook chamada")
     data = request.get_json() or {}
     
     payment_id = None
