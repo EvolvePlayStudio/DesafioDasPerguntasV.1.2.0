@@ -166,7 +166,6 @@ def criar_pix():
         if cur: cur.close()
         if conn: conn.close()
 
-
 @app.route('/api/webhook/mercado-pago', methods=['POST', 'GET'])
 @app.route('/api/webhook/mercado-pago/', methods=['POST', 'GET'])
 def webhook_mercado_pago():
@@ -261,9 +260,11 @@ def webhook_mercado_pago():
 @app.route('/api/checar-status-pix/<transacao_id>', methods=['GET'])
 def checar_status_pix(transacao_id):
     conn = cur = None
+    print("Função de checar status do pix chamada")
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
+        print(f"transacao_id_gateway é {transacao_id}")
         cur.execute("SELECT status FROM historico_compras WHERE transacao_id_gateway = %s;", (str(transacao_id),))
         res = cur.fetchone()
         status = res['status'] if res else 'NAO_ENCONTRADO'
