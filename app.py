@@ -257,8 +257,78 @@ def webhook_mercado_pago():
 
     return jsonify({"status": "ok"}), 200
 
+
+
 @app.route('/api/checar-status-pix/<transacao_id>', methods=['GET'])
 def checar_status_pix(transacao_id):
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    
+    # Busca a compra diretamente pelo transacao_id_gateway que você já tem na tabela
+    cur.execute("""
+        SELECT transacao_id_gateway, status, id_usuario, energia_creditada 
+        FROM historico_compras 
+        WHERE transacao_id_gateway = %s;
+    """, (str(transacao_id),))
+    compra = cur.fetchone()
+    
+    if not compra:
+        cur.close()
+        conn.close()
+        print("Compra não encontrada")
+        return jsonify({"status": "nao_encontrado"})
+        
+    status_atual = compra['status']
+    
+    # Se já estiver aprovado, só retorna para o frontend festejar
+    if status_atual == 'APROVADO':
+        cur.close()
+        conn.close()
+        print("Status da compra já aprovado")
+        return jsonify({"status": "APROVADO"})
+        
+    # Se ainda estiver PENDENTE, consulta ativamente a API do Mercado Pago
+    if status_atual == 'PENDENTE':
+        try:
+            payment_info = sdk.payment().get(transacao_id)
+            response_data = payment_info.get("response", {})
+            status_mp = response_data.get("status")
+            
+            print(f"🔄 Verificação ativa para transação {transacao_id}: Status no MP = {status_mp}")
+            
+            if status_mp == 'approved':
+                id_usuario = compra['id_usuario']
+                qtd_energia = compra['energia_creditada']
+                
+                # Credita a energia na conta do usuário
+                cur.execute("""
+                    UPDATE usuarios_registrados 
+                    SET energia = energia + %s 
+                    WHERE id_usuario = %s;
+                """, (qtd_energia, id_usuario))
+                
+                # Atualiza o status na tabela historico_compras usando o transacao_id_gateway
+                cur.execute("""
+                    UPDATE historico_compras 
+                    SET status = 'APROVADO' 
+                    WHERE transacao_id_gateway = %s;
+                """, (str(transacao_id),))
+                
+                conn.commit()
+                status_atual = 'APROVADO'
+                print(f"✅ Aprovado via verificação ativa para a transação {transacao_id}!")
+        except Exception as e:
+            if conn: conn.rollback()
+            print(f"❌ Erro ao consultar status no MP: {str(e)}")
+            
+    cur.close()
+    conn.close()
+    return jsonify({"status": status_atual})
+
+
+
+
+def checar_status_pix_antiga(transacao_id):
     conn = cur = None
     print("Função de checar status do pix chamada")
     try:
