@@ -294,7 +294,7 @@
       Adquira mais energia para continuar respondendo aos quizzes sem ter que esperar a recarga diária.
     </p>
 
-    {% if em_breve %}
+    {% if id_usuario_atual not in [6, 16] %}
     <div style="margin-bottom: 1rem;">
       🚀 Esta seção estará disponível oficialmente em breve.
     </div>
