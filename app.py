@@ -147,7 +147,7 @@ def criar_pix():
             preco_float, 
             transacao_id_mp, 
             qr_code_copia_cola,
-            perguntas_restantes
+            energia_inicial
         ))
         conn.commit()
 
@@ -233,7 +233,7 @@ def webhook_mercado_pago():
 
                 cur.execute("""
                     UPDATE usuarios_registrados 
-                    SET energia = energia + %s 
+                    SET energia = perguntas_restantes + %s 
                     WHERE id_usuario = %s;
                 """, (qtd_energia, id_usuario))
 
