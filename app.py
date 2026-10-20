@@ -113,7 +113,7 @@ def criar_pix():
                 "first_name": nome_usuario or "Jogador"
             },
             "date_of_expiration": expiracao,
-            "notification_url": "https://desafiodasperguntas.com.br/api/webhook/mercado-pago"
+            "notification_url": "https://www.desafiodasperguntas.com.br/api/webhook/mercado-pago"
         }
 
         # Envia a requisição para a API do Mercado Pago
