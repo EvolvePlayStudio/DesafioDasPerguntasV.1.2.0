@@ -1103,6 +1103,7 @@ def home():
 
 @app.route("/recarga-de-energia")
 def doacoes():
+    print("Tela de energia chamada")
     pacotes = []
     email_confirmado = False
     total_respostas = 0
