@@ -220,14 +220,13 @@ def webhook_mercado_pago():
             cur = conn.cursor(cursor_factory=RealDictCursor)
 
             cur.execute("""
-                SELECT id_compra, id_usuario, energia_creditada, status 
+                SELECT id_usuario, energia_creditada, status 
                 FROM historico_compras 
                 WHERE transacao_id_gateway = %s AND status = 'PENDENTE';
             """, (str(payment_id),))
             compra = cur.fetchone()
 
             if compra:
-                id_compra = compra['id_compra']
                 id_usuario = compra['id_usuario']
                 qtd_energia = compra['energia_creditada']
 
@@ -240,11 +239,11 @@ def webhook_mercado_pago():
                 cur.execute("""
                     UPDATE historico_compras 
                     SET status = 'APROVADO' 
-                    WHERE id_compra = %s;
-                """, (id_compra,))
+                    WHERE transacao_id_gateway = %s;
+                """, (payment_id,))
 
                 conn.commit()
-                print(f"✅ SUCESSO! Compra {id_compra} aprovada e +{qtd_energia}⚡ creditadas.")
+                print(f"✅ SUCESSO! Compra {payment_id} aprovada e +{qtd_energia}⚡ creditadas.")
 
     except Exception as e:
         if conn: conn.rollback()
@@ -260,7 +259,7 @@ def webhook_mercado_pago():
 
 
 @app.route('/api/checar-status-pix/<transacao_id>', methods=['GET'])
-def checar_status_pix(transacao_id):
+def checar_status_pix_nova(transacao_id):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     
@@ -328,7 +327,7 @@ def checar_status_pix(transacao_id):
 
 
 
-def checar_status_pix_antiga(transacao_id):
+def checar_status_pix(transacao_id):
     conn = cur = None
     print("Função de checar status do pix chamada")
     try:
