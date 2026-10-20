@@ -302,7 +302,7 @@ def checar_status_pix_nova(transacao_id):
                 # Credita a energia na conta do usuário
                 cur.execute("""
                     UPDATE usuarios_registrados 
-                    SET energia = energia + %s 
+                    SET perguntas_restantes = perguntas_restantes + %s 
                     WHERE id_usuario = %s;
                 """, (qtd_energia, id_usuario))
                 
