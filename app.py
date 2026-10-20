@@ -1252,7 +1252,6 @@ def doacoes():
         erro_carregamento=erro_carregamento,
         email_usuario=email_usuario,
         modo_visitante=modo_visitante,
-        em_breve=False,
         id_usuario_atual= session.get('id_usuario') or None
     )
 
