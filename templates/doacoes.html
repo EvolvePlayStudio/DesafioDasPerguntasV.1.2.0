@@ -120,6 +120,9 @@
       font-weight: bold;
       color: #0f172a;
     }
+    .aviso-bloqueio-nivel {
+      font-size: 1.2rem;
+    }
     /* Botões dos pacotes */
     .btn-comprar {
       margin-top: 0.4rem;
@@ -368,14 +371,15 @@
               <span class="pacote-qtd">⚡{{ pacote.energia }}</span>
             </div>
             
+            {% if not pacote.bloqueado_por_excesso %}
             <div class="pacote-preco">
               <div class="valor-main">
                 R$ {{ "%.2f"|format(pacote.preco)|replace('.', ',') }}
               </div>
             </div>
-
-            {% if pacote.bloqueado_por_excesso %}
-              <div class="aviso-bloqueio-nivel">🔒 Indisponível (Perguntas esgotadas)</div>
+            
+            {% else %}
+              <div class="aviso-bloqueio-nivel">🔒 Indisponível</div>
             {% endif %}
           </div>
         {% endfor %}
@@ -385,9 +389,9 @@
       <div class="regras-lista mt-4">
         <strong>Como funciona o reservatório:</strong>
         <ul>
-          <li>A recarga diária gratuita é de <strong>10 de energia</strong>.</li>
-          <li>Pacotes maiores podem ser desativados temporariamente dependendo da quantidade de energia atual e das perguntas disponíveis no banco.</li>
-          <li>Preços e ofertas sujeitos a alterações sem aviso prévio.</li>
+          <li>A recarga diária gratuita é de <strong>10 de energia</strong></li>
+          <li>Pacotes maiores podem ser desativados temporariamente dependendo das perguntas disponíveis no banco</li>
+          <li>Preços e ofertas sujeitos a alterações sem aviso prévio</li>
         </ul>
       </div>
       
