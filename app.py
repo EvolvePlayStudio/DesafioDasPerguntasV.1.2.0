@@ -112,7 +112,8 @@ def criar_pix():
                 "email": email_usuario or "cliente@desafiodasperguntas.com.br",
                 "first_name": nome_usuario or "Jogador"
             },
-            "date_of_expiration": expiracao
+            "date_of_expiration": expiracao,
+            "notification_url": "https://desafiodasperguntas.com.br/api/webhook/mercado-pago"
         }
 
         # Envia a requisição para a API do Mercado Pago
@@ -241,7 +242,6 @@ def webhook_mercado_pago():
             if conn: conn.close()
 
     return jsonify({"status": "ok"}), 200
-
 
 @app.route('/api/checar-status-pix/<transacao_id>', methods=['GET'])
 def checar_status_pix(transacao_id):
