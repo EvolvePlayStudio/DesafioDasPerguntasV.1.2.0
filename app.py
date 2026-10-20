@@ -299,23 +299,25 @@ def checar_status_pix(transacao_id):
                 id_usuario = compra['id_usuario']
                 qtd_energia = compra['energia_creditada']
                 
-                # Credita a energia na conta do usuário
-                cur.execute("""
-                    UPDATE usuarios_registrados 
-                    SET perguntas_restantes = perguntas_restantes + %s 
-                    WHERE id_usuario = %s;
-                """, (qtd_energia, id_usuario))
-                
-                # Atualiza o status na tabela historico_compras usando o transacao_id_gateway
                 cur.execute("""
                     UPDATE historico_compras 
                     SET status = 'APROVADO' 
-                    WHERE transacao_id_gateway = %s;
+                    WHERE transacao_id_gateway = %s AND status = 'PENDENTE';
                 """, (str(transacao_id),))
-                
-                conn.commit()
-                status_atual = 'APROVADO'
-                print(f"✅ Aprovado via verificação ativa para a transação {transacao_id}!")
+
+                # Verifica se alguma linha foi de fato alterada por esta consulta
+                if cur.rowcount > 0:
+                    cur.execute("""
+                        UPDATE usuarios_registrados 
+                        SET perguntas_restantes = perguntas_restantes + %s 
+                        WHERE id_usuario = %s;
+                    """, (qtd_energia, id_usuario))
+                    conn.commit()
+                    status_atual = 'APROVADO'
+                    print(f"✅ Aprovado via verificação ativa para a transação {transacao_id}!")
+                else:
+                    conn.rollback() # Já foi creditado pelo Webhook concorrente
+               
         except Exception as e:
             if conn: conn.rollback()
             print(f"❌ Erro ao consultar status no MP: {str(e)}")
@@ -384,6 +386,7 @@ def obter_pacotes():
     conn.close()
 
     return jsonify({"sucesso": True, "pacotes": lista_pacotes, "total_respostas": total_respostas}), 200
+
 
 @app.route("/alterar-email", methods=["POST"])
 def alterar_email_route():

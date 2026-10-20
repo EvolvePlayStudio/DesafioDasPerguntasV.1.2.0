@@ -472,6 +472,7 @@
     const elementoEnergia = document.getElementById('energia-atual-span');
     let pacoteSelecionadoInfo = null;
     let intervalChecagemPix = null;
+    let q_checagens_status_pix = 0;
 
     // Preenche o valor na tela ao carregar
     document.addEventListener("DOMContentLoaded", () => {
@@ -527,6 +528,7 @@
 
     window.fecharModalPagamento = function () {
       playSound("click");
+      if (intervalChecagemPix) clearInterval(intervalChecagemPix);
       document.getElementById('modalPagamento').style.display = 'none';
     };
 
@@ -562,6 +564,7 @@
     };
 
     window.exibirTelaPix = function(qrCodeBase64, qrCodeCopiaCola, transacaoId) {
+      q_checagens_status_pix = 0;
       const areaAcao = document.getElementById('areaAcaoCheckout');
       if (areaAcao) {
         areaAcao.style.display = 'none';
@@ -611,13 +614,19 @@
     }
 
     async function verificarStatusPagamento(transacaoId) {
+      q_checagens_status_pix++;
+      if (q_checagens_status_pix >= 60) {
+        if (intervalChecagemPix) clearInterval(intervalChecagemPix);
+        console.log("Tempo limite de checagem do PIX atingido.");
+        return;
+      } 
       try {
         const response = await fetch(`/api/checar-status-pix/${transacaoId}`);
         const data = await response.json();
         if (data.status === 'APROVADO') {
           if (intervalChecagemPix) clearInterval(intervalChecagemPix);
         
-          // 1. Remove o botão de fechar do modal, título do modal e resumo do pacote e opções de pagamento
+          // 1. Remove elementos desnecessários da tela de sucesso
           const btnFecharModal      = document.getElementById('btn-fechar-modal');
           const titulo_modal        = document.getElementById('titulo-modal-pagamento');
           const resumoPacote        = document.getElementById('resumoPacote');
@@ -627,18 +636,23 @@
           if (resumoPacote)           resumoPacote.style.display = 'none';
           if (opcoesPagamento)        opcoesPagamento.style.display = 'none';
 
-          // 2. . Atualiza o texto da energia atual para "Energia anterior" ou similar
+          // 2. Calcula a nova energia total e atualiza o localStorage
+          const qtdAdicionada = pacoteSelecionadoInfo ? pacoteSelecionadoInfo.qtd : 0;
+          const novaEnergiaTotal = energiaAtualUsuario + qtdAdicionada;
+          localStorage.setItem('perguntas_restantes', novaEnergiaTotal.toString());
+
+          // 3. Atualiza o texto da energia anterior
           if (elementoEnergia) {
-            elementoEnergia.innerHTML = `⚡Energia anterior: <strong id="energiaAtualTexto">${localStorage.getItem('perguntas_restantes')}</strong> / 500`;
+            elementoEnergia.innerHTML = `⚡Energia anterior: <strong id="energiaAtualTexto">${energiaAtualUsuario}</strong> / 500`;
           }
 
-          // 3. Ajusta a projeção para mostrar o final creditado
+          // 4. Ajusta a projeção para mostrar o valor final creditado
           if (projecao) {
             projecao.innerHTML = `➔ Energia atual: <strong>${novaEnergiaTotal} / 500</strong>`;
             projecao.style.color = '#16a34a';
           }
 
-          // 2. Atualiza o container com a mensagem de sucesso e o botão de voltar
+          // 5. Exibe a mensagem de sucesso no container do PIX
           if (containerPix) {
             containerPix.innerHTML = `
               <div class="pix-checkout-box text-center p-4">
@@ -649,15 +663,12 @@
             `;
           }
 
+          // 6. Transforma o botão original no botão de Voltar ao Menu
           if (btnPagar) {
-            // 1. Muda o texto para a ação de retorno
             btnPagar.innerHTML = "Voltar ao Menu";
-            
-            // 2. Troca a classe ou estilo para combinar com o botão de sucesso/voltar
             btnPagar.className = "btn-voltar-sucesso shadow-sm mt-3"; 
-            
-            // 3. Substitui a função de clique antiga (gerar PIX) pelo redirecionamento
             btnPagar.onclick = voltarParaHome;
+            btnPagar.style.display = "block";
           }
         }
       } catch (err) {
@@ -695,6 +706,6 @@
       window.location.href = '/home';
     };
 
-  </script>
+</script>
 </body>
 </html>
