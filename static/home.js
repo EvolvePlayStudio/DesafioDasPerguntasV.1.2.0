@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const maxEnergiaUsuarios = 500;
   localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
   localStorage.setItem('limite_energia', maxEnergiaUsuarios);
-  const idsUsuariosIsentos = [291] // Usuários que não recebem convite para compra de energia
+  const idsUsuariosIsentos = ['291'] // Usuários que não recebem convite para compra de energia
 
   if (!MODO_VISITANTE) { // Verifica se deve expirar a sessão
     if (!idUsuario) { // Caso o id de usuário não tenha sido identificado
@@ -458,9 +458,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     function exibirModalEnergia() {
       // --- CONTROLE DE FREQUÊNCIA DO MODAL DE ENERGIA (Exibir a cada 3 dias) ---
       const ULTIMA_EXIBICAO_CHAVE = "ultima_vez_modal_energia_exibido";
-
-      //if (idsReservados.includes(idUsuario)) localStorage.removeItem(ULTIMA_EXIBICAO_CHAVE);
-
+      
+      //if (idsReservados.includes(parseInt(idUsuario))) localStorage.removeItem(ULTIMA_EXIBICAO_CHAVE);
+      
       const ultimaExibicao = localStorage.getItem(ULTIMA_EXIBICAO_CHAVE);
       const agora = new Date().getTime();
       const TRES_DIAS_EM_MS = 3 * 24 * 60 * 60 * 1000; // 3 dias em milissegundos
@@ -503,10 +503,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             permitir_escolher_tema = true; // Libera o jogo
           }
         });
-      }
-      else {
-        // Se o e-mail está confirmado, mas não precisa mostrar o modal de energia agora
-        permitir_escolher_tema = true;
       }
     }
 
@@ -630,6 +626,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (perguntas_restantes) {
           localStorage.setItem('perguntas_restantes', data.perguntas_restantes)
           perguntas_restantes.textContent = `${data.perguntas_restantes}/${maxEnergiaUsuarios}`;
+          console.log(`Permitir escolher tema? ${permitir_escolher_tema}`)
         }
       } else console.warn("Não foi possível atualizar a energia:", data.message);
       permitir_escolher_tema = true;
