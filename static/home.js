@@ -469,6 +469,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (email_confirmado) {
         // --- CONTROLE DE FREQUÊNCIA DO MODAL DE ENERGIA (Exibir a cada 3 dias) ---
         const ULTIMA_EXIBICAO_CHAVE = "ultima_vez_modal_energia_exibido";
+
+        // REMOVER ANTES DO UPDATE
+        // localStorage.removeItem(ULTIMA_EXIBICAO_CHAVE);
+
         const ultimaExibicao = localStorage.getItem(ULTIMA_EXIBICAO_CHAVE);
         const agora = new Date().getTime();
         const TRES_DIAS_EM_MS = 3 * 24 * 60 * 60 * 1000; // 3 dias em milissegundos
@@ -480,8 +484,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Pega a energia atual para checar se realmente está baixa (<= 50)
         const perguntasRestantesAtual = parseInt(localStorage.getItem('perguntas_restantes') || '500');
         
-        const prosseguir = false
-        if (prosseguir && deveExibirModalEnergia && !eIsento && perguntasRestantesAtual <= 50) {
+        if (deveExibirModalEnergia && !eIsento && perguntasRestantesAtual <= 50) {
           // Salva o momento atual como última exibição
           localStorage.setItem(ULTIMA_EXIBICAO_CHAVE, agora.toString());
 
@@ -489,7 +492,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           abrirModal({
             titulo: "⚡ Sua energia está acabando!",
             corpoHTML: `
-              <p>Adquira mais energia para continuar respondendo e subindo no ranking</p>
+              <p>Adquira mais energia para continuar respondendo novas perguntas e subindo no ranking.</p>
             `,
             textoPrimario: "Adquirir Energia",
             textoSecundario: "Continuar Jogando",

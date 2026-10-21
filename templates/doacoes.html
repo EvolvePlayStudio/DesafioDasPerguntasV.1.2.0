@@ -315,18 +315,18 @@
 
     <h2>⚡ Recarga de Energia</h2>
     <p class="subtitulo">
-      Adquira mais energia para continuar respondendo aos quizzes sem ter que esperar a recarga diária.
+      Adquira energia para responder aos quizzes sem esperar pela recarga diária e apoiar a manutenção da nossa plataforma.
     </p>
 
     <!-- Desativa a tela de energia para caso tenha algum problema no mecanismo de compra
-    {% if id_usuario_atual not in [6, 16] %}
+    if id_usuario_atual not in [6, 16]
     <div style="margin-bottom: 1rem;">
       Esta seção está indisponível no momento.
     </div>
     -->
-
+  
     <!-- 1. Alertas e Avisos Condicionais -->
-    {% elif modo_visitante %}
+    {% if modo_visitante %}
     <div class="alert alert-info text-center p-4 shadow-sm mb-4">
         <h4 class="alert-heading">🔒 Área Exclusiva para Contas Registradas</h4>
         <p class="mb-3">
@@ -412,7 +412,7 @@
 
     <!-- 3. Ações da Página (Sempre visíveis para o usuário não ficar preso) -->
     <div class="acoes-loja mt-4">
-      {% if email_confirmado and pacotes and not em_breve %}
+      {% if email_confirmado and pacotes %}
         <button id="btnCheckout" class="btn-checkout" disabled onclick="abrirModalPagamento()">
           Selecione um pacote
         </button>

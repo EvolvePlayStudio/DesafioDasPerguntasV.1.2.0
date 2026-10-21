@@ -1165,15 +1165,14 @@ def doacoes():
     erro_carregamento = None
     email_usuario = ''
     id_usuario = session.get('id_usuario')
-    modo_visitante = session.get("visitante")
+    modo_visitante = session.get("visitante", False)
 
     conn = cur = None
     try:
         conn = get_db_connection()
-        # Usa RealDictCursor para buscar os dados como dicionário usando os nomes das colunas
         cur = conn.cursor(cursor_factory=RealDictCursor)
 
-        if id_usuario:
+        if id_usuario and not modo_visitante:
             cur.execute("""
                 SELECT 
                     u.email,
