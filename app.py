@@ -10,7 +10,6 @@ import logging
 import sys
 import traceback
 import random, string, time
-import requests
 import mercadopago
 from PIL import Image, ImageEnhance, ImageFilter
 from io import BytesIO
@@ -40,13 +39,8 @@ DIFERENCA_PERGUNTAS_RESTANTES = 30
 # Rota para o ads.txt do PubFuture
 @app.route('/ads.txt')
 def ads_txt():
-    try:
-        # Troque pela URL que o PubFuture te forneceu no painel do Dynamic ads.txt
-        url_dynamic_ads = "adstxt-ssp.pubfuture.com/site/6ad89d9ec6f123003cbe39f2/www.desafiodasperguntas.com.br/ads.txt" 
-        resposta = requests.get(url_dynamic_ads, timeout=5)
-        return resposta.text, 200, {'Content-Type': 'text/plain; charset=utf-8'}
-    except Exception as e:
-        return "", 200, {'Content-Type': 'text/plain; charset=utf-8'}
+    # Redireciona o robô diretamente para o link oficial e dinâmico do PubFuture
+    return redirect("https://adstxt-ssp.pubfuture.com/site/6ad89d9ec6f123003cbe39f2/www.desafiodasperguntas.com.br/ads.txt", code=301)
 
 @app.route('/api/criar-pix', methods=['POST'])
 def criar_pix():
