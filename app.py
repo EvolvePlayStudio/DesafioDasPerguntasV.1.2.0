@@ -1225,7 +1225,7 @@ def doacoes():
         if cur: cur.close()
         if conn: conn.close()
 
-    registrar_pagina_visitada("Recarga de energia")
+    registrar_pagina_visitada('Recarga de energia')
 
     return render_template(
         "doacoes.html", 
@@ -2356,9 +2356,8 @@ def registrar_pagina_visitada(pagina, id_visitante=None):
     if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
         return
     
-    dispositivo = session.get('usuario_dispositivo')
-
     # Se não for passado explicitamente na chamada da função, busca tudo padronizado da session!
+    dispositivo     = session.get('usuario_dispositivo')
     origem          = session.get('usuario_origem', 'Desconhecida')
     midia           = session.get('usuario_midia', 'Desconhecida')
     tipo_campanha   = session.get('usuario_tipo_campanha', 'Desconhecido')

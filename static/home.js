@@ -454,66 +454,64 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function exibirModalEmailOuEnergia() {
-    permitir_escolher_tema = false;
-    try {
-      const response = await fetch("/pegar_email_confirmado", {
-        method: "GET",
-        credentials: "include"
-      });
+    // Função para exixbir modal para ir para tela de energia
+    function exibirModalEnergia() {
+      // --- CONTROLE DE FREQUÊNCIA DO MODAL DE ENERGIA (Exibir a cada 3 dias) ---
+      const ULTIMA_EXIBICAO_CHAVE = "ultima_vez_modal_energia_exibido";
 
-      if (!response.ok) throw new Error();
+      //if (idsReservados.includes(idUsuario)) localStorage.removeItem(ULTIMA_EXIBICAO_CHAVE);
 
-      const { email_confirmado, email_usuario } = await response.json();
+      const ultimaExibicao = localStorage.getItem(ULTIMA_EXIBICAO_CHAVE);
+      const agora = new Date().getTime();
+      const TRES_DIAS_EM_MS = 3 * 24 * 60 * 60 * 1000; // 3 dias em milissegundos
 
-      // Modal para convite de compra de energia
-      if (email_confirmado) {
-        // --- CONTROLE DE FREQUÊNCIA DO MODAL DE ENERGIA (Exibir a cada 3 dias) ---
-        const ULTIMA_EXIBICAO_CHAVE = "ultima_vez_modal_energia_exibido";
+      // Verifica se já passou 3 dias desde a última exibição (ou se nunca foi exibido)
+      const deveExibirModalEnergia = !ultimaExibicao || (agora - parseInt(ultimaExibicao) > TRES_DIAS_EM_MS);
+      const eIsento = idsUsuariosIsentos.includes(idUsuario);
 
-        // REMOVER ANTES DO UPDATE
-        // localStorage.removeItem(ULTIMA_EXIBICAO_CHAVE);
-
-        const ultimaExibicao = localStorage.getItem(ULTIMA_EXIBICAO_CHAVE);
-        const agora = new Date().getTime();
-        const TRES_DIAS_EM_MS = 3 * 24 * 60 * 60 * 1000; // 3 dias em milissegundos
-
-        // Verifica se já passou 3 dias desde a última exibição (ou se nunca foi exibido)
-        const deveExibirModalEnergia = !ultimaExibicao || (agora - parseInt(ultimaExibicao) > TRES_DIAS_EM_MS);
-        const eIsento = idsUsuariosIsentos.includes(idUsuario);
-
-        // Pega a energia atual para checar se realmente está baixa (<= 50)
-        const perguntasRestantesAtual = parseInt(localStorage.getItem('perguntas_restantes') || '500');
-        
-        if (deveExibirModalEnergia && !eIsento && perguntasRestantesAtual <= 50) {
-          // Salva o momento atual como última exibição
-          localStorage.setItem(ULTIMA_EXIBICAO_CHAVE, agora.toString());
-
-          // Abre o Modal de Oferta de Energia Baixa
-          abrirModal({
-            titulo: "⚡ Sua energia está acabando!",
-            corpoHTML: `
-              <p>Adquira mais energia para continuar respondendo novas perguntas e subindo no ranking.</p>
-            `,
-            textoPrimario: "Adquirir Energia",
-            textoSecundario: "Continuar Jogando",
-            onPrimario: () => {
-              window.location.href = "/recarga-de-energia";
-            },
-            onSecundario: () => {
-              modal.classList.add("hidden");
-              permitir_escolher_tema = true; // Libera o jogo
-            }
+      // Pega a energia atual para checar se realmente está baixa (<= 50)
+      const perguntasRestantesAtual = parseInt(localStorage.getItem('perguntas_restantes') || '500');
+      
+      if (deveExibirModalEnergia && !eIsento && perguntasRestantesAtual <= 50) {
+        // Registra na base a abertura do modal aguardando o envio com sucesso
+        try {
+          fetch("/api/registrar-acesso", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pagina: "Modal de energia" })
           });
+        } catch (err) {
+          console.warn("Falha ao registrar abertura do modal de energia:", err);
         }
-        else {
-          // Se o e-mail está confirmado, mas não precisa mostrar o modal de energia agora
-          permitir_escolher_tema = true;
-        }
-        return;
-      }
 
-      // Modal de confirmação de e-mail
-      abrirModal({
+        // Salva o momento atual como última exibição
+        localStorage.setItem(ULTIMA_EXIBICAO_CHAVE, agora.toString());
+
+        // Abre o Modal de Oferta de Energia Baixa
+        abrirModal({
+          titulo: "⚡ Sua energia está acabando!",
+          corpoHTML: `
+            <p>Adquira mais energia para continuar respondendo novas perguntas e subir no ranking.</p>
+          `,
+          textoPrimario: "Adquirir Energia",
+          textoSecundario: "Continuar Jogando",
+          onPrimario: () => {
+            window.location.href = "/recarga-de-energia";
+          },
+          onSecundario: () => {
+            modal.classList.add("hidden");
+            permitir_escolher_tema = true; // Libera o jogo
+          }
+        });
+      }
+      else {
+        // Se o e-mail está confirmado, mas não precisa mostrar o modal de energia agora
+        permitir_escolher_tema = true;
+      }
+    }
+
+    async function exibirModalConfirmacaoEmail() {
+       abrirModal({
         textoPrimario: "Fechar",
         textoSecundario: "Reenviar e-mail",
         onPrimario: () => {
@@ -557,6 +555,28 @@ document.addEventListener("DOMContentLoaded", async () => {
         modalReenvioEmail: true
       });
 
+    }
+
+    permitir_escolher_tema = false;
+    try {
+      const response = await fetch("/pegar_email_confirmado", {
+        method: "GET",
+        credentials: "include"
+      });
+
+      if (!response.ok) throw new Error();
+
+      const { email_confirmado, email_usuario } = await response.json();
+
+      // Modal para convite de compra de energia
+      if (email_confirmado) {
+        exibirModalEnergia();
+      }
+      else {
+        exibirModalConfirmacaoEmail();
+      }
+      // Modal de confirmação de e-mail
+     
       // Preenche o e-mail destacado
       spanEmail.textContent = email_usuario;
 
