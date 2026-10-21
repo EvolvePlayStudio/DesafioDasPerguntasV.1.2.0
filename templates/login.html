@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html lang="pt-br" style="height: 100%; box-sizing: border-box; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
 <head>
+
+  <!-- Grava na session do backend as dimensões de dispositivo do usuário -->
+  <script>
+    (function() { // Função se repete em home.html
+      const largura = window.innerWidth || document.documentElement.clientWidth;
+      const altura = window.innerHeight || document.documentElement.clientHeight;
+      if (largura) {
+          // Envia para o backend salvar na session antes do DOM carregar por completo
+          fetch('/api/gravar-resolucao-sessao', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ largura: largura, altura: altura }),
+            keepalive: true
+          });
+      }
+    })();
+  </script>
+
   {% include 'cabecalho_comum.html' %}
 
   <title>Login - Desafio das Perguntas</title>

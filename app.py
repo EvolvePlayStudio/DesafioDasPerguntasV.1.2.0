@@ -393,7 +393,6 @@ def obter_pacotes():
 
     return jsonify({"sucesso": True, "pacotes": lista_pacotes, "total_respostas": total_respostas}), 200
 
-
 @app.route("/alterar-email", methods=["POST"])
 def alterar_email_route():
     conn = cur = None
@@ -577,7 +576,6 @@ def entrar_visitante():
 
     # Novas variáveis granulares do Sufixo da URL
     utm_type = request.args.get('utm_type')          # 'search' ou 'display'
-    device_raw = request.args.get('device')          # 'm', 'c' ou 't'
     keyword = request.args.get('utm_term')           # Palavra-chave (Pesquisa)
     
     # Captura primeiro o targetid dedicado, depois o utm_content/placement como fallback
@@ -595,17 +593,10 @@ def entrar_visitante():
         origem = session.get('usuario_origem', 'Desconhecida')
         midia = session.get('usuario_midia', 'Desconhecida')
 
-    # Dicionários de tradução para cobrir Google e Microsoft
-    dispositivos_map = {
-        'm': 'Mobile', 'c': 'Desktop', 't': 'Tablet', # Google
-        'Mobile': 'Mobile', 'Desktop': 'Desktop', 'Tablet': 'Tablet' # Microsoft
-    }
     matchtype_map = {
         'e': 'Exata', 'p': 'Frase', 'b': 'Ampla', # Google
         'Exact': 'Exata', 'Phrase': 'Frase', 'Broad': 'Ampla' # Microsoft
     }
-
-    dispositivo = dispositivos_map.get(device_raw, 'Desconhecido')
     
     # Padronização do tipo de campanha
     tipo_campanha = utm_type or ('Display' if utm_medium == 'display' else 'Pesquisa' if utm_medium == 'cpc' else 'Desconhecido')
@@ -620,7 +611,6 @@ def entrar_visitante():
     session['usuario_origem'] = origem
     session['usuario_midia'] = midia
     session['usuario_tipo_campanha'] = tipo_campanha
-    session['usuario_dispositivo'] = dispositivo
     session['usuario_palavra_chave'] = keyword or 'Não aplicável'
     session['usuario_canal_display'] = placement or 'Não aplicável'
     session['usuario_correspondencia'] = tipo_correspondencia
@@ -867,33 +857,22 @@ def email_dominio_valido(email: str) -> bool:
 
     return True
 
-def identificar_dispositivo():
-    ua = (request.headers.get("User-Agent") or "").lower()
+@app.route('/api/gravar-resolucao-sessao', methods=['POST'])
+def gravar_resolucao_sessao():
+    """Grava no session as dimensões e tipo de dispositivo do usuário"""
+    dados = request.get_json() or {}
+    largura = dados.get('largura')
+    altura = dados.get('altura')
 
-    if not ua:
-        return "Indefinido"
-
-    # 1. Identifica Tablets (incluindo iPads que mandam User-Agent de Mac mas possuem suporte a toque ou menção explícita)
-    if "ipad" in ua or "tablet" in ua:
-        return "Tablet"
-    
-    # Alguns iPads modernos no iPadOS enviam 'macintosh' mas podemos tentar pegar se houver indício de toque ou deixar seguro.
-    # Como você pontuou que o modo desktop raramente é ativado neles, a checagem acima já captura a grande maioria.
-
-    # 2. Identifica Mobile (Smartphones)
-    if any(x in ua for x in ["mobile", "android", "iphone", "ipod"]):
-        # Nota: Alguns tablets Android antigos vinham com 'android' sem a palavra 'mobile'. 
-        # Se contiver 'android' e NÃO contiver 'mobile', geralmente é um tablet Android!
-        if "android" in ua and "mobile" not in ua:
-            return "Tablet"
-        return "Mobile"
-
-    # 3. Identifica Desktop
-    if any(x in ua for x in ["windows", "macintosh", "linux"]):
-        return "Desktop"
-
-    return "Indefinido"
-
+    if largura:
+        if largura < 768:   dispositivo = f"Mobile ({largura}x{altura})"
+        elif largura <= 1024: dispositivo = f"Tablet ({largura}x{altura})"
+        else:                 dispositivo = f"Desktop ({largura}x{altura})"
+        session['usuario_dispositivo'] = dispositivo    
+    else:
+        session['usuario_dispositivo'] = 'Desconhecido'
+    return jsonify({"status": "ok"}), 200  
+   
 @app.route("/log/pagina", methods=["POST"])
 def pagina_visitada():
     data = request.get_json()
@@ -2374,14 +2353,15 @@ def registrar_pagina_visitada(pagina, id_visitante=None):
     id_usuario = session.get('id_usuario')
     if not id_visitante:
         id_visitante = session.get('id_visitante')
-    
+
     if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
         return
+    
+    dispositivo = session.get('usuario_dispositivo')
 
     # Se não for passado explicitamente na chamada da função, busca tudo padronizado da session!
     origem          = session.get('usuario_origem', 'Desconhecida')
     midia           = session.get('usuario_midia', 'Desconhecida')
-    dispositivo     = session.get('usuario_dispositivo') or identificar_dispositivo()
     tipo_campanha   = session.get('usuario_tipo_campanha', 'Desconhecido')
     correspondencia = session.get('usuario_correspondencia', 'Não aplicável')
     palavra_chave   = session.get('usuario_palavra_chave', 'Não aplicável')

@@ -6,7 +6,6 @@ const mensagensAbaLogin = [
 'Sessão expirada', 
 'Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente'];
 
-
 // Função para registrar conversão da Microsoft para conta cadastrada
 function dispararConversaoMicrosoft() {
   try {
