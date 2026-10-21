@@ -2317,7 +2317,7 @@ def registrar_interacao_anuncio():
         conn = get_db_connection()
         cur = conn.cursor()
 
-        dispositivo = identificar_dispositivo()
+        dispositivo = session.get('usuario_dispositivo')
         query = """
         INSERT INTO cliques_anuncios (id_usuario, id_visitante, id_anuncio, tema_quiz, provedor, tipo_midia, dispositivo, tipo_interacao)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
@@ -2351,9 +2351,9 @@ def registrar_modo_teste():
 def registrar_pagina_visitada(pagina, id_visitante=None):
     conn = cur = None
     id_usuario = session.get('id_usuario')
-    if not id_visitante:
-        id_visitante = session.get('id_visitante')
+    if not id_visitante: id_visitante = session.get('id_visitante')
 
+    # Bloqueia registro de página para admins
     if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
         return
     

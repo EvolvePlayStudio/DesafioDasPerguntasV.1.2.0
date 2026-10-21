@@ -3,22 +3,24 @@ import { playSound } from "./sound.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
 
-  function validateAppVersionHome() { // Depois irá para o utils e isto deve ser feito em quiz.js também
-  if (!localStorage.getItem('app_version')) {
-    localStorage.setItem("auth_message", "Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente");
-    window.location.href = '/login';
-  }
+  // Exige ir para o login caso a versão do app tenha sido modificada
+  function validateAppVersionHome() { // Depois pode ir para o utils
+    if (!localStorage.getItem('app_version')) {
+      localStorage.setItem("auth_message", "Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente");
+      window.location.href = '/login';
+    }
   }
 
   let permitir_escolher_tema = false;
   let tema_atual = null;
-  const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
-  const idUsuario = localStorage.getItem("id_usuario");
   let idVisitante = localStorage.getItem("id_visitante");
-  localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
+  const idUsuario = localStorage.getItem("id_usuario");
+  const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
   const maxEnergiaVisitantes = 80;
   const maxEnergiaUsuarios = 500;
+  localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
   localStorage.setItem('limite_energia', maxEnergiaUsuarios);
+  const idsUsuariosIsentos = [291] // Usuários que não recebem convite para compra de energia
 
   if (!MODO_VISITANTE) { // Verifica se deve expirar a sessão
     if (!idUsuario) { // Caso o id de usuário não tenha sido identificado
@@ -98,7 +100,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!localStorage.getItem("visitante_respondidas")) {
       localStorage.setItem("visitante_respondidas", JSON.stringify([]));
     }
-    permitir_escolher_tema = true;
 
     fetch("/api/registrar_visitante", { // Registra o id de visitante em session no backend
       method: "POST",
@@ -108,12 +109,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   else {
     btnsHeader = [btn_opcoes, btn_doacoes, btn_perfil, btn_pesquisa, btn_logout];
-
     if (localStorage.getItem("modal_confirmacao_email_exibido") === "false") {
-      exibirModalConfirmacaoEmail();
-    }
-    else {
-      permitir_escolher_tema = true;
+      exibirModalEmailOuEnergia();
     }
   }
 
@@ -328,7 +325,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (perguntas_restantes_atuais <= 0) {
       if (!MODO_VISITANTE) {
-        exibirMensagem(mensagem, `Energia esgotada, retorne amanhã para poder responder novas perguntas`, corMensagemAlerta, true, false, 'flex');
+        exibirMensagem(mensagem, `Energia esgotada, aguarde a recarga diária ou obtenha pacotes de energia para responder novas perguntas`, corMensagemAlerta, true, false, 'flex');
       }
       else {
         exibirMensagem(mensagem, `É necessário criar uma conta para ter acesso ao conteúdo completo do jogo`, corMensagemAlerta, true, false, 'flex');
@@ -456,7 +453,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  async function exibirModalConfirmacaoEmail() {
+  async function exibirModalEmailOuEnergia() {
     permitir_escolher_tema = false;
     try {
       const response = await fetch("/pegar_email_confirmado", {
@@ -468,11 +465,51 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const { email_confirmado, email_usuario } = await response.json();
 
+      // Modal para convite de compra de energia
       if (email_confirmado) {
-        permitir_escolher_tema = true;
+        // --- CONTROLE DE FREQUÊNCIA DO MODAL DE ENERGIA (Exibir a cada 3 dias) ---
+        const ULTIMA_EXIBICAO_CHAVE = "ultima_vez_modal_energia_exibido";
+        const ultimaExibicao = localStorage.getItem(ULTIMA_EXIBICAO_CHAVE);
+        const agora = new Date().getTime();
+        const TRES_DIAS_EM_MS = 3 * 24 * 60 * 60 * 1000; // 3 dias em milissegundos
+
+        // Verifica se já passou 3 dias desde a última exibição (ou se nunca foi exibido)
+        const deveExibirModalEnergia = !ultimaExibicao || (agora - parseInt(ultimaExibicao) > TRES_DIAS_EM_MS);
+        const eIsento = idsUsuariosIsentos.includes(idUsuario);
+
+        // Pega a energia atual para checar se realmente está baixa (<= 50)
+        const perguntasRestantesAtual = parseInt(localStorage.getItem('perguntas_restantes') || '500');
+        
+        const prosseguir = false
+        if (prosseguir && deveExibirModalEnergia && !eIsento && perguntasRestantesAtual <= 50) {
+          // Salva o momento atual como última exibição
+          localStorage.setItem(ULTIMA_EXIBICAO_CHAVE, agora.toString());
+
+          // Abre o Modal de Oferta de Energia Baixa
+          abrirModal({
+            titulo: "⚡ Sua energia está acabando!",
+            corpoHTML: `
+              <p>Adquira mais energia para continuar respondendo e subindo no ranking</p>
+            `,
+            textoPrimario: "Adquirir Energia",
+            textoSecundario: "Continuar Jogando",
+            onPrimario: () => {
+              window.location.href = "/recarga-de-energia";
+            },
+            onSecundario: () => {
+              modal.classList.add("hidden");
+              permitir_escolher_tema = true; // Libera o jogo
+            }
+          });
+        }
+        else {
+          // Se o e-mail está confirmado, mas não precisa mostrar o modal de energia agora
+          permitir_escolher_tema = true;
+        }
         return;
       }
 
+      // Modal de confirmação de e-mail
       abrirModal({
         textoPrimario: "Fechar",
         textoSecundario: "Reenviar e-mail",
@@ -570,10 +607,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (perguntas_restantes) {
           localStorage.setItem('perguntas_restantes', data.perguntas_restantes)
           perguntas_restantes.textContent = `${data.perguntas_restantes}/${maxEnergiaUsuarios}`;
-          }
-      } else {
-        console.warn("Não foi possível atualizar a energia:", data.message);
-      }
+        }
+      } else console.warn("Não foi possível atualizar a energia:", data.message);
+      permitir_escolher_tema = true;
     })
     .catch(error => {
         console.error("Erro na requisição de energia:", error);
