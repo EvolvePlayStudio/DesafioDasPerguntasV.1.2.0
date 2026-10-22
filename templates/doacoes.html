@@ -724,7 +724,6 @@
 
     window.abrirModalPagamento = function () {
       if (!pacoteSelecionado) return;
-      playSound("click");
 
       containerPix.innerHTML = '';
       containerPix.style.display = 'none';
@@ -760,6 +759,7 @@
 
     window.gerarCobrancaPix = async function () {
       if (!pacoteSelecionado) return;
+      playSound("click");
 
       btnPagar.disabled = true;
       btnPagar.textContent = "Gerando PIX...";
