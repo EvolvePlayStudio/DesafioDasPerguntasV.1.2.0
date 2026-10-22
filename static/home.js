@@ -630,7 +630,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (localStorage.getItem("modal_confirmacao_email_exibido") === "false") {
         exibirModalEmailOuEnergia();
       }
-      else permitir_escolher_tema = true;
+      permitir_escolher_tema = true;
     })
     .catch(error => {
         console.error("Erro na requisição de energia:", error);

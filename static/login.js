@@ -488,6 +488,11 @@ document.addEventListener('DOMContentLoaded', function () {
           window.location.href = "/home";
         } 
         else {
+          fetch('/api/registrar-acesso', { // Registra na base o erro ocorrido
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({pagina: 'Login - erro no login'})
+          });
           if (lbl_mensagem_login) {
             lbl_mensagem_login.style.color = 'red';
             lbl_mensagem_login.textContent = data.message || 'Falha no login';
@@ -496,6 +501,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       }
       catch (error) {
+        fetch('/api/registrar-acesso', { // Registra na base o erro ocorrido
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({pagina: 'Login - erro no login'})
+        });
         if (lbl_mensagem_login) {
           lbl_mensagem_login.style.color = 'red';
           lbl_mensagem_login.textContent = 'Erro na comunicação com o servidor';
