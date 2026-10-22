@@ -453,12 +453,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function exibirModalEmailOuEnergia() {
     // Função para exixbir modal para ir para tela de energia
     function exibirModalEnergia() {
+      console.log('Modal chamado')
       // --- CONTROLE DE FREQUÊNCIA DO MODAL DE ENERGIA (Exibir a cada 3 dias) ---
       const ULTIMA_EXIBICAO_CHAVE = "ultima_vez_modal_energia_exibido";
       
       //if (idsReservados.includes(parseInt(idUsuario))) localStorage.removeItem(ULTIMA_EXIBICAO_CHAVE);
-      
+        
       const ultimaExibicao = localStorage.getItem(ULTIMA_EXIBICAO_CHAVE);
+      console.log(`Última exibição: ${ultimaExibicao}`)
       const agora = new Date().getTime();
       const TRES_DIAS_EM_MS = 3 * 24 * 60 * 60 * 1000; // 3 dias em milissegundos
 
@@ -466,8 +468,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       const deveExibirModalEnergia = !ultimaExibicao || (agora - parseInt(ultimaExibicao) > TRES_DIAS_EM_MS);
       const eIsento = idsUsuariosIsentos.includes(idUsuario);
 
+      console.log(`Deve exibir? ${deveExibirModalEnergia}`)
+      console.log(`É insento? ${eIsento}`)
+      
+
       // Pega a energia atual para checar se realmente está baixa (<= 50)
       const perguntasRestantesAtual = parseInt(localStorage.getItem('perguntas_restantes') || '500');
+
+      console.log(`Perguntas restantes atuais: ${perguntasRestantesAtual}`)
       
       if (deveExibirModalEnergia && !eIsento && perguntasRestantesAtual <= 50) {
         // Registra na base a abertura do modal aguardando o envio com sucesso
@@ -501,6 +509,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           }
         });
       }
+      else permitir_escolher_tema = true;
     }
 
     async function exibirModalConfirmacaoEmail() {
@@ -562,14 +571,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       const { email_confirmado, email_usuario } = await response.json();
 
       // Modal para convite de compra de energia
+      console.log('Email confirmado?')
+      console.log(email_confirmado)
       if (email_confirmado) {
         exibirModalEnergia();
       }
-      else {
+      // Modal de confirmação de e-mail
+      else if (localStorage.getItem("modal_confirmacao_email_exibido") === "false") {
         exibirModalConfirmacaoEmail();
       }
-      // Modal de confirmação de e-mail
-     
+      else permitir_escolher_tema = true;
+
       // Preenche o e-mail destacado
       spanEmail.textContent = email_usuario;
 
@@ -623,14 +635,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (perguntas_restantes) {
           localStorage.setItem('perguntas_restantes', data.perguntas_restantes)
           perguntas_restantes.textContent = `${data.perguntas_restantes}/${maxEnergiaUsuarios}`;
-          console.log(`Permitir escolher tema? ${permitir_escolher_tema}`)
         }
       } else console.warn("Não foi possível atualizar a energia:", data.message);
 
-      if (localStorage.getItem("modal_confirmacao_email_exibido") === "false") {
-        exibirModalEmailOuEnergia();
-      }
-      permitir_escolher_tema = true;
+      exibirModalEmailOuEnergia();
     })
     .catch(error => {
         console.error("Erro na requisição de energia:", error);
