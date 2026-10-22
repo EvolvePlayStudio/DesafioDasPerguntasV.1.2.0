@@ -1623,7 +1623,6 @@ def login():
             conn.commit()
 
             opcoes_usuario = {
-                "exibir_instrucoes_quiz":         exibir_instrucoes_quiz,
                 "notificacoes_bonus_energia":     notificacoes_bonus_energia,
                 "notificacoes_alteracoes_pontos": notificacoes_alteracoes_pontos,
                 "notificacoes_atualizacoes_site": notificacoes_atualizacoes_site,

@@ -1,5 +1,5 @@
 import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, idsReservados, idsVisitantesReservados, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
-import { playSound } from "./sound.js";
+import { playSound } from "./sound.js";;
 
 document.addEventListener("DOMContentLoaded", async () => {
 
@@ -109,9 +109,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   else {
     btnsHeader = [btn_opcoes, btn_doacoes, btn_perfil, btn_pesquisa, btn_logout];
-    if (localStorage.getItem("modal_confirmacao_email_exibido") === "false") {
-      exibirModalEmailOuEnergia();
-    }
   }
 
   // Renderiza os botões do header
@@ -629,7 +626,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           console.log(`Permitir escolher tema? ${permitir_escolher_tema}`)
         }
       } else console.warn("Não foi possível atualizar a energia:", data.message);
-      permitir_escolher_tema = true;
+
+      if (localStorage.getItem("modal_confirmacao_email_exibido") === "false") {
+        exibirModalEmailOuEnergia();
+      }
+      else permitir_escolher_tema = true;
     })
     .catch(error => {
         console.error("Erro na requisição de energia:", error);
