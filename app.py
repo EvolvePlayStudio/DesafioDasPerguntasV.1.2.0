@@ -36,11 +36,10 @@ ids_visitante_admin = ['53c3025c-d619-4d91-9913-96cc6651ef1a', 'd103db0e-cd5d-47
 sdk = mercadopago.SDK(ACCESS_TOKEN_MERCADO_PAGO)
 DIFERENCA_PERGUNTAS_RESTANTES = 30
 
-# Rota para o ads.txt do PubFuture
+# Arquivo txt da Ezoic
 @app.route('/ads.txt')
 def ads_txt():
-    # Redireciona o robô diretamente para o link oficial e dinâmico do PubFuture
-    return redirect("https://adstxt-ssp.pubfuture.com/site/6ad89d9ec6f123003cbe39f2/www.desafiodasperguntas.com.br/ads.txt", code=301)
+    return redirect("https://srv.adstxtmanager.com/19390/desafiodasperguntas.com.br", code=301)
 
 @app.route('/api/criar-pix', methods=['POST'])
 def criar_pix():
