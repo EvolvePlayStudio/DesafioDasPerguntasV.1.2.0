@@ -1167,6 +1167,9 @@ def doacoes():
     id_usuario = session.get('id_usuario')
     modo_visitante = session.get("visitante", False)
 
+    # Preço base de referência por energia (R$ 0,10)
+    PRECO_BASE_POR_ENERGIA = 0.10
+
     conn = cur = None
     try:
         conn = get_db_connection()
@@ -1189,34 +1192,40 @@ def doacoes():
                 email_usuario = usuario_info.get('email') or ''
                 email_confirmado = bool(usuario_info.get('email_confirmado'))
                 total_respostas = usuario_info.get('total_respostas') or 0
-                total_perguntas_sistema = usuario_info.get('total_perguntas_sistema') or 0
-                
-                if not email_confirmado:
-                    erro_carregamento = "Você precisa confirmar seu e-mail para desbloquear as opções de recarga de energia."
-                
+                total_perguntas_sistema = usuario_info.get('total_perguntas_sistema') or 0                
                 perguntas_restantes = max(0, total_perguntas_sistema - total_respostas)
 
         # Só busca os pacotes se o e-mail estiver confirmado
-        if email_confirmado:
-            cur.execute("""
-                SELECT id, nome, energia, preco, desconto_label 
-                FROM pacotes_energia 
-                WHERE ativo = TRUE 
-                ORDER BY ordem ASC;
-            """)
-            linhas = cur.fetchall()
+        cur.execute("""
+            SELECT id, nome, energia, preco, preco_original
+            FROM pacotes_energia 
+            WHERE ativo = TRUE 
+            ORDER BY ordem ASC;
+        """)
+        linhas = cur.fetchall()
 
-            for linha in linhas:
-                p = dict(linha)
-                p['preco'] = float(p['preco'])
-                qtd_energia = p.get('energia') or 0
+        for linha in linhas:
+            p = dict(linha)
+            p['preco'] = float(p['preco'])
+            qtd_energia = p.get('energia') or 0
 
-                if id_usuario and (perguntas_restantes - DIFERENCA_PERGUNTAS_RESTANTES) < qtd_energia:
-                    p['bloqueado_por_excesso'] = True
-                else:
-                    p['bloqueado_por_excesso'] = False
+            # 1. Calcula quanto custaria essa quantidade de energia no valor avulso (âncora real)
+            valor_ancora_total = qtd_energia * PRECO_BASE_POR_ENERGIA
+    
+            # 2. Calcula a porcentagem de desconto acumulado em relação ao valor avulso
+            if valor_ancora_total > 0 and p['preco'] < valor_ancora_total:
+                desconto_percentual = round(((valor_ancora_total - p['preco']) / valor_ancora_total) * 100)
+                p['desconto_label'] = f"{desconto_percentual}% OFF"
+            else:
+                p['desconto_label'] = None
 
-                pacotes.append(p)
+            # Bloqueia pacotes para usuários que possuem poucas perguntas no banco
+            if id_usuario and (perguntas_restantes - DIFERENCA_PERGUNTAS_RESTANTES) < qtd_energia:
+                p['bloqueado_por_excesso'] = True
+            else:
+                p['bloqueado_por_excesso'] = False
+
+            pacotes.append(p)
 
     except Exception as e:
         print(f"Erro ao carregar pacotes de energia: {e}")
@@ -1947,12 +1956,12 @@ def reset_senha():
         if conn: conn.close()
 
 @app.route('/opcoes', methods=['GET'])
-def tela_opcoes():
+def opcoes():
     registrar_pagina_visitada("Opções")
     return render_template("opcoes.html")
 
 @app.route("/perfil")
-def tela_perfil():
+def perfil():
     registrar_pagina_visitada("Perfil")
     return render_template("perfil.html")
 

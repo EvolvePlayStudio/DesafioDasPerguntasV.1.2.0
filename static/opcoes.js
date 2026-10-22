@@ -7,7 +7,6 @@ import { playSound } from "./sound.js"
 const checkNotificacoesBonusEnergia = document.getElementById('check-notificacoes-bonus-energia');
 const checkNotificacoesAlteracoesPontos = document.getElementById('check-notificacoes-alteracoes-pontos');
 const checkNotificacoesAtualizacoesSite = document.getElementById('check-notificacoes-atualizacoes-site');
-const checkOutrasNotificacoes = document.getElementById('check-outras-notificacoes');
 const totChecks = document.querySelectorAll(`input[type="checkbox"]`);
 
 const btnSalvar = document.getElementById('btn-salvar-opcoes');
@@ -92,7 +91,6 @@ function obterEstadoAtual() {
     notificacoes_bonus_energia: checkNotificacoesBonusEnergia.checked,
     notificacoes_alteracoes_pontos: checkNotificacoesAlteracoesPontos.checked,
     notificacoes_atualizacoes_site: checkNotificacoesAtualizacoesSite.checked,
-    outras_notificacoes: checkOutrasNotificacoes.checked,
     temas_interesse: Array.from(temasCheckboxes).filter(chk => chk.checked).map(chk => chk.value).sort()
   };
 }
@@ -121,7 +119,6 @@ function carregarEstadoInicial() {
     checkNotificacoesBonusEnergia.checked = opcoes.notificacoes_bonus_energia;
     checkNotificacoesAlteracoesPontos.checked = opcoes.notificacoes_alteracoes_pontos;
     checkNotificacoesAtualizacoesSite.checked = opcoes.notificacoes_atualizacoes_site;
-    checkOutrasNotificacoes.checked = opcoes.outras_notificacoes;
     
     temasCheckboxes.forEach(chk => chk.checked = opcoes.temas_interesse.includes(chk.value));
 
@@ -152,7 +149,6 @@ function setTelaBloqueada(bloquear) {
   checkNotificacoesBonusEnergia.disabled = bloquear;
   checkNotificacoesAlteracoesPontos.disabled = bloquear;
   checkNotificacoesAtualizacoesSite.disabled = bloquear;
-  checkOutrasNotificacoes.disabled = bloquear;
   temasCheckboxes.forEach(chk => chk.disabled = bloquear);
 }
 
@@ -160,7 +156,7 @@ function setTelaBloqueada(bloquear) {
 // Eventos
 // ===============================
 checkNotificacoesBonusEnergia.addEventListener('change', () => atualizarBotaoSalvar());
-[checkNotificacoesBonusEnergia, checkNotificacoesAlteracoesPontos, checkNotificacoesAtualizacoesSite, checkOutrasNotificacoes, ...temasCheckboxes].forEach(el => el.addEventListener('change', atualizarBotaoSalvar));
+[checkNotificacoesBonusEnergia, checkNotificacoesAlteracoesPontos, checkNotificacoesAtualizacoesSite, ...temasCheckboxes].forEach(el => el.addEventListener('change', atualizarBotaoSalvar));
 
 // ===============================
 // Salvar opções
