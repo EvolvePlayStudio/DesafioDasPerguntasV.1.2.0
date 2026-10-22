@@ -638,7 +638,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // Registra acesso em home na base de dados junto com a origem e mídia do usuário
-  // (se vaio do Google Ads ou Microsoft Ads por exemplo)
+  // (se veio do Google Ads ou Microsoft Ads por exemplo)
   fetch('/api/registrar-acesso', {
     method: 'POST',
     headers: {

@@ -1583,7 +1583,6 @@ def login():
             # Pega as informações de opções do usuário
             cur.execute("""
                 SELECT
-                exibir_instrucoes_quiz,
                 notificacoes_bonus_energia,
                 notificacoes_alteracoes_pontos,
                 notificacoes_atualizacoes_site,
@@ -1596,8 +1595,7 @@ def login():
             opcoes = cur.fetchone()
 
             if opcoes:
-                (   exibir_instrucoes_quiz,
-                    notificacoes_bonus_energia,
+                (   notificacoes_bonus_energia,
                     notificacoes_alteracoes_pontos,
                     notificacoes_atualizacoes_site,
                     outras_notificacoes,
@@ -1605,7 +1603,6 @@ def login():
                 ) = opcoes
             else:
                 # Fallback defensivo
-                exibir_instrucoes_quiz          = True
                 notificacoes_bonus_energia      = True
                 notificacoes_alteracoes_pontos  = True
                 notificacoes_atualizacoes_site  = True
