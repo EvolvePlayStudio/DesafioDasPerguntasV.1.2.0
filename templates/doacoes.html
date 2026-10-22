@@ -496,6 +496,10 @@
           </div>
         </div>
 
+        <!-- Mensagem de erro -->
+        <div id="mensagem-erro" style="display: none; margin-bottom: 1rem;">
+        </div>
+
         <div id="containerPixResultado" style="margin-bottom: 1rem;"></div>
 
         <button id="btnPagarAgora" class="btn-pagar" onclick="gerarCobrancaPix()">
@@ -513,6 +517,7 @@
 
   <script type="module">
     import { playSound } from "../static/sound.js";
+    import { exibirMensagem } from "../static/utils.js"
     const configEl = document.getElementById('app-config');
     const eModoVisitante = configEl.dataset.visitant === 'true';
     const eEmailConfirmado = configEl.dataset.emailConfirmado === 'true';
@@ -530,6 +535,7 @@
     const tituloModalEl = document.getElementById('titulo-modal-pagamento');
     const containerOpcoesPagamento = document.getElementById('container-opcoes-pagamento');
     const resumoEnergiaUsuario = document.getElementById('resumo-energia-usuario');
+    const mensagemErro = document.getElementById('mensagem-erro');
     let pacoteSelecionado = null;
     let intervalChecagemPix = null;
     let q_checagens_status_pix = 0;
@@ -542,7 +548,7 @@
 
       // 1. REGISTRA A INTENÇÃO DE COMPRA NO BACKEND (Mesmo de visitantes / não confirmados)
       try {
-        await fetch("/api/registrar-acesso", {
+        fetch("/api/registrar-acesso", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
@@ -560,10 +566,10 @@
           "Para concluir a aquisição deste pacote de energias, você precisa criar uma conta.",
           "Criar Conta",
           async () => { // Redireciona para aba de registro da tela de login
-            await fetch("/pagina_destino", {
+            await fetch("/api/registrar-acesso", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ pagina_destino: "Recarga de Energia -> Registro" })
+              body: JSON.stringify({ pagina: "Recarga de Energia -> Registro" })
             });
             sessionStorage.setItem("ir_para_aba_registro", true);
             window.location.href = "/";
@@ -758,32 +764,48 @@
     };
 
     window.gerarCobrancaPix = async function () {
-      if (!pacoteSelecionado) return;
+      if (!pacoteSelecionado || mensagemErro.style.display !== 'none') return;
       playSound("click");
 
       btnPagar.disabled = true;
       btnPagar.textContent = "Gerando PIX...";
 
       try {
+        
         const response = await fetch('/api/criar-pix', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ pacote_id: pacoteSelecionado.id })
         });
-
         const data = await response.json();
 
         if (data.sucesso) {
           exibirTelaPix(data.qr_code_base64, data.qr_code_copia_cola, data.transacao_id);
           btnPagar.style.display = 'none';
-        } else {
-          alert("Erro ao gerar PIX: " + data.erro);
+        } 
+        else {
+          exibirMensagem(mensagemErro, 'Erro ao gerar PIX, por favor tente novamente mais tarde',
+          'red', true, true, 'flex', 8000
+          )
+          fetch('/api/registrar-acesso', { // Registra na base o erro ocorrido
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({pagina: 'Tela de energia - erro PIX'})
+          });
         }
+        
         btnPagar.disabled = false;
         btnPagar.textContent = "Gerar PIX";
       } catch (err) {
         console.error("Erro de conexão:", err);
-        alert("Erro de conexão com o servidor.");
+        exibirMensagem(mensagemErro, 'Erro ao gerar PIX, por favor tente novamente mais tarde',
+        'red', true, true, 'flex', 8000
+        )
+        fetch('/api/registrar-acesso', { // Registra na base o erro ocorrido
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({pagina: 'Tela de energia - erro de conexão'})
+        });
         btnPagar.disabled = false;
         btnPagar.textContent = "Gerar PIX";
       }
@@ -923,7 +945,9 @@
           btnCopiar.innerHTML = textoOriginal;
         }, 2500);
       } else {
-        alert("Código PIX copiado com sucesso!");
+        exibirMensagem(mensagemErro, 'Código PIX copiado com sucesso',
+        'lime', true, true, 'flex', 8000
+        )
       }
     }
 

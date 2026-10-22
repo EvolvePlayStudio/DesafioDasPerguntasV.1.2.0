@@ -351,7 +351,7 @@ export function obterDificuldadesDisponiveis(tema=null, MODO_VISITANTE=null) {
   return dificuldades_disponiveis
 }
 
-export function exibirMensagem(label, texto, cor, temporaria=true, remover_display=false, tipo_display='') {
+export function exibirMensagem(label, texto, cor, temporaria=true, remover_display=false, tipo_display='', tempo_ativa=10000) {
   label.style.display = tipo_display;
   label.style.color = cor;
   label.textContent = texto;
@@ -362,7 +362,7 @@ export function exibirMensagem(label, texto, cor, temporaria=true, remover_displ
         if (remover_display) {
           label.style.display = 'none'
         }
-      }, 10000)
+      }, tempo_ativa)
   }
 }
 
