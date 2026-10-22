@@ -491,7 +491,7 @@ document.addEventListener('DOMContentLoaded', function () {
           fetch('/api/registrar-acesso', { // Registra na base o erro ocorrido
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({pagina: 'Login - erro no login'})
+            body: JSON.stringify({pagina: `Login - erro: ${data.message}`})
           });
           if (lbl_mensagem_login) {
             lbl_mensagem_login.style.color = 'red';
@@ -504,7 +504,7 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/api/registrar-acesso', { // Registra na base o erro ocorrido
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({pagina: 'Login - erro no login'})
+          body: JSON.stringify({pagina: `Login - erro: ${error}`})
         });
         if (lbl_mensagem_login) {
           lbl_mensagem_login.style.color = 'red';
