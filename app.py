@@ -1787,7 +1787,8 @@ def obter_anuncios_home():
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            SELECT id, nome, tema, descricao, link_asin, imagem_url, tipo_midia, provedor, disponivel_visitantes, disponivel_usuarios, oferta_expira_em
+            SELECT id, nome, tema, descricao, link_asin, imagem_url, tipo_midia, provedor,
+            disponivel_visitantes, disponivel_usuarios, oferta_expira_em, prioridade
             FROM anuncios
             WHERE is_ativo = TRUE AND tema = 'Banner horizontal'
         """)
@@ -1795,17 +1796,14 @@ def obter_anuncios_home():
         anuncios = cur.fetchall()
 
         for a in anuncios:
-            id_banco, nome, tema, desc, link_referencia, img, tipo_midia, provedor, disp_visitantes, disp_usuarios, oferta_expira_em = a
+            id_banco, nome, tema, desc, link_referencia, img, tipo_midia, provedor, disp_visitantes, disp_usuarios, oferta_expira_em, prioridade = a
             
             # Garante a criação do provedor no dicionário
             if provedor not in dicionario_anuncios:
                 dicionario_anuncios[provedor] = []
             
             # Montagem do Link
-            if provedor == 'Amazon':
-                link_final = f"{link_referencia}?tag={AMAZON_TRACKING_ID}"
-            else:
-                link_final = link_referencia
+            link_final = f"{link_referencia}?tag={AMAZON_TRACKING_ID}" if provedor == 'Amazon' else link_referencia
 
             dicionario_anuncios[provedor].append({
                 'id': id_banco,
@@ -1818,7 +1816,8 @@ def obter_anuncios_home():
                 'provedor': provedor,
                 'disponivel_visitantes': disp_visitantes,
                 'disponivel_usuarios': disp_usuarios,
-                'oferta_expira_em': oferta_expira_em
+                'oferta_expira_em': oferta_expira_em,
+                'prioridade': prioridade
             })
     except Exception:
         app.logger.exception("Erro ao tentar obter anúncios")

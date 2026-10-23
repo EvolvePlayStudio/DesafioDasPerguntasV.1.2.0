@@ -158,6 +158,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function exibirAnuncios() {
+    // NÃO ESQUECER DE APAGAR QUANDO FIZER UPDATE
+    //sessionStorage.removeItem("anuncios_vistos");
+
     // 1. Obtém o horário atual de Brasília/São Paulo
     const agoraSP = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
 
@@ -165,12 +168,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       const link = container.querySelector(".link-anuncio-geral");
       const imgProd = container.querySelector(".produto-container img");
       const imgLogo = container.querySelector(".logo-container img");
+      
       // Carrega o logotipo do provedor
       if (produto.provedor === 'Amazon') {
-        imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoAmazon"
+        imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoAmazon";
       }
       else if (produto.provedor === 'Mercado Livre'){
-        imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoMercadoLivre03"
+        imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoMercadoLivre03";
       }
       else {
         imgLogo.src = "";
@@ -190,77 +194,107 @@ document.addEventListener("DOMContentLoaded", async () => {
           link.removeEventListener('click', link._clickhandler);
         }
         link._clickhandler = function() {
-          registrarInteracaoAnuncio(link, 'Clique', produto.tema)
-        }
+          registrarInteracaoAnuncio(link, 'Clique', produto.tema);
+        };
         link.addEventListener('click', link._clickhandler);
         link.addEventListener('auxclick', function(e) {
           if (e.button === 1) { // 1 faz referência ao botão do meio do mouse
-            link._clickhandler();}
+            link._clickhandler();
+          }
         });
       }
 
       if (imgProd) imgProd.src = produto.imagem;
     }
 
+    // --- FUNÇÃO AUXILIAR: SELEÇÃO POR PRIORIDADE COM ROTAÇÃO NO SESSIONSTORAGE ---
+    function selecionarMelhorAnuncio(lista) {
+      if (!lista || lista.length === 0) return null;
+
+      // Ordena por prioridade (maior número = maior prioridade)
+      // Em caso de empate na prioridade, desempata aleatoriamente
+      const listaOrdenada = [...lista].sort((a, b) => {
+        const prioA = Number(a.prioridade || 0);
+        const prioB = Number(b.prioridade || 0);
+        if (prioB !== prioA) return prioB - prioA;
+        return 0.5 - Math.random(); 
+      });
+
+      // Carrega os IDs já vistos da sessionStorage
+      let vistos = JSON.parse(sessionStorage.getItem("anuncios_vistos") || "[]");
+
+      // Procura o anúncio de maior prioridade que AINDA NÃO foi visto
+      let escolhido = listaOrdenada.find(a => !vistos.includes(a.id));
+
+      // Se todos os anúncios da lista já foram vistos nesta sessão, reseta o histórico para essa lista
+      if (!escolhido) {
+        const idsLista = listaOrdenada.map(a => a.id);
+        vistos = vistos.filter(id => !idsLista.includes(id));
+        escolhido = listaOrdenada[0];
+      }
+
+      // Salva o ID escolhido no sessionStorage para a rotação das próximas páginas
+      if (escolhido) {
+        vistos.push(escolhido.id);
+        sessionStorage.setItem("anuncios_vistos", JSON.stringify(vistos));
+      }
+
+      return escolhido;
+    }
+
     try {
       const resposta = await fetch("/api/obter_anuncios_home");
       const dados = await resposta.json();
 
-      // 2. Filtra e limpa as listas (remove expirados e valida provedor)
+      // 2. Filtra anúncios válidos (não expirados e de acordo com a permissão do usuário)
       const filtrarValidos = (lista) => (lista || []).filter(a => {
         const expira = new Date(a.oferta_expira_em);
-        // Mantém apenas se a data de expiração for maior que agora
-        return expira > agoraSP && (window.ADS_CONFIG.isAdmin || a.disponivel_visitantes === true && MODO_VISITANTE || a.disponivel_usuarios && !MODO_VISITANTE);
+        return expira > agoraSP && (
+          window.ADS_CONFIG.isAdmin || 
+          (a.disponivel_visitantes === true && MODO_VISITANTE) || 
+          (a.disponivel_usuarios && !MODO_VISITANTE)
+        );
       });
 
       const anunciosAmazon = filtrarValidos(dados['Amazon']);
       const anunciosML = filtrarValidos(dados['Mercado Livre']);
 
-      if (window.ADS_CONFIG.isAdmin) {
-        console.log(`Quantidade de anúncios da Amazon: ${anunciosAmazon.length}`);
-        console.log(`Quantidade de anúncios do ML: ${anunciosML.length}`);
-      }
-
-      // Junta todos os anúncios válidos disponíveis em uma única lista para sortear
-      const todosAnuncios = [...anunciosAmazon, ...anunciosML];
+      // Lista unificada com todos os anúncios válidos disponíveis
+      const todosAnunciosValidos = [...anunciosAmazon, ...anunciosML];
 
       if (!window.ADS_CONFIG.isMobile) {
-        // Exibição Amazon (esquerda)
-        if (anunciosAmazon.length > 0) {
-          const aleatorioAmazon = anunciosAmazon[Math.floor(Math.random() * anunciosAmazon.length)];
-          if (window.ADS_CONFIG.isAdmin) {
-            console.log("Configurando banner da Amazon...");
-          }  
-          
-          configurarBanner(bannerTopoEsquerda, aleatorioAmazon);
+        // --- DESKTOP: Amazon na Esquerda, Mercado Livre na Direita ---
+        
+        // Amazon (Esquerda)
+        const melhorAmazon = selecionarMelhorAnuncio(anunciosAmazon);
+        if (melhorAmazon) {
+          configurarBanner(bannerTopoEsquerda, melhorAmazon);
           bannerTopoEsquerda.style.visibility = "visible";
-        }
-        else {
-          if (window.ADS_CONFIG.isAdmin) {
-            console.log("Não há anúncios da Amazon para exibir");
-          }
+        } else {
           bannerTopoEsquerda.style.visibility = "hidden";
         }
 
-        // Exibição Mercado Livre (Direita)
-        if (anunciosML.length > 0) {
-          const aleatorioML = anunciosML[Math.floor(Math.random() * anunciosML.length)];
-          configurarBanner(bannerTopoDireita, aleatorioML);
+        // Mercado Livre (Direita)
+        const melhorML = selecionarMelhorAnuncio(anunciosML);
+        if (melhorML) {
+          configurarBanner(bannerTopoDireita, melhorML);
           bannerTopoDireita.style.visibility = "visible";
-        }
-        else {
-          bannerTopoDireita.style.visibility = "hidden";
-        }
-      }
-      else {
-        if (todosAnuncios.length > 0) {
-          const anuncioSorteado = todosAnuncios[Math.floor(Math.random() * todosAnuncios.length)];
-          configurarBanner(bannerTopoEsquerda, anuncioSorteado);
-          bannerTopoEsquerda.style.visibility = "visible";
-          bannerTopoDireita.style.visibility = "hidden";
         } else {
-          bannerTopoEsquerda.style.visibility = "hidden"; 
+          bannerTopoDireita.style.visibility = "hidden";
         }
+
+      } else {
+        // --- MOBILE: Sempre exibe no bannerTopoEsquerda o melhor entre TODOS ---
+        
+        const melhorGeralMobile = selecionarMelhorAnuncio(todosAnunciosValidos);
+        if (melhorGeralMobile) {
+          configurarBanner(bannerTopoEsquerda, melhorGeralMobile);
+          bannerTopoEsquerda.style.visibility = "visible";
+        } else {
+          bannerTopoEsquerda.style.visibility = "hidden";
+        }
+
+        // O banner da direita fica oculto no mobile
         bannerTopoDireita.style.visibility = "hidden";
         bannerTopoDireita.style.display = "none";
       }
