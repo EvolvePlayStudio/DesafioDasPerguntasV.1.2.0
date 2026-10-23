@@ -36,6 +36,60 @@ ids_visitante_admin = ['cb21d00e-8d6a-4909-b149-492e03737035', 'd103db0e-cd5d-47
 sdk = mercadopago.SDK(ACCESS_TOKEN_MERCADO_PAGO)
 DIFERENCA_PERGUNTAS_RESTANTES = 30
 
+@app.route('/api/checar-status-email', methods=['GET'])
+def checar_status_email():
+    id_usuario = session.get('id_usuario')
+    if not id_usuario:
+        return jsonify({"sucesso": False}), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT email_confirmado FROM usuarios_registrados WHERE id_usuario = %s;", (id_usuario,))
+        resultado = cur.fetchone()
+        
+        if resultado:
+            email_confirmado = bool(resultado[0])
+            # Atualiza também a session por segurança
+            session["email_confirmado"] = email_confirmado
+            return jsonify({"sucesso": True, "email_confirmado": email_confirmado}), 200
+            
+        return jsonify({"sucesso": False}), 404
+    except Exception as e:
+        return jsonify({"sucesso": False}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route('/api/marcar-modal-inicial-visto', methods=['POST'])
+def marcar_modal_inicial_visto():
+    id_usuario = session.get('id_usuario')
+    if not id_usuario:
+        return jsonify({"sucesso": False, "erro": "Usuário não autenticado."}), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        # Atualiza a coluna modal_inicial_exibido para True na tabela usuarios_registrados
+        cur.execute("""
+            UPDATE usuarios_registrados
+            SET modal_inicial_exibido = TRUE
+            WHERE id_usuario = %s;
+        """, (id_usuario,))
+        
+        conn.commit()
+
+        return jsonify({"sucesso": True, "mensagem": "Modal inicial marcado como visto."}), 200
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Erro ao marcar modal inicial visto: {e}")
+        return jsonify({"sucesso": False, "erro": "Erro interno no servidor."}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
 # Arquivo txt da Ezoic
 @app.route('/ads.txt')
 def ads_txt():
@@ -1561,7 +1615,7 @@ def login():
 
             # Verifica usuário
             cur.execute("""
-                SELECT id_usuario, senha_hash, nome, email_confirmado
+                SELECT id_usuario, senha_hash, nome, email_confirmado, modal_inicial_exibido
                 FROM usuarios_registrados WHERE email = %s
             """, (email,))
             usuario = cur.fetchone()
@@ -1569,7 +1623,7 @@ def login():
             if not usuario:
                 return jsonify(success=False, message="E-mail não registrado")
 
-            id_usuario, senha_hash, nome_usuario, email_confirmado = usuario
+            id_usuario, senha_hash, nome_usuario, email_confirmado, modal_inicial_exibido = usuario
 
             if not check_password_hash(senha_hash, senha):
                 return jsonify(success=False, message="Senha incorreta")
@@ -1634,6 +1688,8 @@ def login():
                 id_usuario=id_usuario,
                 email=email,
                 nome_usuario=nome_usuario,
+                email_confirmado=email_confirmado,
+                modal_inicial_exibido=modal_inicial_exibido,
                 opcoes_usuario=opcoes_usuario
             ), 200)
 
@@ -2359,6 +2415,7 @@ def registrar_pagina_visitada(pagina, id_visitante=None):
     # Bloqueia registro de página para admins
     if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
         return
+        #pass
     
     # Se não for passado explicitamente na chamada da função, busca tudo padronizado da session!
     dispositivo     = session.get('usuario_dispositivo')

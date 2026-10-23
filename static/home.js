@@ -114,14 +114,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Renderiza os botões do header
   btnsHeader.forEach(btn => {btn.style.display = ""});
 
-  function abrirModal({titulo = "", corpoHTML = "", textoPrimario = null, textoSecundario = null, onPrimario = null, onSecundario = null, modalReenvioEmail = false}) {
+  function abrirModal({titulo = "", corpoHTML = "", textoPrimario = null, textoSecundario = null, onPrimario = null, onSecundario = null, modalReenvioEmail = false, 
+    ativarBotaoPrimario = true, ativarBotaoSecundario = true
+  }) {
     // Bloqueia interação geral
     permitir_escolher_tema = false;
     btnModalPrimario.disabled = true;
     btnModalSecundario.disabled = true;
     setTimeout(() => {
-      btnModalPrimario.disabled = false;
-      btnModalSecundario.disabled = false;
+      if (ativarBotaoPrimario) btnModalPrimario.disabled = false;
+      if (ativarBotaoSecundario) btnModalSecundario.disabled = false;
     }, 1000);
 
     // Conteúdo
@@ -451,42 +453,49 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function exibirModalEmailOuEnergia() {
-    // Função para exixbir modal para ir para tela de energia
-    function exibirModalEnergia() {
-      // --- CONTROLE DE FREQUÊNCIA DO MODAL DE ENERGIA (Exibir a cada 3 dias) ---
-      const ULTIMA_EXIBICAO_CHAVE = "ultima_vez_modal_energia_exibido";
-      
-      //if (idsReservados.includes(parseInt(idUsuario))) localStorage.removeItem(ULTIMA_EXIBICAO_CHAVE);
+    const ULTIMA_EXIBICAO_CHAVE = "ultima_vez_modal_energia_exibido";
+    const emailConfirmado = localStorage.getItem("email_confirmado") === "true";
 
+    // Se não encontrar no localStorage (null), considera como já visto (true) por segurança
+    const valorModalStorage = localStorage.getItem("modal_inicial_visto");
+    const modalInicialVisto = valorModalStorage === null ? true : (valorModalStorage === "true");
+      
+    // Função para reativar o botão quando o usuário marcar um rádio no modal de plano inicial de energia
+    window.habilitarBotaoConfirmar = function() {
+      if (btnModalPrimario) {
+        btnModalPrimario.disabled = false;
+        btnModalPrimario.style.opacity = '1';
+        btnModalPrimario.style.cursor = 'pointer';
+      }
+    };
+      
+    // --- FUNÇÃO 3: Modal de Energia Baixa (Apenas para e-mails confirmados) ---
+    function exibirModalEnergiaBaixa() {
+      // if (idsReservados.includes(parseInt(idUsuario))) localStorage.removeItem(ULTIMA_EXIBICAO_CHAVE);
       const ultimaExibicao = localStorage.getItem(ULTIMA_EXIBICAO_CHAVE);
       const agora = new Date().getTime();
-      const TRES_DIAS_EM_MS = 3 * 24 * 60 * 60 * 1000; // 3 dias em milissegundos
-
-      // Verifica se já passou 3 dias desde a última exibição (ou se nunca foi exibido)
-      const deveExibirModalEnergia = !ultimaExibicao || (agora - parseInt(ultimaExibicao) > TRES_DIAS_EM_MS);
+      const TRES_DIAS_EM_MS = 3 * 24 * 60 * 60 * 1000;
+      const deveExibir = !ultimaExibicao || (agora - parseInt(ultimaExibicao) > TRES_DIAS_EM_MS);
       const eIsento = idsUsuariosIsentos.includes(idUsuario);
-
-      // Pega a energia atual para checar se realmente está baixa (<= 50)
       const perguntasRestantesAtual = parseInt(localStorage.getItem('perguntas_restantes') || '500');
-      
-      if (deveExibirModalEnergia && !eIsento && perguntasRestantesAtual <= 50) {
-        // Registra na base a abertura do modal aguardando o envio com sucesso
+
+      if (deveExibir && !eIsento && perguntasRestantesAtual <= 40) {
         try {
           fetch("/api/registrar-acesso", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pagina: "Modal de energia" })
+            body: JSON.stringify({ pagina: "Modal de energia baixa" })
           });
         } catch (err) {
-          console.warn("Falha ao registrar abertura do modal de energia:", err);
+          console.warn("Falha ao registrar abertura do modal de energia baixa:", err);
         }
 
-        // Salva o momento atual como última exibição
         localStorage.setItem(ULTIMA_EXIBICAO_CHAVE, agora.toString());
 
-        // Abre o Modal de Oferta de Energia Baixa
+        let textoTitulo = "⚡ Sua energia está acabando!"
+        if (perguntasRestantesAtual === 0) textoTitulo = "⚡ Sua energia acabou!"
         abrirModal({
-          titulo: "⚡ Sua energia está acabando!",
+          titulo: textoTitulo,
           corpoHTML: `
             <p>Adquira mais energia para continuar respondendo novas perguntas e subir no ranking.</p>
           `,
@@ -494,27 +503,187 @@ document.addEventListener("DOMContentLoaded", async () => {
           textoSecundario: "Continuar Jogando",
           onPrimario: () => {
             window.location.href = "/recarga-de-energia";
+            permitir_escolher_tema = true; // Para não travar caso retorne à home pela setinha
           },
           onSecundario: () => {
             modal.classList.add("hidden");
-            permitir_escolher_tema = true; // Libera o jogo
+            permitir_escolher_tema = true;
           }
         });
+      } else {
+        permitir_escolher_tema = true;
       }
-      else permitir_escolher_tema = true;
     }
 
-    async function exibirModalConfirmacaoEmail() {
-       abrirModal({
+    // --- FUNÇÃO 2: Modal Inicial de Planos ---
+    function exibirModalPlanoInicial() {
+      const agora = new Date().getTime();
+      localStorage.setItem(ULTIMA_EXIBICAO_CHAVE, agora.toString());
+
+      abrirModal({
+        titulo: "⚡ Bem-vindo! Escolha seu pacote inicial",
+        corpoHTML: `
+          
+          <div style="margin: 12px 0; text-align: left; display: flex; flex-direction: column; gap: 8px;">
+            
+            <!-- Básico -->
+            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 10px 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; transition: background 0.2s;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="radio" name="plano_inicial" value="Básico" onchange="habilitarBotaoConfirmar()" style="accent-color: #3b82f6;">
+                <div>
+                  <div style="font-weight: bold; font-size: 14px; color: #000000;">Básico</div>
+                  <div style="font-size: 14px; color: #000000; margin-top: 2px;">⚡<b>140</b>/500 perguntas</div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+              <span style="font-size: 12px; background: rgba(52, 211, 153, 0.15); color: #4debb1; padding: 2px 6px; border-radius: 4px; font-weight: bold;">50% OFF</span>
+                <span style="font-size: 14px; font-weight: bold; color: #000000;">R$ 2,00</span>
+              </div>
+            </label>
+
+            <!-- Médio -->
+            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 10px 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; transition: background 0.2s;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="radio" name="plano_inicial" value="Médio" onchange="habilitarBotaoConfirmar()" style="accent-color: #3b82f6;">
+                <div>
+                  <div style="font-weight: bold; font-size: 14px; color: #000000;">Médio</div>
+                  <div style="font-size: 14px; color: #000000; margin-top: 2px;">⚡<b>250</b>/500 perguntas</div>
+                </div>
+              </div>
+              <div style="text-align: right; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px; background: rgba(52, 211, 153, 0.15); color: #4debb1; padding: 2px 6px; border-radius: 4px; font-weight: bold;">63% OFF</span>
+                <span style="font-size: 14px; font-weight: bold; color: #000000; min-width: 55px; text-align: right;">R$ 5,50</span>
+              </div>
+            </label>
+
+            <!-- Avançado -->
+            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 10px 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; transition: background 0.2s;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="radio" name="plano_inicial" value="Avançado" onchange="habilitarBotaoConfirmar()" style="accent-color: #3b82f6;">
+                <div>
+                  <div style="font-weight: bold; font-size: 14px; color: #000000;">Avançado</div>
+                  <div style="font-size: 14px; color: #000000; margin-top: 0;">⚡<b>350</b>/500 perguntas</div>
+                </div>
+              </div>
+              <div style="text-align: right; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px; background: rgba(52, 211, 153, 0.15); color: #4debb1; padding: 2px 6px; border-radius: 4px; font-weight: bold;">68% OFF</span>
+                <span style="font-size: 14px; font-weight: bold; color: #000000; min-width: 55px; text-align: right;">R$ 8,00</span>
+              </div>
+            </label>
+
+            <!-- Pro -->
+            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 10px 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; transition: background 0.2s;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="radio" name="plano_inicial" value="Pro" onchange="habilitarBotaoConfirmar()" style="accent-color: #3b82f6;">
+                <div>
+                  <div style="font-weight: bold; font-size: 14px; color: #000000;">Pro</div>
+                  <div style="font-size: 14px; color: #000000; margin-top: 2px;">⚡<b>500</b>/500 perguntas</div>
+                </div>
+              </div>
+              <div style="text-align: right; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px; background: rgba(52, 211, 153, 0.15); color: #4debb1; padding: 2px 6px; border-radius: 4px; font-weight: bold;">70% OFF</span>
+                <span style="font-size: 14px; font-weight: bold; color: #000000; min-width: 55px; text-align: right;">R$ 12,00</span>
+              </div>
+            </label>
+
+          </div>
+
+          <!-- Mensagens Informativas -->
+          <div style="font-size: 14px; color: #000000; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.08); padding: 8px 10px; border-radius: 6px; margin-top: 10px; display: flex; flex-direction: column; gap: 4px; text-align: left;">
+            <div>🎁 Você inicia com <b>100⚡</b>no plano gratuito</div>
+            <div>🔄 Você recebe <b>10⚡</b>por cada dia que entrar</div>
+          </div>
+
+          <div id="aviso-email-pendente" style="color: #facc15; font-size: 13px; display: none; margin-top: 10px;">
+            ⚠️ Você deve confirmar seu e-mail para adquirir os planos pagos.
+          </div>
+        `,
+        textoPrimario: "Confirmar Escolha",
+        textoSecundario: "Continuar com plano grátis",
+        onPrimario: async () => {
+          const radioSelecionado = document.querySelector('input[name="plano_inicial"]:checked');
+          const planoEscolhido = radioSelecionado.value;
+
+          // Registra na análise qual plano o usuário escolheu
+          fetch("/log/pagina", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pagina: `Modal Inicial - Escolha: ${planoEscolhido}` })
+          }).catch(() => {});
+
+          // ⚡ CHECAGEM EM TEMPO REAL: Se o plano for pago, verifica no banco se ele confirmou o e-mail recentemente
+          let emailConfirmado; // Pega o valor local inicial
+          if (planoEscolhido) {
+            try {
+              const res = await fetch("/api/checar-status-email");
+              const data = await res.json();
+              if (data.sucesso) emailConfirmado = data.email_confirmado;
+            } catch (err) {
+              console.warn("Falha ao checar status do e-mail em tempo real:", err);
+            }
+          }
+
+          if (!emailConfirmado) {
+            const aviso = document.getElementById('aviso-email-pendente');
+            if (aviso) aviso.style.display = 'block';
+            // Desativa o botão primário permanentemente neste modal
+            const btnPrimarioEl = modal.querySelector('button:first-of-type, .btn-primario, [id*="primario"]');
+            if (btnPrimarioEl) {
+              btnPrimarioEl.disabled = true;
+              btnPrimarioEl.style.opacity = '0.4';
+              btnPrimarioEl.style.cursor = 'not-allowed';
+            }
+            return;
+          }
+
+          window.location.href = `/recarga-de-energia`;
+          sessionStorage.setItem('plano_inicial_escolhido', planoEscolhido);
+        },
+        onSecundario: () => {
+          fetch("/log/pagina", { // Registra na base que optou conscientemente pelo plano gratuito
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pagina: "Modal Inicial - Escolha: Gratuito" })
+          }).catch(() => {});
+          modal.classList.add("hidden");
+          permitir_escolher_tema = true;
+          sessionStorage.removeItem('plano_inicial_escolhido');
+          habilitarBotaoConfirmar();
+        },
+        ativarBotaoPrimario: false
+      });
+
+      // Deixa o botão primário desativado até que um plano seja selecionado
+      const btnPrimarioEl = modal.querySelector('button:first-of-type, .btn-primario, [id*="primario"]');
+      if (btnPrimarioEl) {
+        btnPrimarioEl.disabled = true;
+        btnPrimarioEl.style.opacity = '0.4';
+        btnPrimarioEl.style.cursor = 'not-allowed';
+      }  
+    }
+
+    // --- FUNÇÃO 1: Modal de Confirmação de E-mail ---
+    function exibirModalConfirmacaoEmail(onCloseCallback) {
+      abrirModal({
         textoPrimario: "Fechar",
         textoSecundario: "Reenviar e-mail",
         onPrimario: () => {
           modal.classList.add("hidden");
           localStorage.setItem("modal_confirmacao_email_exibido", "true");
-          permitir_escolher_tema = true;
+          msgModal.style.display = 'none'; // Remove mensagem para não ficar no próximo modal
+          
+          // Dispara o próximo passo (abre o modal de plano inicial)
+          if (typeof onCloseCallback === 'function') onCloseCallback();
         },
         onSecundario: () => {
-          if (localStorage.getItem("email_reenviado_neste_login") === "true") {
+          // --- CONTROLE DE FREQUÊNCIA DE REENVIO (1 vez por dia / 24 horas) ---
+          const ULTIMO_ENVIO_CHAVE = "ultimo_horario_email_reenviado";
+          const ultimoEnvio = localStorage.getItem(ULTIMO_ENVIO_CHAVE);
+          const agora = new Date().getTime();
+          const UM_DIA_EM_MS = 24 * 60 * 60 * 1000; // 24 horas em milissegundos
+          const podeReenviar = !ultimoEnvio || (agora - parseInt(ultimoEnvio) > UM_DIA_EM_MS);
+
+          if (!podeReenviar) {
             msgModal.innerText = "Um e-mail de confirmação já foi enviado recentemente";
             msgModal.style.display = "block";
             msgModal.style.color = corMensagemAlerta;
@@ -532,11 +701,10 @@ document.addEventListener("DOMContentLoaded", async () => {
           .then(res => res.json())
           .then(data => {
             if (data.success) {
-              localStorage.setItem("email_reenviado_neste_login", "true");
+              localStorage.setItem(ULTIMO_ENVIO_CHAVE, agora.toString());
               msgModal.innerText = "O e-mail de confirmação foi reenviado";
               msgModal.style.color = "lime";
-            }
-            else {
+            } else {
               msgModal.innerText = data.message || "Não foi possível reenviar o e-mail";
               msgModal.style.color = "red";
             }
@@ -548,37 +716,53 @@ document.addEventListener("DOMContentLoaded", async () => {
         },
         modalReenvioEmail: true
       });
-
     }
 
+    // --- FLUXO PRINCIPAL ---
     permitir_escolher_tema = false;
     try {
-      const response = await fetch("/pegar_email_confirmado", {
-        method: "GET",
-        credentials: "include"
-      });
+      const emailUsuario = localStorage.getItem("email_usuario") || "";
+      const avaliarProximoPasso = () => {
+        if (!modalInicialVisto) {
+          exibirModalPlanoInicial();
+          localStorage.setItem("modal_inicial_visto", "true");
 
-      if (!response.ok) throw new Error();
+          // Dispara em background para atualizar o banco de dados (assíncrono, não trava a tela)
+          fetch("/api/marcar-modal-inicial-visto", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+          }).catch(err => console.warn("Erro ao registrar modal inicial visto no banco:", err));
 
-      const { email_confirmado, email_usuario } = await response.json();
+          // 2. Envia para o banco o log de que o modal apareceu (usando sua rota /log/pagina)
+          fetch("/log/pagina", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pagina: "Modal de plano inicial" })
+          }).catch(err => console.warn("Erro ao registrar log de aparição do modal:", err));
+        } else if (emailConfirmado) {
+          exibirModalEnergiaBaixa();
+        } else {
+          permitir_escolher_tema = true;
+        }
+      };
 
-      // Modal para convite de compra de energia
-      if (email_confirmado) {
-        exibirModalEnergia();
-      }
-      // Modal de confirmação de e-mail
-      else if (localStorage.getItem("modal_confirmacao_email_exibido") === "false") {
-        exibirModalConfirmacaoEmail();
-      }
-      else permitir_escolher_tema = true;
+      // --- CONTROLE DE FREQUÊNCIA DO MODAL DE E-MAIL (1 vez por dia) ---
+      const CHAVE_TEMPO_AVISO_EMAIL = "ultimo_horario_aviso_email_exibido";
+      const ultimoAvisoEmail = localStorage.getItem(CHAVE_TEMPO_AVISO_EMAIL);
+      const agora = new Date().getTime();
+      const UM_DIA_EM_MS = 24 * 60 * 60 * 1000; // 24 horas
 
-      // Preenche o e-mail destacado
-      spanEmail.textContent = email_usuario;
+      // Deve exibir se o e-mail NÃO está confirmado E (nunca apareceu OU já passou 1 dia)
+      const deveExibirAvisoEmail = !emailConfirmado && (!ultimoAvisoEmail || (agora - parseInt(ultimoAvisoEmail) > UM_DIA_EM_MS));
 
-    }
-    catch (e) {
+      if (deveExibirAvisoEmail) {
+        localStorage.setItem(CHAVE_TEMPO_AVISO_EMAIL, agora.toString());
+        exibirModalConfirmacaoEmail(avaliarProximoPasso);
+        spanEmail.textContent = emailUsuario;
+      } else avaliarProximoPasso();
+    } catch (e) {
       permitir_escolher_tema = true;
-      console.error("Erro ao tentar abrir modal de confirmação de e-mail", e);
+      console.error("Erro ao tentar gerenciar modais de entrada", e);
     }
   }
 

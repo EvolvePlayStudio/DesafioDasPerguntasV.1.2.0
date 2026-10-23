@@ -400,7 +400,8 @@
       <div class="pacotes-grid" id="pacotesGrid">
         {% for pacote in pacotes %}
           <div class="pacote-card {% if pacote.bloqueado_por_excesso %}bloqueado{% endif %}" 
-              data-id="{{ pacote.id }}" 
+              data-id="{{ pacote.id }}"
+              data-nome="{{ pacote.nome }}"
               data-qtd="{{ pacote.energia }}" 
               data-preco="{{ '%.2f'|format(pacote.preco)|replace('.', ',') }}"
               {% if not pacote.bloqueado_por_excesso %}onclick="selecionarPacote(this)"{% endif %}>
@@ -431,7 +432,7 @@
       <div class="regras-lista mt-4">
         <strong>Como funciona o reservatório:</strong>
         <ul>
-          <li>A recarga diária gratuita é de <strong>10 de energia</strong></li>
+          <li>A recarga diária gratuita é de <strong>10⚡</strong></li>
           <li>Pacotes maiores podem ser desativados temporariamente dependendo das perguntas disponíveis no banco</li>
           <li>Preços e ofertas sujeitos a alterações sem aviso prévio</li>
         </ul>
@@ -700,34 +701,6 @@
       document.getElementById('modalPagamento').style.display = 'flex';
     }
 
-    // Preenche o valor na tela ao carregar
-    document.addEventListener("DOMContentLoaded", () => {
-      const elEnergia = document.getElementById('energiaAtualTexto');
-      if (elEnergia) elEnergia.textContent = energiaAtualUsuario;
-    });
-
-    window.selecionarPacote = function (elementoCard) {
-      playSound("click");
-
-      document.querySelectorAll('.pacote-card').forEach(card => {
-        card.classList.remove('selecionado');
-      });
-
-      elementoCard.classList.add('selecionado');
-
-      pacoteSelecionado = {
-        id: elementoCard.dataset.id,
-        qtd: parseInt(elementoCard.dataset.qtd),
-        preco: elementoCard.dataset.preco
-      };
-
-      const btnCheckout = document.getElementById('btnCheckout');
-      if (btnCheckout) {
-        btnCheckout.disabled = false;
-        btnCheckout.innerHTML = `Comprar +${pacoteSelecionado.qtd}⚡por R$ ${pacoteSelecionado.preco}`;
-      }
-    };
-
     window.abrirModalPagamento = function () {
       if (!pacoteSelecionado) return;
 
@@ -750,6 +723,61 @@
       
       document.getElementById('modalPagamento').style.display = 'flex';
     };
+
+    // Preenche o valor na tela ao carregar
+    document.addEventListener("DOMContentLoaded", () => {
+      const elEnergia = document.getElementById('energiaAtualTexto');
+      if (elEnergia) elEnergia.textContent = energiaAtualUsuario;
+    });
+
+    window.selecionarPacote = function (elementoCard, somClique=true) {
+      if (somClique) playSound("click");
+
+      console.log(`Selecionando pacote`)
+      document.querySelectorAll('.pacote-card').forEach(card => {
+        card.classList.remove('selecionado');
+      });
+
+      elementoCard.classList.add('selecionado');
+
+      pacoteSelecionado = {
+        id: elementoCard.dataset.id,
+        qtd: parseInt(elementoCard.dataset.qtd),
+        preco: elementoCard.dataset.preco
+      };
+
+      const btnCheckout = document.getElementById('btnCheckout');
+      if (btnCheckout) {
+        btnCheckout.disabled = false;
+        btnCheckout.innerHTML = `Comprar +${pacoteSelecionado.qtd}⚡por R$ ${pacoteSelecionado.preco}`;
+      }
+    };
+
+    // Seleciona um pacote automaticamente caso o usuário tenha vindo do modal em que escolhe o plano inicial de energia
+    let cardParaSelecionar = null;
+    const planoSalvo = sessionStorage.getItem('plano_inicial_escolhido');
+    
+    // Limpa o sessionStorage imediatamente para não repetir se navegar de volta
+    sessionStorage.removeItem('plano_inicial_escolhido');
+
+    if (planoSalvo) {
+      // Pega todos os cards de pacotes da tela
+      const cards = document.querySelectorAll('.pacote-card');
+      // Procura comparando em minúsculas para evitar erro de digitação ou maiúsculas/minúsculas
+      for (let card of cards) {
+        const nomeCard = (card.getAttribute('data-nome') || '').toLowerCase();
+        if (nomeCard === planoSalvo.toLowerCase()) {
+          cardParaSelecionar = card;
+          break;
+        }
+      }
+    }
+
+    // 3. Se encontrou um card válido e a função selecionarPacote existe, dispara a seleção
+    if (cardParaSelecionar) {
+      window.selecionarPacote(cardParaSelecionar, false);
+      window.abrirModalPagamento();
+    }
 
     window.fecharModalPagamento = function () {
       playSound("click");
