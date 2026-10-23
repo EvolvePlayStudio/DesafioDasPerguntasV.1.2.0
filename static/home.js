@@ -592,6 +592,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div style="font-size: 14px; color: #000000; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.08); padding: 8px 10px; border-radius: 6px; margin-top: 10px; display: flex; flex-direction: column; gap: 4px; text-align: left;">
             <div>🎁 Você inicia com <b>100⚡</b>no plano gratuito</div>
             <div>🔄 Você recebe <b>10⚡</b>por cada dia que entrar</div>
+            <div>💲 Descontos incidem sobre o preço base de <b>R$ 0,10</b> por⚡</div>
           </div>
 
           <div id="aviso-email-pendente" style="color: #facc15; font-size: 13px; display: none; margin-top: 10px;">
