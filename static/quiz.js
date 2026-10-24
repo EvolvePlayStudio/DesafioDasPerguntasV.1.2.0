@@ -8,11 +8,31 @@ function validateAppVersionQuiz() {
   }
 }
 
-// Envia erros para a base de dados caso ocorram
+// Faz envio de dados para a base
 const id_visitante = localStorage.getItem("id_visitante");
 const idUsuario = Number(localStorage.getItem("id_usuario") ?? "0");
 const isAdmin = idsReservados.includes(idUsuario) || idsVisitantesReservados.includes(id_visitante);
-window.onerror = function (message) {
+const MODO_VISITANTE = localStorage.getItem("modoVisitante") === 'true';
+
+try { // Registra primeiro quiz iniciado caso seja o primeiro login na conta do usuário
+  if (!MODO_VISITANTE) {
+    const jaTentouAntes = localStorage.getItem('primeiro_quiz_iniciado');
+    if (!jaTentouAntes) {
+      fetch('/api/registrar-acesso', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          pagina: 'Primeiro quiz iniciado',
+          id_visitante: id_visitante
+        })
+      })
+      localStorage.setItem('primeiro_quiz_iniciado', true)
+    }
+  } 
+} catch (error) {console.error("Erro no bloco de rastreamento:", error)};
+
+
+window.onerror = function (message) { // Caso ocorra um erro
   if (!idsVisitantesReservados.includes(id_visitante) && !idsReservados.includes(idUsuario)) {
     fetch("/api/debug/frontend", {
     method: "POST",
@@ -26,8 +46,6 @@ window.onerror = function (message) {
   }).catch(() => {});
   }
 };
-
-const MODO_VISITANTE = localStorage.getItem("modoVisitante") === 'true';
 
 if (MODO_VISITANTE === undefined || (!MODO_VISITANTE && idUsuario === 0)) {
   localStorage.setItem("auth_message", "Sessão expirada");

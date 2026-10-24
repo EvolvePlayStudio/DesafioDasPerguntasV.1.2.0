@@ -233,7 +233,7 @@ export function detectarModoTela() {
 export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIGO=null) {
   // ATENÇÃO, APAGAR PARÂMETRO ACIMA QUE NÃO É UTILIZADO DEPOIS QUE REMOVER DE TODAS AS FUNÇÕES EM QUIZ.JS E HOME.JS
   const MODO_TESTE = sessionStorage.getItem('modo_teste') === 'true';
-  if (MODO_TESTE) return false;
+  if (MODO_TESTE || idsReservados.includes(idUsuario)) return false;
   const tema = localStorage.getItem("tema_atual");
   const MODO_VISITANTE = localStorage.getItem("modoVisitante") === 'true';
   const infoRanking = obterInfoRankingAtual(tema, MODO_VISITANTE)

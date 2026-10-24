@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const maxEnergiaUsuarios = 500;
   localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
   localStorage.setItem('limite_energia', maxEnergiaUsuarios);
-  const idsUsuariosIsentos = ['291'] // Usuários que não recebem convite para compra de energia
+  const idsUsuariosIsentos = ['291', '439'] // Usuários que não recebem convite para compra de energia
 
   if (!MODO_VISITANTE) { // Verifica se deve expirar a sessão
     if (!idUsuario) { // Caso o id de usuário não tenha sido identificado
@@ -332,6 +332,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   exibirAnuncios();
 
   async function iniciarQuiz(event) {
+
+    try { // Registra tentativa de início de quiz caso seja o primeiro login na conta do usuário
+      if (!MODO_VISITANTE) {
+        const jaTentouAntes = localStorage.getItem('primeira_tentativa_inicio_quiz');
+        if (!jaTentouAntes) {
+          fetch('/api/registrar-acesso', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              pagina: 'Tentativa de iniciar Quiz',
+              id_visitante: idVisitante
+            })
+          })
+          localStorage.setItem('primeira_tentativa_inicio_quiz', true)
+        }
+      }
+    } catch (error) {console.error("Erro no bloco de rastreamento:", error)};
 
     function desbloquearBotoes() {permitir_escolher_tema = true};
 
