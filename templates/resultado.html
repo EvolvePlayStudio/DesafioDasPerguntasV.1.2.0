@@ -319,6 +319,152 @@
       }
     }
   </style>
+
+  <!-- CSS do Interstitial -->
+  <style>
+    .modal-interstitial {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 3000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .interstitial-card {
+      position: relative;
+      background: #ffffff;
+      border-radius: 16px;
+      width: 95%;
+      max-width: 600px;
+      padding: 1rem;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+      animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .interstitial-body {
+      position: relative; /* Essencial para ancorar o botão X absoluto */
+      width: 100%;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: default;
+    }
+    .btn-fechar-interstitial {
+      position: absolute;
+      top: 9px;
+      right: 9px;
+      background: rgba(0, 0, 0, 0.65);
+      color: #fff;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .btn-fechar-interstitial:hover {
+      background: rgba(0, 0, 0, 0.9);
+      transform: scale(1.05);
+    }
+    /* Logotipo sobreposto no canto inferior esquerdo */
+    .interstitial-logo-overlay {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      height: 37px;
+      width: auto;
+      object-fit: contain;
+      z-index: 10;
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+    .interstitial-img {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1.5 / 1; /* Mantém a proporção padrão que definimos */
+      object-fit: contain;
+      border-radius: 8px;
+      background: #f8f9fa;
+      cursor: pointer;
+    }
+    .interstitial-cta {
+      margin-top: 1rem;
+      width: 90%;
+      max-width: 300px;
+      background: #FFD814;
+      border: 1px solid #FCD200;
+      color: #111;
+      font-weight: bold;
+      padding: 0.8rem;
+      border-radius: 25px;
+      text-align: center;
+      font-size: 1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .interstitial-cta:hover {
+      background: #f7ca00;
+    }
+
+    /* --- Ajustes para Mobile (Telas com menos de 768px de largura) --- */
+    @media (max-width: 580px) {
+      .interstitial-logo-overlay {
+        top: 8px;
+        left: 8px;
+        height: 33px; 
+      }
+      .interstitial-cta {
+        font-size: 0.95rem;
+      }
+      .btn-fechar-interstitial {
+        width: 33px;
+        height: 33px;
+        font-size: 0.95rem;
+        top: 8px;
+        right: 8px;
+      }
+    }
+    @media (max-width: 480px) {
+      .interstitial-logo-overlay {
+        top: 5px;
+        left: 5px;
+        height: 30px; 
+      }
+      .btn-fechar-interstitial {
+        top: 6px;
+        right: 6px;
+      }
+    }
+    @media (max-width: 400px) {
+      .interstitial-logo-overlay {
+        top: 2px;
+        left: 2px;
+        height: 28px; 
+      }
+      .interstitial-cta {
+        font-size: 0.85rem;
+      }
+      .btn-fechar-interstitial {
+        width: 28px;
+        height: 28px;
+        font-size: 0.85rem;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -414,6 +560,27 @@
           <button id="editar-feedback" class="btn btn-primario">Editar feedback</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- --- MODAL INTERSTITIAL -->
+  <div id="modal-interstitial" class="modal-interstitial">
+    <div class="interstitial-card">
+      <a href="#" target="_blank" class="interstitial-body">
+        <!-- Botão X flutuante no canto superior direito da imagem -->
+        <button id="btn-fechar-interstitial" class="btn-fechar-interstitial" onclick="event.preventDefault(); document.getElementById('modal-interstitial').style.display='none';">
+          ✕
+        </button>
+
+        <!-- Logotipo oficial sobreposto no canto inferior esquerdo -->
+        <img src="/static/img/logotipoAmazon.png" class="interstitial-logo-overlay">
+
+        <!-- Imagem gerada por IA já contendo o logotipo integrado -->
+        <img src="/static/img/IntestitialAdAmazon01Original.jpg" alt="Anúncio Especial" class="interstitial-img">
+        
+        <!-- CTA opcional na base, ou pode ser integrado na própria arte se preferir -->
+        <div class="interstitial-cta">Conferir Oferta</div>
+      </a>
     </div>
   </div>
 

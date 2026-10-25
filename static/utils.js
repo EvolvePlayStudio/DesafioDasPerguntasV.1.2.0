@@ -369,7 +369,8 @@ export function exibirMensagem(label, texto, cor, temporaria=true, remover_displ
 export async function registrarInteracaoAnuncio(linkElement, tipoInteracao, temaAtual='Nenhum') {
   atualizarVariaveis();
   // Se for admin em modo visitante, não registra nada a interação
-  if (MODO_VISITANTE && (idsVisitantesReservados.includes(idVisitante) || idsReservados.includes(idUsuario))) return;
+  if (MODO_VISITANTE && idsVisitantesReservados.includes(idVisitante)
+  || !MODO_VISITANTE && idsReservados.includes(idUsuario) && tipoInteracao === 'Impressão') return;
 
   const idAnuncioSorteado = linkElement.getAttribute('data-id-anuncio');
   const provedorAnuncioSorteado = linkElement.getAttribute('data-provedor-anuncio');

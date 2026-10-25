@@ -1,7 +1,121 @@
 import { playSound, playKeySound } from "./sound.js";
 import { coresDificuldade, registrarInteracaoAnuncio, simbolosRankings, simbolosTemas} from "./utils.js";
 
-// Variáveis relacionadas aos anúncios
+async function carregarInterstitialDinamico() {
+  try {
+    // 1. Faz a requisição filtrando pelo tema do interstitial
+    const response = await fetch('/api/obter_anuncios?tema=Interstitial Ad');
+    const dados = await response.json();
+
+    // Junta todos os anúncios em uma única lista
+    let todosAnuncios = [];
+    for (let provedor in dados) {
+      todosAnuncios = todosAnuncios.concat(dados[provedor]);
+    }
+
+    if (todosAnuncios.length === 0) return;
+
+    // 2. Recupera o histórico de exibições do localStorage
+    let historicoExibicoes = JSON.parse(localStorage.getItem('interstitial_historico') || '{}');
+
+    // Associa a contagem de vezes que cada anúncio foi exibido e valida se ainda existem anúncios não exibidos no ciclo atual
+    let anunciosNaoExibidos = [];
+    
+    todosAnuncios.forEach(anuncio => {
+      const vezes = historicoExibicoes[anuncio.id] || 0;
+      anuncio.vezesExibido = vezes;
+      
+      // Se o anúncio ainda não foi exibido neste ciclo (vezes === 0)
+      if (vezes === 0) anunciosNaoExibidos.push(anuncio);
+    });
+
+    // 3. REGRA DE CICLO FECHADO: Se todos já foram exibidos pelo menos 1 vez...
+    if (anunciosNaoExibidos.length === 0) {
+      localStorage.removeItem('interstitial_historico'); // Zera a contagem
+      return; 
+    }
+
+    // 4. Ordena por prioridade decrescente e pega o de maior prioridade entre os que ainda não foram exibidos no ciclo
+    todosAnuncios.sort((a, b) => {
+      if (b.prioridade !== a.prioridade) return b.prioridade - a.prioridade;
+      return a.vezesExibido - b.vezesExibido;
+    });
+
+    // Filtra para pegar apenas os que têm a maior prioridade atual que ainda não rodaram
+    const maiorPrioridade = todosAnuncios[0].prioridade;
+    const candidatos = todosAnuncios.filter(a => a.prioridade === maiorPrioridade && a.vezesExibido === 0);
+
+    // Seleciona o primeiro candidato elegível
+    const anuncio = candidatos.length > 0 ? candidatos[0] : todosAnuncios[0];
+
+    // 5. Atualiza o histórico no localStorage marcando este anúncio como exibido
+    historicoExibicoes[anuncio.id] = 1;
+    localStorage.setItem('interstitial_historico', JSON.stringify(historicoExibicoes));
+
+    // 6. Seleciona os elementos do modal no DOM
+    const modal = document.getElementById('modal-interstitial');
+    const linkElement = modal.querySelector('.interstitial-body');
+    const imgElement = modal.querySelector('.interstitial-img');
+    const imgLogo = modal.querySelector('.interstitial-logo-overlay');
+
+    // Injeta os dados vindos do backend (Cloudinary + Link de Afiliado)
+    linkElement.href = anuncio.link;
+    imgElement.src = anuncio.imagem; // URL vinda direto do Cloudinary
+    imgElement.alt = anuncio.nome;
+
+    // Adiciona os atributos de rastreamento necessários para a função do utils.js
+    linkElement.setAttribute('data-id-anuncio', anuncio.id);
+    linkElement.setAttribute('data-provedor-anuncio', anuncio.provedor);
+    linkElement.setAttribute('data-tipo-midia-anuncio', anuncio.tipo_midia);
+
+    // Carrega o logotipo do provedor
+    if (anuncio.provedor === 'Amazon') {
+      imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoAmazon";
+      imgLogo.style.display = 'block';
+    }
+    else if (anuncio.provedor === 'Mercado Livre'){
+      imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoMercadoLivre03";
+      imgLogo.style.display = 'block';
+    }
+    else {
+      imgLogo.src = "";
+      imgLogo.style.display = 'none';
+    }
+
+    // Segurança contra imagem quebrada (remove o símbolo de papel se houver falha)
+    imgLogo.onerror = function() {this.style.display = 'none'};
+
+    // Exibe o modal
+    modal.style.display = 'flex';
+
+    // Registra a impressão no banco utilizando a mesma função do utils.js
+    if (typeof registrarInteracaoAnuncio === 'function') {
+      registrarInteracaoAnuncio(linkElement, 'Impressão', anuncio.tema);
+    }
+
+    // Função para registrar clique (primeiro remove a do banner anterior)
+    if (linkElement._clickhandler) {
+      linkElement.removeEventListener('click', linkElement._clickhandler);
+    }
+    linkElement._clickhandler = function() {
+      registrarInteracaoAnuncio(linkElement, 'Clique', anuncio.tema);
+    };
+    linkElement.addEventListener('click', linkElement._clickhandler);
+    linkElement.addEventListener('auxclick', function(e) {
+      if (e.button === 1) linkElement._clickhandler(); // 1 faz referência ao botão do meio do mouse
+    });
+
+  } catch (error) {
+    console.error("Erro ao carregar o anúncio interstitial:", error);
+  }
+}
+
+// Executa a função quando a página carregar (ou conforme sua regra de exibição)
+document.addEventListener('DOMContentLoaded', () => {
+  carregarInterstitialDinamico();
+});
+
+// Anúncios de BANNERS (não utilizados no momento)
 const tema_atual = localStorage.getItem("tema_atual");
 /*
 const cacheAnuncios = localStorage.getItem('anuncios') || '{}';
@@ -9,14 +123,14 @@ const dadosAnuncios = JSON.parse(cacheAnuncios);
 const containerEsq = document.getElementById('banner-lateral-esquerda');
 const containerDir = document.getElementById('banner-lateral-direita');
 const logotipoAnuncioEsq = document.getElementById('logotipo-anuncio-esq')
-const logotipoAnuncioDir = document.getElementById('logotipo-anuncio-dir');*/
+const logotipoAnuncioDir = document.getElementById('logotipo-anuncio-dir');
 const bannerAnuncioEsq = document.getElementById('banner-lateral-esquerda')
 const bannerAnuncioDir = document.getElementById('banner-lateral-direita');
 [bannerAnuncioEsq, bannerAnuncioDir].forEach(b => {
   b.addEventListener('click', function() {
     registrarInteracaoAnuncio(this.querySelector('a'), "Clique", 'Resultado'); // Depois ver se é Resultado que deve passar sempre aqui
   });
-});
+});*/
 /*
 let historicoExibicao = {};
 historicoExibicao = atualizarAnuncios(containerEsq, containerDir, logotipoAnuncioEsq, logotipoAnuncioDir, tema_atual, dadosAnuncios, historicoExibicao);

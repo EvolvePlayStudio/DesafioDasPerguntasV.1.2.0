@@ -1778,8 +1778,7 @@ def recarregar_energia_home():
         if cur: cur.close()
         if conn: conn.close()
 
-@app.route('/api/obter_anuncios_home')
-def obter_anuncios_home():
+def obter_anuncios_homeANTIGO():
     conn = cur = None
     dicionario_anuncios = {}
     
@@ -1812,6 +1811,61 @@ def obter_anuncios_home():
                 'descricao': desc,
                 'link': link_final,
                 'imagem': img,
+                'tipo_midia': tipo_midia,
+                'provedor': provedor,
+                'disponivel_visitantes': disp_visitantes,
+                'disponivel_usuarios': disp_usuarios,
+                'oferta_expira_em': oferta_expira_em,
+                'prioridade': prioridade
+            })
+    except Exception:
+        app.logger.exception("Erro ao tentar obter anúncios")
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+    return jsonify(dicionario_anuncios)
+
+@app.route('/api/obter_anuncios')
+def obter_anuncios():
+    conn = cur = None
+    dicionario_anuncios = {}
+    
+    # Permite filtrar por tema via query string (ex: /api/obter_anuncios?tema=Interstitial Ad)
+    tema_filtro = request.args.get('tema')
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        query = """
+            SELECT id, nome, tema, descricao, link_asin, imagem_url, tipo_midia, provedor,
+            disponivel_visitantes, disponivel_usuarios, oferta_expira_em, prioridade
+            FROM anuncios
+            WHERE is_ativo = TRUE
+        """
+        params = []
+        if tema_filtro:
+            query += " AND tema = %s"
+            params.append(tema_filtro)
+            
+        cur.execute(query, params)
+        anuncios = cur.fetchall()
+
+        for a in anuncios:
+            id_banco, nome, tema, desc, link_referencia, img, tipo_midia, provedor, disp_visitantes, disp_usuarios, oferta_expira_em, prioridade = a
+            
+            if provedor not in dicionario_anuncios:
+                dicionario_anuncios[provedor] = []
+            
+            link_final = f"{link_referencia}?tag={AMAZON_TRACKING_ID}" if provedor == 'Amazon' else link_referencia
+
+            dicionario_anuncios[provedor].append({
+                'id': id_banco,
+                'nome': nome,
+                'tema': tema,
+                'descricao': desc,
+                'link': link_final,
+                'imagem': img, # URL direta do Cloudinary salva no banco
                 'tipo_midia': tipo_midia,
                 'provedor': provedor,
                 'disponivel_visitantes': disp_visitantes,

@@ -76,7 +76,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (MODO_VISITANTE) {
     btnsHeader = [btn_perfil, btn_pesquisa, btn_doacoes, btn_logout];
-    permitir_escolher_tema = true;
     btn_criar_conta.style.display = "";
     btn_criar_conta.addEventListener("click", async () => {
       sessionStorage.setItem("ir_para_aba_registro", true);
@@ -118,7 +117,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     ativarBotaoPrimario = true, ativarBotaoSecundario = true
   }) {
     // Bloqueia interação geral
-    permitir_escolher_tema = false;
     btnModalPrimario.disabled = true;
     btnModalSecundario.disabled = true;
     setTimeout(() => {
@@ -158,14 +156,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function exibirAnuncios() {
-    // NÃO ESQUECER DE APAGAR QUANDO FIZER UPDATE
-    //sessionStorage.removeItem("anuncios_vistos");
+    //sessionStorage.removeItem("anuncios_vistos"); // NÃO ESQUECER DE APAGAR QUANDO FIZER UPDATE
 
     // 1. Obtém o horário atual de Brasília/São Paulo
     const agoraSP = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
 
     function configurarBanner(container, produto) {
-      const link = container.querySelector(".link-anuncio-geral");
+      const linkElement = container.querySelector(".link-anuncio-geral");
       const imgProd = container.querySelector(".produto-container img");
       const imgLogo = container.querySelector(".logo-container img");
       
@@ -180,27 +177,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         imgLogo.src = "";
       }
       
-      if (link) {
-        link.setAttribute('data-id-anuncio', produto.id);
-        link.setAttribute('data-provedor-anuncio', produto.provedor);
-        link.setAttribute('data-tipo-midia-anuncio', produto.tipo_midia);
-        link.href = produto.link;
+      if (linkElement) {
+        linkElement.setAttribute('data-id-anuncio', produto.id);
+        linkElement.setAttribute('data-provedor-anuncio', produto.provedor);
+        linkElement.setAttribute('data-tipo-midia-anuncio', produto.tipo_midia);
+        linkElement.href = produto.link;
 
         // Chama função para registrar impressão
-        registrarInteracaoAnuncio(link, 'Impressão', produto.tema);
+        if (typeof registrarInteracaoAnuncio === 'function') {
+          registrarInteracaoAnuncio(linkElement, 'Impressão', produto.tema);
+        }
 
         // Função para registrar clique (primeiro remove a do banner anterior)
-        if (link._clickhandler) {
-          link.removeEventListener('click', link._clickhandler);
+        if (linkElement._clickhandler) {
+          linkElement.removeEventListener('click', linkElement._clickhandler);
         }
-        link._clickhandler = function() {
-          registrarInteracaoAnuncio(link, 'Clique', produto.tema);
+        linkElement._clickhandler = function() {
+          registrarInteracaoAnuncio(linkElement, 'Clique', produto.tema);
         };
-        link.addEventListener('click', link._clickhandler);
-        link.addEventListener('auxclick', function(e) {
-          if (e.button === 1) { // 1 faz referência ao botão do meio do mouse
-            link._clickhandler();
-          }
+        linkElement.addEventListener('click', linkElement._clickhandler);
+        linkElement.addEventListener('auxclick', function(e) {
+          if (e.button === 1) linkElement._clickhandler(); // 1 faz referência ao botão do meio do mouse
         });
       }
 
@@ -243,7 +240,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     try {
-      const resposta = await fetch("/api/obter_anuncios_home");
+      const resposta = await fetch('/api/obter_anuncios?tema=Banner horizontal');
       const dados = await resposta.json();
 
       // 2. Filtra anúncios válidos (não expirados e de acordo com a permissão do usuário)
@@ -556,15 +553,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           textoSecundario: "Continuar Jogando",
           onPrimario: () => {
             window.location.href = "/recarga-de-energia";
-            permitir_escolher_tema = true; // Para não travar caso retorne à home pela setinha
           },
           onSecundario: () => {
             modal.classList.add("hidden");
-            permitir_escolher_tema = true;
           }
         });
-      } else {
-        permitir_escolher_tema = true;
       }
     }
 
@@ -700,7 +693,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             body: JSON.stringify({ pagina: "Modal Inicial - Escolha: Gratuito" })
           }).catch(() => {});
           modal.classList.add("hidden");
-          permitir_escolher_tema = true;
           sessionStorage.removeItem('plano_inicial_escolhido');
           habilitarBotaoConfirmar();
         },
@@ -773,7 +765,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // --- FLUXO PRINCIPAL ---
-    permitir_escolher_tema = false;
     try {
       const emailUsuario = localStorage.getItem("email_usuario") || "";
       const avaliarProximoPasso = () => {
@@ -795,27 +786,26 @@ document.addEventListener("DOMContentLoaded", async () => {
           }).catch(err => console.warn("Erro ao registrar log de aparição do modal:", err));
         } else if (emailConfirmado) {
           exibirModalEnergiaBaixa();
-        } else {
-          permitir_escolher_tema = true;
         }
       };
 
       // --- CONTROLE DE FREQUÊNCIA DO MODAL DE E-MAIL (1 vez por dia) ---
       const CHAVE_TEMPO_AVISO_EMAIL = "ultimo_horario_aviso_email_exibido";
+      //if (idsReservados.includes(Number(idUsuario))) localStorage.removeItem(CHAVE_TEMPO_AVISO_EMAIL);
       const ultimoAvisoEmail = localStorage.getItem(CHAVE_TEMPO_AVISO_EMAIL);
       const agora = new Date().getTime();
       const UM_DIA_EM_MS = 24 * 60 * 60 * 1000; // 24 horas
 
-      // Deve exibir se o e-mail NÃO está confirmado E (nunca apareceu OU já passou 1 dia)
+      console.log(`Não tem último aviso de email? ${!ultimoAvisoEmail}`)
+      // Deve exibir se o e-mail NÃO está confirmado e (nunca apareceu OU já passou 1 dia)
       const deveExibirAvisoEmail = !emailConfirmado && (!ultimoAvisoEmail || (agora - parseInt(ultimoAvisoEmail) > UM_DIA_EM_MS));
-
+      console.log(`Deve exibir? ${deveExibirAvisoEmail}`)
       if (deveExibirAvisoEmail) {
         localStorage.setItem(CHAVE_TEMPO_AVISO_EMAIL, agora.toString());
         exibirModalConfirmacaoEmail(avaliarProximoPasso);
         spanEmail.textContent = emailUsuario;
       } else avaliarProximoPasso();
     } catch (e) {
-      permitir_escolher_tema = true;
       console.error("Erro ao tentar gerenciar modais de entrada", e);
     }
   }
@@ -837,7 +827,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       onPrimario: () => {
         localStorage.setItem(`modal_registro_fechado_${marco}`, "true");
         modal.classList.add("hidden");
-        permitir_escolher_tema = true;
       },
       onSecundario: async () => {
         sessionStorage.setItem("ir_para_aba_registro", true);
@@ -863,6 +852,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (perguntas_restantes) {
           localStorage.setItem('perguntas_restantes', data.perguntas_restantes)
           perguntas_restantes.textContent = `${data.perguntas_restantes}/${maxEnergiaUsuarios}`;
+          permitir_escolher_tema = true;
         }
       } else console.warn("Não foi possível atualizar a energia:", data.message);
 
@@ -961,6 +951,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (MODO_VISITANTE) {
     userName.textContent = "Visitante";
     perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/${maxEnergiaVisitantes}`;
+    permitir_escolher_tema = true;
 
     // Decide se deve exibir modal para convidar a fazer registro
     const respondidas = JSON.parse(localStorage.getItem("visitante_respondidas"));
