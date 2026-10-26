@@ -1,9 +1,12 @@
 import { playSound, playKeySound } from "./sound.js";
 import { coresDificuldade, registrarInteracaoAnuncio, simbolosRankings, simbolosTemas} from "./utils.js";
 
+const CHAVE_HISTORICO_INTERSTITIAL_AD = 'interstitial_historico_V2'
+
+
 async function carregarInterstitialDinamico() {
   try {
-    console.log(`Histórico: ${localStorage.getItem('interstitial_historico')}`)
+    console.log(`Histórico: ${localStorage.getItem(CHAVE_HISTORICO_INTERSTITIAL_AD)}`)
     // 1. Faz a requisição filtrando pelo tema do interstitial
     const response = await fetch('/api/obter_anuncios?tema=Interstitial Ad');
     const dados = await response.json();
@@ -17,7 +20,7 @@ async function carregarInterstitialDinamico() {
     if (todosAnuncios.length === 0) return;
 
     // 2. Recupera o histórico de exibições do localStorage
-    let historicoExibicoes = JSON.parse(localStorage.getItem('interstitial_historico') || '{}');
+    let historicoExibicoes = JSON.parse(localStorage.getItem(CHAVE_HISTORICO_INTERSTITIAL_AD) || '{}');
 
     // 3. Adiciona o "anúncio virtual de descanso"
     const idDescanso = 'descanso_ciclo_virtual';
@@ -36,7 +39,7 @@ async function carregarInterstitialDinamico() {
     const totalItensExibidos = Object.keys(historicoExibicoes).length;
 
     if (totalItensExibidos >= totalItensPossiveis) {
-      localStorage.removeItem('interstitial_historico');
+      localStorage.removeItem(CHAVE_HISTORICO_INTERSTITIAL_AD);
       historicoExibicoes = {}; // Zera o objeto na memória também para esta execução
     }
 
@@ -59,7 +62,7 @@ async function carregarInterstitialDinamico() {
 
     // 6. Atualiza o histórico no localStorage marcando este item como exibido
     historicoExibicoes[selecionado.id] = 1;
-    localStorage.setItem('interstitial_historico', JSON.stringify(historicoExibicoes));
+    localStorage.setItem(CHAVE_HISTORICO_INTERSTITIAL_AD, JSON.stringify(historicoExibicoes));
 
     // 7. SE FOR O ITEM DE DESCANSO, APENAS ENCERRA SEM EXIBIR NADA
     if (selecionado.eDescanso) return;
