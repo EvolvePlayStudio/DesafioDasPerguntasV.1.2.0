@@ -5,8 +5,8 @@ const CHAVE_HISTORICO_INTERSTITIAL_AD = 'interstitial_historico_V2'
 
 
 async function carregarInterstitialDinamico() {
+  console.log(`Histórico: ${localStorage.getItem(CHAVE_HISTORICO_INTERSTITIAL_AD)}`)
   try {
-    console.log(`Histórico: ${localStorage.getItem(CHAVE_HISTORICO_INTERSTITIAL_AD)}`)
     // 1. Faz a requisição filtrando pelo tema do interstitial
     const response = await fetch('/api/obter_anuncios?tema=Interstitial Ad');
     const dados = await response.json();
