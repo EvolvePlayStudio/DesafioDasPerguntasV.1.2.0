@@ -161,21 +161,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 1. Obtém o horário atual de Brasília/São Paulo
     const agoraSP = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
 
-    function configurarBanner(container, produto) {
-      const linkElement = container.querySelector(".link-anuncio-geral");
-      const imgProd = container.querySelector(".produto-container img");
-      const imgLogo = container.querySelector(".logo-container img");
-      
-      // Carrega o logotipo do provedor
-      if (produto.provedor === 'Amazon') {
-        imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoAmazon";
-      }
-      else if (produto.provedor === 'Mercado Livre'){
-        imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoMercadoLivre03";
-      }
-      else {
-        imgLogo.src = "";
-      }
+    function configurarBannerAntigo(container, produto) {
       
       if (linkElement) {
         linkElement.setAttribute('data-id-anuncio', produto.id);
@@ -203,6 +189,60 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (imgProd) imgProd.src = produto.imagem;
     }
+
+
+    function configurarBanner(container, produto) {
+      const linkElement = container.querySelector(".link-anuncio-geral");
+      const imgProd = container.querySelector(".produto-container img");
+      const imgLogo = container.querySelector(".logo-container img");
+      
+      // Carrega o logotipo do provedor
+      if (produto.provedor === 'Amazon') {
+        imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoAmazon";
+      }
+      else if (produto.provedor === 'Mercado Livre'){
+        imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoMercadoLivre03";
+      }
+      else {
+        imgLogo.src = "";
+      }
+      
+      if (linkElement) {
+        linkElement.setAttribute('data-id-anuncio', produto.id);
+        linkElement.setAttribute('data-provedor-anuncio', produto.provedor);
+        linkElement.setAttribute('data-tipo-midia-anuncio', produto.tipo_midia);
+        linkElement.href = produto.link;
+
+        // 1. REGISTRO DE IMPRESSÃO (Garante que só registra 1 impressão por ID de anúncio renderizado nesta sessão)
+        const chaveImpressaoSessao = `imp_${produto.id}`;
+        if (typeof registrarInteracaoAnuncio === 'function' && !sessionStorage.getItem(chaveImpressaoSessao)) {
+          sessionStorage.setItem(chaveImpressaoSessao, 'true');
+          registrarInteracaoAnuncio(linkElement, 'Impressão', produto.tema);
+        }
+
+        // 2. REGISTRO DE CLIQUE LIMPO (Remove qualquer listener anterior do elemento clonado/atual)
+        if (linkElement._clickhandler) {
+          linkElement.removeEventListener('click', linkElement._clickhandler);
+        }
+
+        linkElement._clickhandler = function(e) {
+          // Evita múltiplos disparos num curto espaço de tempo (debounce de 1 segundo)
+          const agora = Date.now();
+          if (linkElement._ultimoClique && (agora - linkElement._ultimoClique < 1000)) {
+            return;
+          }
+          linkElement._ultimoClique = agora;
+
+          registrarInteracaoAnuncio(linkElement, 'Clique', produto.tema);
+        };
+
+        // Adiciona o listener apenas no 'click' geral (o navegador já lida com botão do meio abrindo o href nativamente)
+        linkElement.addEventListener('click', linkElement._clickhandler);
+      }
+
+      if (imgProd) imgProd.src = produto.imagem;
+    }
+
 
     // --- FUNÇÃO AUXILIAR: SELEÇÃO POR PRIORIDADE COM ROTAÇÃO NO SESSIONSTORAGE ---
     function selecionarMelhorAnuncio(lista) {

@@ -336,9 +336,8 @@
       position: relative;
       background: #ffffff;
       border-radius: 16px;
-      width: 95%;
+      width: 100%;
       max-width: 600px;
-      padding: 1rem;
       box-shadow: 0 10px 40px rgba(0,0,0,0.5);
       display: flex;
       flex-direction: column;
@@ -395,21 +394,18 @@
       width: 100%;
       height: auto;
       aspect-ratio: 1.5 / 1; /* Mantém a proporção padrão que definimos */
-      object-fit: contain;
-      border-radius: 8px;
+      object-fit: cover;
       background: #f8f9fa;
       cursor: pointer;
     }
     .interstitial-cta {
-      margin-top: 1rem;
-      width: 90%;
-      max-width: 300px;
+      width: 100%;
+      max-width: 1300px;
       background: #FFD814;
       border: 1px solid #FCD200;
       color: #111;
       font-weight: bold;
       padding: 0.8rem;
-      border-radius: 25px;
       text-align: center;
       font-size: 1rem;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -566,12 +562,12 @@
   <!-- --- MODAL INTERSTITIAL -->
   <div id="modal-interstitial" class="modal-interstitial">
     <div class="interstitial-card">
-      <a href="#" target="_blank" class="interstitial-body">
-        <!-- Botão X flutuante no canto superior direito da imagem -->
+      <!-- Botão X flutuante no canto superior direito da imagem -->
         <button id="btn-fechar-interstitial" class="btn-fechar-interstitial" onclick="event.preventDefault(); document.getElementById('modal-interstitial').style.display='none';">
           ✕
         </button>
 
+      <a href="#" target="_blank" class="interstitial-body">
         <!-- Logotipo oficial sobreposto no canto inferior esquerdo -->
         <img src="/static/img/logotipoAmazon.png" class="interstitial-logo-overlay">
 
