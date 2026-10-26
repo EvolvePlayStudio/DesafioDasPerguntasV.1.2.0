@@ -796,10 +796,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       const agora = new Date().getTime();
       const UM_DIA_EM_MS = 24 * 60 * 60 * 1000; // 24 horas
 
-      console.log(`Não tem último aviso de email? ${!ultimoAvisoEmail}`)
       // Deve exibir se o e-mail NÃO está confirmado e (nunca apareceu OU já passou 1 dia)
       const deveExibirAvisoEmail = !emailConfirmado && (!ultimoAvisoEmail || (agora - parseInt(ultimoAvisoEmail) > UM_DIA_EM_MS));
-      console.log(`Deve exibir? ${deveExibirAvisoEmail}`)
       if (deveExibirAvisoEmail) {
         localStorage.setItem(CHAVE_TEMPO_AVISO_EMAIL, agora.toString());
         exibirModalConfirmacaoEmail(avaliarProximoPasso);
