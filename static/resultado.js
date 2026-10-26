@@ -3,6 +3,7 @@ import { coresDificuldade, registrarInteracaoAnuncio, simbolosRankings, simbolos
 
 async function carregarInterstitialDinamico() {
   try {
+    console.log(`Histórico: ${localStorage.getItem('interstitial_historico')}`)
     // 1. Faz a requisição filtrando pelo tema do interstitial
     const response = await fetch('/api/obter_anuncios?tema=Interstitial Ad');
     const dados = await response.json();
@@ -18,62 +19,70 @@ async function carregarInterstitialDinamico() {
     // 2. Recupera o histórico de exibições do localStorage
     let historicoExibicoes = JSON.parse(localStorage.getItem('interstitial_historico') || '{}');
 
-    // Associa a contagem de vezes que cada anúncio foi exibido e valida se ainda existem anúncios não exibidos no ciclo atual
-    let anunciosNaoExibidos = [];
-    
-    todosAnuncios.forEach(anuncio => {
-      const vezes = historicoExibicoes[anuncio.id] || 0;
-      anuncio.vezesExibido = vezes;
-      
-      // Se o anúncio ainda não foi exibido neste ciclo (vezes === 0)
-      if (vezes === 0) anunciosNaoExibidos.push(anuncio);
-    });
+    // 3. Adiciona o "anúncio virtual de descanso"
+    const idDescanso = 'descanso_ciclo_virtual';
+    const anuncioDescanso = {
+      id: idDescanso,
+      prioridade: -999,
+      tema: 'Interstitial Ad',
+      eDescanso: true
+    };
 
-    // 3. REGRA DE CICLO FECHADO: Se todos já foram exibidos pelo menos 1 vez...
-    if (anunciosNaoExibidos.length === 0) {
-      localStorage.removeItem('interstitial_historico'); // Zera a contagem
-      return; 
+    let listaCompleta = [...todosAnuncios, anuncioDescanso];
+
+    // VERIFICAÇÃO INFALÍVEL DE CICLO COMPLETO:
+    // Se o número de chaves no histórico for igual ou maior que o total de itens possíveis, zera o ciclo!
+    const totalItensPossiveis = listaCompleta.length;
+    const totalItensExibidos = Object.keys(historicoExibicoes).length;
+
+    if (totalItensExibidos >= totalItensPossiveis) {
+      localStorage.removeItem('interstitial_historico');
+      historicoExibicoes = {}; // Zera o objeto na memória também para esta execução
     }
 
-    // 4. Ordena por prioridade decrescente e pega o de maior prioridade entre os que ainda não foram exibidos no ciclo
-    todosAnuncios.sort((a, b) => {
-      if (b.prioridade !== a.prioridade) return b.prioridade - a.prioridade;
-      return a.vezesExibido - b.vezesExibido;
+    // 4. Filtra apenas os anúncios que AINDA NÃO foram exibidos no ciclo atual
+    let anunciosNaoExibidos = listaCompleta.filter(anuncio => {
+      const vezes = historicoExibicoes[anuncio.id] || 0;
+      return vezes === 0;
     });
 
-    // Filtra para pegar apenas os que têm a maior prioridade atual que ainda não rodaram
-    const maiorPrioridade = todosAnuncios[0].prioridade;
-    const candidatos = todosAnuncios.filter(a => a.prioridade === maiorPrioridade && a.vezesExibido === 0);
+    // 5. Ordena os não exibidos estritamente por prioridade decrescente
+    anunciosNaoExibidos.sort((a, b) => {
+      const prioA = Number(a.prioridade || 0);
+      const prioB = Number(b.prioridade || 0);
+      if (prioB !== prioA) return prioB - prioA;
+      return 0.5 - Math.random();
+    });
 
-    // Seleciona o primeiro candidato elegível
-    const anuncio = candidatos.length > 0 ? candidatos[0] : todosAnuncios[0];
+    // Pega o primeiro da lista ordenada
+    const selecionado = anunciosNaoExibidos[0];
 
-    // 5. Atualiza o histórico no localStorage marcando este anúncio como exibido
-    historicoExibicoes[anuncio.id] = 1;
+    // 6. Atualiza o histórico no localStorage marcando este item como exibido
+    historicoExibicoes[selecionado.id] = 1;
     localStorage.setItem('interstitial_historico', JSON.stringify(historicoExibicoes));
 
-    // 6. Seleciona os elementos do modal no DOM
+    // 7. SE FOR O ITEM DE DESCANSO, APENAS ENCERRA SEM EXIBIR NADA
+    if (selecionado.eDescanso) return;
+
+    // Caso contrário, configura e exibe o modal do anúncio normalmente...
     const modal = document.getElementById('modal-interstitial');
     const linkElement = modal.querySelector('.interstitial-body');
     const imgElement = modal.querySelector('.interstitial-img');
     const imgLogo = modal.querySelector('.interstitial-logo-overlay');
 
-    // Injeta os dados vindos do backend (Cloudinary + Link de Afiliado)
-    linkElement.href = anuncio.link;
-    imgElement.src = anuncio.imagem; // URL vinda direto do Cloudinary
-    imgElement.alt = anuncio.nome;
+    linkElement.href = selecionado.link;
+    imgElement.src = selecionado.imagem;
+    imgElement.alt = selecionado.nome;
 
-    // Adiciona os atributos de rastreamento necessários para a função do utils.js
-    linkElement.setAttribute('data-id-anuncio', anuncio.id);
-    linkElement.setAttribute('data-provedor-anuncio', anuncio.provedor);
-    linkElement.setAttribute('data-tipo-midia-anuncio', anuncio.tipo_midia);
+    linkElement.setAttribute('data-id-anuncio', selecionado.id);
+    linkElement.setAttribute('data-provedor-anuncio', selecionado.provedor);
+    linkElement.setAttribute('data-tipo-midia-anuncio', selecionado.tipo_midia);
 
-    // Carrega o logotipo do provedor
-    if (anuncio.provedor === 'Amazon') {
+    if (selecionado.provedor === 'Amazon') {
       imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoAmazon";
       imgLogo.style.display = 'block';
     }
-    else if (anuncio.provedor === 'Mercado Livre'){
+    else if (selecionado.provedor === 'Mercado Livre'){
       imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoMercadoLivre03";
       imgLogo.style.display = 'block';
     }
@@ -82,27 +91,23 @@ async function carregarInterstitialDinamico() {
       imgLogo.style.display = 'none';
     }
 
-    // Segurança contra imagem quebrada (remove o símbolo de papel se houver falha)
     imgLogo.onerror = function() {this.style.display = 'none'};
 
-    // Exibe o modal
     modal.style.display = 'flex';
 
-    // Registra a impressão no banco utilizando a mesma função do utils.js
     if (typeof registrarInteracaoAnuncio === 'function') {
-      registrarInteracaoAnuncio(linkElement, 'Impressão', anuncio.tema);
+      registrarInteracaoAnuncio(linkElement, 'Impressão', selecionado.tema);
     }
 
-    // Função para registrar clique (primeiro remove a do banner anterior)
     if (linkElement._clickhandler) {
       linkElement.removeEventListener('click', linkElement._clickhandler);
     }
     linkElement._clickhandler = function() {
-      registrarInteracaoAnuncio(linkElement, 'Clique', anuncio.tema);
+      registrarInteracaoAnuncio(linkElement, 'Clique', selecionado.tema);
     };
     linkElement.addEventListener('click', linkElement._clickhandler);
     linkElement.addEventListener('auxclick', function(e) {
-      if (e.button === 1) linkElement._clickhandler(); // 1 faz referência ao botão do meio do mouse
+      if (e.button === 1) linkElement._clickhandler();
     });
 
   } catch (error) {

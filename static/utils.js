@@ -370,7 +370,7 @@ export async function registrarInteracaoAnuncio(linkElement, tipoInteracao, tema
   atualizarVariaveis();
   // Se for admin em modo visitante, não registra nada a interação
   if (MODO_VISITANTE && idsVisitantesReservados.includes(idVisitante)
-  || !MODO_VISITANTE && idsReservados.includes(idUsuario) && tipoInteracao === 'Impressão') return;
+  || !MODO_VISITANTE && idsReservados.includes(Number(idUsuario)) && tipoInteracao === 'Impressão') return;
 
   const idAnuncioSorteado = linkElement.getAttribute('data-id-anuncio');
   const provedorAnuncioSorteado = linkElement.getAttribute('data-provedor-anuncio');
