@@ -5,7 +5,6 @@ const CHAVE_HISTORICO_INTERSTITIAL_AD = 'interstitial_historico_V2'
 
 
 async function carregarInterstitialDinamico() {
-  console.log(`Histórico: ${localStorage.getItem(CHAVE_HISTORICO_INTERSTITIAL_AD)}`)
   try {
     // 1. Faz a requisição filtrando pelo tema do interstitial
     const response = await fetch('/api/obter_anuncios?tema=Interstitial Ad');
@@ -109,9 +108,6 @@ async function carregarInterstitialDinamico() {
       registrarInteracaoAnuncio(linkElement, 'Clique', selecionado.tema);
     };
     linkElement.addEventListener('click', linkElement._clickhandler);
-    linkElement.addEventListener('auxclick', function(e) {
-      if (e.button === 1) linkElement._clickhandler();
-    });
 
   } catch (error) {
     console.error("Erro ao carregar o anúncio interstitial:", error);
@@ -339,7 +335,6 @@ document.addEventListener("DOMContentLoaded", () => {
         comentario: comentario,
         feedback_id: feedbackIdAtual
     };
-    console.log('tema: ', document.getElementById("tema-perguntas").textContent)
 
     try {
         const response = await fetch("/api/feedbacks/comentarios", {

@@ -252,7 +252,7 @@ export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIG
     const apenasDificeisOuExtremas = qtdFacil === 0 && qtdMedio === 0;
     const apenas_1_nivel = apenasFaceis || apenasMedias || apenasDificeis || apenasExtremas;
     // Não permite prosseguir se houver apenas 1 nível de dificuldade
-    if (ranking !== 'Iniciante' && apenas_1_nivel) return true;
+    if (apenas_1_nivel) return true;
     
     // 🧑‍🎓 APRENDIZ: encerra se SÓ houverem difíceis e extremas
     if (ranking === "Aprendiz" && apenasDificeisOuExtremas) return true;
