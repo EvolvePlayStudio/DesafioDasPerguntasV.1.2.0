@@ -161,36 +161,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 1. Obtém o horário atual de Brasília/São Paulo
     const agoraSP = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
 
-    function configurarBannerAntigo(container, produto) {
-      
-      if (linkElement) {
-        linkElement.setAttribute('data-id-anuncio', produto.id);
-        linkElement.setAttribute('data-provedor-anuncio', produto.provedor);
-        linkElement.setAttribute('data-tipo-midia-anuncio', produto.tipo_midia);
-        linkElement.href = produto.link;
-
-        // Chama função para registrar impressão
-        if (typeof registrarInteracaoAnuncio === 'function') {
-          registrarInteracaoAnuncio(linkElement, 'Impressão', produto.tema);
-        }
-
-        // Função para registrar clique (primeiro remove a do banner anterior)
-        if (linkElement._clickhandler) {
-          linkElement.removeEventListener('click', linkElement._clickhandler);
-        }
-        linkElement._clickhandler = function() {
-          registrarInteracaoAnuncio(linkElement, 'Clique', produto.tema);
-        };
-        linkElement.addEventListener('click', linkElement._clickhandler);
-        linkElement.addEventListener('auxclick', function(e) {
-          if (e.button === 1) linkElement._clickhandler(); // 1 faz referência ao botão do meio do mouse
-        });
-      }
-
-      if (imgProd) imgProd.src = produto.imagem;
-    }
-
-
     function configurarBanner(container, produto) {
       const linkElement = container.querySelector(".link-anuncio-geral");
       const imgProd = container.querySelector(".produto-container img");

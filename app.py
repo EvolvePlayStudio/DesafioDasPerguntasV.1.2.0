@@ -1525,6 +1525,9 @@ def listar_perguntas():
         for row in perguntas:
             respondida = False if modo_visitante else bool(row['respondida'])
             dificuldade = row['dificuldade'] or 'Médio'
+            print(f"ID da pergunta: {row.get('id_pergunta')}")
+            print(f"Total de acertos: {row.get('total_acertos')}")
+            print(f"Total de respostas: {row.get('total_respostas')}")
             item = {
                 'id_pergunta': row['id_pergunta'],
                 'subtemas': row['subtemas'],
@@ -1538,7 +1541,9 @@ def listar_perguntas():
                 'versao_pergunta': row['versao'],
                 'estrelas': row['estrelas'],
                 'comentario': row['comentario'],
-                'aprovacao_nota': row['aprovacao_nota']
+                'aprovacao_nota': row['aprovacao_nota'],
+                'total_acertos': row.get('total_acertos', 0),
+                'total_respostas': row.get('total_respostas', 0)
             }
             if modo == 'revisao':
                 item.update({'resposta_correta': row['resposta_correta']})
@@ -2482,6 +2487,21 @@ def registrar_resposta_usuario():
                 dados["dificuldade"].lower().capitalize(),
                 dados["auto_chute"]
             ))
+
+            # 🎯 2. Incrementa os contadores da comunidade na tabela perguntas em tempo real
+            if id_usuario not in privileged_ids:
+                cur.execute("""
+                    UPDATE perguntas_objetivas
+                    SET 
+                        total_respostas = total_respostas + 1,
+                        total_acertos = total_acertos + CASE WHEN %s = TRUE THEN 1 ELSE 0 END
+                    WHERE id_pergunta = %s AND versao = %s
+                """, (
+                    dados["acertou"],
+                    dados["id_pergunta"],
+                    dados["versao_pergunta"]
+                ))
+
             # Atualiza a pontuação do usuário
             cur.execute("""
                 INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao)

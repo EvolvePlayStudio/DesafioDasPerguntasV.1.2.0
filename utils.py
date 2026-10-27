@@ -45,7 +45,9 @@ QUESTION_CONFIG = {
         'p.prioridade_usuarios',
         'COALESCE(f.estrelas, NULL) AS estrelas',
         'COALESCE(f.comentario, NULL) AS comentario',
-        'COALESCE(fn.positivo, NULL) AS aprovacao_nota'
+        'COALESCE(fn.positivo, NULL) AS aprovacao_nota',
+        'p.total_acertos',
+        'p.total_respostas'
     ],
     'select_cols_visitante': [
         'p.id_pergunta',
@@ -62,7 +64,9 @@ QUESTION_CONFIG = {
         'p.disponivel_visitantes',
         'COALESCE(f.estrelas, NULL) AS estrelas',
         'COALESCE(f.comentario, NULL) AS comentario',
-        'COALESCE(fn.positivo, NULL) AS aprovacao_nota'
+        'COALESCE(fn.positivo, NULL) AS aprovacao_nota',
+        'p.total_acertos',
+        'p.total_respostas'
     ],
 }
 EMAILS_PROIBIDOS = ['admin@gmail.com', 'teste@gmail.com']

@@ -517,7 +517,7 @@ async function enviarResposta() {
   }
 
   function mostrarResultadoResposta(acertou) {
-    resultado.style.display = "block";
+    resultado.style.display = "flex";
 
     // Exibe nota, curiosidade ou explicação
     if (pergunta_selecionada.nota?.trim()) {
@@ -529,16 +529,48 @@ async function enviarResposta() {
       document.getElementById("nota-box").style.display = "none";
     }
     
-    // Exibe a mensagem que indica se a resposta foi correta ou não
-    if (acertou) {
-      resultado.style.color = "lime";
-      resultado.innerHTML = '✅ Resposta correta!';
-    }
-    else {
-      resultado.style.color = "red";
-      resultado.innerHTML = '❌ Resposta incorreta';
+    // 1. Monta o texto de status (Correto / Incorreto) com a cor correspondente
+    let textoStatus = acertou 
+      ? '<span style="color: lime;">✅ Resposta correta!</span>' 
+      : '<span style="color: red;">❌ Resposta incorreta</span>';
+
+    let elTextoEstatistica = '';
+
+    try {
+        let totalAcertos = pergunta_selecionada.total_acertos || 0;
+        let totalRespostas = pergunta_selecionada.total_respostas || 0;
+        if (!MODO_VISITANTE && !idsReservados.includes(idUsuario)) { // Se estiver logado e não for admin
+          if (acertou) totalAcertos ++;
+          totalRespostas ++;
+        }
+
+        // Se tiver menos de 10 respostas, mostra indicador de "em validação"
+        if (totalRespostas < 10) {
+          elTextoEstatistica = `
+            <span style="color: black; font-weight: 400; cursor: help;" 
+              title="Estatísticas de acertos: dados insuficientes"> 🎯 --/--
+            </span>
+          `;
+        } else {
+            let porcentagem = Math.round((totalAcertos / totalRespostas) * 100);
+            let corPorcentagem = "#FFD700";
+            if (porcentagem < 40) {corPorcentagem = "red";}
+            else if (porcentagem > 70) {corPorcentagem = "lime";}
+
+            let textoEstatistica = `🎯 ${totalAcertos}/${totalRespostas} (<span style="color: ${corPorcentagem}; font-weight: 600;">${porcentagem}%</span>)`;
+            elTextoEstatistica = `
+              <span style="color: black; font-weight: 600; cursor: help;" 
+                title="Estatísticas de acertos de usuários cadastrados">${textoEstatistica}
+              </span>
+            `;
+        }
+    } catch (erro) {
+        console.error("Erro ao renderizar estatísticas de acertos da pergunta:", erro);
+        // Em caso de erro, elTextoEstatistica continua vazia e o app não quebra
     }
 
+    // Injeta no resultado
+    resultado.innerHTML = textoStatus + elTextoEstatistica;
     aguardando_proxima = true;
     botoes_enviar_div.style.display = "none";
 
