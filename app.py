@@ -2328,7 +2328,22 @@ def registrar():
                         )
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON CONFLICT (id_usuario, id_pergunta) DO NOTHING
+                        RETURNING id_resposta
                     """, (id_usuario, id_pergunta, tema, resposta_enviada, versao_pergunta, acertou, tempo_gasto, pontos_ganhos, pontos_usuario, agora_sp, True, auto_chute, dificuldade))
+
+                    inserido = cur.fetchone()
+
+                    # TRECHO DE CÓDIGO ADICIONADO
+                    #===================================
+                    if inserido and not id_visitante in ids_visitante_admin:
+                        cur.execute("""
+                            UPDATE perguntas_objetivas
+                            SET 
+                                total_respostas = total_respostas + 1,
+                                total_acertos = total_acertos + CASE WHEN %s = TRUE THEN 1 ELSE 0 END
+                            WHERE id_pergunta = %s AND versao = %s
+                        """, (acertou, id_pergunta, versao_pergunta))
+                        #===================================
 
                 app.logger.info(f"{len(respostas)} respostas migradas do visitante {id_visitante}")
 
