@@ -1387,8 +1387,7 @@ def esqueci_senha():
                 app.logger.error("Erro ao enviar email")
                 return jsonify(success=False, message=mensagem_padrao)
     except Exception:
-        if conn:
-            conn.rollback()
+        if conn: conn.rollback()
         app.logger.exception(f"Erro na recuperação de senha")
     finally:
         if cur: cur.close()

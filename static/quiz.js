@@ -13,6 +13,8 @@ const id_visitante = localStorage.getItem("id_visitante");
 const idUsuario = Number(localStorage.getItem("id_usuario") ?? "0");
 const isAdmin = idsReservados.includes(idUsuario) || idsVisitantesReservados.includes(id_visitante);
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === 'true';
+// Carrega o objeto do localStorage transformando de JSON para Objeto JS (ou cria um vazio se não existir)
+let respondidasVisitantesPorDificuldade = JSON.parse(localStorage.getItem('respondidas_visitante_por_dificuldade')) || {};
 
 try { // Registra primeiro quiz iniciado caso seja o primeiro login na conta do usuário
   if (!MODO_VISITANTE) {
@@ -537,36 +539,36 @@ async function enviarResposta() {
     let elTextoEstatistica = '';
 
     try {
-        let totalAcertos = pergunta_selecionada.total_acertos || 0;
-        let totalRespostas = pergunta_selecionada.total_respostas || 0;
-        if (!MODO_VISITANTE && !idsReservados.includes(idUsuario)) { // Se estiver logado e não for admin
-          if (acertou) totalAcertos ++;
-          totalRespostas ++;
-        }
+      let totalAcertos = pergunta_selecionada.total_acertos || 0;
+      let totalRespostas = pergunta_selecionada.total_respostas || 0;
+      if (!MODO_VISITANTE && !idsReservados.includes(idUsuario)) { // Se estiver logado e não for admin
+        if (acertou) totalAcertos ++;
+        totalRespostas ++;
+      }
 
-        // Se tiver menos de 10 respostas, mostra indicador de "em validação"
-        if (totalRespostas < 10) {
-          elTextoEstatistica = `
-            <span style="color: black; font-weight: 400; cursor: help;" 
-              title="Estatísticas de acertos: dados insuficientes"> 🎯 --/--
-            </span>
-          `;
-        } else {
-            let porcentagem = Math.round((totalAcertos / totalRespostas) * 100);
-            let corPorcentagem = "#FFD700";
-            if (porcentagem < 40) {corPorcentagem = "red";}
-            else if (porcentagem > 70) {corPorcentagem = "lime";}
+      // Se tiver menos de 10 respostas, mostra indicador de "em validação"
+      if (totalRespostas < 10) {
+        elTextoEstatistica = `
+          <span style="color: black; font-weight: 400; cursor: help;" 
+            title="Estatísticas de acertos: dados insuficientes"> 🎯 --/--
+          </span>
+        `;
+      } else {
+        let porcentagem = Math.round((totalAcertos / totalRespostas) * 100);
+        let corPorcentagem = "#FFD700";
+        if (porcentagem < 40) {corPorcentagem = "red";}
+        else if (porcentagem > 70) {corPorcentagem = "lime";}
 
-            let textoEstatistica = `🎯 ${totalAcertos}/${totalRespostas} (<span style="color: ${corPorcentagem}; font-weight: 600;">${porcentagem}%</span>)`;
-            elTextoEstatistica = `
-              <span style="color: black; font-weight: 600; cursor: help;" 
-                title="Estatísticas de acertos de usuários cadastrados">${textoEstatistica}
-              </span>
-            `;
-        }
+        let textoEstatistica = `🎯 ${totalAcertos}/${totalRespostas} (<span style="color: ${corPorcentagem}; font-weight: 600;">${porcentagem}%</span>)`;
+        elTextoEstatistica = `
+          <span style="color: black; font-weight: 600; cursor: help;" 
+            title="Estatísticas de acertos de usuários cadastrados">${textoEstatistica}
+          </span>
+        `;
+      }
     } catch (erro) {
-        console.error("Erro ao renderizar estatísticas de acertos da pergunta:", erro);
-        // Em caso de erro, elTextoEstatistica continua vazia e o app não quebra
+      console.error("Erro ao renderizar estatísticas de acertos da pergunta:", erro);
+      // Em caso de erro, elTextoEstatistica continua vazia e o app não quebra
     }
 
     // Injeta no resultado
@@ -824,8 +826,17 @@ async function enviarResposta() {
     );
   }
   
-  // Registra o envio da resposta no SQL caso esteja no modo visitante
+  // Salva quantas perguntas o visitante respondeu na dificuldade e tema e registra resposta na base
   if (MODO_VISITANTE && modo_jogo === 'desafio') {
+    let chaveComposta = `${tema_atual}_${pergunta_selecionada.dificuldade}`;
+    // Garante que a chave existe antes de incrementar
+    if (respondidasVisitantesPorDificuldade[chaveComposta] === undefined) {
+      respondidasVisitantesPorDificuldade[chaveComposta] = 0;
+    }
+    respondidasVisitantesPorDificuldade[chaveComposta]++;
+    // Salva o objeto atualizado de volta no localStorage convertendo para string
+    localStorage.setItem('respondidas_visitante_por_dificuldade', JSON.stringify(respondidasVisitantesPorDificuldade));
+    // Registra o envio da resposta no SQL
     registrarRespostaVisitante(resposta_usuario, acertou, pontos_ganhos, tempo_gasto)
   }
   
@@ -854,7 +865,6 @@ async function enviarResposta() {
 }
 
 async function finalizarQuiz() {
-  // await registrarFeedback();
   registrarFeedback()
   if (modo_jogo === 'desafio') {
     localStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador ?? {}))

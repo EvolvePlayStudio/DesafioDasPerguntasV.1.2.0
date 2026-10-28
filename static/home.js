@@ -100,6 +100,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       localStorage.setItem("visitante_respondidas", JSON.stringify([]));
     }
 
+    // Verifica e inicializa o controle de perguntas respondidas por tema e dificuldade no localStorage
+    if (!localStorage.getItem("respondidas_visitante_por_dificuldade")) {
+      const dicRespondidasPorDificuldade = {};
+      const dificuldades = ['Fácil', 'Médio', 'Difícil', 'Extremo'];
+
+      // Para cada tema, cria uma chave para cada nível de dificuldade
+      temas_disponiveis.forEach(tema => {
+        dificuldades.forEach(nivel => {
+          let chaveComposta = `${tema}_${nivel}`;
+          dicRespondidasPorDificuldade[chaveComposta] = 0; // Começa com zero respostas respondidas
+        });
+      });
+
+      // Salva no localStorage convertido em string JSON
+      localStorage.setItem("respondidas_visitante_por_dificuldade", JSON.stringify(dicRespondidasPorDificuldade));
+    }
+
     fetch("/api/registrar_visitante", { // Registra o id de visitante em session no backend
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -454,17 +471,41 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       }
       else { // modo visitante
-        const response = await fetch(`/api/perguntas?tema=${tema_atual}&modo=desafio`)
+        const url = `/api/perguntas?tema=${encodeURIComponent(tema_atual)}&modo=desafio`;
+        const response = await fetch(url);
         if (response.ok) {
+          // 1. Pega as perguntas no backend
           const data = await response.json();
-          
-          // Elimina perguntas já respondidas pelo visitante
+          // 2. Elimina perguntas já respondidas individualmente pelo ID
           const idsRespondidas = JSON.parse(localStorage.getItem("visitante_respondidas") ?? "[]");
+          // 3. Recupera o progresso de quantidade respondida por Tema e Dificuldade
+          const progressoPorDificuldade = JSON.parse(localStorage.getItem("respondidas_visitante_por_dificuldade") ?? "{}");
+          // 4. Cotas máximas permitidas para visitantes
+          const cotasVisitante = {'Fácil': 2, 'Médio': 3, 'Difícil': 3, 'Extremo': 2};
+
           Object.keys(data.perguntas).forEach(dificuldade => {
             if (!Array.isArray(data.perguntas[dificuldade])) return;
-            data.perguntas[dificuldade] = data.perguntas[dificuldade].filter(
+
+            // Primeiro tira as que ele já respondeu nominalmente
+            let perguntasDisponiveis = data.perguntas[dificuldade].filter(
               p => !idsRespondidas.includes(p.id_pergunta)
             );
+
+            // Calcula quantas ele já respondeu neste tema/dificuldade específica
+            let chaveProgresso = `${tema_atual}_${dificuldade}`;
+            let jaRespondidasNesteNivel = progressoPorDificuldade[chaveProgresso] || 0;
+            let limiteMaximo = cotasVisitante[dificuldade] || 0;
+
+            // Descobre quantas vagas ainda restam para completar a cota
+            let vagasRestantes = limiteMaximo - jaRespondidasNesteNivel;
+
+            // Se a vaga jáestiver esgotada, zera a lista dessa dificuldade
+            if (vagasRestantes <= 0) {
+              data.perguntas[dificuldade] = [];
+            } else {
+              // Caso contrário, corta o array para pegar apenas a quantidade exata que falta
+              data.perguntas[dificuldade] = perguntasDisponiveis.slice(0, vagasRestantes);
+            }
           });
 
           // Analisa se há perguntas disponíveis para prosseguir com o quiz
@@ -502,6 +543,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
           // Chama a tela de quiz
           window.location.href = `/quiz/${encodeURIComponent(slugify(tema_atual))}`;
+        }
+        else {
+          exibirMensagem(mensagem, `Não foi possível iniciar o quiz no tema ${tema_atual}`, corMensagemAlerta, true, false, 'flex');
+          desbloquearBotoes();
         }
       }
     }
