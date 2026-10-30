@@ -1435,7 +1435,7 @@ def get_gabarito(id_pergunta):
 @app.route('/api/perguntas', methods=['GET'])
 def listar_perguntas():
     """
-    Retorna perguntas agrupadas por dificuldade conforme tipo (discursiva/objetiva) e modo (desafio/revisao).
+    Retorna perguntas agrupadas por dificuldade conforme o modo (desafio/revisao).
     Retorna também as pontuações atuais do usuário em cada tema.
     """
     # Parâmetros de query
@@ -1445,8 +1445,11 @@ def listar_perguntas():
     id_visitante = session.get('id_visitante')
     modo_visitante = session.get("visitante")
 
+    # Temas com a nova estratégia de grupos ativada
+    TEMAS_COM_GRUPO = {'Artes'}
+
     # Configurações locais
-    limit = 150 if modo == 'desafio' else 1000
+    limit = 50 if modo == 'desafio' else 1000
 
     # Validações
     if not tema or modo not in ('desafio', 'revisao'):
@@ -1459,16 +1462,15 @@ def listar_perguntas():
         app.logger.error("Visitante não autenticado")
         return jsonify({'erro': 'Visitante não autenticado'}), 401
     
-    # Conexão com servidor
+    # Conexão com banco
     conn = cur = None
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
     except Exception:
-        app.logger.exception("1.Erro ao tentar conectar para buscar perguntas para o usuário com id %s", id_usuario)
+        app.logger.exception("1.Erro ao conectar para buscar perguntas. User: %s", id_usuario)
         return jsonify({'erro': 'Erro ao tentar conectar para buscar novas perguntas'}), 500
 
-    # Busca das perguntas
     ids_prioritarios = []
     try:
         select_clause = ",\n".join(QUESTION_CONFIG['select_cols'])
@@ -1476,6 +1478,7 @@ def listar_perguntas():
     
         is_privileged = False if modo_visitante else int(id_usuario) in privileged_ids
         modo_teste = session.get("modo_teste", False)
+        
         if modo_visitante:
             where_filter = "p.status IN ('Ativa', 'Em teste') AND p.disponivel_visitantes = TRUE"
         elif not modo_teste:
@@ -1485,7 +1488,7 @@ def listar_perguntas():
 
         if modo_visitante:
             sql = f"""
-                SELECT {select_cols_visitante}
+                SELECT {select_cols_visitante}, p.grupo
                 FROM perguntas_objetivas p
                 LEFT JOIN feedbacks f
                     ON f.id_pergunta = p.id_pergunta
@@ -1496,37 +1499,88 @@ def listar_perguntas():
                     AND fn.id_visitante = %s
                     AND (p.versao - floor(p.versao)) = (fn.versao - floor(fn.versao))
                 WHERE p.tema = %s AND {where_filter}
+                ORDER BY p.id_pergunta ASC
                 LIMIT %s
             """
             params = (id_visitante, id_visitante, tema, limit)
-        else:
-            sql = f"""
-                SELECT {select_clause}
-                FROM perguntas_objetivas p
-                LEFT JOIN respostas_usuarios r
-                    ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s
-                LEFT JOIN feedbacks f
-                    ON f.id_pergunta = p.id_pergunta
-                    AND f.id_usuario = %s
-                    AND f.versao_pergunta = p.versao
-                LEFT JOIN feedbacks_notas fn
-                    ON fn.id_pergunta = p.id_pergunta
-                    AND fn.id_usuario = %s
-                    AND (p.versao - floor(p.versao)) = (fn.versao - floor(fn.versao))
-                WHERE p.tema = %s AND {where_filter}
-                LIMIT %s
-            """
-            # Aqui são passados 8 paramêtros por causa da tabela respostas_usuarios, que não é analisada no modo visitante
-            params = (id_usuario, id_usuario, id_usuario, tema, limit)
+
+        else: # Usuário com conta registrada
+            if modo == 'desafio':
+                if tema in TEMAS_COM_GRUPO:
+                    # ORDENAÇÃO POR GRUPO: Pega as não respondidas priorizando os menores grupos (1, depois 2...) 
+                    # e preenche o lote de 50 misturando em ordem crescente de grupo.
+                    sql = f"""
+                        SELECT {select_clause}, p.grupo, p.prioridade_usuarios
+                        FROM perguntas_objetivas p
+                        LEFT JOIN respostas_usuarios r
+                            ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s
+                        LEFT JOIN feedbacks f
+                            ON f.id_pergunta = p.id_pergunta
+                            AND f.id_usuario = %s
+                            AND f.versao_pergunta = p.versao
+                        LEFT JOIN feedbacks_notas fn
+                            ON fn.id_pergunta = p.id_pergunta
+                            AND fn.id_usuario = %s
+                            AND (p.versao - floor(p.versao)) = (fn.versao - floor(fn.versao))
+                        WHERE p.tema = %s 
+                          AND {where_filter}
+                          AND r.id_pergunta IS NULL
+                        ORDER BY p.grupo ASC NULLS LAST, p.id_pergunta ASC
+                        LIMIT %s
+                    """
+                    params = (id_usuario, id_usuario, id_usuario, tema, limit)
+                else:
+                    # Lógica legada para temas sem grupo
+                    sql = f"""
+                        SELECT {select_clause}, p.grupo, p.prioridade_usuarios
+                        FROM perguntas_objetivas p
+                        LEFT JOIN respostas_usuarios r
+                            ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s
+                        LEFT JOIN feedbacks f
+                            ON f.id_pergunta = p.id_pergunta
+                            AND f.id_usuario = %s
+                            AND f.versao_pergunta = p.versao
+                        LEFT JOIN feedbacks_notas fn
+                            ON fn.id_pergunta = p.id_pergunta
+                            AND fn.id_usuario = %s
+                            AND (p.versao - floor(p.versao)) = (fn.versao - floor(fn.versao))
+                        WHERE p.tema = %s 
+                          AND {where_filter}
+                          AND r.id_pergunta IS NULL
+                        ORDER BY p.id_pergunta ASC
+                        LIMIT %s
+                    """
+                    params = (id_usuario, id_usuario, id_usuario, tema, limit)
+            else:
+                # MODO REVISÃO: Traz todas as perguntas já respondidas pelo usuário
+                sql = f"""
+                    SELECT {select_clause}, p.grupo, p.prioridade_usuarios
+                    FROM perguntas_objetivas p
+                    JOIN respostas_usuarios r
+                        ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s
+                    LEFT JOIN feedbacks f
+                        ON f.id_pergunta = p.id_pergunta
+                        AND f.id_usuario = %s
+                        AND f.versao_pergunta = p.versao
+                    LEFT JOIN feedbacks_notas fn
+                        ON fn.id_pergunta = p.id_pergunta
+                        AND fn.id_usuario = %s
+                        AND (p.versao - floor(p.versao)) = (fn.versao - floor(fn.versao))
+                    WHERE p.tema = %s 
+                      AND {where_filter}
+                      AND r.id_pergunta IS NOT NULL
+                    ORDER BY p.grupo ASC NULLS LAST, p.id_pergunta ASC
+                    LIMIT %s
+                """
+                params = (id_usuario, id_usuario, id_usuario, tema, limit)
+
         cur.execute(sql, params)
         perguntas = cur.fetchall()
         perguntas_por_dificuldade = {'Fácil': [], 'Médio': [], 'Difícil': [], 'Extremo': []}
+        
         for row in perguntas:
-            respondida = False if modo_visitante else bool(row['respondida'])
             dificuldade = row['dificuldade'] or 'Médio'
-            print(f"ID da pergunta: {row.get('id_pergunta')}")
-            print(f"Total de acertos: {row.get('total_acertos')}")
-            print(f"Total de respostas: {row.get('total_respostas')}")
+            
             item = {
                 'id_pergunta': row['id_pergunta'],
                 'subtemas': row['subtemas'],
@@ -1544,19 +1598,18 @@ def listar_perguntas():
                 'total_acertos': row.get('total_acertos', 0),
                 'total_respostas': row.get('total_respostas', 0)
             }
-            if modo == 'revisao':
+            # Só leva para o frontend a resposta correta no modo revisão para evitar trapaça
+            if modo == 'revisao': 
                 item.update({'resposta_correta': row['resposta_correta']})
-            # Filtra por modo
-            if modo_visitante:
-                perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
-            elif modo == 'desafio' and not respondida:
-                if row['prioridade_usuarios'] is True:
-                    ids_prioritarios.append(row['id_pergunta'])
-                perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
-            elif modo == 'revisao' and respondida:
-                perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
+                
+            perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
+            
+            # Identificação de IDs prioritários (Grupo 1 para novos temas ou flag legada)
+            if not modo_visitante and modo == 'desafio':
+                ids_prioritarios.append(row['id_pergunta'])
+                
     except Exception:
-        app.logger.exception("2.Erro ao tentar conectar para buscar perguntas para o usuário com id %s", id_usuario)
+        app.logger.exception("2.Erro ao consultar perguntas. User: %s", id_usuario)
         return jsonify({'erro': 'Erro interno ao consultar perguntas'}), 500
     
     finally:
@@ -1570,6 +1623,7 @@ def listar_perguntas():
         'pontuacoes_usuario': pontuacoes_usuario,
         'ids_prioritarios': ids_prioritarios
     })
+
 
 @app.route("/api/subtemas")
 def listar_subtemas():

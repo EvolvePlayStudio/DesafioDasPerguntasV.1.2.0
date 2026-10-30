@@ -133,12 +133,13 @@ const botoes_finalizar_div = document.getElementById("botoes-acao");
 const alternativaBtns = Array.from(alternativasContainer.querySelectorAll(".alternativa-btn"));
 
 const PROBABILIDADES_POR_RANKING = {
-  Iniciante: { Fácil: 0.40, Médio: 0.40, Difícil: 0.20, Extremo: 0.00 },
+  Iniciante: { Fácil: 0.35, Médio: 0.40, Difícil: 0.25, Extremo: 0.00 },
   Aprendiz:  { Fácil: 0.25, Médio: 0.35, Difícil: 0.35, Extremo: 0.05 },
-  Estudante: { Fácil: 0.10, Médio: 0.30, Difícil: 0.45, Extremo: 0.15 },
-  Sábio:     { Fácil: 0.05, Médio: 0.15, Difícil: 0.55, Extremo: 0.25 },
-  Lenda:     { Fácil: 0.02, Médio: 0.10, Difícil: 0.58, Extremo: 0.30 }
+  Estudante: { Fácil: 0.10, Médio: 0.30, Difícil: 0.50, Extremo: 0.10 },
+  Sábio:     { Fácil: 0.05, Médio: 0.15, Difícil: 0.65, Extremo: 0.15 },
+  Lenda:     { Fácil: 0.02, Médio: 0.10, Difícil: 0.63, Extremo: 0.25 }
 };
+const maxProbabilidadeForcagem = 0.15
 
 // Tempos para as alternativas
 const sleep = ms => new Promise(res => setTimeout(res, ms));
@@ -1053,9 +1054,9 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
 
       let escolhida = ordenadas[0]; // Pega a que tem o maior estoque
 
-      // A probabilidade base deve ser maior do que 10% para pegar forçadamente por estoque
+      // A probabilidade base deve ser maior do que o definido para pegar forçadamente por estoque
       // Caso contrário, pega a segunda de maior estoque (ordenadas[1])
-      if ((probsBase[escolhida] ?? 0) <= 0.10 && ordenadas[1]) {
+      if ((probsBase[escolhida] ?? 0) <= maxProbabilidadeForcagem && ordenadas[1]) {
         escolhida = ordenadas[1];
       }
 
