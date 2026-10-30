@@ -1446,7 +1446,7 @@ def listar_perguntas():
     modo_visitante = session.get("visitante")
 
     # Temas com a nova estratégia de grupos ativada
-    TEMAS_COM_GRUPO = {'Artes'}
+    TEMAS_COM_GRUPO = {'Artes', 'Astronomia'}
 
     # Configurações locais
     limit = 50 if modo == 'desafio' else 1000
