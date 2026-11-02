@@ -1591,7 +1591,10 @@ def listar_perguntas():
         # Extrai as perguntas e prepara dicionário agrupando por dificuldade
         cur.execute(sql, params)
         perguntas = cur.fetchall()
-        perguntas_a_processar = montar_sessao_usuario(perguntas, ranking_usuario) if modo == 'desafio' else perguntas            
+        if modo == 'desafio' and not modo_teste:
+            perguntas_a_processar = montar_sessao_usuario(perguntas, ranking_usuario)
+        else:
+            perguntas_a_processar = perguntas            
         perguntas_por_dificuldade = {'Fácil': [], 'Médio': [], 'Difícil': [], 'Extremo': []}
 
         # Laço unificado: formata e agrupa por dificuldade

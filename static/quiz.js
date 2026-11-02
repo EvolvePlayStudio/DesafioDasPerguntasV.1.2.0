@@ -267,6 +267,7 @@ function atualizarRankingVisual() {
   rankings_jogador[tema_atual] = info_ranking_atual.ranking;
 
   const pontuacao = pontuacoes_jogador[tema_atual] || 0;
+  console.log(`1.Pontuação do jogador: ${pontuacao}`)
   let ranking_anterior;
   let ranking_proximo;
   let progressoFinal = 100;
@@ -1389,6 +1390,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Chama as funções que são necessárias na inicialização
   renderizarPontuacaoAtual(pontuacoes_jogador[tema_atual]);
   definirRankingAnterior(); // útil para quando for animar barra de progresso
+  console.log(`111. POntuação do jogador: ${pontuacoes_jogador[tema_atual]}`)
   atualizarRankingVisual();
   await mostrarPergunta(true);
   configurarEstrelas();
