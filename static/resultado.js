@@ -3,7 +3,6 @@ import { coresDificuldade, registrarInteracaoAnuncio, simbolosRankings, simbolos
 
 const CHAVE_HISTORICO_INTERSTITIAL_AD = 'interstitial_historico_V2'
 
-
 async function carregarInterstitialDinamico() {
   try {
     // 1. Faz a requisição filtrando pelo tema do interstitial

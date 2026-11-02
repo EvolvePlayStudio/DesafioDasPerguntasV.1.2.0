@@ -230,7 +230,7 @@ export function detectarModoTela() {
   if (!touch) return "desktop";
 }
 
-export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIGO=null) {
+export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIGO=null, iniciandoQuiz=true) {
   // ATENÇÃO, APAGAR PARÂMETRO ACIMA QUE NÃO É UTILIZADO DEPOIS QUE REMOVER DE TODAS AS FUNÇÕES EM QUIZ.JS E HOME.JS
   const MODO_TESTE = sessionStorage.getItem('modo_teste') === 'true';
   if (MODO_TESTE || idsReservados.includes(idUsuario)) return false;
@@ -243,6 +243,7 @@ export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIG
   const qtdMedio = perguntas_por_dificuldade["Médio"]?.length ?? 0;
   const qtdDificil = perguntas_por_dificuldade["Difícil"]?.length ?? 0;
   const qtdExtremo = perguntas_por_dificuldade["Extremo"]?.length ?? 0;
+  const qtdTotal = qtdFacil + qtdMedio + qtdDificil + qtdExtremo;
 
   if (!MODO_VISITANTE) {
     const apenasFaceis = qtdMedio === 0 && (qtdDificil === 0 || !infoRanking.pode_receber_dificil) && (qtdExtremo === 0 || !infoRanking.pode_receber_extremo);
@@ -251,17 +252,20 @@ export function deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE_ANTIG
     const apenasExtremas = qtdFacil === 0 && qtdMedio === 0 && (qtdDificil === 0 || !infoRanking.pode_receber_dificil);
     const apenasDificeisOuExtremas = qtdFacil === 0 && qtdMedio === 0;
     const apenas_1_nivel = apenasFaceis || apenasMedias || apenasDificeis || apenasExtremas;
-    // Não permite prosseguir se houver apenas 1 nível de dificuldade
-    if (apenas_1_nivel) return true;
+
+    // Não permite prosseguir se houver apenas 1 nível de dificuldade (permite quando o quiz está no fim ainda)
+    if (apenas_1_nivel && (iniciandoQuiz || qtdTotal > 3)) return true;
     
-    // 🧑‍🎓 APRENDIZ: encerra se SÓ houverem difíceis e extremas
-    if (ranking === "Aprendiz" && apenasDificeisOuExtremas) return true;
+    if (iniciandoQuiz) {
+      // Encerra se só houverem fáceis e extremas
+      if (qtdMedio === 0 && qtdDificil === 0) return true;
 
-    // 🧠 SÁBIO: encerra se Só houverem fáceis e extremas
-    if (ranking === "Sábio" && qtdMedio === 0 && qtdDificil === 0) return true;
+      // 🧑‍🎓 INICIANTE E APRENDIZ: encerra se só houverem difíceis e extremas
+      if (["Aprendiz", "Iniciante"].includes(ranking) && apenasDificeisOuExtremas) return true;
 
-    // 🔥 Lenda: encerra se NÃO houverem difíceis ou extremas
-    if (ranking === "Lenda" && qtdDificil === 0 && qtdExtremo === 0) return true;
+      // 🔥 SÁBIO E LENDA: encerra se só houverem fáceis e médias
+      if (["Sábio", "Lenda"].includes(ranking) && qtdDificil === 0 && qtdExtremo === 0) return true;
+    }
   }
   else {
     if (ranking === 'Iniciante' && qtdFacil === 0 && qtdMedio === 0 && qtdDificil === 0) {

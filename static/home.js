@@ -413,8 +413,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Carrega as perguntas para o quiz
     try {
+      // Reinicia variáveis do session de quizzes anteriores
+      sessionStorage.removeItem("ultima_dificuldade_usada");
+      sessionStorage.removeItem("repeticoes_dificuldade");
+      sessionStorage.removeItem("erros_consecutivos");
+      sessionStorage.removeItem("acertos_consecutivos");
+      sessionStorage.removeItem("marcos_niveis");
+
       if (!MODO_VISITANTE) {
-        const response = await fetchAutenticado(`/api/perguntas?tema=${tema_atual}&modo=desafio`)
+        const rankingUsuario = obterInfoRankingAtual(tema_atual).ranking;
+        const response = await fetchAutenticado(`/api/perguntas?tema=${tema_atual}&modo=desafio&ranking-usuario=${rankingUsuario}`)
         
         // Pode ser bom tratar quase a resposta não seja ok
         if (response.ok) {

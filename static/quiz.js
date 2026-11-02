@@ -81,7 +81,7 @@ const regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao") ?? 
 const rankings_jogador = JSON.parse(localStorage.getItem("rankings_jogador") ?? "{}");
 const modo_jogo        = (localStorage.getItem("modo_jogo") ?? "").toLocaleLowerCase();
 let indicePerguntaGlobal = null;
-let perguntasDisponiveisGlobal = [];
+let perguntasNaDificuldadeEscolhida = [];
 
 // Elementos do HTML
 const lblRankingAnterior = document.getElementById("ranking-anterior");
@@ -132,24 +132,12 @@ const botoes_enviar_div = document.getElementById("botoes-envio");
 const botoes_finalizar_div = document.getElementById("botoes-acao");
 const alternativaBtns = Array.from(alternativasContainer.querySelectorAll(".alternativa-btn"));
 
-const PROBABILIDADES_POR_RANKING = {
-  Iniciante: { Fácil: 0.35, Médio: 0.40, Difícil: 0.25, Extremo: 0.00 },
-  Aprendiz:  { Fácil: 0.25, Médio: 0.35, Difícil: 0.35, Extremo: 0.05 },
-  Estudante: { Fácil: 0.10, Médio: 0.30, Difícil: 0.50, Extremo: 0.10 },
-  Sábio:     { Fácil: 0.05, Médio: 0.15, Difícil: 0.65, Extremo: 0.15 },
-  Lenda:     { Fácil: 0.02, Médio: 0.10, Difícil: 0.63, Extremo: 0.25 }
-};
-const maxProbabilidadeForcagem = 0.15
-
 // Tempos para as alternativas
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 const PAUSA_ANTES_DA_A              = 500;
 const GAP_ENTRE_ALTERNATIVAS        = 380;
 const VELOCIDADE_LETRA_ENUNCIADO    = 21;
 const VELOCIDADE_LETRA_ALTERNATIVAS = 16; // quanto menor, mais rápido
-
-// Ids de perguntas que são selecionados primeiro
-let idsPrioritarios = JSON.parse(localStorage.getItem("ids_prioritarios") ?? "[]").map(Number);
 
 // Seleciona os botões
 botaoLikeNota.addEventListener("click", () => {
@@ -607,7 +595,7 @@ async function enviarResposta() {
 
     let encerrar_quiz = false
     if (modo_jogo === "desafio") {
-      encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE)
+      encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE, false);
       if (parseInt(contador_perguntas_restantes.textContent) <= 0) {encerrar_quiz = true};
     }
     
@@ -788,8 +776,8 @@ async function enviarResposta() {
     autoChute = false;
     btnAlternativaSelecionada = document.querySelector('.alternativa-btn.selected');
   }
-  resposta_usuario = alternativaSelecionada;
-  
+    resposta_usuario = alternativaSelecionada;
+    
   // Marca a alternativa correta pelo data-letter
   if (modo_jogo === 'revisao') {
     letra_correta = pergunta_selecionada.resposta_correta;
@@ -802,15 +790,25 @@ async function enviarResposta() {
       letra_correta = pergunta_selecionada.resposta_correta = info_pergunta["resposta_correta"];
       acertou = analisarRespostaEnviada();
     }
-    else {
-      return;
-    }
+    else return;
   }
 
-  // Calcula pontos ganhos toca áudio de acerto ou erro
+  // Calcula pontos ganhos, toca áudio e salva streak de acertos ou erros
   pontos_ganhos = calcularPontuacao(acertou);
-  if (acertou) playSound("correct")
-  else if (pontos_ganhos === regras_jogador.pontos_erro) playSound("error");
+  if (acertou) {
+    playSound("correct")
+    // 🔥 Atualiza streaks: Incrementa acertos e zera os erros
+    let acertos = parseInt(sessionStorage.getItem("acertos_consecutivos") || "0") + 1;
+    sessionStorage.setItem("acertos_consecutivos", acertos);
+    sessionStorage.setItem("erros_consecutivos", "0");
+  }
+  else {
+    playSound("error");
+    // 🔥 Atualiza streaks: Incrementa erros e zera os acertos
+    let erros = parseInt(sessionStorage.getItem("erros_consecutivos") || "0") + 1;
+    sessionStorage.setItem("erros_consecutivos", erros);
+    sessionStorage.setItem("acertos_consecutivos", "0");
+  };
 
   // Registra a resposta enviada no SQL
   if (modo_jogo === 'desafio' && !MODO_VISITANTE) {
@@ -841,16 +839,32 @@ async function enviarResposta() {
     registrarRespostaVisitante(resposta_usuario, acertou, pontos_ganhos, tempo_gasto)
   }
   
-  // Armazena informações que serão úteis depois na tela de resultado
   if (prosseguir_com_resultado) {
     // Remove a pergunta do array para não repetir
-    perguntasDisponiveisGlobal.splice(indicePerguntaGlobal, 1);
+    perguntasNaDificuldadeEscolhida.splice(indicePerguntaGlobal, 1);
     localStorage.setItem("perguntas", JSON.stringify(perguntas_por_dificuldade));
 
     if (modo_jogo === "desafio") {
+      // Armazena informações que serão úteis depois na tela de resultado
       const info_resposta = {"enunciado": pergunta_selecionada.enunciado, "alternativa_a": pergunta_selecionada.alternativa_a, "alternativa_b": pergunta_selecionada.alternativa_b, "alternativa_c": pergunta_selecionada.alternativa_c, "alternativa_d": pergunta_selecionada.alternativa_d, "resposta_correta": letra_correta, "resposta_usuario": resposta_usuario, "pontos_ganhos": pontos_ganhos, "dificuldade": pergunta_selecionada.dificuldade}
       perguntas_respondidas.push(info_resposta);
       localStorage.setItem("perguntas_respondidas", JSON.stringify(perguntas_respondidas));
+
+      // 🎯 ATUALIZAÇÃO DO VETOR DE MARCOS (útil para escolha de dificuldade da próxima pergunta)
+      let marcosNiveis = JSON.parse(sessionStorage.getItem("marcos_niveis") || "[\"null\", \"null\", \"null\", \"null\", \"null\"]");
+      marcosNiveis = marcosNiveis.map(m => m === "null" || m === "" ? null : m);
+
+      // Se ainda houver algum espaço vazio (null), preenche a primeira vaga vazia encontrada
+      const primeiroNullIndex = marcosNiveis.indexOf(null);
+      if (primeiroNullIndex !== -1) {
+        marcosNiveis[primeiroNullIndex] = pergunta_selecionada.dificuldade;
+      } else {
+        // Se o array já estiver cheio (5 elementos), faz o efeito de fila deslizante:
+        // Adiciona a nova no início, empurrando as outras, e remove a última
+        marcosNiveis.unshift(pergunta_selecionada.dificuldade);
+        marcosNiveis.pop();
+      }
+      sessionStorage.setItem("marcos_niveis", JSON.stringify(marcosNiveis));
     }
     
     // Mostra se acertou a resposta e os botões "próxima" e "finalizar"
@@ -874,27 +888,6 @@ async function finalizarQuiz() {
   else {
     window.location.href = "/pesquisa";
   }
-}
-
-// Remove dos ids prioritários perguntas que não estão na lista de perguntas
-function limparIdsPrioritariosInvalidos() {
-  // 1. IDs válidos (todas as dificuldades)
-  const idsValidos = new Set();
-
-  for (const nivel of dificuldadesOrdenadas) {
-    for (const p of perguntas_por_dificuldade[nivel] || []) {
-      idsValidos.add(p.id_pergunta);
-    };
-  };
-  
-  // 3. Limpa IDs inválidos
-  idsPrioritarios = idsPrioritarios.filter(id => idsValidos.has(id));
-
-  // 4. Embaralha (Fisher–Yates)
-  for (let i = idsPrioritarios.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [idsPrioritarios[i], idsPrioritarios[j]] = [idsPrioritarios[j], idsPrioritarios[i]];
-  };
 }
 
 async function mostrarAlternativas() {
@@ -1007,7 +1000,6 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   desativarBotoes();
 
   function escolherProximaDificuldade() {
-    const ranking = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking;
     let disponiveis = obterDificuldadesDisponiveis(tema_atual, MODO_VISITANTE);
 
     // Quantidade de perguntas de cada nível de dificuldade disponíveis atualmente
@@ -1015,178 +1007,115 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
     const estoqueMedio   = perguntas_por_dificuldade["Médio"]?.length || 0;
     const estoqueDificil = perguntas_por_dificuldade["Difícil"]?.length || 0;
     const estoqueExtremo = perguntas_por_dificuldade["Extremo"]?.length || 0;
+    const estoque = {"Fácil": estoqueFacil, "Médio": estoqueMedio, "Difícil": estoqueDificil, "Extremo": estoqueExtremo};
+    if (isAdmin) { console.log("Estoque: ", estoque); }
     
-    // Remove as dificuldades Extremo, Difícil e Médio para usuários que não atingiram uma determinada pontuação
-    if (!MODO_VISITANTE) {
-      if ((pontuacoes_jogador[tema_atual] || 0) < 1300 && estoqueFacil + estoqueMedio + estoqueDificil > 0) {
-        disponiveis = disponiveis.filter(dif => dif !== 'Extremo');
+    // Caso esteja no modo revisão ou visitante, pega a primeira disponível com estoque
+    if (modo_jogo === "revisao" || MODO_VISITANTE) return disponiveis.find(d => estoque[d] > 0) ?? null;
+
+    // Regra que obriga o nível fácil se a pontuação do usuário for 0
+    if (pontuacoes_jogador[tema_atual] === 0 && estoque["Fácil"] > 0) return "Fácil";
+    
+    // Regras que impedem fácil ou extremo em caso de acertos ou erros consecutivos, respectivamente
+    let candidatasPermitidas = [...disponiveis];
+    const acertosConsecutivos = parseInt(sessionStorage.getItem("acertos_consecutivos") || "0");
+    const errosConsecutivos = parseInt(sessionStorage.getItem("erros_consecutivos") || "0");
+
+    let primeiraRegraAplicada = false;
+    // 🔥 REGRA 1: Acertou 3+ seguidas -> Evita perguntas fáceis para elevar o desafio
+    if (acertosConsecutivos === 3) {
+      primeiraRegraAplicada = true;
+      candidatasPermitidas = candidatasPermitidas.filter(d => d !== 'Fácil');
+      if (candidatasPermitidas.length === 0) candidatasPermitidas = ['Fácil']; // Fallback se só tiver fácil
+      sessionStorage.setItem("acertos_consecutivos", "0");
+    }
+    // 🔥 REGRA 2: Errou 3+ seguidas -> Evita perguntas extremas para dar um respiro
+    else if (errosConsecutivos === 3) {
+      primeiraRegraAplicada = true;
+      candidatasPermitidas = candidatasPermitidas.filter(d => d !== 'Extremo');
+      if (candidatasPermitidas.length === 0) candidatasPermitidas = ['Extremo']; // Fallback se só tiver extremo
+      sessionStorage.setItem("erros_consecutivos", "0");
+    }
+
+    // 🎯 2. REGRA DO VETOR DE MARCOS (A cada bloco de 5)
+    if (!primeiraRegraAplicada) {
+      const rankingUsuario = obterInfoRankingAtual(tema_atual, MODO_VISITANTE).ranking;
+      let dificuldadeAlvo = "Fácil";
+      if (rankingUsuario === "Aprendiz") dificuldadeAlvo = "Médio";
+      else if (rankingUsuario === "Estudante" || rankingUsuario === "Sábio") dificuldadeAlvo = "Difícil";
+      else if (rankingUsuario === "Lenda") dificuldadeAlvo = "Extremo";
+
+      // Recupera ou inicializa o array de marcos com 5 posições null: [null, null, null, null, null]
+      let marcosNiveis = JSON.parse(sessionStorage.getItem("marcos_niveis") || "[\"null\", \"null\", \"null\", \"null\", \"null\"]");
+      // Correção para garantir que sejam null reais do JS caso venham como string
+      marcosNiveis = marcosNiveis.map(m => m === "null" || m === "" ? null : m);
+
+      // Verifica se a dificuldade alvo já está presente no vetor atual
+      const temAlvoNoMarco = marcosNiveis.includes(dificuldadeAlvo);
+      // Verifica se ainda existem espaços vazios (null) no vetor
+      const temEspacoVazio = marcosNiveis.includes(null);
+
+      // Se a dificuldade alvo NÃO está no vetor E não há mais espaços vazios (o ciclo fechou sem ela)
+      if (!temAlvoNoMarco && !temEspacoVazio && estoque[dificuldadeAlvo] > 0) {
+        if (isAdmin) console.log(`Ciclo de 5 fechado sem ${dificuldadeAlvo}. Forçando obrigatoriamente.`);
+        // Reseta o vetor de marcos para um novo ciclo, já registrando essa dificuldade
+        marcosNiveis = [dificuldadeAlvo, null, null, null, null];
+        sessionStorage.setItem("marcos_niveis", JSON.stringify(marcosNiveis));
+        return dificuldadeAlvo;
       }
-      if ((pontuacoes_jogador[tema_atual] || 0) < 300 && estoqueFacil + estoqueMedio > 0) {
-        disponiveis = disponiveis.filter(dif => dif !== 'Difícil');
-      }
-      if ((pontuacoes_jogador[tema_atual] || 0) < 100 && estoqueFacil > 0) {
-        disponiveis = disponiveis.filter(dif => dif !== 'Médio');
+    }
+    // Filtra apenas as que têm estoque dentre as permitidas pelas regras de streak
+    let opcoesViaveis = [];
+    for (const dif of candidatasPermitidas) {
+      if (estoque[dif] > 0) {
+        opcoesViaveis.push({ dificuldade: dif, estoque: estoque[dif] });
       }
     }
 
-    const probsBase = PROBABILIDADES_POR_RANKING[ranking];
-    const estoque = {
-      "Fácil":   estoqueFacil,
-      "Médio":   estoqueMedio,
-      "Difícil": estoqueDificil,
-      "Extremo": estoqueExtremo
-    };
-    if (isAdmin) {console.log("Estoque: ", estoque)};
-    
-    // Caso esteja no modo revisão ou visitante
-    if (modo_jogo === "revisao" || MODO_VISITANTE) {
+    // Fallback absoluto se a filtragem esvaziou o estoque daquela faixa
+    if (opcoesViaveis.length === 0) {
+      console.warn("Aviso: Nenhuma opção viável encontrada nas regras de streak");
       return disponiveis.find(d => estoque[d] > 0) ?? null;
     }
 
-    // 🔥 1. FORÇAGEM PELA DIFICULDADE COM MAIOR ESTOQUE
-    if (respostasDesdeUltimaForcagem === 4) {
-      if (isAdmin) {
-        console.log("Pegando a dificuldade com maior estoque...")
+    // Respeita o limite de 3 repetições consecutivas do mesmo nível
+    let ultimaDif = sessionStorage.getItem("ultima_dificuldade_usada") || null;
+    let repeticoesDif = parseInt(sessionStorage.getItem("repeticoes_dificuldade") || "0");
+    let opcoesFiltradasRepeticao = opcoesViaveis.filter(o => {
+      if (o.dificuldade === ultimaDif && repeticoesDif >= 3) {
+        return false;
       }
-      const ordenadas = [...disponiveis].sort( // Ordena da que tem maior estoque para a que tem menor
-        (a, b) => estoque[b] - estoque[a]
-      );
+      return true;
+    });
 
-      let escolhida = ordenadas[0]; // Pega a que tem o maior estoque
-
-      // A probabilidade base deve ser maior do que o definido para pegar forçadamente por estoque
-      // Caso contrário, pega a segunda de maior estoque (ordenadas[1])
-      if ((probsBase[escolhida] ?? 0) <= maxProbabilidadeForcagem && ordenadas[1]) {
-        escolhida = ordenadas[1];
-      }
-
-      respostasDesdeUltimaForcagem = 1;
-      return resolverFallback(escolhida, estoque, probsBase, disponiveis);
+    if (opcoesFiltradasRepeticao.length > 0) {
+      opcoesViaveis = opcoesFiltradasRepeticao;
     }
 
-    // 🎯 2. SORTEIO PROBABILÍSTICO NORMAL
-    const sorteio = Math.round(Math.random() * 100) / 100; // Número entre 0 e 1 com 2 casas decimais
-    let acumulado = 0; // Probabilidade acumulada (ex: 0.2 da fácil + 0.3 da médio = 0.5)
+    // Ordena pelo MAIOR ESTOQUE disponível
+    opcoesViaveis.sort((a, b) => b.estoque - a.estoque);
+    let escolha = opcoesViaveis[0].dificuldade;
 
-    for (const d of disponiveis) {
-      acumulado += probsBase[d] ?? 0;
-      if (sorteio <= acumulado) { // Analisa se o sorteio caiu na fácil, médio, difícil ou extremo (nesta ordem)
-        respostasDesdeUltimaForcagem++;
-        return resolverFallback(d, estoque, probsBase, disponiveis);
-      }
+    // Atualiza o rastreio de repetições consecutivas para a próxima rodada
+    if (escolha === ultimaDif) {
+      sessionStorage.setItem("repeticoes_dificuldade", repeticoesDif + 1);
+    } else {
+      sessionStorage.setItem("ultima_dificuldade_usada", escolha);
+      sessionStorage.setItem("repeticoes_dificuldade", "1");
     }
 
-    // 🛟 3. SEGURANÇA ABSOLUTA
-    respostasDesdeUltimaForcagem++;
-    const fallback = [...disponiveis].sort( // Pega a de maior estoque em último caso
-      (a, b) => estoque[b] - estoque[a]
-    )[0];
-
-    return fallback ?? null;
+    return escolha;
   }
 
-  function resolverFallback(escolhida, estoque, probsBase, disponiveis) {
-    // Se a escolhida ainda tem estoque
-    if (estoque[escolhida] > 0) return escolhida;
-
-    const idx = dificuldadesOrdenadas.indexOf(escolhida);
-    if (idx === -1) {
-      console.warn("1.Fallback utilizado na escolha da dificuldade")
-      return disponiveis.find(d => estoque[d] > 0) ?? null;
-    }
-
-    // 1️⃣ Extremos colapsam para dentro
-    if (escolhida === "Fácil") {
-      if (estoque["Médio"] > 0 && disponiveis.includes("Médio")) {
-        return "Médio"
-      }
-      else if (estoque["Difícil"] > 0 && disponiveis.includes("Difícil")) {
-        return "Difícil"
-      }
-      console.warn("2.Fallback utilizado na escolha da dificuldade")
-      return disponiveis.find(d => estoque[d] > 0) ?? null;
-    }
-
-    if (escolhida === "Extremo") {
-      if (estoque["Difícil"] > 0 && disponiveis.includes("Difícil")) {
-        return "Difícil"
-      }
-      if (estoque["Médio"] > 0 && disponiveis.includes("Médio")) {
-        return "Médio"
-      }
-      console.warn("3.Fallback utilizado na escolha da dificuldade")
-      return disponiveis.find(d => estoque[d] > 0) ?? null;
-    }
-
-    // 2️⃣ Casos intermediários: comparar acima vs abaixo
-    const abaixo = dificuldadesOrdenadas[idx - 1];
-    const acima  = dificuldadesOrdenadas[idx + 1];
-
-    const candidatos = [];
-    if (abaixo && disponiveis.includes(abaixo) && estoque[abaixo] > 0) {candidatos.push(abaixo)};
-    if (acima && disponiveis.includes(acima) && estoque[acima] > 0) {candidatos.push(acima)};
-
-    if (candidatos.length === 0) {
-      // Último recurso: qualquer disponível com estoque
-      return disponiveis.find(d => estoque[d] > 0) ?? null;
-    }
-
-    if (candidatos.length === 1) {
-      return candidatos[0];
-    }
-
-    // 3️⃣ Dois candidatos válidos → critério objetivo
-    const [c1, c2] = candidatos;
-
-    if (estoque[c1] !== estoque[c2]) {
-      return estoque[c1] > estoque[c2] ? c1 : c2;
-    }
-
-    // Estoque igual → usa probabilidade base
-    const p1 = probsBase[c1] ?? 0;
-    const p2 = probsBase[c2] ?? 0;
-
-    if (Math.abs(p1 - p2) > 0.1) {
-      return p1 > p2 ? c1 : c2;
-    }
-
-    // Último desempate: puxa levemente para baixo
-    return dificuldadesOrdenadas.indexOf(c1) < dificuldadesOrdenadas.indexOf(c2) ? c1 : c2;
-  }
-
-  function selecionarPergunta(perguntasDisponiveis) {
-    if (!perguntasDisponiveis || perguntasDisponiveis.length === 0) {
+  function selecionarPergunta(listaPergunta) {
+    // Recebe a lista de perguntas da dificuldade que foi escolhida
+    if (!listaPergunta || listaPergunta.length === 0) {
       return -1;
     }
-    if (MODO_VISITANTE) {
-      pergunta_selecionada = perguntasDisponiveis[0];
-      return 0;
-    }
-    else {
-      // ===============================
-      // 1. Seleciona um id dos prioritários
-      // ===============================
-      for (let i = 0; i < idsPrioritarios.length; i++) {
-        const idPrioritario = idsPrioritarios[i];
-
-        const indicePergunta = perguntasDisponiveis.findIndex(
-          p => p.id_pergunta === idPrioritario
-        );
-
-        // Caso encontre um id de pergunta prioritária na lista de perguntas da dificuldade escolhida
-        if (indicePergunta !== -1) {
-          idsPrioritarios.splice(i, 1);
-          pergunta_selecionada = perguntasDisponiveis[indicePergunta];
-          return indicePergunta;
-        }
-      }
-      // ===============================
-      // 2. Fallback caso não tenha encontrado um id dentre os prioritários
-      // ===============================
-      const indice = Math.floor(Math.random() * perguntasDisponiveis.length);
-      pergunta_selecionada = perguntasDisponiveis[indice];
-      return indice;
-    }
+    
+    // Pega sempre a primeira pergunta disponível daquela dificuldade
+    pergunta_selecionada = listaPergunta[0];
+    return 0;
   }
 
   // 1. Tenta recuperar o ID salvo no sessionStorage
@@ -1203,7 +1132,7 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
         const encontrada = lista.find(p => p.id_pergunta === idProcurado);
         if (encontrada) {
           perguntaExistente = encontrada;
-          perguntasDisponiveisGlobal = lista;
+          perguntasNaDificuldadeEscolhida = lista;
           indicePerguntaGlobal = lista.indexOf(encontrada);
           break;
         }
@@ -1211,13 +1140,14 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
     }
   }
 
-  // 2. Se já existia uma pergunta ativa na sessão, usa ela 
+  // 2. Se já existia uma pergunta ativa na sessão, usa ela
+  // if (isAdmin) perguntaExistente = false;
   if (perguntaExistente) {
     pergunta_selecionada = perguntaExistente;
   } else { // Caso contrário, seleciona a próxima normalmente
     const dificuldade_selecionada = escolherProximaDificuldade();
-    perguntasDisponiveisGlobal = perguntas_por_dificuldade[dificuldade_selecionada];
-    indicePerguntaGlobal = selecionarPergunta(perguntasDisponiveisGlobal);
+    perguntasNaDificuldadeEscolhida = perguntas_por_dificuldade[dificuldade_selecionada];
+    indicePerguntaGlobal = selecionarPergunta(perguntasNaDificuldadeEscolhida);
 
     if (indicePerguntaGlobal === -1 || !pergunta_selecionada) {
       console.warn("Nenhuma pergunta disponível");
@@ -1457,7 +1387,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Chama as funções que são necessárias na inicialização
   renderizarPontuacaoAtual(pontuacoes_jogador[tema_atual]);
-  limparIdsPrioritariosInvalidos();
   definirRankingAnterior(); // útil para quando for animar barra de progresso
   atualizarRankingVisual();
   await mostrarPergunta(true);
