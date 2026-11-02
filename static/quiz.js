@@ -1143,6 +1143,7 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   // 2. Se já existia uma pergunta ativa na sessão, usa ela
   // if (isAdmin) perguntaExistente = false;
   if (perguntaExistente) {
+    if (isAdmin) console.log('Pergunta anterior selecionada novamente');
     pergunta_selecionada = perguntaExistente;
   } else { // Caso contrário, seleciona a próxima normalmente
     const dificuldade_selecionada = escolherProximaDificuldade();
@@ -1154,7 +1155,7 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
       return;
     }
     // Persiste o ID da nova pergunta selecionada no sessionStorage
-    sessionStorage.setItem("id_pergunta_ativa", pergunta_selecionada.id_pergunta);
+    if (!MODO_VISITANTE && modo_jogo === 'desafio') sessionStorage.setItem("id_pergunta_ativa", pergunta_selecionada.id_pergunta);
   }
   if (isAdmin) {
     console.log(`Dificuldade selecionada: ${pergunta_selecionada.dificuldade}`);
