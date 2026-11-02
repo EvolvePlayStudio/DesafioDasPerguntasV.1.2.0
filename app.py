@@ -1612,7 +1612,8 @@ def listar_perguntas():
                 'comentario': row['comentario'],
                 'aprovacao_nota': row['aprovacao_nota'],
                 'total_acertos': row.get('total_acertos', 0),
-                'total_respostas': row.get('total_respostas', 0)
+                'total_respostas': row.get('total_respostas', 0),
+                'grupo': row.get('grupo', None) # Apenas para depuração
             }
             
             # Inclui a resposta correta com total segurança apenas no modo revisão

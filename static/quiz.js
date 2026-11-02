@@ -1159,7 +1159,7 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   }
   if (isAdmin) {
     console.log(`Dificuldade selecionada: ${pergunta_selecionada.dificuldade}`);
-    console.log(`Pergunta selecionada: (${pergunta_selecionada.id_pergunta}) ${pergunta_selecionada.enunciado}`);
+    console.log(`Pergunta selecionada: (${pergunta_selecionada.id_pergunta}/${pergunta_selecionada.grupo}) ${pergunta_selecionada.enunciado}`);
   }
   window.avaliacaoAtual = 0;
 
