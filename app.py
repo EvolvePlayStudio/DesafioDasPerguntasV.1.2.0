@@ -35,7 +35,7 @@ SITE_EM_MANUTENCAO = False
 ids_visitante_admin = ['cb21d00e-8d6a-4909-b149-492e03737035', 'd103db0e-cd5d-4743-a67c-2cdf0f282892']
 
 sdk = mercadopago.SDK(ACCESS_TOKEN_MERCADO_PAGO)
-DIFERENCA_PERGUNTAS_RESTANTES = 30 # Para compra de pacotes de energia
+DIFERENCA_PERGUNTAS_RESTANTES = 40 # Para compra de pacotes de energia
 
 # Tamanho padrão do lote/sessão entregue ao usuário
 TAMANHO_SESSAO = 30
@@ -44,33 +44,33 @@ TAMANHO_SESSAO = 30
 CONFIG_COTAS_RANKING = {
     'Iniciante': {
         'Fácil':   {'min': 2,  'max': 14},
-        'Médio':   {'min': 2,  'max': 13},
+        'Médio':   {'min': 1,  'max': 13},
         'Difícil': {'min': 1,  'max': 10},
         'Extremo': {'min': 1,  'max': 1}
     },
     'Aprendiz': {
-        'Fácil':   {'min': 1,  'max': 8},
-        'Médio':   {'min': 2,  'max': 14},
-        'Difícil': {'min': 2,  'max': 14},
-        'Extremo': {'min': 1,  'max': 1}
+        'Fácil':   {'min': 1,  'max': 10},
+        'Médio':   {'min': 1,  'max': 16},
+        'Difícil': {'min': 1,  'max': 16},
+        'Extremo': {'min': 1,  'max': 2}
     },
     'Estudante': {
         'Fácil':   {'min': 1,  'max': 4},
-        'Médio':   {'min': 3,  'max': 14},
-        'Difícil': {'min': 6,  'max': 18},
-        'Extremo': {'min': 2,  'max': 3}
+        'Médio':   {'min': 2,  'max': 14},
+        'Difícil': {'min': 2,  'max': 18},
+        'Extremo': {'min': 1,  'max': 3}
     },
     'Sábio': {
         'Fácil':   {'min': 1,  'max': 2},
         'Médio':   {'min': 1,  'max': 4},
-        'Difícil': {'min': 7,  'max': 20},
-        'Extremo': {'min': 4,  'max': 6}
+        'Difícil': {'min': 3,  'max': 20},
+        'Extremo': {'min': 2,  'max': 6}
     },
     'Lenda': {
         'Fácil':   {'min': 0,  'max': 1},
         'Médio':   {'min': 1,  'max': 2},
-        'Difícil': {'min': 9,  'max': 20},
-        'Extremo': {'min': 7,  'max': 10}
+        'Difícil': {'min': 4,  'max': 20},
+        'Extremo': {'min': 3,  'max': 10}
     }
 }
 

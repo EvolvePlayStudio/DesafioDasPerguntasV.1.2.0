@@ -2,8 +2,7 @@ import { idsVisitantesReservados } from "./utils.js";
 import { playSound, playKeySound } from './sound.js';
 
 const APP_VERSION_LOGIN = '1.8.9';
-const mensagensAbaLogin = [
-'Sessão expirada', 
+const mensagensAbaLogin = ['Sessão expirada', 
 'Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente'];
 
 // Função para registrar conversão da Microsoft para conta cadastrada
@@ -29,6 +28,7 @@ function dispararConversaoGoogle() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+
   // Mensagens
   const forgot_message = document.getElementById("forgot-message");
   const lbl_mensagem_login = document.getElementById("login-message");

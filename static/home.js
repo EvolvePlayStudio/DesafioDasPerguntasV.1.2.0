@@ -584,15 +584,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       
     // --- FUNÇÃO 3: Modal de Energia Baixa (Apenas para e-mails confirmados) ---
     function exibirModalEnergiaBaixa() {
-      // if (idsReservados.includes(parseInt(idUsuario))) localStorage.removeItem(ULTIMA_EXIBICAO_CHAVE);
-      const ultimaExibicao = localStorage.getItem(ULTIMA_EXIBICAO_CHAVE);
       const agora = new Date().getTime();
-      const TRES_DIAS_EM_MS = 3 * 24 * 60 * 60 * 1000;
-      const deveExibir = !ultimaExibicao || (agora - parseInt(ultimaExibicao) > TRES_DIAS_EM_MS);
       const eIsento = idsUsuariosIsentos.includes(idUsuario);
       const perguntasRestantesAtual = parseInt(localStorage.getItem('perguntas_restantes') || '500');
 
-      if (deveExibir && !eIsento && perguntasRestantesAtual <= 40) {
+      if (!eIsento && perguntasRestantesAtual == 0) {
         try {
           fetch("/api/registrar-acesso", {
             method: "POST",
@@ -603,12 +599,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           console.warn("Falha ao registrar abertura do modal de energia baixa:", err);
         }
 
-        localStorage.setItem(ULTIMA_EXIBICAO_CHAVE, agora.toString());
-
-        let textoTitulo = "⚡ Sua energia está acabando!"
-        if (perguntasRestantesAtual === 0) textoTitulo = "⚡ Sua energia acabou!"
         abrirModal({
-          titulo: textoTitulo,
+          titulo: "⚡ Sua energia acabou!",
           corpoHTML: `
             <p>Adquira mais energia para continuar respondendo novas perguntas e subir no ranking.</p>
           `,
