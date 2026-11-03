@@ -355,34 +355,44 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (window.ADS_CONFIG.isAdmin && !MODO_VISITANTE) inserirBotaoModoTeste();
   exibirAnuncios();
 
+  function registrarLog(textoLog) {
+    fetch('/api/registrar-acesso', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        pagina: textoLog,
+        id_visitante: idVisitante
+      })
+    })
+  }
+
   async function iniciarQuiz(event) {
 
     try { // Registra tentativa de início de quiz caso seja o primeiro login na conta do usuário
       if (!MODO_VISITANTE) {
-        const jaTentouAntes = localStorage.getItem('primeira_tentativa_inicio_quiz');
-        if (!jaTentouAntes) {
-          fetch('/api/registrar-acesso', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              pagina: 'Tentativa de iniciar Quiz',
-              id_visitante: idVisitante
-            })
-          })
-          localStorage.setItem('primeira_tentativa_inicio_quiz', true)
-        }
+        let jaTentouAntes = localStorage.getItem('primeira_tentativa_inicio_quiz');
+        // if (window.ADS_CONFIG.isAdmin) jaTentouAntes = false;
+        if (!jaTentouAntes) registrarLog('Tentativa de iniciar Quiz');
       }
     } catch (error) {console.error("Erro no bloco de rastreamento:", error)};
 
     function desbloquearBotoes() {permitir_escolher_tema = true};
 
+    // Retorna caso não seja permitido iniciar o quiz
     const config = window.ADS_CONFIG;
-    if (config.registrandoModoTeste) return;
-    if (!permitir_escolher_tema) return;
+    if (config.registrandoModoTeste) {
+      registrarLog('Retorno - registrando modo teste');
+      return;
+    }
+    if (!permitir_escolher_tema) {
+      registrarLog('Retorno - não foi permitido escolher tema');
+      return;
+    } 
+
     playSound("click");
-    permitir_escolher_tema = false;
+    permitir_escolher_tema = false; // Para não tentar iniciar outro enquanto um quiz é carregado
 
     // Atualiza o tema atual, modo de jogo e tipo de pergunta no localStorage
     tema_atual = decodeURIComponent(event.currentTarget.dataset.tema);
@@ -392,6 +402,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!tema_atual) {
       console.error("Tema não definidos na URL");
       desbloquearBotoes();
+      registrarLog('Retorno - tema não definido');
       return;
     };
 
@@ -402,6 +413,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (perguntas_restantes_atuais <= 0) {
       if (!MODO_VISITANTE) {
         exibirMensagem(mensagem, `Energia esgotada, aguarde a recarga diária ou obtenha pacotes de energia para responder novas perguntas`, corMensagemAlerta, true, false, 'flex');
+        registrarLog('Retorno - sem energia');
       }
       else {
         exibirMensagem(mensagem, `É necessário criar uma conta para ter acesso ao conteúdo completo do jogo`, corMensagemAlerta, true, false, 'flex');
@@ -474,6 +486,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           else {
             exibirMensagem(mensagem, `Você não possui perguntas disponíveis no tema ${tema_atual} no momento`, corMensagemAlerta, true, false, 'flex');
             desbloquearBotoes();
+            registrarLog('Retorno - sem perguntas no tema');
             return;
           }
         }

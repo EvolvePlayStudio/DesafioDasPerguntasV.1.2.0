@@ -8,6 +8,8 @@ function validateAppVersionQuiz() {
   }
 }
 
+const tema_atual = localStorage.getItem("tema_atual");
+
 // Faz envio de dados para a base
 const id_visitante = localStorage.getItem("id_visitante");
 const idUsuario = Number(localStorage.getItem("id_usuario") ?? "0");
@@ -18,16 +20,18 @@ let respondidasVisitantesPorDificuldade = JSON.parse(localStorage.getItem('respo
 
 try { // Registra primeiro quiz iniciado caso seja o primeiro login na conta do usuário
   if (!MODO_VISITANTE) {
-    const jaTentouAntes = localStorage.getItem('primeiro_quiz_iniciado');
+    let jaTentouAntes = localStorage.getItem('primeiro_quiz_iniciado');
+    // if (isAdmin) jaTentouAntes = false;
     if (!jaTentouAntes) {
       fetch('/api/registrar-acesso', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-          pagina: 'Primeiro quiz iniciado',
+          pagina: `Primeiro quiz iniciado: ${tema_atual}`,
           id_visitante: id_visitante
         })
       })
+      localStorage.setItem('primeira_tentativa_inicio_quiz', true)
       localStorage.setItem('primeiro_quiz_iniciado', true)
     }
   } 
@@ -61,7 +65,6 @@ else {
   pontuacoes_jogador = JSON.parse(localStorage.getItem("pontuacoes_usuario") ?? "{}");
   validateAppVersionQuiz();
 }
-const tema_atual = localStorage.getItem("tema_atual");
 if (typeof pontuacoes_jogador[tema_atual] !== "number") { 
   pontuacoes_jogador[tema_atual] = 0;
   localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes_jogador))
@@ -117,8 +120,6 @@ let estrelas_iniciais;
 let comentario_inicial;
 let aprovacao_nota_inicial = null;
 let alternativaSelecionada; // guarda a letra selecionada (A, B, C, D)
-let respostasDesdeUltimaForcagem = 1; // para pegar a pergunta do nível que tem mais a cada 
-// x respondidas
 let info_ultimo_ranking = regras_pontuacao.at(-1) ?? null;
 const letrasAlternativas = ['A', 'B', 'C', 'D'];
 let autoChute = false;
