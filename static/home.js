@@ -173,7 +173,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function exibirAnuncios() {
-    //sessionStorage.removeItem("anuncios_vistos"); // NÃO ESQUECER DE APAGAR QUANDO FIZER UPDATE
+    //if (window.ADS_CONFIG.isAdmin) sessionStorage.removeItem("anuncios_vistos");
 
     // 1. Obtém o horário atual de Brasília/São Paulo
     const agoraSP = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
@@ -584,11 +584,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       
     // --- FUNÇÃO 3: Modal de Energia Baixa (Apenas para e-mails confirmados) ---
     function exibirModalEnergiaBaixa() {
-      const agora = new Date().getTime();
       const eIsento = idsUsuariosIsentos.includes(idUsuario);
       const perguntasRestantesAtual = parseInt(localStorage.getItem('perguntas_restantes') || '500');
-
-      if (!eIsento && perguntasRestantesAtual == 0) {
+      const deveExibir = sessionStorage.getItem('exibir_modal_sem_energia') === 'true';
+      if (deveExibir && !eIsento && perguntasRestantesAtual == 0) {
         try {
           fetch("/api/registrar-acesso", {
             method: "POST",
@@ -598,14 +597,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         } catch (err) {
           console.warn("Falha ao registrar abertura do modal de energia baixa:", err);
         }
-
+        sessionStorage.setItem('exibir_modal_sem_energia', false);
         abrirModal({
           titulo: "⚡ Sua energia acabou!",
           corpoHTML: `
             <p>Adquira mais energia para continuar respondendo novas perguntas e subir no ranking.</p>
           `,
           textoPrimario: "Adquirir Energia",
-          textoSecundario: "Continuar Jogando",
+          textoSecundario: "Esperar até Amanhã",
           onPrimario: () => {
             window.location.href = "/recarga-de-energia";
           },

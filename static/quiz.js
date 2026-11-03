@@ -267,7 +267,6 @@ function atualizarRankingVisual() {
   rankings_jogador[tema_atual] = info_ranking_atual.ranking;
 
   const pontuacao = pontuacoes_jogador[tema_atual] || 0;
-  console.log(`1.Pontuação do jogador: ${pontuacao}`)
   let ranking_anterior;
   let ranking_proximo;
   let progressoFinal = 100;
@@ -597,7 +596,10 @@ async function enviarResposta() {
     let encerrar_quiz = false
     if (modo_jogo === "desafio") {
       encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE, false);
-      if (parseInt(contador_perguntas_restantes.textContent) <= 0) {encerrar_quiz = true};
+      if (parseInt(contador_perguntas_restantes.textContent) <= 0) {
+        encerrar_quiz = true
+        sessionStorage.setItem('exibir_modal_sem_energia', true);
+      };
     }
     
     // Mostrar apenas o botão Finalizar

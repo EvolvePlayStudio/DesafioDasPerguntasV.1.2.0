@@ -1,7 +1,11 @@
 import { playSound, playKeySound } from "./sound.js";
-import { coresDificuldade, registrarInteracaoAnuncio, simbolosRankings, simbolosTemas} from "./utils.js";
+import { coresDificuldade, idsReservados, idsVisitantesReservados, registrarInteracaoAnuncio, simbolosRankings, simbolosTemas} from "./utils.js";
 
 const CHAVE_HISTORICO_INTERSTITIAL_AD = 'interstitial_historico_V2'
+const MODO_VISITANTE = localStorage.getItem('modoVisitante') === "true";
+const idUsuario = parseInt(localStorage.getItem("id_usuario") ?? "0");
+const idVisitante = localStorage.getItem("id_visitante") ?? "null";
+const isAdmin = idsReservados.includes(idUsuario) || (idsVisitantesReservados.includes(idVisitante) && MODO_VISITANTE);
 
 async function carregarInterstitialDinamico() {
   try {
@@ -9,10 +13,20 @@ async function carregarInterstitialDinamico() {
     const response = await fetch('/api/obter_anuncios?tema=Interstitial Ad');
     const dados = await response.json();
 
-    // Junta todos os anúncios em uma única lista
+    // 🛡️ APLICAÇÃO DO FILTRO DE VALIDADE E PERMISSÃO (Igualzinho na Home)
+    const agoraSP = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+    const filtrarValidos = (lista) => (lista || []).filter(a => {
+      const expira = new Date(a.oferta_expira_em);
+      return expira > agoraSP && (
+        isAdmin || (a.disponivel_visitantes === true && MODO_VISITANTE) || (a.disponivel_usuarios && !MODO_VISITANTE)
+      );
+    });
+
+    // Junta todos os anúncios já filtrados em uma única lista
     let todosAnuncios = [];
     for (let provedor in dados) {
-      todosAnuncios = todosAnuncios.concat(dados[provedor]);
+      const anunciosValidosDoProvedor = filtrarValidos(dados[provedor]);
+      todosAnuncios = todosAnuncios.concat(anunciosValidosDoProvedor);
     }
 
     if (todosAnuncios.length === 0) return;
@@ -144,7 +158,6 @@ setInterval(() => {
 }, 14000);*/
 
 // Outras variáveis
-const MODO_VISITANTE = localStorage.getItem('modoVisitante') === "true";
 const perguntas_respondidas = JSON.parse(localStorage.getItem("perguntas_respondidas"));
 const pontuacoes_jogador = MODO_VISITANTE ? JSON.parse(localStorage.getItem("pontuacoes_visitante")) : JSON.parse(localStorage.getItem("pontuacoes_usuario"));
 const rankings_jogador = JSON.parse(localStorage.getItem("rankings_jogador"));
