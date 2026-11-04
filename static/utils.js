@@ -305,8 +305,24 @@ export async function fetchAutenticado(url, options = {}) {
 export function obterInfoRankingAtual(tema=null, MODO_VISITANTE_ANTIGO=null) {
   // Obtém informação de ranking de acordo com pontuação no tema indicado
   const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
-  const pontuacoes_jogador = MODO_VISITANTE ? JSON.parse(localStorage.getItem("pontuacoes_visitante")) : JSON.parse(localStorage.getItem("pontuacoes_usuario"));
-  if (!tema) { tema = localStorage.getItem("tema_atual")};
+
+  // 2. Busca a string salva no storage
+  const chaveStorage = MODO_VISITANTE ? "pontuacoes_visitante" : "pontuacoes_usuario";
+  const brutoPontuacoes = localStorage.getItem(chaveStorage);
+  
+  // 🛡️ BLINDAGEM CRUCIAL: Se for null/undefined, força um objeto vazio {}
+  let pontuacoes_jogador = {};
+  if (brutoPontuacoes) {
+    try {
+      pontuacoes_jogador = JSON.parse(brutoPontuacoes) || {};
+    } catch (e) {
+      pontuacoes_jogador = {};
+    }
+  }
+
+  if (!tema) { 
+    tema = localStorage.getItem("tema_atual"); 
+  }
   
   const pontuacao_no_tema = pontuacoes_jogador[tema] || 0;
   const regras_pontuacao = JSON.parse(localStorage.getItem("regras_pontuacao")) || [];

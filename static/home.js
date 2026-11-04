@@ -425,7 +425,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Carrega as perguntas para o quiz
     try {
-      //gierw = 324;
       // Reinicia variáveis do session de quizzes anteriores
       sessionStorage.removeItem("ultima_dificuldade_usada");
       sessionStorage.removeItem("repeticoes_dificuldade");
@@ -576,6 +575,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     catch (error) {
       console.error("Erro ao carregar perguntas", error)
       // Permite alterar novamente o tipo de pergunta e tema
+      exibirMensagem(mensagem, `Ocorreu um erro e não foi possível iniciar o seu quiz, tente novamente mais tarde`, 'red', true, false, 'flex');
       desbloquearBotoes();
       registrarLog(`Erro: ${error}`);
     }
