@@ -1,0 +1,2887 @@
+from flask import Flask, jsonify, render_template, request, session, redirect, send_file, url_for, make_response, send_from_directory
+from werkzeug.security import generate_password_hash, check_password_hash
+from utils import *
+import secrets
+import string
+from email_service import enviar_email_confirmacao, enviar_email_recuperacao, enviar_email_feedback_pergunta, enviar_email_feedback_site
+from datetime import datetime, timedelta # timedelta também é importado no utils
+import re
+import logging
+import sys
+import traceback
+import random, string, time
+import mercadopago
+import random
+from PIL import Image, ImageEnhance, ImageFilter
+from io import BytesIO
+import urllib.parse
+from functools import wraps
+from psycopg2.extras import RealDictCursor
+from db import *
+
+app = Flask(__name__, static_folder='static', template_folder='templates')
+app.logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
+handler.setFormatter(formatter)
+app.logger.addHandler(handler)
+app.secret_key = os.getenv("SECRET_KEY")
+invite_token = os.getenv("TOKEN_CONVITE")
+
+# Algumas variáveis abaixo podem ir para o utils.py futuramente
+SITE_EM_MANUTENCAO = False
+# O primeiro id é de desktop e o segundo de mobile
+ids_visitante_admin = ['cb21d00e-8d6a-4909-b149-492e03737035', 'd103db0e-cd5d-4743-a67c-2cdf0f282892']
+
+sdk = mercadopago.SDK(ACCESS_TOKEN_MERCADO_PAGO)
+DIFERENCA_PERGUNTAS_RESTANTES = 40 # Para compra de pacotes de energia
+
+# Tamanho padrão do lote/sessão entregue ao usuário
+TAMANHO_SESSAO = 30
+
+# Limites (mínimo e máximo) de perguntas por dificuldade para cada ranking
+CONFIG_COTAS_RANKING = {
+    'Iniciante': {
+        'Fácil':   {'min': 2,  'max': 14},
+        'Médio':   {'min': 1,  'max': 13},
+        'Difícil': {'min': 1,  'max': 10},
+        'Extremo': {'min': 1,  'max': 1}
+    },
+    'Aprendiz': {
+        'Fácil':   {'min': 1,  'max': 10},
+        'Médio':   {'min': 1,  'max': 16},
+        'Difícil': {'min': 1,  'max': 16},
+        'Extremo': {'min': 1,  'max': 2}
+    },
+    'Estudante': {
+        'Fácil':   {'min': 1,  'max': 4},
+        'Médio':   {'min': 2,  'max': 14},
+        'Difícil': {'min': 2,  'max': 18},
+        'Extremo': {'min': 1,  'max': 3}
+    },
+    'Sábio': {
+        'Fácil':   {'min': 1,  'max': 2},
+        'Médio':   {'min': 1,  'max': 4},
+        'Difícil': {'min': 3,  'max': 20},
+        'Extremo': {'min': 2,  'max': 6}
+    },
+    'Lenda': {
+        'Fácil':   {'min': 0,  'max': 1},
+        'Médio':   {'min': 1,  'max': 2},
+        'Difícil': {'min': 4,  'max': 20},
+        'Extremo': {'min': 3,  'max': 10}
+    }
+}
+
+@app.route('/api/checar-status-email', methods=['GET'])
+def checar_status_email():
+    id_usuario = session.get('id_usuario')
+    if not id_usuario:
+        return jsonify({"sucesso": False}), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT email_confirmado FROM usuarios_registrados WHERE id_usuario = %s;", (id_usuario,))
+        resultado = cur.fetchone()
+        
+        if resultado:
+            email_confirmado = bool(resultado[0])
+            # Atualiza também a session por segurança
+            session["email_confirmado"] = email_confirmado
+            return jsonify({"sucesso": True, "email_confirmado": email_confirmado}), 200
+            
+        return jsonify({"sucesso": False}), 404
+    except Exception as e:
+        return jsonify({"sucesso": False}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route('/api/marcar-modal-inicial-visto', methods=['POST'])
+def marcar_modal_inicial_visto():
+    id_usuario = session.get('id_usuario')
+    if not id_usuario:
+        return jsonify({"sucesso": False, "erro": "Usuário não autenticado."}), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        # Atualiza a coluna modal_inicial_exibido para True na tabela usuarios_registrados
+        cur.execute("""
+            UPDATE usuarios_registrados
+            SET modal_inicial_exibido = TRUE
+            WHERE id_usuario = %s;
+        """, (id_usuario,))
+        
+        conn.commit()
+
+        return jsonify({"sucesso": True, "mensagem": "Modal inicial marcado como visto."}), 200
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Erro ao marcar modal inicial visto: {e}")
+        return jsonify({"sucesso": False, "erro": "Erro interno no servidor."}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+# Arquivo txt da Ezoic
+@app.route('/ads.txt')
+def ads_txt():
+    return redirect("https://srv.adstxtmanager.com/19390/desafiodasperguntas.com.br", code=301)
+
+@app.route('/api/criar-pix', methods=['POST'])
+def criar_pix():
+    dados = request.get_json() or {}
+    id_pacote = dados.get('pacote_id')
+
+    if not id_pacote:
+        return jsonify({"sucesso": False, "erro": "Pacote não informado."}), 400
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        id_usuario = session.get('id_usuario')
+        if not id_usuario:
+            return jsonify({"sucesso": False, "erro": "Sessão expirada. Faça login novamente."}), 401
+
+        # 1. Busca dados do usuário logado e valida verificação de e-mail
+        cur.execute("""
+            SELECT id_usuario, email, email_confirmado, nome, perguntas_restantes 
+            FROM usuarios_registrados 
+            WHERE id_usuario = %s;
+        """, (id_usuario,))
+        usuario = cur.fetchone()
+
+        if not usuario:
+            return jsonify({"sucesso": False, "erro": "Usuário não encontrado."}), 401
+
+        id_usuario, email_usuario, email_confirmado, nome_usuario, energia_inicial = usuario
+
+        # Trava de e-mail verificado
+        if not email_confirmado:
+            return jsonify({"sucesso": False, "erro": "Sua conta precisa estar com o e-mail verificado para realizar compras."}), 403
+
+        # 2. Consulta o total de perguntas no sistema e as já respondidas pelo usuário
+        cur.execute("""
+            SELECT 
+                (SELECT COUNT(*) FROM perguntas_objetivas WHERE status = 'Ativa') - 
+                (SELECT COUNT(*) FROM respostas_usuarios WHERE id_usuario = %s) as perguntas_restantes
+        """, (id_usuario,))
+        resultado = cur.fetchone()
+        
+        perguntas_restantes = max(0, resultado[0] if resultado and resultado[0] is not None else 0)
+        perguntas_e_energia_restantes = perguntas_restantes + energia_inicial
+
+        # 3. Busca as informações do pacote escolhido (id, nome, energia, preco)
+        cur.execute("""
+            SELECT id, nome, energia, preco 
+            FROM pacotes_energia 
+            WHERE id = %s AND ativo = TRUE;
+        """, (id_pacote,))
+        pacote = cur.fetchone()
+
+        if not pacote:
+            return jsonify({"sucesso": False, "erro": "Pacote inválido ou inativo."}), 404
+
+        pacote_id, nome_pacote, qtd_energia, preco_pacote = pacote
+        preco_float = float(preco_pacote)
+
+        # Validação da trava de perguntas restantes com a margem de segurança
+        if qtd_energia > (perguntas_e_energia_restantes - DIFERENCA_PERGUNTAS_RESTANTES):
+            return jsonify({
+                "sucesso": False, 
+                "erro": "Você não possui perguntas suficientes no banco para adquirir este pacote de energia."
+            }), 403
+
+        # 4. Monta a requisição de pagamento PIX para o Mercado Pago (expiração em 30 min)
+        agora_sp = datetime.now(tz_sp) + timedelta(minutes=30)
+        expiracao = agora_sp.strftime('%Y-%m-%dT%H:%M:%S.000%z')
+
+        payment_data = {
+            "transaction_amount": preco_float,
+            "description": f"Recarga de Energia: +{qtd_energia}⚡ ({nome_pacote}) - Desafio das Perguntas",
+            "payment_method_id": "pix",
+            "payer": {
+                "email": email_usuario or "cliente@desafiodasperguntas.com.br",
+                "first_name": nome_usuario or "Jogador"
+            },
+            "date_of_expiration": expiracao,
+            "notification_url": "https://www.desafiodasperguntas.com.br/api/webhook/mercado-pago"
+        }
+
+        # Envia a requisição para a API do Mercado Pago
+        payment_response = sdk.payment().create(payment_data)
+        
+        response_status = payment_response.get("status")
+        payment_info = payment_response.get("response")
+
+        if response_status not in [200, 201] or not payment_info:
+            print(f"Erro Mercado Pago: {payment_response}")
+            return jsonify({"sucesso": False, "erro": "Erro ao comunicar com o gateway de pagamento."}), 500
+
+        transacao_id_mp = str(payment_info.get("id"))
+        ponto_interacao = payment_info.get("point_of_interaction", {})
+        dados_transacao = ponto_interacao.get("transaction_data", {})
+        
+        qr_code_copia_cola = dados_transacao.get("qr_code")
+        qr_code_base64 = dados_transacao.get("qr_code_base64")
+
+        # 5. Registra na tabela historico_compras como PENDENTE
+        cur.execute("""
+            INSERT INTO historico_compras 
+            (id_usuario, id_pacote, energia_creditada, valor_pago, status, gateway, transacao_id_gateway, qr_code_pix, energia_anterior)
+            VALUES (%s, %s, %s, %s, 'PENDENTE', 'MERCADO_PAGO', %s, %s, %s);
+        """, (
+            id_usuario, 
+            pacote_id, 
+            qtd_energia, 
+            preco_float, 
+            transacao_id_mp, 
+            qr_code_copia_cola,
+            energia_inicial
+        ))
+        conn.commit()
+
+        return jsonify({
+            "sucesso": True,
+            "transacao_id": transacao_id_mp,
+            "qr_code_copia_cola": qr_code_copia_cola,
+            "qr_code_base64": qr_code_base64
+        }), 200
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Erro crítico ao gerar PIX: {e}")
+        return jsonify({"sucesso": False, "erro": "Erro interno ao processar a recarga."}), 500
+
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route('/api/webhook/mercado-pago', methods=['POST', 'GET'])
+@app.route('/api/webhook/mercado-pago/', methods=['POST', 'GET'])
+def webhook_mercado_pago():
+    print("🔔 Rota webhook chamada com sucesso!")
+    print(f"ID de usuário na compra: {session.get('id_usuario')}") # Para auditoria se necessário reembolsar
+    # Captura segura de dados para evitar o erro de Unsupported Media Type
+    data = {}
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+    else:
+        # Se não for JSON puro, tenta pegar de formulário ou dados da requisição
+        data = request.form.to_dict()
+        if not data and request.data:
+            import json
+            try:
+                data = json.loads(request.data.decode('utf-8'))
+            except:
+                data = {}
+
+    # Se ainda estiver vazio, tenta pegar pelos query parameters (muito comum em testes de painel)
+    if not data:
+        data = request.args.to_dict()
+
+    print(f"📦 Dados brutos recebidos no webhook: {data}")
+
+    payment_id = None
+    if isinstance(data, dict):
+        if data.get('type') == 'payment' and 'data' in data:
+            payment_id = data['data'].get('id')
+        elif 'id' in data:
+            payment_id = data.get('id')
+
+    if not payment_id:
+        payment_id = request.args.get('id') or request.args.get('data.id') or request.args.get('topic')
+
+    print(f"🆔 ID capturado: {payment_id}")
+
+    # Proteção contra o teste padrão do painel do Mercado Pago
+    if not payment_id or str(payment_id) in ['123456', 'test', 'None']:
+        return jsonify({"status": "ok", "mensagem": "Teste recebido com sucesso"}), 200
+
+    conn = cur = None
+    try:
+        payment_info = sdk.payment().get(payment_id)
+        response_data = payment_info.get("response", {})
+        status_mp = response_data.get("status")
+
+        print(f"🔍 Status no Mercado Pago para ID {payment_id}: {status_mp}")
+
+        if status_mp == 'approved':
+            conn = get_db_connection()
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+
+            cur.execute("""
+                SELECT id_usuario, energia_creditada, status 
+                FROM historico_compras 
+                WHERE transacao_id_gateway = %s AND status = 'PENDENTE';
+            """, (str(payment_id),))
+            compra = cur.fetchone()
+
+            if compra:
+                id_usuario = compra['id_usuario']
+                qtd_energia = compra['energia_creditada']
+
+                cur.execute("""
+                    UPDATE usuarios_registrados 
+                    SET energia = perguntas_restantes + %s 
+                    WHERE id_usuario = %s;
+                """, (qtd_energia, id_usuario))
+
+                cur.execute("""
+                    UPDATE historico_compras 
+                    SET status = 'APROVADO' 
+                    WHERE transacao_id_gateway = %s;
+                """, (payment_id,))
+
+                conn.commit()
+                print(f"✅ SUCESSO! Compra {payment_id} aprovada e +{qtd_energia}⚡ creditadas.")
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"❌ Erro no processamento do webhook: {str(e)}")
+        # Sempre retorna 200 para o Mercado Pago não insistir em reenviar infinitamente caso dê algum ajuste
+        return jsonify({"status": "ok"}), 200
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+    return jsonify({"status": "ok"}), 200
+
+@app.route('/api/checar-status-pix/<transacao_id>', methods=['GET'])
+def checar_status_pix(transacao_id):
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    
+    # Busca a compra diretamente pelo transacao_id_gateway que você já tem na tabela
+    cur.execute("""
+        SELECT transacao_id_gateway, status, id_usuario, energia_creditada 
+        FROM historico_compras 
+        WHERE transacao_id_gateway = %s;
+    """, (str(transacao_id),))
+    compra = cur.fetchone()
+    
+    if not compra:
+        cur.close()
+        conn.close()
+        return jsonify({"status": "nao_encontrado"})
+        
+    status_atual = compra['status']
+    
+    # Se já estiver aprovado, só retorna para o frontend festejar
+    if status_atual == 'APROVADO':
+        print('Compra de energia identificada pela chacagem de status do pix')
+        cur.close()
+        conn.close()
+        return jsonify({"status": "APROVADO"})
+        
+    # Se ainda estiver PENDENTE, consulta ativamente a API do Mercado Pago
+    if status_atual == 'PENDENTE':
+        try:
+            print(f"ID de usuário na compra: {session.get('id_usuario')}")
+            payment_info = sdk.payment().get(transacao_id)
+            response_data = payment_info.get("response", {})
+            status_mp = response_data.get("status")
+            
+            print(f"🔄 Verificação ativa para transação {transacao_id}: Status no MP = {status_mp}")
+            
+            if status_mp == 'approved':
+                id_usuario = compra['id_usuario']
+                qtd_energia = compra['energia_creditada']
+                
+                cur.execute("""
+                    UPDATE historico_compras 
+                    SET status = 'APROVADO' 
+                    WHERE transacao_id_gateway = %s AND status = 'PENDENTE';
+                """, (str(transacao_id),))
+
+                # Verifica se alguma linha foi de fato alterada por esta consulta
+                if cur.rowcount > 0:
+                    cur.execute("""
+                        UPDATE usuarios_registrados 
+                        SET perguntas_restantes = perguntas_restantes + %s 
+                        WHERE id_usuario = %s;
+                    """, (qtd_energia, id_usuario))
+                    conn.commit()
+                    status_atual = 'APROVADO'
+                    print(f"✅ Aprovado via verificação ativa para a transação {transacao_id}!")
+                else:
+                    conn.rollback() # Já foi creditado pelo Webhook concorrente
+               
+        except Exception as e:
+            if conn: conn.rollback()
+            print(f"❌ Erro ao consultar status no MP: {str(e)}")
+            
+    cur.close()
+    conn.close()
+    return jsonify({"status": status_atual})
+
+@app.route('/api/pacotes-disponiveis', methods=['GET'])
+def obter_pacotes():
+    id_usuario = session.get('id_usuario')
+    if not id_usuario:
+        return jsonify({"sucesso": False, "erro": "Usuário não autenticado."}), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # 1. Busca dados do usuário (e-mail confirmado e contagem de respostas)
+    cur.execute("""
+        SELECT u.email_confirmado,
+        u.perguntas_restantes,
+               (SELECT COUNT(*) FROM respostas_usuarios r WHERE r.id_usuario = u.id_usuario) as total_respostas
+        FROM usuarios_registrados u
+        WHERE u.id_usuario = %s;
+    """, (id_usuario,))
+    usuario_info = cur.fetchone()
+
+    if not usuario_info:
+        cur.close()
+        conn.close()
+        return jsonify({"sucesso": False, "erro": "Usuário não encontrado."}), 404
+
+    email_confirmado, perguntas_restantes, total_respostas = usuario_info
+
+    # Regra 1: Bloqueia loja se e-mail não estiver verificado
+    if not email_confirmado:
+        cur.close()
+        conn.close()
+        return jsonify({
+            "sucesso": False,
+            "requer_confirmacao_email": True,
+            "erro": "Confirme seu e-mail para desbloquear a loja de energias."
+        }), 403
+
+    # 2. Busca pacotes no banco
+    cur.execute("SELECT id, nome, energia, preco, respostas_minimas FROM pacotes_energia WHERE ativo = TRUE ORDER BY preco ASC;")
+    pacotes = cur.fetchall()
+
+    lista_pacotes = []
+    for p in pacotes:
+        p_id, p_nome, p_energia, p_preco, p_respostas_min = p
+        
+        # Regra 2: Libera/Bloqueia pacotes baseando-se na contagem de respostas
+        bloqueado = perguntas_restantes + total_respostas < (p_respostas_min or 0)
+
+        lista_pacotes.append({
+            "id": p_id,
+            "nome": p_nome,
+            "energia": p_energia,
+            "preco": float(p_preco),
+            "bloqueado": bloqueado,
+            "respostas_necessarias": p_respostas_min
+        })
+
+    cur.close()
+    conn.close()
+
+    return jsonify({"sucesso": True, "pacotes": lista_pacotes, "total_respostas": total_respostas}), 200
+
+@app.route("/alterar-email", methods=["POST"])
+def alterar_email_route():
+    conn = cur = None
+    try:
+        data = request.get_json()
+        novo_email = data.get("email").strip().lower()
+
+        if not novo_email:
+            return jsonify(success=False, message="E-mail inválido"), 400
+
+        if not email_dominio_valido(novo_email):
+            return jsonify(success=False, message="Domínio de e-mail não permitido"), 400
+
+        id_usuario = session.get("id_usuario")
+        if not id_usuario:
+            return jsonify(success=False, message="Não autenticado"), 401
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Busca nome do usuário
+        cur.execute("""
+            SELECT nome
+            FROM usuarios_registrados
+            WHERE id_usuario = %s
+        """, (id_usuario,))
+        row = cur.fetchone()
+
+        if not row:
+            return jsonify(success=False, message="Usuário não encontrado"), 404
+
+        nome_usuario = row[0]
+
+        # Verifica se e-mail já está em uso
+        cur.execute("""
+            SELECT 1 FROM usuarios_registrados
+            WHERE email = %s
+              AND id_usuario <> %s
+        """, (novo_email, id_usuario))
+
+        if cur.fetchone():
+            return jsonify(success=False, message="E-mail já está em uso"), 409
+
+        # Gera novo token
+        token = secrets.token_urlsafe(32)
+        expiracao = datetime.now(tz_sp) + timedelta(hours=21)
+
+        # Atualiza e-mail + estado de confirmação
+        cur.execute("""
+            UPDATE usuarios_registrados
+            SET email = %s,
+                email_confirmado = FALSE,
+                token_confirmacao = %s,
+                expiracao_token_confirmacao = date_trunc('second', %s)
+            WHERE id_usuario = %s
+        """, (novo_email, token, expiracao, id_usuario))
+
+        conn.commit()
+
+        link_confirmacao = f"{base_url}/confirmar_email?token={token}"
+        enviado = enviar_email_confirmacao(
+            novo_email, nome_usuario, link_confirmacao
+        )
+
+        if not enviado:
+            return jsonify(success=False, message="Falha ao enviar e-mail")
+
+        return jsonify(success=True)
+
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.error("Erro ao alterar e-mail:\n" + traceback.format_exc())
+        return jsonify(success=False, message="Erro ao tentar alterar e-mail"), 500
+
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route("/api/pontuacoes")
+def api_pontuacoes():
+    pontuacoes = buscar_pontuacoes_usuario()
+    return jsonify(pontuacoes)
+
+@app.route('/api/registrar-acesso', methods=['POST'])
+def api_registrar_acesso():
+    try:
+        dados = request.get_json()
+        if not dados:
+            return jsonify({"status": "erro", "mensagem": "Dados inválidos"}), 400
+            
+        pagina = dados.get('pagina', 'Não identificada')
+        id_visitante = dados.get('id_visitante')
+
+        registrar_pagina_visitada(pagina, id_visitante)
+        
+        return jsonify({"status": "sucesso"}), 200
+        
+    except Exception as e:
+        app.logger.error(f"Erro na rota da API: {e}")
+        # Retorna um JSON mesmo se der erro, evitando enviar HTML para o JS
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+@app.route("/api/regras_pontuacao")
+def api_regras_pontuacao():
+    try:
+        regras_pontuacao = carregar_regras_pontuacao()
+        return jsonify(success=True, regras_pontuacao=regras_pontuacao)
+    except Exception:
+        return jsonify(
+            success=False,
+            message="Erro ao carregar regras de pontuação"
+        ), 500
+
+def buscar_pontuacoes_usuario():
+    """
+    Busca pontuações do usuário para todos os temas ativos.
+    Caso o usuário ainda não tenha pontuação em um tema, retorna 0.
+    """
+    pontuacoes_usuario = {}
+    id_usuario = session['id_usuario']
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT
+                t.nome AS tema,
+                COALESCE(p.pontuacao, 0) AS pontuacao
+            FROM temas t
+            LEFT JOIN pontuacoes_usuarios p
+                ON p.tema = t.nome
+               AND p.id_usuario = %s
+            WHERE t.ativo = true
+            ORDER BY t.nome
+        """, (id_usuario,))
+
+        pontuacoes_usuario = {
+            tema: pontuacao
+            for tema, pontuacao in cur.fetchall()
+        }
+
+    except Exception:
+        app.logger.exception("Erro ao tentar obter pontuações do usuário %s", id_usuario)
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+    return pontuacoes_usuario
+
+def carregar_regras_pontuacao():
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("SELECT * FROM regras_pontuacao ORDER BY id_ranking")
+
+        linhas = cur.fetchall()
+        colunas = [desc[0] for desc in cur.description]
+
+        return [dict(zip(colunas, linha)) for linha in linhas]
+
+    except Exception:
+        app.logger.error("Erro ao buscar regras de pontuações\n" + traceback.format_exc())
+        raise
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route('/entrar_visitante')
+def entrar_visitante():
+    session.clear()
+    
+    # 1. Captura dos parâmetros da URL
+    utm_source = request.args.get('utm_source')
+    utm_medium = request.args.get('utm_medium')
+    gclid = request.args.get('gclid')
+    msclkid = request.args.get('msclkid')
+
+    # Novas variáveis granulares do Sufixo da URL
+    utm_type = request.args.get('utm_type')          # 'search' ou 'display'
+    keyword = request.args.get('utm_term')           # Palavra-chave (Pesquisa)
+    
+    # Captura primeiro o targetid dedicado, depois o utm_content/placement como fallback
+    placement = request.args.get('targetid') or request.args.get('utm_content')
+    matchtype_raw = request.args.get('matchtype')    # 'e', 'p', 'b'
+
+    # 2. Identificação da Origem e Mídia
+    if utm_source == 'google' or gclid:
+        origem = 'GoogleAds'
+        midia = utm_medium or 'cpc'
+    elif utm_source in ['microsoft', 'bing'] or msclkid:
+        origem = 'MicrosoftAds'
+        midia = utm_medium or 'cpc'
+    else:
+        origem = session.get('usuario_origem', 'Desconhecida')
+        midia = session.get('usuario_midia', 'Desconhecida')
+
+    matchtype_map = {
+        'e': 'Exata', 'p': 'Frase', 'b': 'Ampla', # Google
+        'Exact': 'Exata', 'Phrase': 'Frase', 'Broad': 'Ampla' # Microsoft
+    }
+    
+    # Padronização do tipo de campanha
+    tipo_campanha = utm_type or ('Display' if utm_medium == 'display' else 'Pesquisa' if utm_medium == 'cpc' else 'Desconhecido')
+    if tipo_campanha == 'search':
+        tipo_campanha = 'Pesquisa'
+    if tipo_campanha == 'display':
+        tipo_campanha = 'Display'
+
+    tipo_correspondencia = matchtype_map.get(matchtype_raw, 'Não aplicável')
+
+    # 4. Guarda tudo padronizado na session para todas as páginas do fluxo
+    session['usuario_origem'] = origem
+    session['usuario_midia'] = midia
+    session['usuario_tipo_campanha'] = tipo_campanha
+    session['usuario_palavra_chave'] = keyword or 'Não aplicável'
+    session['usuario_canal_display'] = placement or 'Não aplicável'
+    session['usuario_correspondencia'] = tipo_correspondencia
+    session["visitante"] = True
+
+    # 🔑 REGISTRA A PRIMEIRA PÁGINA (Puxa automaticamente os dados da session)
+    registrar_pagina_visitada('Home', id_visitante='Primeiro acesso')
+
+    return redirect("/home")
+    
+@app.route("/enviar_feedback", methods=["POST"])
+def enviar_feedback():
+    data = request.get_json()
+    id_pergunta = data.get("id_pergunta")
+    tema = data.get("tema").lower().capitalize()
+    estrelas = data.get("estrelas")
+    if estrelas not in (1, 2, 3, 4, 5):
+        estrelas = None
+    versao_pergunta = data.get("versao_pergunta")
+    comentario = data.get("comentario")
+    dificuldade = data.get("dificuldade").lower().capitalize()
+    aprovacao_nota = data.get("aprovacao_nota")
+
+    id_usuario = session.get("id_usuario")
+    id_visitante = session.get("id_visitante")
+    modo_visitante = session.get("visitante")
+
+    if modo_visitante:
+        if not all([data.get("id_pergunta"), data.get("versao_pergunta"), id_visitante]):
+            return jsonify({"erro": "Dados incompletos como visitante"}), 400
+    else:
+        if not all([data.get("id_pergunta"), data.get("tema"), data.get("versao_pergunta"), id_usuario]):
+            return jsonify({"erro": "Dados incompletos como usuário cadastrado"}), 400
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        # Feedbacks de estrelas
+        id_feedback = None
+        if data['atualizar_feedback_estrelas']:
+            if modo_visitante:
+                cur.execute("""
+                    INSERT INTO feedbacks (id_pergunta, tema, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (id_pergunta, versao_pergunta, id_visitante)
+                    DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, comentario = EXCLUDED.comentario, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'))
+                    RETURNING id_feedback;
+                """, (id_pergunta, tema, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade))
+            else:
+                cur.execute("""
+                    INSERT INTO feedbacks (id_pergunta, tema, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (id_pergunta, versao_pergunta, id_usuario)
+                    DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, comentario = EXCLUDED.comentario, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'))
+                    RETURNING id_feedback;
+                """, (id_pergunta, tema, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade))
+            id_feedback = cur.fetchone()[0]
+        # Feedback para a nota da pergunta
+        if data["atualizar_feedback_nota"]:
+            if modo_visitante:
+                cur.execute("""
+                    INSERT INTO feedbacks_notas (id_pergunta, id_visitante, versao, positivo)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (id_pergunta, id_visitante, versao)
+                    DO UPDATE SET positivo = EXCLUDED.positivo,
+                                    versao = EXCLUDED.versao,
+                                    ultima_atualizacao = date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo');
+                """, (id_pergunta, id_visitante, versao_pergunta, aprovacao_nota))
+            else:
+                cur.execute("""
+                    INSERT INTO feedbacks_notas (id_pergunta, id_usuario,
+                                                    versao, positivo)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (id_pergunta, id_usuario, versao)
+                    DO UPDATE SET positivo = EXCLUDED.positivo,
+                                    versao = EXCLUDED.versao,
+                                    ultima_atualizacao = date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo');
+                """, (id_pergunta, id_usuario, versao_pergunta, aprovacao_nota))
+        conn.commit()
+
+        # Notifica por e-mail o feedback enviado caso tenha comentário
+        if comentario:
+            try:
+                enviar_email_feedback_pergunta(
+                    id_feedback=id_feedback,
+                    id_pergunta=id_pergunta,
+                    tema = tema,
+                    enunciado=data.get("enunciado"),
+                    comentario=comentario,
+                    estrelas=estrelas,
+                    dificuldade=dificuldade,
+                    modo_visitante=modo_visitante
+                )
+            except Exception:
+                app.logger.warning("Falha ao enviar email de feedback da pergunta", exc_info=True)
+
+        return jsonify({"sucesso": True})
+    except Exception as e:
+        if conn: conn.rollback()
+        app.logger.exception("Erro ao salvar feedback da pergunta")
+        return jsonify({"erro": str(e)}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route("/api/feedbacks/comentarios", methods=["POST"])
+def enviar_feedback_comentario():
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"erro": "Payload inválido"}), 400
+
+    modo_visitante = session["visitante"]
+    comentario = (data.get("comentario") or "").strip()
+    tema = data.get("tema")
+    feedback_id = data.get("feedback_id")
+    pontuacao_saldo = data.get("pontuacao_saldo")
+
+    if modo_visitante is None:
+        return jsonify({"erro": "modo_visitante é obrigatório"}), 400
+
+    if not comentario:
+        return jsonify({"erro": "Comentário vazio"}), 400
+
+    if not tema:
+        return jsonify({"erro": "Tema é obrigatório"}), 400
+
+    id_usuario = session.get("id_usuario") if not modo_visitante else None
+    id_visitante = session.get("id_visitante") if modo_visitante else None
+
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+
+                # =====================================
+                # UPDATE (caso o usuário edite um feedback já existente)
+                # =====================================
+                if feedback_id:
+                    cur.execute(
+                        """
+                        SELECT id_feedback
+                        FROM feedbacks_comentarios
+                        WHERE id_feedback = %s
+                          AND (
+                            (%s = false AND id_usuario = %s)
+                            OR
+                            (%s = true AND id_visitante = %s)
+                          )
+                        """,
+                        (
+                            feedback_id,
+                            modo_visitante, id_usuario,
+                            modo_visitante, id_visitante
+                        )
+                    )
+
+                    feedback = cur.fetchone()
+                    if not feedback:
+                        return jsonify({"erro": "Feedback não encontrado ou acesso negado"}), 403
+
+                    cur.execute(
+                        """
+                        UPDATE feedbacks_comentarios
+                        SET comentario = %s,
+                            pontuacao_saldo = %s
+                        WHERE id_feedback = %s
+                        RETURNING id_feedback;
+                        """,
+                        (comentario, pontuacao_saldo, feedback_id)
+                    )
+
+                    conn.commit()
+
+                    return jsonify({
+                        "sucesso": True,
+                        "id_feedback": feedback_id,
+                        "editado": True
+                    }), 200
+
+                # =====================================
+                # INSERT (novo feedback)
+                # =====================================
+                cur.execute(
+                    """
+                    INSERT INTO feedbacks_comentarios (
+                        modo_visitante,
+                        id_usuario,
+                        id_visitante,
+                        tema,
+                        pontuacao_saldo,
+                        comentario
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING id_feedback;
+                    """,
+                    (
+                        modo_visitante,
+                        id_usuario,
+                        id_visitante,
+                        tema,
+                        pontuacao_saldo,
+                        comentario
+                    )
+                )
+
+                novo_id = cur.fetchone()["id_feedback"]
+                conn.commit()
+
+                # Envia o feedback feito para o e-mail do admin
+                try:
+                    enviar_email_feedback_site(
+                        id_feedback=feedback_id,
+                        tema=tema,
+                        comentario=comentario,
+                        pontuacao_saldo=pontuacao_saldo,
+                        modo_visitante=modo_visitante
+                    )
+                except Exception:
+                    app.logger.warning("Falha ao enviar email de feedback do site",exc_info=True)
+
+                return jsonify({
+                    "sucesso": True,
+                    "id_feedback": novo_id,
+                    "editado": False
+                }), 201
+
+    except Exception as e:
+        app.logger.exception("Erro ao salvar feedback")
+        return jsonify({
+            "erro": "Erro interno",
+            "detalhe": str(e)
+        }), 500
+
+def email_dominio_valido(email: str) -> bool:
+    if not email or "@" not in email:
+        return False
+
+    dominio = email.split("@")[-1].lower()
+
+    if dominio in dominios_descartaveis:
+        return False
+
+    if dominio not in dominios_permitidos:
+        return False
+
+    return True
+
+@app.route('/api/gravar-resolucao-sessao', methods=['POST'])
+def gravar_resolucao_sessao():
+    """Grava no session as dimensões e tipo de dispositivo do usuário"""
+    dados = request.get_json() or {}
+    largura = dados.get('largura')
+    altura = dados.get('altura')
+
+    if largura:
+        if largura < 768:   dispositivo = f"Mobile ({largura}x{altura})"
+        elif largura <= 1024: dispositivo = f"Tablet ({largura}x{altura})"
+        else:                 dispositivo = f"Desktop ({largura}x{altura})"
+        session['usuario_dispositivo'] = dispositivo    
+    else:
+        session['usuario_dispositivo'] = 'Desconhecido'
+    return jsonify({"status": "ok"}), 200  
+   
+@app.route("/log/pagina", methods=["POST"])
+def pagina_visitada():
+    data = request.get_json()
+    pagina = data.get("pagina")
+
+    registrar_pagina_visitada(pagina)
+
+    if not pagina:
+        return {"error": "Página não informada"}, 400
+
+    return {"sucess": True}, 200
+
+@app.route("/", methods=["GET"])
+def index():
+    return render_template("login.html")
+
+@app.route("/pagina_destino", methods=["POST"])
+def pagina_destino():
+    data = request.get_json(silent=True) or {}
+    session["pagina_destino"] = data.get("pagina_destino", None)
+    return jsonify(ok=True)
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static', 'img'),
+                               'Favicon.png', mimetype='image/png')
+
+def checar_dados_registro(nome, email, senha):
+    if not nome or not email or not senha:
+        return False, "Preencha todos os campos"
+
+    if not re.match(email_regex, email):
+        return False, "E-mail inválido"
+
+    dominio = email.split("@")[-1].lower()
+
+    if dominio in dominios_descartaveis:
+        return False, "Domínio de e-mail temporário não é permitido"
+
+    if dominio not in dominios_permitidos:
+        return False, "O provedor de e-mail fornecido não é confiável"
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id_usuario FROM usuarios_registrados WHERE email = %s", (email,))
+    if cur.fetchone():
+        cur.close()
+        conn.close()
+        return False, "E-mail já registrado"
+    cur.close()
+    conn.close()
+
+    return True, "Validação OK"
+
+def carregar_e_transformar(caminho_img):
+    """Carrega a imagem do CAPTCHA com alguns ajustes para evitar identificação automática"""
+    img = Image.open(caminho_img).convert("RGB")
+    # Ajuste de brilho/contraste
+    enhancer = ImageEnhance.Contrast(img)
+    img = enhancer.enhance(random.uniform(0.85, 1.15))
+    # Pequeno desfoque
+    img = img.filter(ImageFilter.GaussianBlur(random.uniform(0, 1)))
+    # Opcional: redimensiona para um tamanho consistente (ex: 200x200) mantendo a proporção
+    img.thumbnail((240, 240), Image.LANCZOS)
+    # Salvar em memória
+    buffer = BytesIO()
+    img.save(buffer, format="JPEG", quality=85)
+    buffer.seek(0)
+    return buffer
+
+@app.route("/captcha_novo")
+def captcha_novo():
+    # Lista de categorias (pastas) dentro de CAPTCHA_BASE_DIR
+    categorias = [d for d in os.listdir(CAPTCHA_BASE_DIR) if os.path.isdir(os.path.join(CAPTCHA_BASE_DIR, d))]
+    if not categorias:
+        return jsonify({"error": "Sem categorias de CAPTCHA configuradas"}), 500
+    
+    categoria_correta = random.choice(categorias)
+
+    # 3 imagens corretas
+    todas_da_cat = os.listdir(os.path.join(CAPTCHA_BASE_DIR, categoria_correta))
+    if len(todas_da_cat) < 3:
+        return jsonify({"error": "Categoria sem imagens suficientes"}), 500
+    corretas = random.sample(todas_da_cat, 3)
+    corretas_paths = [f"{categoria_correta}/{fname}" for fname in corretas]
+
+
+    # 6 imagens incorretas
+    outras_categorias = [c for c in categorias if c != categoria_correta]
+    incorretas = []
+    while len(incorretas) < 6:
+        cat = random.choice(outras_categorias)
+        arquivos = os.listdir(os.path.join(CAPTCHA_BASE_DIR, cat))
+        if not arquivos:
+            continue
+        img = random.choice(arquivos)
+        caminho = f"{cat}/{img}"
+        if caminho not in incorretas:
+            incorretas.append(caminho)
+
+    todas = corretas_paths + incorretas
+    random.shuffle(todas)
+
+    # Criar token para este CAPTCHA
+    token = secrets.token_hex(16)
+
+    # Guardar na sessão quais índices são corretos
+    session[f"captcha_{token}"] = {
+        "categoria": categoria_correta,
+        "corretos": [todas.index(path) for path in corretas_paths],
+        "expira": time.time() + 180
+    }
+
+    # Gera URLs codificando segmentos
+    imagens_urls = []
+    for p in todas:
+        cat, fname = p.split("/", 1)
+        imagens_urls.append(f"/captcha_imagem/{urllib.parse.quote(cat)}/{urllib.parse.quote(fname)}")
+    return jsonify({
+        "token": token,
+        "categoria": categoria_correta,
+        "imagens": imagens_urls
+    })
+
+@app.route("/captcha_imagem/<categoria>/<filename>")
+def captcha_imagem(categoria, filename):
+    # Decodifica já feita pelo Flask — junta os segmentos
+    subpath = os.path.join(categoria, filename)
+    safe_subpath = os.path.normpath(subpath).lstrip(os.sep)
+    full_path = os.path.join(CAPTCHA_BASE_DIR, safe_subpath)
+
+    base_real = os.path.realpath(CAPTCHA_BASE_DIR)
+    target_real = os.path.realpath(full_path)
+    if not target_real.startswith(base_real):
+        return "Caminho inválido", 400
+    if not os.path.isfile(target_real):
+        return "Imagem não encontrada", 404
+
+    buffer = carregar_e_transformar(target_real)
+    # evita cache no cliente (opcional)
+    resp = send_file(buffer, mimetype="image/jpeg")
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return resp
+
+def formatar_hora_servidor(timestamp):
+    """Retorna data/hora formatada no fuso do servidor."""
+    if not timestamp:
+        return None
+    dt = datetime.fromtimestamp(timestamp, FUSO_SERVIDOR)
+    return dt.strftime("%H:%M")
+
+@app.route('/acesso/registro', methods=['POST'])
+def registrar_acesso_aba_registro():
+    pagina = session.get("pagina_destino", None) 
+    registrar_pagina_visitada(pagina)
+    return jsonify({ "ok": True })
+
+@app.route('/verificar_bloqueio')
+def verificar_bloqueio():
+    info = session.get('bloqueio_captcha', {'tentativas_registro': 0, 'bloqueado_ate': 0})
+    agora = time.time()
+
+    if info.get('bloqueado_ate', 0) > agora:
+        return jsonify(
+            bloqueado=True,
+            tentativas_registro=info['tentativas_registro'],
+            bloqueado_ate=info['bloqueado_ate'],
+            bloqueado_ate_str=formatar_hora_servidor(info['bloqueado_ate'])
+        )
+    else:
+        session.pop('bloqueio_captcha', None)
+        return jsonify(bloqueado=False)
+
+@app.route('/registrar_falha_captcha', methods=['POST'])
+def registra_falha_sessao():
+    agora = time.time()
+    info = session.get('bloqueio_captcha', {'tentativas_registro': 0, 'bloqueado_ate': 0})
+    info['tentativas_registro'] += 1
+
+    if info['tentativas_registro'] >= 6:
+        info['bloqueado_ate'] = agora + 15 * 60  # bloqueio 15 minutos
+
+    session['bloqueio_captcha'] = info
+
+    return jsonify(
+        success=True,
+        tentativas_registro=info['tentativas_registro'],
+        bloqueado_ate=info['bloqueado_ate'],
+        bloqueado_ate_str=formatar_hora_servidor(info['bloqueado_ate'])
+    )
+
+@app.route('/confirmar_email')
+def confirmar_email():
+    token = request.args.get('token')
+
+    if not token:
+        return render_template('mensagem.html', titulo="Erro", mensagem="Token de confirmação ausente.")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        # Busca usuário com o token fornecido e ainda válido
+        cur.execute("""
+            SELECT id_usuario, expiracao_token_confirmacao 
+            FROM usuarios_registrados 
+            WHERE token_confirmacao = %s
+        """, (token,))
+        usuario = cur.fetchone()
+
+        if not usuario:
+            return render_template('mensagem.html', titulo="Erro", mensagem="Token inválido.")
+
+        id_usuario, expiracao = usuario
+
+        if not expiracao or expiracao < datetime.utcnow():
+            return render_template('mensagem.html', titulo="Token expirado", mensagem="O token de confirmação expirou.")
+
+        # Atualiza o status do e-mail como confirmado
+        cur.execute("""
+            UPDATE usuarios_registrados
+            SET email_confirmado = TRUE,
+                token_confirmacao = NULL,
+                expiracao_token_confirmacao = NULL
+            WHERE id_usuario = %s
+        """, (id_usuario,))
+        conn.commit()
+
+        return render_template('mensagem.html', titulo="Sucesso", mensagem="E-mail confirmado com sucesso!")
+    
+    except Exception:
+        if conn:
+            conn.rollback()
+        return render_template('mensagem.html', titulo="Erro", mensagem="Erro ao confirmar o e-mail. Tente novamente mais tarde.")
+    
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route("/api/debug/frontend", methods=["POST"])
+def debug_frontend():
+    data = request.get_json()
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO debug_frontend (
+                mensagem, pagina, id_visitante, user_agent
+            )
+            VALUES (%s,%s,%s,%s)
+        """, (
+            data.get("mensagem"),
+            data.get("pagina"),
+            data.get("id_visitante"),
+            data.get("user_agent")
+        ))
+        conn.commit()
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.exception("Não foi possível registrar o erro")
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+    return "", 204
+
+def gerar_token_confirmacao(tamanho=32):
+    alfabeto = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(alfabeto) for _ in range(tamanho))
+
+@app.route("/home")
+def home():
+    id_usuario = session.get("id_usuario")
+    visitante = session.get("visitante", False)
+    usuario_autorizado = True if id_usuario in privileged_ids else False
+
+    return render_template(
+        "home.html",
+        usuario_autorizado=usuario_autorizado,
+        visitante=visitante
+    )
+
+@app.route("/recarga-de-energia")
+def doacoes():
+    pacotes = []
+    email_confirmado = False
+    total_respostas = 0
+    perguntas_restantes = 0
+    erro_carregamento = None
+    email_usuario = ''
+    id_usuario = session.get('id_usuario')
+    modo_visitante = session.get("visitante", False)
+
+    # Preço base de referência por energia (R$ 0,10)
+    PRECO_BASE_POR_ENERGIA = 0.10
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        if id_usuario and not modo_visitante:
+            cur.execute("""
+                SELECT 
+                    u.email,
+                    u.email_confirmado,
+                    (SELECT COUNT(*) FROM respostas_usuarios r WHERE r.id_usuario = u.id_usuario) as total_respostas,
+                    (SELECT COUNT(*) FROM perguntas_objetivas WHERE status = 'Ativa') as total_perguntas_sistema  
+                FROM usuarios_registrados u
+                WHERE u.id_usuario = %s;
+            """, (id_usuario,))
+            usuario_info = cur.fetchone()
+
+            if usuario_info:
+                # Acessa diretamente pelo nome da coluna no banco, eliminando erros de índice
+                email_usuario = usuario_info.get('email') or ''
+                email_confirmado = bool(usuario_info.get('email_confirmado'))
+                total_respostas = usuario_info.get('total_respostas') or 0
+                total_perguntas_sistema = usuario_info.get('total_perguntas_sistema') or 0                
+                perguntas_restantes = max(0, total_perguntas_sistema - total_respostas)
+
+        # Só busca os pacotes se o e-mail estiver confirmado
+        cur.execute("""
+            SELECT id, nome, energia, preco, preco_original
+            FROM pacotes_energia 
+            WHERE ativo = TRUE 
+            ORDER BY ordem ASC;
+        """)
+        linhas = cur.fetchall()
+
+        for linha in linhas:
+            p = dict(linha)
+            p['preco'] = float(p['preco'])
+            qtd_energia = p.get('energia') or 0
+
+            # 1. Calcula quanto custaria essa quantidade de energia no valor avulso (âncora real)
+            valor_ancora_total = qtd_energia * PRECO_BASE_POR_ENERGIA
+    
+            # 2. Calcula a porcentagem de desconto acumulado em relação ao valor avulso
+            if valor_ancora_total > 0 and p['preco'] < valor_ancora_total:
+                desconto_percentual = round(((valor_ancora_total - p['preco']) / valor_ancora_total) * 100)
+                p['desconto_label'] = f"{desconto_percentual}% OFF"
+            else:
+                p['desconto_label'] = None
+
+            # Bloqueia pacotes para usuários que possuem poucas perguntas no banco
+            if id_usuario and (perguntas_restantes - DIFERENCA_PERGUNTAS_RESTANTES) < qtd_energia:
+                p['bloqueado_por_excesso'] = True
+            else:
+                p['bloqueado_por_excesso'] = False
+
+            pacotes.append(p)
+
+    except Exception as e:
+        erro_carregamento = "Não foi possível carregar as opções de recarga no momento. Por favor, tente novamente em instantes."
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+    registrar_pagina_visitada('Recarga de energia')
+
+    return render_template(
+        "doacoes.html", 
+        pacotes=pacotes, 
+        email_confirmado=email_confirmado,
+        total_respostas=total_respostas,
+        perguntas_restantes=perguntas_restantes,
+        erro_carregamento=erro_carregamento,
+        email_usuario=email_usuario,
+        modo_visitante=modo_visitante,
+        id_usuario_atual= session.get('id_usuario') or None
+    )
+
+@app.route("/pesquisa")
+def pesquisa():
+    registrar_pagina_visitada("Pesquisa")
+    return render_template("pesquisa.html")
+
+@app.route("/api/carregar-favoritos", methods=["GET"])
+def get_favoritos_usuario():
+    tema = request.args.get("tema-atual")
+    id_usuario = session["id_usuario"]
+
+    if not id_usuario or not tema:
+        return jsonify({"error": "Parâmetros inválidos"}), 400
+
+    conn = cur = None
+    try:        
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        query = """
+            SELECT id_pergunta
+            FROM favoritos_usuarios
+            WHERE id_usuario = %s AND tema = %s
+        """
+        cur.execute(query, (id_usuario, tema))
+        favoritos = [row[0] for row in cur.fetchall()]
+    except Exception:
+        app.logger.exception("Erro ao carregar favoritos do usuário com id %s", id_usuario)
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+    return jsonify({"favoritos": favoritos})
+
+@app.route("/recuperação-de-senha", methods=["POST"])
+def esqueci_senha():
+    data = request.get_json()
+    email = data.get("email", "").strip()
+
+    # Mensagem padrão
+    mensagem_padrao = "Se o e-mail estiver cadastrado, enviaremos instruções."
+
+    if not email:
+        return jsonify(success=False, message="Informe um e-mail válido.")
+
+    # Busca email do usuário no banco
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("SELECT id_usuario, nome FROM usuarios_registrados WHERE email = %s", (email,))
+        usuario = cur.fetchone()
+    
+        if usuario:
+            token = secrets.token_urlsafe(32)
+            expira = datetime.utcnow() + timedelta(hours=1)
+
+            cur.execute("""
+                UPDATE usuarios_registrados
+                SET token_recuperacao = %s, expiracao_token_recuperacao = %s
+                WHERE id_usuario = %s
+            """, (token, expira, usuario[0]))
+            conn.commit()
+            
+            # Construir link de recuperação
+            link_recuperacao = url_for('reset_senha', token=token, _external=True)
+
+            # Montar mensagem
+            conteudo_email = f"""
+            Olá {usuario[1]},
+
+            Recebemos uma solicitação para redefinir sua senha.
+            Clique no link abaixo para criar uma nova senha:
+
+            {link_recuperacao}
+
+            Se você não solicitou a recuperação de senha, ignore esta mensagem.
+            """
+
+            # Enviar email
+            try:
+                enviar_email_recuperacao(email, "Recuperação de Senha - Desafio das Perguntas", conteudo_email)
+            except Exception:
+                app.logger.error("Erro ao enviar email")
+                return jsonify(success=False, message=mensagem_padrao)
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.exception(f"Erro na recuperação de senha")
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+    # Retorna mensagem padrão sempre, mesmo que o e-mail não exista
+    return jsonify(success=True, message=mensagem_padrao)
+
+@app.route("/pegar_email_confirmado", methods=["GET"])
+def pegar_email_confirmado():
+    return jsonify({
+        'email_usuario': session["email"],
+        'email_confirmado': session["email_confirmado"]
+    })
+
+@app.route("/pergunta/<int:id_pergunta>/gabarito", methods=["GET"])
+def get_gabarito(id_pergunta):
+    """Função para só pegar o gabarito e nota da pergunta após resposta enviada pelo usuário no modo desafio (evita expor o gabarito no localStorage)"""
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT resposta_correta, nota
+            FROM perguntas_objetivas
+            WHERE id_pergunta = %s
+        """, (id_pergunta,))
+        row = cur.fetchone()
+
+        if not row:
+            return {"erro": "Pergunta não encontrada"}, 404
+        resposta_correta, nota = row
+        return {
+            "resposta_correta": resposta_correta,
+            "nota": nota
+        }
+    except Exception:
+        app.logger.exception("Erro ao buscar gabarito")
+        return {"erro": "Erro interno"}, 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route('/api/perguntas', methods=['GET'])
+def listar_perguntas():
+    """
+    Retorna perguntas agrupadas por dificuldade conforme o modo (desafio/revisao).
+    Retorna também as pontuações atuais do usuário em cada tema.
+    """
+    # Parâmetros de query
+    tema = request.args.get('tema')
+    modo = (request.args.get('modo') or '').lower()
+    id_usuario = session.get('id_usuario')
+    id_visitante = session.get('id_visitante')
+    modo_visitante = session.get("visitante")
+    ranking_usuario = request.args.get('ranking-usuario') or 'Aprendiz'
+
+    # Configurações locais
+    limit = 80 if modo == 'desafio' else 1000
+
+    # Validações
+    if not tema or modo not in ('desafio', 'revisao'):
+        app.logger.error("Parâmetros inválidos ou ausentes")
+        return jsonify({'erro': 'Parâmetros inválidos ou ausentes'}), 400
+    if not id_usuario and not modo_visitante:
+        app.logger.error("Usuário não autenticado")
+        return jsonify({'erro': 'Usuário não autenticado'}), 401
+    if not id_visitante and modo_visitante:
+        app.logger.error("Visitante não autenticado")
+        return jsonify({'erro': 'Visitante não autenticado'}), 401
+    
+    # Conexão com banco
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+    except Exception:
+        app.logger.exception("1.Erro ao conectar para buscar perguntas. User: %s", id_usuario)
+        return jsonify({'erro': 'Erro ao tentar conectar para buscar novas perguntas'}), 500
+
+    try:
+        select_clause = ",\n".join(QUESTION_CONFIG['select_cols'])
+        select_cols_visitante = ",\n".join(QUESTION_CONFIG['select_cols_visitante'])
+    
+        is_privileged = False if modo_visitante else int(id_usuario) in privileged_ids
+        modo_teste = session.get("modo_teste", False)
+        
+        if modo_visitante:
+            where_filter = "p.status IN ('Ativa', 'Em teste') AND p.disponivel_visitantes = TRUE"
+        elif not modo_teste:
+            where_filter = "p.status = 'Ativa'"
+        else:
+            where_filter = "p.status = 'Teste fechado'" if is_privileged else "p.status = 'Ativa'"
+
+        if modo_visitante:
+            sql = f"""
+                SELECT {select_cols_visitante}, p.grupo
+                FROM perguntas_objetivas p
+                LEFT JOIN feedbacks f
+                    ON f.id_pergunta = p.id_pergunta
+                    AND f.id_visitante = %s
+                    AND f.versao_pergunta = p.versao
+                LEFT JOIN feedbacks_notas fn
+                    ON fn.id_pergunta = p.id_pergunta 
+                    AND fn.id_visitante = %s
+                    AND (p.versao - floor(p.versao)) = (fn.versao - floor(fn.versao))
+                WHERE p.tema = %s AND {where_filter}
+                ORDER BY p.id_pergunta ASC
+                LIMIT %s
+            """
+            params = (id_visitante, id_visitante, tema, limit)
+        else: # Usuário com conta registrada
+            if modo == 'desafio':
+                # Busca um pool estendido de perguntas não respondidas, 
+                # priorizando estritamente os menores grupos (1, 2, 3...) e jogando os sem grupo (NULL) para o final
+                sql = f"""
+                    SELECT {select_clause}, p.grupo, p.dificuldade, p.prioridade_usuarios
+                    FROM perguntas_objetivas p
+                    LEFT JOIN respostas_usuarios r
+                        ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s
+                    LEFT JOIN feedbacks f
+                        ON f.id_pergunta = p.id_pergunta
+                        AND f.id_usuario = %s
+                        AND f.versao_pergunta = p.versao
+                    LEFT JOIN feedbacks_notas fn
+                        ON fn.id_pergunta = p.id_pergunta
+                        AND fn.id_usuario = %s
+                        AND (p.versao - floor(p.versao)) = (fn.versao - floor(fn.versao))
+                    WHERE p.tema = %s 
+                    AND {where_filter}
+                    AND r.id_pergunta IS NULL
+                    ORDER BY 
+                        CASE WHEN p.grupo IS NULL THEN 1 ELSE 0 END ASC, 
+                        p.grupo ASC, 
+                        p.id_pergunta ASC
+                    LIMIT %s
+                """
+                # Pedimos um limit maior (ex: 80 ou 100) para o Python ter margem de escolha para montar a sessão ideal de 30
+                params = (id_usuario, id_usuario, id_usuario, tema, limit)
+            else:
+                # MODO REVISÃO: Traz todas as perguntas já respondidas pelo usuário
+                sql = f"""
+                    SELECT {select_clause}, p.grupo, p.prioridade_usuarios
+                    FROM perguntas_objetivas p
+                    JOIN respostas_usuarios r
+                        ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s
+                    LEFT JOIN feedbacks f
+                        ON f.id_pergunta = p.id_pergunta
+                        AND f.id_usuario = %s
+                        AND f.versao_pergunta = p.versao
+                    LEFT JOIN feedbacks_notas fn
+                        ON fn.id_pergunta = p.id_pergunta
+                        AND fn.id_usuario = %s
+                        AND (p.versao - floor(p.versao)) = (fn.versao - floor(fn.versao))
+                    WHERE p.tema = %s 
+                      AND {where_filter}
+                      AND r.id_pergunta IS NOT NULL
+                    ORDER BY p.grupo ASC NULLS LAST, p.id_pergunta ASC
+                    LIMIT %s
+                """
+                params = (id_usuario, id_usuario, id_usuario, tema, limit)
+
+        # Extrai as perguntas e prepara dicionário agrupando por dificuldade
+        cur.execute(sql, params)
+        perguntas = cur.fetchall()
+        if modo == 'desafio' and not modo_teste:
+            perguntas_a_processar = montar_sessao_usuario(perguntas, ranking_usuario)
+        else:
+            perguntas_a_processar = perguntas            
+        perguntas_por_dificuldade = {'Fácil': [], 'Médio': [], 'Difícil': [], 'Extremo': []}
+
+        # Laço unificado: formata e agrupa por dificuldade
+        for row in perguntas_a_processar:
+            dificuldade = row.get('dificuldade') or 'Médio'
+            item = {
+                'id_pergunta': row['id_pergunta'],
+                'subtemas': row['subtemas'],
+                'enunciado': row['enunciado'],
+                'alternativa_a': row['alternativa_a'],
+                'alternativa_b': row['alternativa_b'],
+                'alternativa_c': row['alternativa_c'],
+                'alternativa_d': row['alternativa_d'],
+                'nota': row['nota'],
+                'dificuldade': dificuldade,
+                'versao_pergunta': row['versao'],
+                'estrelas': row['estrelas'],
+                'comentario': row['comentario'],
+                'aprovacao_nota': row['aprovacao_nota'],
+                'total_acertos': row.get('total_acertos', 0),
+                'total_respostas': row.get('total_respostas', 0),
+                'grupo': row.get('grupo', None) # Apenas para depuração
+            }
+            
+            # Inclui a resposta correta com total segurança apenas no modo revisão
+            if modo == 'revisao': item.update({'resposta_correta': row['resposta_correta']})
+            perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
+    except Exception:
+        app.logger.exception("2.Erro ao consultar perguntas. User: %s", id_usuario)
+        return jsonify({'erro': 'Erro interno ao consultar perguntas'}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+    pontuacoes_usuario = buscar_pontuacoes_usuario() if not modo_visitante else {}
+
+    return jsonify({
+        'perguntas': perguntas_por_dificuldade,
+        'pontuacoes_usuario': pontuacoes_usuario,
+        'ids_prioritarios': []
+    })
+
+def montar_sessao_usuario(pool_perguntas, ranking_usuario):
+    cotas = CONFIG_COTAS_RANKING.get(ranking_usuario, CONFIG_COTAS_RANKING['Iniciante'])
+    
+    # 0. Agrupa, embaralha internamente cada grupo e junta respeitando a sequência de grupos (1 -> 2 -> 3)
+    grupos_dict = {}
+    for p in pool_perguntas:
+        g = p.get('grupo') or 999
+        if g not in grupos_dict:
+            grupos_dict[g] = []
+        grupos_dict[g].append(p)
+        
+    pool_ordenado = []
+    for g in sorted(grupos_dict.keys()):
+        random.shuffle(grupos_dict[g])  # Randomiza a ordem dentro do lote do mesmo grupo
+        pool_ordenado.extend(grupos_dict[g])
+    
+    # Separar o pool por dificuldade mantendo a prioridade por grupo (com IDs aleatorizados por grupo)
+    candidatos = {
+        'Fácil': [p for p in pool_ordenado if p['dificuldade'] == 'Fácil'],
+        'Médio': [p for p in pool_ordenado if p['dificuldade'] == 'Médio'],
+        'Difícil': [p for p in pool_ordenado if p['dificuldade'] == 'Difícil'],
+        'Extremo': [p for p in pool_ordenado if p['dificuldade'] == 'Extremo']
+    }
+    
+    sessao = []
+    
+    # 1. Fase dos Pisos Mínimos (pega o mínimo de cada dificuldade de acordo com o ranking)
+    for dificuldade, config in cotas.items():
+        min_q = config['min']
+        disponiveis = candidatos[dificuldade]
+        
+        qtd_a_pegar = min(min_q, len(disponiveis))
+        selecionadas = disponiveis[:qtd_a_pegar]
+        sessao.extend(selecionadas)
+        
+        candidatos[dificuldade] = disponiveis[qtd_a_pegar:]
+        
+    # 2. Fase de Preenchimento Restante baseada no Estoque e no Limite de Repetição
+    LIMITE_REPETICAO_CONSECUTIVA = 4
+    while len(sessao) < TAMANHO_SESSAO:
+        ultima_dificuldade = sessao[-1]['dificuldade'] if sessao else None
+        
+        repeticoes_atuais = 0
+        if ultima_dificuldade:
+            for pergunta in reversed(sessao):
+                if pergunta['dificuldade'] == ultima_dificuldade:
+                    repeticoes_atuais += 1
+                else:
+                    break
+        
+        opcoes_viaveis = []
+        for dificuldade, config in cotas.items():
+            max_q = config['max'] # Máximo de perguntas que pode pegar na dificuldade analisada
+            atual_q = sum(1 for pergunta in sessao if pergunta['dificuldade'] == dificuldade)
+            distancia_max = max_q - atual_q # Quanto falta para chegar no máximo definido
+            # (ex: se 15 for o máximo para difícil e já pegou 10, faltam 5 ainda)
+            
+            if len(candidatos[dificuldade]) > 0 and distancia_max > 0: # Se ainda tem perguntas para pegar
+                # na dificuldade e ainda não chegou no máximo permitido
+                if dificuldade == ultima_dificuldade and repeticoes_atuais >= LIMITE_REPETICAO_CONSECUTIVA:
+                    # Pula para a próxima dificuldade se já pegou várias consecutivas nesta
+                    continue
+                
+                opcoes_viaveis.append({
+                    'dificuldade': dificuldade,
+                    'estoque': len(candidatos[dificuldade]),
+                    'distancia': distancia_max
+                })
+        
+        if not opcoes_viaveis and ultima_dificuldade:
+            for dificuldade, config in cotas.items():
+                max_q = config['max']
+                atual_q = sum(1 for pergunta in sessao if pergunta['dificuldade'] == dificuldade)
+                if len(candidatos[dificuldade]) > 0 and (max_q - atual_q) > 0:
+                    opcoes_viaveis.append({
+                        'dificuldade': dificuldade,
+                        'estoque': len(candidatos[dificuldade]),
+                        'distancia': max_q - atual_q
+                    })
+        
+        if not opcoes_viaveis:
+            break
+            
+        opcoes_viaveis.sort(key=lambda x: x['estoque'], reverse=True)
+        escolha = opcoes_viaveis[0]['dificuldade']
+        
+        pergunta_selecionada = candidatos[escolha].pop(0)
+        sessao.append(pergunta_selecionada)
+
+    # --- IMPRESSÃO DOS IDS SEPARADOS POR GRUPO ---
+    ids_por_grupo = {}
+    for p in sessao:
+        g = p.get('grupo') or 'Sem Grupo'
+        if g not in ids_por_grupo:
+            ids_por_grupo[g] = []
+        ids_por_grupo[g].append(str(p['id_pergunta']))
+    try:
+        id_usuario = int(session.get('id_usuario') or -1)
+    except (ValueError, TypeError):
+        id_usuario = -1
+    try:
+        id_visitante = int(session.get('id_visitante') or -1)
+    except (ValueError, TypeError):
+        id_visitante = -1
+    if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
+        print("\n--- PERGUNTAS SELECIONADAS PARA A SESSÃO ---")
+        for grupo_num in sorted([g for g in ids_por_grupo.keys() if isinstance(g, int)]):
+            print(f"Grupo {grupo_num}: {', '.join(ids_por_grupo[grupo_num])}")
+        if 'Sem Grupo' in ids_por_grupo:
+            print(f"Sem Grupo: {', '.join(ids_por_grupo['Sem Grupo'])}")
+        print("--------------------------------------------\n")
+
+    return sessao
+
+@app.route("/api/subtemas")
+def listar_subtemas():
+    tema = request.args.get("tema")
+    if not tema:
+        return {"subtemas": []}
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT nome FROM subtemas WHERE tema = %s ORDER BY nome ASC
+        """, (tema,))
+
+        rows = cur.fetchall()
+
+        return {"subtemas": [r[0] for r in rows]}
+
+    except Exception:
+        app.logger.exception("Erro ao buscar subtemas")
+        return {"subtemas": []}, 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route("/login", methods=["GET","POST"])
+def login():
+    conn = cur = None
+    try:
+        if request.method == "POST":
+            if not request.is_json:
+                return jsonify(success=False, message="Content-Type deve ser application/json"), 415
+
+            data = request.get_json()
+            email = data.get("email").strip().lower()
+            senha = data.get("senha")
+
+            if not email or not senha:
+                return jsonify(success=False, message="Email e senha são obrigatórios")
+            
+            if not re.match(email_regex, email):
+                return jsonify(success=False, message="Formato de e-mail inválido"), 400
+
+            conn = get_db_connection()
+            cur = conn.cursor()
+
+            # Verifica usuário
+            cur.execute("""
+                SELECT id_usuario, senha_hash, nome, email_confirmado, modal_inicial_exibido
+                FROM usuarios_registrados WHERE email = %s
+            """, (email,))
+            usuario = cur.fetchone()
+
+            if not usuario:
+                return jsonify(success=False, message="E-mail não registrado")
+
+            id_usuario, senha_hash, nome_usuario, email_confirmado, modal_inicial_exibido = usuario
+
+            if not check_password_hash(senha_hash, senha):
+                return jsonify(success=False, message="Senha incorreta")
+
+            # Configura a sessão do Flask
+            session["id_usuario"]       = id_usuario
+            session["email"]            = email
+            session["email_confirmado"] = email_confirmado
+            session["visitante"]        = False
+
+            # Pega as informações de opções do usuário
+            cur.execute("""
+                SELECT
+                notificacoes_bonus_energia,
+                notificacoes_alteracoes_pontos,
+                notificacoes_atualizacoes_site,
+                outras_notificacoes,
+                temas_interesse
+                FROM opcoes_usuarios
+                WHERE id_usuario = %s
+            """, (id_usuario,))
+
+            opcoes = cur.fetchone()
+
+            if opcoes:
+                (   notificacoes_bonus_energia,
+                    notificacoes_alteracoes_pontos,
+                    notificacoes_atualizacoes_site,
+                    outras_notificacoes,
+                    temas_interesse
+                ) = opcoes
+            else:
+                # Fallback defensivo
+                notificacoes_bonus_energia      = True
+                notificacoes_alteracoes_pontos  = True
+                notificacoes_atualizacoes_site  = True
+                outras_notificacoes             = False
+                temas_interesse                 = []
+
+            # Cria as pontuações de usuário nos temas e registra na base de dados (iniciando com 0 pontos)
+            cur.execute("SELECT tema FROM pontuacoes_usuarios WHERE id_usuario = %s", (id_usuario,))
+            temas_ja_registrados = {row[0].strip().lower() for row in cur.fetchall()}
+            temas_normalizados = {tema.strip().lower(): tema for tema in temas_disponiveis}
+            temas_faltantes = [nome_original for chave, nome_original in temas_normalizados.items() if chave not in temas_ja_registrados]
+            for tema in temas_faltantes:
+                cur.execute("INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao) VALUES (%s, %s, %s)", (id_usuario, tema, 0))
+
+            conn.commit()
+
+            opcoes_usuario = {
+                "notificacoes_bonus_energia":     notificacoes_bonus_energia,
+                "notificacoes_alteracoes_pontos": notificacoes_alteracoes_pontos,
+                "notificacoes_atualizacoes_site": notificacoes_atualizacoes_site,
+                "outras_notificacoes":            outras_notificacoes,
+                "temas_interesse":                temas_interesse or []
+            }
+
+            # 🔑 Retorna JSON e define cookie HttpOnly
+            resp = make_response(jsonify(
+                success=True,
+                message="Login realizado com sucesso",
+                id_usuario=id_usuario,
+                email=email,
+                nome_usuario=nome_usuario,
+                email_confirmado=email_confirmado,
+                modal_inicial_exibido=modal_inicial_exibido,
+                opcoes_usuario=opcoes_usuario
+            ), 200)
+
+            return resp
+        else:
+            return render_template("login.html")
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.error("Erro no login:\n" + traceback.format_exc())
+        return jsonify(success=False, message="Erro interno no servidor"), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+def atualizar_energia_usuario(cur, id_usuario, energia_atual, u_sessao, b_energia, exp_bonus):
+    """
+    Calcula o ganho acumulado de energia (+5 por dia de ausência, máx. +50)
+    e atualiza o registro no banco de dados.
+    """
+    agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
+    nova_energia = energia_atual
+
+    # 1. Recarga baseada em dias de calendário ausentes
+    if u_sessao:
+        dias_passados = (agora_sp.date() - u_sessao.date()).days
+        if dias_passados > 0:
+            # Ganho de +5 por dia, limitado ao teto máximo de +50 de recarga
+            ganho_diario = min(dias_passados * 5, 50)
+            nova_energia += ganho_diario
+
+    # 2. Processamento do Bônus Pendente (se houver e não estiver expirado)
+    if b_energia and b_energia > 0:
+        if exp_bonus is None or agora_sp < exp_bonus:
+            nova_energia += b_energia
+
+    # Respeita o teto máximo global absoluto de 500
+    nova_energia = min(nova_energia, 500)
+
+    # 3. Atualiza o banco com a nova energia acumulada e zera o bônus processado
+    cur.execute("""
+        UPDATE usuarios_registrados
+        SET ultima_sessao = date_trunc('second', NOW() AT TIME ZONE 'America/Sao_Paulo'),
+            perguntas_restantes = %s,
+            bonus_energia = 0,
+            expiracao_bonus = NULL
+        WHERE id_usuario = %s
+    """, (nova_energia, id_usuario))
+
+    return nova_energia
+
+@app.route('/api/recarregar_energia_usuario', methods=['GET'])
+def recarregar_energia_home():
+    id_usuario = session.get('id_usuario')
+    if not id_usuario:
+        return jsonify(success=False, message="Sessão expirada"), 401
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        # 1. PEGAR APENAS AS INFORMAÇÕES NECESSÁRIAS NO BANCO
+        cur.execute("""
+            SELECT perguntas_restantes, ultima_sessao, bonus_energia, expiracao_bonus
+            FROM usuarios_registrados WHERE id_usuario = %s
+        """, (id_usuario,))
+        usuario = cur.fetchone()
+
+        if not usuario:
+            return jsonify(success=False, message="Usuário não encontrado"), 404
+
+        # 2. ATUALIZAR AS INFORMAÇÕES NO BANCO
+        nova_energia = atualizar_energia_usuario(
+            cur=cur,
+            id_usuario=id_usuario,
+            energia_atual=usuario['perguntas_restantes'],
+            u_sessao=usuario['ultima_sessao'],
+            b_energia=usuario['bonus_energia'],
+            exp_bonus=usuario['expiracao_bonus']
+        )
+
+        # 🔑 Salva de fato as alterações no banco de dados da Home
+        conn.commit()
+
+        # 3. RETORNAR PARA O FRONTEND A NOVA ENERGIA
+        return jsonify({
+            'success': True,
+            'perguntas_restantes': nova_energia
+        })
+
+    except Exception:
+        app.logger.exception("Erro ao recarregar energia na home")
+        return jsonify({'success': False, 'message': 'Erro interno'}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route('/api/obter_anuncios')
+def obter_anuncios():
+    conn = cur = None
+    dicionario_anuncios = {}
+    
+    # Permite filtrar por tema via query string (ex: /api/obter_anuncios?tema=Interstitial Ad)
+    tema_filtro = request.args.get('tema')
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        query = """
+            SELECT id, nome, tema, descricao, link_asin, imagem_url, tipo_midia, provedor,
+            disponivel_visitantes, disponivel_usuarios, oferta_expira_em, prioridade
+            FROM anuncios
+            WHERE is_ativo = TRUE
+        """
+        params = []
+        if tema_filtro:
+            query += " AND tema = %s"
+            params.append(tema_filtro)
+            
+        cur.execute(query, params)
+        anuncios = cur.fetchall()
+
+        for a in anuncios:
+            id_banco, nome, tema, desc, link_referencia, img, tipo_midia, provedor, disp_visitantes, disp_usuarios, oferta_expira_em, prioridade = a
+            
+            if provedor not in dicionario_anuncios:
+                dicionario_anuncios[provedor] = []
+            
+            link_final = f"{link_referencia}&tag={AMAZON_TRACKING_ID}" if provedor == 'Amazon' else link_referencia
+
+            dicionario_anuncios[provedor].append({
+                'id': id_banco,
+                'nome': nome,
+                'tema': tema,
+                'descricao': desc,
+                'link': link_final,
+                'imagem': img, # URL direta do Cloudinary salva no banco
+                'tipo_midia': tipo_midia,
+                'provedor': provedor,
+                'disponivel_visitantes': disp_visitantes,
+                'disponivel_usuarios': disp_usuarios,
+                'oferta_expira_em': oferta_expira_em,
+                'prioridade': prioridade
+            })
+    except Exception:
+        app.logger.exception("Erro ao tentar obter anúncios")
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+    return jsonify(dicionario_anuncios)
+
+@app.route('/api/obter_todos_anuncios')
+def obter_todos_anuncios():
+    conn = cur = None
+    # Estrutura final: {"História": {"amazon": [...], "mercadolivre": [...]}}
+    dicionario_anuncios = {}
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, tema, nome, descricao, link_asin, imagem_url, provedor, tipo_midia, disponivel_visitantes, disponivel_usuarios, frete_gratis, desconto, oferta_expira_em
+            FROM anuncios
+            WHERE is_ativo = TRUE
+        """)
+
+        anuncios = cur.fetchall()
+
+        for a in anuncios:
+            id_banco, tema, nome, desc, link_referencia, img, provedor, tipo_midia, disp_visitantes, disp_usuarios, frete_gratis, desconto, oferta_expira_em = a
+            
+            # Garante a criação do Tema e do Provedor no dicionário
+            if tema not in dicionario_anuncios:
+                dicionario_anuncios[tema] = {}
+            
+            if provedor not in dicionario_anuncios[tema]:
+                dicionario_anuncios[tema][provedor] = []
+            
+            # Montagem do Link
+            if provedor == 'Amazon':
+                if tipo_midia == 'Melhores ofertas':
+                    link_final = f"{link_referencia}?tag={AMAZON_TRACKING_ID}"
+                else:
+                    link_final = f"https://www.amazon.com.br/dp/{link_referencia}?tag={AMAZON_TRACKING_ID}"
+            else:
+                if tipo_midia == 'Melhores ofertas':
+                    link_final = link_referencia
+                else:
+                    link_final = f"https://mercadolivre.com/sec/{link_referencia}"
+
+            dicionario_anuncios[tema][provedor].append({
+                'id': id_banco,
+                'nome': nome,
+                'descricao': desc,
+                'link': link_final,
+                'imagem': img,
+                'tipo_midia': tipo_midia,
+                'provedor': provedor,
+                'disponivel_visitantes': disp_visitantes,
+                'disponivel_usuarios': disp_usuarios,
+                'frete_gratis': frete_gratis,
+                'desconto': desconto,
+                'oferta_expira_em': oferta_expira_em
+            })
+
+    except Exception:
+        app.logger.exception("Erro ao tentar obter anúncios")
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+    return jsonify(dicionario_anuncios)
+
+@app.route("/reenviar-email-confirmacao", methods=["POST"])
+def reenviar_email_confirmacao_route():
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Identifica o usuário
+        id_usuario = session.get("id_usuario")
+        cur.execute("""
+            SELECT nome, email
+            FROM usuarios_registrados
+            WHERE id_usuario = %s
+        """, (id_usuario,))
+        usuario = cur.fetchone()
+
+        if not usuario:
+            return jsonify(success=False, message="Usuário não encontrado"), 404
+
+        nome_usuario, email = usuario
+
+        # 🔑 Gera novo token
+        token = secrets.token_urlsafe(32)
+        agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
+        expiracao = agora_sp + timedelta(hours=24)
+
+        # 🔄 Atualiza token e expiração
+        cur.execute("""
+            UPDATE usuarios_registrados
+            SET token_confirmacao = %s,
+                expiracao_token_confirmacao = date_trunc('second', %s)
+            WHERE id_usuario = %s
+        """, (token, expiracao, id_usuario))
+
+        conn.commit()
+
+        link_confirmacao = f"{base_url}/confirmar_email?token={token}"
+        enviado = enviar_email_confirmacao(email, nome_usuario, link_confirmacao)
+
+        if not enviado:
+            return jsonify(success=False, message="Falha ao enviar o e-mail")
+
+        return jsonify(success=True)
+
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.error("Erro ao reenviar confirmação:\n" + traceback.format_exc())
+        return jsonify(success=False, message="Erro interno no servidor"), 500
+
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route("/reset_senha", methods=["GET", "POST"])
+def reset_senha():
+    token = request.args.get("token") if request.method == "GET" else request.form.get("token")
+    if not token:
+        return render_template("mensagem.html", titulo="Erro", mensagem="Token ausente.")
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Busca usuário com token válido
+        cur.execute("""
+            SELECT id_usuario, expiracao_token_recuperacao
+            FROM usuarios_registrados
+            WHERE token_recuperacao = %s
+        """, (token,))
+        usuario = cur.fetchone()
+
+        if not usuario:
+            return render_template("mensagem.html", titulo="Erro", mensagem="Token inválido.")
+
+        id_usuario, expira = usuario
+
+        if not expira or expira < datetime.utcnow():
+            return render_template("mensagem.html", titulo="Token expirado", mensagem="O token de recuperação expirou.")
+        
+        if request.method == "POST":
+            # Recebe novas senhas
+            nova_senha = request.form.get("senha", "").strip()
+            confirmar_senha = request.form.get("confirmar_senha", "").strip()
+
+            if not nova_senha or not confirmar_senha:
+                return render_template("reset_senha.html", token=token, erro="Preencha ambos os campos.")
+            if nova_senha != confirmar_senha:
+                return render_template("reset_senha.html", token=token, erro="As senhas não coincidem.")
+
+            # Hash da nova senha
+            senha_hash = generate_password_hash(nova_senha)
+
+            # Atualiza senha e remove token
+            cur.execute("""
+                UPDATE usuarios_registrados
+                SET senha_hash = %s,
+                    token_recuperacao = NULL,
+                    expiracao_token_recuperacao = NULL
+                WHERE id_usuario = %s
+            """, (senha_hash, id_usuario))
+            conn.commit()
+
+            return render_template("mensagem.html", titulo="Sucesso", mensagem="Senha redefinida com sucesso! Agora você pode fazer login.")
+
+        # GET: exibe formulário
+        return render_template("reset_senha.html", token=token)
+
+    except Exception:
+        if conn:
+            conn.rollback()
+        app.logger.exception(f"Erro reset_senha:")
+        return render_template("mensagem.html", titulo="Erro", mensagem="Erro ao redefinir a senha. Tente novamente.")
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route('/opcoes', methods=['GET'])
+def opcoes():
+    registrar_pagina_visitada("Opções")
+    return render_template("opcoes.html")
+
+@app.route("/perfil")
+def perfil():
+    registrar_pagina_visitada("Perfil")
+    return render_template("perfil.html")
+
+@app.route("/politica-de-privacidade")
+def politica_privacidade():
+    session['from_login'] = False
+    registrar_pagina_visitada("Home -> Política de Privacidade")
+    return render_template("privacy_policy.html")
+
+@app.route("/termos-de-uso")
+def termos_uso():
+    session['from_login'] = False
+    registrar_pagina_visitada("Home -> Termos de Uso")
+    return render_template("termos_de_uso.html")
+
+@app.route("/api/favoritos", methods=["POST"])
+def salvar_favoritos():
+    data = request.get_json(force=True)
+
+    tema = data.get("tema_atual")
+    adicionar = set(map(int, data.get("adicionar", [])))
+    remover   = set(map(int, data.get("remover", [])))
+
+    if not tema:
+        return jsonify({"success": False, "msg": "Tema inválido"}), 400
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        id_usuario = session['id_usuario']
+
+        # Remover apenas os IDs explicitamente enviados
+        if remover:
+            cur.execute("""
+                DELETE FROM favoritos_usuarios
+                WHERE id_usuario = %s
+                  AND tema = %s
+                  AND id_pergunta = ANY(%s)
+            """, (id_usuario, tema, list(remover)))
+
+        # Inserir os IDs explicitamente enviados
+        for id_pergunta in adicionar:
+            cur.execute("""
+                INSERT INTO favoritos_usuarios (id_usuario, id_pergunta, tema)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (id_usuario, id_pergunta) DO NOTHING
+            """, (id_usuario, id_pergunta, tema))
+
+        conn.commit()
+        return jsonify({"success": True, "msg": "Favoritos atualizados com sucesso."}), 200
+
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.exception("Erro ao salvar favoritos do usuário %s", id_usuario)
+        return jsonify({"success": False, "msg": "Erro ao salvar favoritos"}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route("/sobre-o-app")
+def sobre_app():
+    session['from_login'] = False
+    registrar_pagina_visitada("Home -> Sobre")
+    return render_template("sobre_o_app.html")
+
+@app.route("/pesquisa-avançada")
+def pesquisa_avancada():
+    return render_template("pesquisa_avancada.html")
+
+@app.route("/pesquisar_perguntas", methods=["POST"])
+def pesquisar_perguntas():
+    data = request.get_json()
+    temas = data.get("temas", [])  # Lista de temas do frontend
+    palavras = data.get("palavras", [])
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    resultados = []
+
+    # Lógica de montagem da cláusula WHERE de temas:
+    # Se nenhum tema for passado, busca todos
+    if not temas:
+        condicao = "WHERE TRUE"
+        params_tema = []
+    else:
+        condicao = "WHERE (tema = ANY(%s))"
+        params_tema = [temas]
+
+    # -------- 1. OBJETIVAS --------
+    query_obj = f"""
+    SELECT id_pergunta, tema, subtemas, enunciado,
+        alternativa_a, alternativa_b, alternativa_c, alternativa_d,
+        resposta_correta, dificuldade, status
+    FROM perguntas_objetivas
+    {condicao}
+    AND EXISTS (
+        SELECT 1
+        FROM unnest(%s::text[]) p
+        WHERE
+            unaccent(LOWER(enunciado)) LIKE unaccent('%%' || p || '%%')
+            OR unaccent(LOWER(
+                CASE resposta_correta
+                    WHEN 'A' THEN alternativa_a
+                    WHEN 'B' THEN alternativa_b
+                    WHEN 'C' THEN alternativa_c
+                    WHEN 'D' THEN alternativa_d
+                END
+            )) LIKE unaccent('%%' || p || '%%')
+    )
+    """
+
+    cur.execute(query_obj, params_tema + [palavras])
+
+    for row in cur.fetchall():
+        alternativas = {
+            "A": row[4],
+            "B": row[5],
+            "C": row[6],
+            "D": row[7]
+        }
+        texto_correto = alternativas.get(row[8], "")
+
+        resultados.append({
+            "id_pergunta": row[0],
+            "tipo": "Objetiva",
+            "tema": row[1],
+            "subtemas": row[2],
+            "enunciado": row[3],
+            "resposta": texto_correto,
+            "dificuldade": row[9],
+            "status": row[10]
+        })
+
+    # -------- 2. DISCURSIVAS --------
+    query_disc = f"""
+    SELECT id_pergunta, tema, subtemas, enunciado, respostas_corretas, dificuldade, status
+    FROM perguntas_discursivas
+    {condicao}
+    AND EXISTS (
+        SELECT 1
+        FROM unnest(%s::text[]) p
+        WHERE
+            unaccent(LOWER(enunciado)) LIKE unaccent('%%' || p || '%%')
+            OR unaccent(LOWER(respostas_corretas::text)) LIKE unaccent('%%' || p || '%%')
+    )
+    """
+
+    cur.execute(query_disc, params_tema + [palavras])
+    
+    for row in cur.fetchall():
+        id_p, tema_p, subtemas, enunciado, respostas, dif, status = row
+
+        resultados.append({
+            "id_pergunta": id_p,
+            "tipo": "Discursiva",
+            "tema": tema_p,
+            "subtemas": subtemas,
+            "enunciado": enunciado,
+            "resposta": respostas,
+            "dificuldade": dif,
+            "status": status
+        })
+
+    cur.close()
+    conn.close()
+
+    return jsonify(resultados)
+
+@app.route('/politica-de-privacidade-from-login')
+def politica_privacidade_from_login():
+    session['from_login'] = True
+    registrar_pagina_visitada("Login -> Política de Privacidade")
+    return render_template('privacy_policy.html')
+
+@app.route("/resultado")
+def resultado():
+    usuario_logado = "id_usuario" in session
+    return render_template(
+        "resultado.html",
+        usuario_logado=usuario_logado
+    )
+
+@app.route('/termos-de-uso-from-login')
+def termos_uso_from_login():
+    session['from_login'] = True
+    registrar_pagina_visitada("Login -> Termos de Uso")
+    return render_template('termos_de_uso.html')
+
+@app.route('/sobre-o-app-from-login')
+def sobre_app_from_login():
+    session['from_login'] = True
+    registrar_pagina_visitada("Login -> Sobre")
+    return render_template('sobre_o_app.html')
+
+# Aqui deve-se passar tema mesmo sem ser usado para que seja mostrado na URL durante o quiz
+@app.route("/quiz/<tema>")
+def quiz(tema):
+    return render_template("quiz.html", AMAZON_TRACKING_ID=AMAZON_TRACKING_ID)
+
+@app.route("/revisao/<tema>")
+def revisao(tema):
+    return render_template("quiz.html", AMAZON_TRACKING_ID=AMAZON_TRACKING_ID)
+
+@app.route("/register", methods=["POST"])
+def registrar():
+    data = request.get_json()
+    notificacoes_bonus_energia = bool(data.get("notificacoes_bonus_energia", True))
+    notificacoes_alteracoes_pontos = bool(data.get("notificacoes_alteracoes_pontos", True))
+    notificacoes_atualizacoes_site = bool(data.get("notificacoes_atualizacoes_site", True))
+
+    nome = data.get("nome")
+    email_raw = data.get("email")
+    senha = data.get("senha")
+    captcha_token = data.get("captcha_token")
+    captcha_selecoes = list(map(int, data.get("captcha_selecoes", [])))
+
+    # Validação do e-mail
+    if not email_raw or email_raw in EMAILS_PROIBIDOS:
+        return jsonify(success=False, message="E-mail inválido"), 400
+    email = email_raw.strip().lower()
+
+    # Validação do CAPTCHA
+    if not captcha_token:
+        return jsonify(success=False, message="CAPTCHA token ausente"), 400
+
+    dados_captcha = session.get(f"captcha_{captcha_token}")
+    if not dados_captcha or time.time() > dados_captcha.get("expira", 0):
+        return jsonify(success=False, message="CAPTCHA expirado ou inválido"), 400
+
+    if sorted(captcha_selecoes) != sorted(dados_captcha.get("corretos", [])):
+        return jsonify(success=False, message="Seleções do CAPTCHA incorretas"), 400
+
+    # Invalida o CAPTCHA para evitar reutilização
+    session.pop(f"captcha_{captcha_token}", None)
+
+    # Gerar hash da senha e token de confirmação
+    senha_hash = generate_password_hash(senha)
+    token = gerar_token_confirmacao()
+
+    # Agora atual (truncado para segundos)
+    agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
+    expiracao = agora_sp + timedelta(hours=24)
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Insere o novo usuário na tabela de usuários registrados
+        cur.execute("""
+            INSERT INTO usuarios_registrados (
+                nome, email, senha_hash, email_confirmado,
+                token_confirmacao, expiracao_token_confirmacao
+            )
+            VALUES (%s, %s, %s, FALSE, %s, %s)
+            RETURNING id_usuario
+        """, (nome, email, senha_hash, token, expiracao))
+
+        id_usuario = cur.fetchone()[0]
+
+        # Registra as opções de usuários na base de dados
+        cur.execute("""
+            INSERT INTO opcoes_usuarios (
+              id_usuario,
+              notificacoes_bonus_energia,
+              notificacoes_alteracoes_pontos,
+              notificacoes_atualizacoes_site
+            )
+            VALUES (%s, %s, %s, %s)
+        """, (id_usuario, notificacoes_bonus_energia, notificacoes_alteracoes_pontos, notificacoes_atualizacoes_site))
+
+        # Cria os registros de pontuações do usuário em cada tema
+        cur.execute("""
+            INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao)
+            SELECT %s, t.nome, 0
+            FROM temas t
+            WHERE t.ativo = true
+            ON CONFLICT (id_usuario, tema) DO NOTHING
+        """, (id_usuario,))
+
+        # Migra dados do modo visitante para a nova conta caso o usuário tenha marcado esta opção
+        id_visitante = data.get("id_visitante")
+        usar_dados_visitante = data.get("usar_dados_visitante", False)
+        if id_visitante:
+            if usar_dados_visitante:
+                cur.execute("""
+                    SELECT
+                        id_pergunta, tema, resposta_enviada, versao_pergunta, acertou, tempo_gasto, pontos_ganhos, pontos_usuario, auto_chute, dificuldade
+                    FROM respostas_visitantes
+                    WHERE id_visitante = %s AND criado_em >= NOW() - INTERVAL '1 month'
+                    ORDER BY id_pergunta, criado_em ASC
+                """, (id_visitante,))
+                
+                respostas = cur.fetchall()
+
+                # Obs: A data da resposta registrada é a data em que ocorreu a migração dos dados
+                for id_pergunta, tema, resposta_enviada, versao_pergunta, acertou, tempo_gasto, pontos_ganhos, pontos_usuario, auto_chute, dificuldade in respostas:
+                    cur.execute("""
+                        INSERT INTO respostas_usuarios (
+                            id_usuario, id_pergunta, tema, resposta_usuario, versao_pergunta, acertou, tempo_gasto, pontos_ganhos, pontos_usuario, data_resposta, dados_migrados, auto_chute, dificuldade
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (id_usuario, id_pergunta) DO NOTHING
+                        RETURNING id_resposta
+                    """, (id_usuario, id_pergunta, tema, resposta_enviada, versao_pergunta, acertou, tempo_gasto, pontos_ganhos, pontos_usuario, agora_sp, True, auto_chute, dificuldade))
+
+                    inserido = cur.fetchone()
+
+                    # TRECHO DE CÓDIGO ADICIONADO
+                    #===================================
+                    if inserido and not id_visitante in ids_visitante_admin:
+                        cur.execute("""
+                            UPDATE perguntas_objetivas
+                            SET 
+                                total_respostas = total_respostas + 1,
+                                total_acertos = total_acertos + CASE WHEN %s = TRUE THEN 1 ELSE 0 END
+                            WHERE id_pergunta = %s AND versao = %s
+                        """, (acertou, id_pergunta, versao_pergunta))
+                        #===================================
+
+                app.logger.info(f"{len(respostas)} respostas migradas do visitante {id_visitante}")
+
+                # Limpeza das respostas do usuario no modo visitante
+                cur.execute("""
+                    DELETE FROM respostas_visitantes WHERE id_visitante = %s AND criado_em >= NOW() - INTERVAL '1 month'
+                """, (id_visitante,))
+
+            # Atualiza os feedbacks para as perguntas que o usuário fez como visitante
+            cur.execute("""
+                UPDATE feedbacks
+                SET id_usuario = %s
+                WHERE id_visitante = %s
+                AND id_usuario IS NULL
+                RETURNING id_feedback
+            """, (id_usuario, id_visitante))
+            qtd = cur.rowcount
+            app.logger.info(
+                f"{qtd} feedbacks migrados do visitante {id_visitante} para usuario {id_usuario}"
+            )
+
+            # Atualiza os feedbacks gerais para o site que o usuário fez como visitante
+            cur.execute("""
+                UPDATE feedbacks_comentarios
+                SET id_usuario = %s
+                WHERE id_visitante = %s
+                AND id_usuario IS NULL
+            """, (id_usuario, id_visitante))
+
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        app.logger.error("Erro ao tentar registrar nova conta\n" + traceback.format_exc())
+        return jsonify(success=False, message="Erro interno no registro"), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+    
+    # ATENÇÃO: ESTE LINK DE CONFIRMAÇÃO JÁ É DEFINIDO DENTRO DA FUNÇÃO ENVIAR_EMAIL_CONFIRMACAO
+    link_confirmacao = f"{base_url}/confirmar_email?token={token}"
+    enviar_email_confirmacao(email, nome, link_confirmacao)
+    return jsonify(success=True, message="Registro realizado! Verifique seu e-mail para confirmar")
+
+@app.route('/registrar_interacao_anuncio', methods=['POST'])
+def registrar_interacao_anuncio():
+    dados = request.get_json()
+    if not dados:
+        return jsonify({"erro": "Dados inválidos"}), 400
+
+    conn = cur = None
+    try:
+        tipo_interacao = dados.get("tipo_interacao", None)
+        id_usuario = None if dados["modo_visitante"] else dados["id_usuario"]
+        id_visitante = None if not dados["modo_visitante"] else dados["id_visitante"]
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        dispositivo = session.get('usuario_dispositivo')
+        query = """
+        INSERT INTO cliques_anuncios (id_usuario, id_visitante, id_anuncio, tema_quiz, provedor, tipo_midia, dispositivo, tipo_interacao)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+        valores = (
+            id_usuario,
+            id_visitante,
+            dados["id_anuncio"],
+            dados["tema_quiz"],
+            dados["provedor"],
+            dados["tipo_midia"],
+            dispositivo,
+            tipo_interacao
+        )
+        cur.execute(query, valores)
+        conn.commit()
+
+        return jsonify({"status": "sucesso", "mensagem": "Interação em anúncio registrada"}), 201
+    except Exception:
+        app.logger.exception("Erro ao tentar registrar interação em anúncio")
+        return jsonify({"erro": "Erro ao tentar registrar interação em anúncio"}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route("/api/modo_teste", methods=["POST"])
+def registrar_modo_teste():
+    data = request.get_json() or {}
+    session["modo_teste"] = bool(data.get("modo_teste", False))
+    return jsonify({"ok": True})
+
+def registrar_pagina_visitada(pagina, id_visitante=None):
+    conn = cur = None
+    id_usuario = session.get('id_usuario')
+    if not id_visitante: id_visitante = session.get('id_visitante')
+
+    # Bloqueia registro de página para admins
+    if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
+        return
+        #pass
+    
+    # Se não for passado explicitamente na chamada da função, busca tudo padronizado da session!
+    dispositivo     = session.get('usuario_dispositivo')
+    origem          = session.get('usuario_origem', 'Desconhecida')
+    midia           = session.get('usuario_midia', 'Desconhecida')
+    tipo_campanha   = session.get('usuario_tipo_campanha', 'Desconhecido')
+    correspondencia = session.get('usuario_correspondencia', 'Não aplicável')
+    palavra_chave   = session.get('usuario_palavra_chave', 'Não aplicável')
+    canal_display   = session.get('usuario_canal_display', 'Não aplicável')
+    modo_visitante  = session.get('visitante')
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO acessos_paginas (pagina, id_usuario, dispositivo, id_visitante, origem, midia,
+            tipo_campanha, correspondencia, palavra_chave, canal_display, modo_visitante) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (pagina, id_usuario, dispositivo, id_visitante, origem, midia, tipo_campanha,
+              correspondencia, palavra_chave, canal_display, modo_visitante))
+        conn.commit()
+    except Exception as e:
+        if conn: conn.rollback()
+        app.logger.error(f"Erro ao registrar página: {e}")
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route("/registrar_resposta", methods=["POST"])
+def registrar_resposta_usuario():
+    dados = request.get_json()
+    id_usuario = session.get("id_usuario")
+
+    if not id_usuario:
+        return jsonify({"sucesso": False, "mensagem": "Usuário não autenticado"})
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            # Registra a resposta do usuário
+            cur.execute("""
+                INSERT INTO respostas_usuarios (
+                    id_usuario, id_pergunta, versao_pergunta, resposta_usuario, acertou,pontos_ganhos, tempo_gasto, pontos_usuario, tema, dados_migrados, dificuldade, auto_chute
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                id_usuario,
+                dados["id_pergunta"],
+                dados["versao_pergunta"],
+                dados["resposta_usuario"],
+                dados["acertou"],
+                dados["pontos_ganhos"],
+                dados["tempo_gasto"],
+                dados["pontos_usuario"],
+                dados["tema"],
+                False,
+                dados["dificuldade"].lower().capitalize(),
+                dados["auto_chute"]
+            ))
+
+            # 🎯 2. Incrementa os contadores da comunidade na tabela perguntas em tempo real
+            if id_usuario not in privileged_ids:
+                cur.execute("""
+                    UPDATE perguntas_objetivas
+                    SET 
+                        total_respostas = total_respostas + 1,
+                        total_acertos = total_acertos + CASE WHEN %s = TRUE THEN 1 ELSE 0 END
+                    WHERE id_pergunta = %s AND versao = %s
+                """, (
+                    dados["acertou"],
+                    dados["id_pergunta"],
+                    dados["versao_pergunta"]
+                ))
+
+            # Atualiza a pontuação do usuário
+            cur.execute("""
+                INSERT INTO pontuacoes_usuarios (id_usuario, tema, pontuacao)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (id_usuario, tema)
+                DO UPDATE SET pontuacao = pontuacoes_usuarios.pontuacao + EXCLUDED.pontuacao
+                RETURNING pontuacao
+            """, (id_usuario, dados["tema"], dados["pontos_ganhos"]))
+            nova_pontuacao = cur.fetchone()[0]
+
+            # Atualiza a quantidade de perguntas restantes do usuário
+            cur.execute("""
+                UPDATE usuarios_registrados
+                SET
+                    perguntas_restantes = GREATEST(perguntas_restantes - 1, 0)
+                WHERE id_usuario = %s
+                RETURNING perguntas_restantes
+            """, (id_usuario,))
+
+            perguntas_restantes = cur.fetchone()
+            conn.commit()
+
+            return jsonify({
+                "sucesso": True,
+                "nova_pontuacao": nova_pontuacao,
+                "perguntas_restantes": perguntas_restantes,
+            })
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.exception("Erro ao tentar registrar resposta da pergunta de usuário")
+        return jsonify(success=False, message="Erro ao tentar registrar resposta da pergunta de usuário"), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route("/registrar-resposta-visitante", methods=["POST"])
+def registrar_resposta_visitante():
+    dados = request.get_json()
+    id_visitante = session["id_visitante"]
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO respostas_visitantes (
+                tema,
+                id_pergunta,
+                resposta_enviada,
+                acertou,
+                tempo_gasto,
+                id_visitante,
+                versao_pergunta,
+                pontos_ganhos,
+                pontos_usuario,
+                dificuldade,
+                auto_chute
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            dados.get("tema"),
+            dados.get("id_pergunta"),
+            dados.get("resposta_enviada"),
+            dados.get("acertou"),
+            dados.get("tempo_gasto"),
+            id_visitante,
+            dados.get("versao_pergunta"),
+            dados.get("pontos_ganhos"),
+            dados.get("pontos_usuario"),
+            dados.get("dificuldade").lower().capitalize(),
+            dados.get("auto_chute")
+        ))
+        conn.commit()
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.exception("Erro ao registrar resposta da pergunta de visitante")
+        return jsonify(success=False, message="Erro ao tentar registrar resposta da pergunta de visitante"), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+    return jsonify({"status": "ok"}), 200
+
+@app.route("/api/registrar_visitante", methods=["POST"])
+def registrar_visitante():
+    data = request.get_json()
+    id_visitante = data.get("id_visitante")
+
+    if id_visitante:
+        session["id_visitante"] = id_visitante
+    return jsonify({"ok": True})
+
+@app.route("/api/salvar-opcoes", methods=["POST"])
+def salvar_opcoes():
+    cur = conn = None
+    try:
+        data = request.get_json(silent=True) or {}
+        exibir_instrucoes_quiz = bool(data.get("exibir_instrucoes_quiz", True))
+        notificacoes_bonus_energia = bool(data.get("notificacoes_bonus_energia", True))
+        notificacoes_alteracoes_pontos = bool(data.get("notificacoes_alteracoes_pontos", True))
+        notificacoes_atualizacoes_site = bool(data.get("notificacoes_atualizacoes_site", True))
+        outras_notificacoes = bool(data.get("outras_notificacoes", False))
+        temas_interesse = data.get("temas_interesse", [])
+        id_usuario = session["id_usuario"]
+
+        # Garantia defensiva
+        if not isinstance(temas_interesse, list): temas_interesse = []
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            UPDATE opcoes_usuarios
+            SET
+                exibir_instrucoes_quiz = %s,
+                notificacoes_bonus_energia = %s,
+                notificacoes_alteracoes_pontos = %s,
+                notificacoes_atualizacoes_site = %s,
+                outras_notificacoes = %s,
+                temas_interesse = %s,
+                ultima_atualizacao = date_trunc('seconds', NOW() AT TIME ZONE 'America/Sao_Paulo')
+            WHERE id_usuario = %s
+        """, (
+            exibir_instrucoes_quiz,
+            notificacoes_bonus_energia,
+            notificacoes_alteracoes_pontos,
+            notificacoes_atualizacoes_site,
+            outras_notificacoes,
+            temas_interesse,
+            id_usuario
+        ))
+
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.exception("Erro ao tentar salvar opções do usuário")
+        return jsonify({"success": False}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route("/register_validate", methods=["POST"])
+def validar_registro():
+    data = request.get_json()
+    ok, msg = checar_dados_registro(data.get("nome"), data.get("email"), data.get("senha"))
+    if not ok:
+        return jsonify(success=False, message=msg)
+
+    return jsonify(success=True, message="Validação OK")
+
+@app.route("/admin/marcar_feedback_lido", methods=["GET"])
+def marcar_feedback_lido():
+    tipo = request.args.get("tipo")
+    id_feedback = request.args.get("id")
+
+    if tipo not in ("pergunta", "site") or not id_feedback:
+        return "Parâmetros inválidos", 400
+
+    tabela = "feedbacks" if tipo == "pergunta" else "feedbacks_comentarios"
+
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(f"""
+                    UPDATE {tabela}
+                    SET lido = TRUE
+                    WHERE id_feedback = %s
+                """, (id_feedback,))
+                conn.commit()
+
+        return "Feedback marcado como lido ✔️"
+
+    except Exception:
+        app.logger.exception("Erro ao marcar feedback como lido")
+        return "Erro interno", 500
+
+# 1. Rode o agendamento em uma Thread para não bloquear o Flask
+if __name__ == '__main__':
+    app.run(debug=not database_url)

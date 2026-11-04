@@ -74,65 +74,6 @@ CONFIG_COTAS_RANKING = {
     }
 }
 
-@app.route('/api/checar-status-email', methods=['GET'])
-def checar_status_email():
-    id_usuario = session.get('id_usuario')
-    if not id_usuario:
-        return jsonify({"sucesso": False}), 401
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-    try:
-        cur.execute("SELECT email_confirmado FROM usuarios_registrados WHERE id_usuario = %s;", (id_usuario,))
-        resultado = cur.fetchone()
-        
-        if resultado:
-            email_confirmado = bool(resultado[0])
-            # Atualiza também a session por segurança
-            session["email_confirmado"] = email_confirmado
-            return jsonify({"sucesso": True, "email_confirmado": email_confirmado}), 200
-            
-        return jsonify({"sucesso": False}), 404
-    except Exception as e:
-        return jsonify({"sucesso": False}), 500
-    finally:
-        if cur: cur.close()
-        if conn: conn.close()
-
-@app.route('/api/marcar-modal-inicial-visto', methods=['POST'])
-def marcar_modal_inicial_visto():
-    id_usuario = session.get('id_usuario')
-    if not id_usuario:
-        return jsonify({"sucesso": False, "erro": "Usuário não autenticado."}), 401
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    try:
-        # Atualiza a coluna modal_inicial_exibido para True na tabela usuarios_registrados
-        cur.execute("""
-            UPDATE usuarios_registrados
-            SET modal_inicial_exibido = TRUE
-            WHERE id_usuario = %s;
-        """, (id_usuario,))
-        
-        conn.commit()
-
-        return jsonify({"sucesso": True, "mensagem": "Modal inicial marcado como visto."}), 200
-
-    except Exception as e:
-        if conn: conn.rollback()
-        print(f"Erro ao marcar modal inicial visto: {e}")
-        return jsonify({"sucesso": False, "erro": "Erro interno no servidor."}), 500
-    finally:
-        if cur: cur.close()
-        if conn: conn.close()
-
-# Arquivo txt da Ezoic
-@app.route('/ads.txt')
-def ads_txt():
-    return redirect("https://srv.adstxtmanager.com/19390/desafiodasperguntas.com.br", code=301)
-
 @app.route('/api/criar-pix', methods=['POST'])
 def criar_pix():
     dados = request.get_json() or {}

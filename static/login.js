@@ -479,9 +479,7 @@ document.addEventListener('DOMContentLoaded', function () {
           localStorage.setItem("id_usuario", data.id_usuario);
           localStorage.setItem("perguntas_restantes", JSON.stringify(data.perguntas_restantes || 0));
           localStorage.setItem("nome_usuario", data.nome_usuario || '');
-          
           localStorage.setItem("email_confirmado", data.email_confirmado);
-          localStorage.setItem("modal_inicial_visto", data.modal_inicial_exibido ? "true" : "false");
 
           if (data.opcoes_usuario) localStorage.setItem('opcoes_usuario', JSON.stringify(data.opcoes_usuario));
           localStorage.setItem("modal_confirmacao_email_exibido", false);
