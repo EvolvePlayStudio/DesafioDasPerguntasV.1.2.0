@@ -413,18 +413,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (perguntas_restantes_atuais <= 0) {
       if (!MODO_VISITANTE) {
         exibirMensagem(mensagem, `Energia esgotada, aguarde a recarga diária ou obtenha pacotes de energia para responder novas perguntas`, corMensagemAlerta, true, false, 'flex');
-        registrarLog('Retorno - sem energia');
       }
       else {
         exibirMensagem(mensagem, `É necessário criar uma conta para ter acesso ao conteúdo completo do jogo`, corMensagemAlerta, true, false, 'flex');
       }
       desbloquearBotoes();
+      registrarLog('Retorno - sem energia');
       return;
     }
     exibirMensagem(mensagem, "Preparando quiz...", '#d1d1d1ff', false, false, 'flex')
 
     // Carrega as perguntas para o quiz
     try {
+      //gierw = 324;
       // Reinicia variáveis do session de quizzes anteriores
       sessionStorage.removeItem("ultima_dificuldade_usada");
       sessionStorage.removeItem("repeticoes_dificuldade");
@@ -464,23 +465,24 @@ document.addEventListener("DOMContentLoaded", async () => {
           const perguntas_filtradas = obterPerguntasDisponiveis(data["perguntas"])
           const ha_perguntas_disponiveis = Object.values(perguntas_filtradas).some(arr => Array.isArray(arr) && arr.length > 0)
 
-          // Pega os anúncios que serão utilizados na tela de quiz
+          
           if (ha_perguntas_disponiveis && !encerrar_quiz) {
             localStorage.removeItem("perguntas_respondidas");
+            // Pega os anúncios que serão utilizados na tela de quiz
+            /*
             try {
-                // 1. Faz a requisição
-                const resposta = await fetch("/api/obter_todos_anuncios"); // Não serve para nada por enquanto, anúncios em quiz foram removidos
-                // 2. Transforma em objeto JSON
-                const dados = await resposta.json();
-                // 3. Salva como STRING (o Storage só aceita strings)
-                localStorage.setItem("anuncios", JSON.stringify(dados));
+              // 1. Faz a requisição
+              const resposta = await fetch("/api/obter_todos_anuncios"); // Não serve para nada por enquanto, anúncios em quiz foram removidos
+              // 2. Transforma em objeto JSON
+              const dados = await resposta.json();
+              // 3. Salva como STRING (o Storage só aceita strings)
+              localStorage.setItem("anuncios", JSON.stringify(dados));
             }
             catch (erro) {
-                console.error("Falha ao carregar anúncios:", erro);
-                // Opcional: define um objeto vazio para não quebrar o quiz
-                localStorage.setItem("anuncios", JSON.stringify({}));
-            }
-
+              console.error("Falha ao carregar anúncios:", erro);
+              // Opcional: define um objeto vazio para não quebrar o quiz
+              localStorage.setItem("anuncios", JSON.stringify({}));
+            }*/
             window.location.href = `/quiz/${encodeURIComponent(slugify(tema_atual))}`;
           }
           else {
@@ -575,6 +577,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.error("Erro ao carregar perguntas", error)
       // Permite alterar novamente o tipo de pergunta e tema
       desbloquearBotoes();
+      registrarLog(`Erro: ${error}`);
     }
   }
 
