@@ -1890,20 +1890,29 @@ def login():
 
 def atualizar_energia_usuario(cur, id_usuario, energia_atual, u_sessao, b_energia, exp_bonus):
     """
-    Calcula a recarga de energia diária do usuário e atualiza no banco de dados
+    Calcula o ganho acumulado de energia (+5 por dia de ausência, máx. +50)
+    e atualiza o registro no banco de dados.
     """
     agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
     nova_energia = energia_atual
 
-    # 1. Recarga Diária Normal (+10 se for um novo dia)
-    if u_sessao and u_sessao.date() < agora_sp.date():
-        nova_energia = min(nova_energia + 10, 500)
+    # 1. Recarga baseada em dias de calendário ausentes
+    if u_sessao:
+        dias_passados = (agora_sp.date() - u_sessao.date()).days
+        if dias_passados > 0:
+            # Ganho de +5 por dia, limitado ao teto máximo de +50 de recarga
+            ganho_diario = min(dias_passados * 5, 50)
+            nova_energia += ganho_diario
 
-    # 2. Processamento do Bônus (soma ao total, respeitando o teto de 80)
-    if b_energia > 0 and (exp_bonus is None or agora_sp < exp_bonus):
-        nova_energia = min(nova_energia + b_energia, 500)
+    # 2. Processamento do Bônus Pendente (se houver e não estiver expirado)
+    if b_energia and b_energia > 0:
+        if exp_bonus is None or agora_sp < exp_bonus:
+            nova_energia += b_energia
 
-    # Atualiza o banco com a nova energia e o último horário da sessão
+    # Respeita o teto máximo global absoluto de 500
+    nova_energia = min(nova_energia, 500)
+
+    # 3. Atualiza o banco com a nova energia acumulada e zera o bônus processado
     cur.execute("""
         UPDATE usuarios_registrados
         SET ultima_sessao = date_trunc('second', NOW() AT TIME ZONE 'America/Sao_Paulo'),
