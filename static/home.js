@@ -356,16 +356,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   exibirAnuncios();
 
   function registrarLog(textoLog) {
-    fetch('/api/registrar-acesso', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        pagina: textoLog,
-        id_visitante: idVisitante
+    try {
+      fetch('/api/registrar-acesso', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          pagina: textoLog,
+          id_visitante: idVisitante
+        })
       })
-    })
+    } catch (error) {
+      console.warn('Não foi possível registrar log');
+    }
   }
 
   async function iniciarQuiz(event) {
@@ -487,7 +491,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           else {
             exibirMensagem(mensagem, `Você não possui perguntas disponíveis no tema ${tema_atual} no momento`, corMensagemAlerta, true, false, 'flex');
             desbloquearBotoes();
-            registrarLog('Retorno - sem perguntas no tema');
+            registrarLog(`Retorno - sem perguntas no tema ${tema_atual}`);
             return;
           }
         }
