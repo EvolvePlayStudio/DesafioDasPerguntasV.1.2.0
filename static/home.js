@@ -654,6 +654,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // --- FUNÇÃO 1: Modal de Confirmação de E-mail ---
     function exibirModalConfirmacaoEmail(onCloseCallback) {
+      // Registra na base o aparecimento do modal de confirmação de e-mail
+      try {
+        fetch("/api/registrar-acesso", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pagina: "Modal de confirmação de e-mail" })
+        });
+      } catch (err) {console.warn("Falha ao registrar abertura do modal de confirmação de email:", err)};
       abrirModal({
         textoPrimario: "Fechar",
         textoSecundario: "Reenviar e-mail",
