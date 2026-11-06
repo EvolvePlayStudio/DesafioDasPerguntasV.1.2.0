@@ -486,6 +486,8 @@ document.addEventListener("DOMContentLoaded", async () => {
               // Opcional: define um objeto vazio para não quebrar o quiz
               localStorage.setItem("anuncios", JSON.stringify({}));
             }*/
+            mensagem.style.opacity = 0;
+            permitir_escolher_tema = true;
             window.location.href = `/quiz/${encodeURIComponent(slugify(tema_atual))}`;
           }
           else {
