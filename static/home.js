@@ -391,7 +391,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
     if (!permitir_escolher_tema) {
-      registrarLog('Retorno - não foi permitido escolher tema');
+      //registrarLog('Retorno - não foi permitido escolher tema');
       return;
     } 
 
