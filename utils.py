@@ -42,7 +42,6 @@ QUESTION_CONFIG = {
         'p.dificuldade',
         'p.versao',
         'p.disponivel_visitantes',
-        'p.prioridade_usuarios',
         'COALESCE(f.estrelas, NULL) AS estrelas',
         'COALESCE(f.comentario, NULL) AS comentario',
         'COALESCE(fn.positivo, NULL) AS aprovacao_nota',
