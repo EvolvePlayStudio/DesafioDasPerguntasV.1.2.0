@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let idVisitante = localStorage.getItem("id_visitante");
   const idUsuario = localStorage.getItem("id_usuario");
   const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
-  const maxEnergiaVisitantes = 80;
+  const maxEnergiaVisitantes = 50;
   const maxEnergiaUsuarios = 500;
   localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
   localStorage.setItem('limite_energia', maxEnergiaUsuarios);
