@@ -1483,7 +1483,7 @@ def listar_perguntas():
                 # Busca um pool estendido de perguntas não respondidas, 
                 # priorizando estritamente os menores grupos (1, 2, 3...) e jogando os sem grupo (NULL) para o final
                 sql = f"""
-                    SELECT {select_clause}, p.grupo, p.dificuldade, p.prioridade_usuarios
+                    SELECT {select_clause}, p.grupo, p.dificuldade
                     FROM perguntas_objetivas p
                     LEFT JOIN respostas_usuarios r
                         ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s
@@ -1509,7 +1509,7 @@ def listar_perguntas():
             else:
                 # MODO REVISÃO: Traz todas as perguntas já respondidas pelo usuário
                 sql = f"""
-                    SELECT {select_clause}, p.grupo, p.prioridade_usuarios
+                    SELECT {select_clause}, p.grupo
                     FROM perguntas_objetivas p
                     JOIN respostas_usuarios r
                         ON p.id_pergunta = r.id_pergunta AND r.id_usuario = %s
@@ -1575,7 +1575,6 @@ def listar_perguntas():
     return jsonify({
         'perguntas': perguntas_por_dificuldade,
         'pontuacoes_usuario': pontuacoes_usuario,
-        'ids_prioritarios': []
     })
 
 def montar_sessao_usuario(pool_perguntas, ranking_usuario):
