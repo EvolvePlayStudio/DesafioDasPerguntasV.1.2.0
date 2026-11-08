@@ -10,6 +10,7 @@ const TEMAS_MAX_PONTOS = 5000;
 const TOTAL_MAX_PONTOS = TEMAS_MAX_PONTOS * (temas.length - 1);
 const barraProgressoTotal = document.getElementById("barra-progresso-total");
 const spanPontosTotais = document.getElementById("pontos-totais");
+const spanPorcentagemProgresso = document.getElementById("porcentagem-progresso");
 
 document.addEventListener("DOMContentLoaded", iniciarPerfil);
 
@@ -66,9 +67,10 @@ async function animarBarrasSequencialmente(pontuacoes) {
   const totalFinal = Object.values(pontuacoes).reduce((acc, val) => acc + val, 0);
   const percentualTotal = Math.min((totalFinal / TOTAL_MAX_PONTOS) * 100, 100);
 
-  // Animação da barra de progresso total
+  // Animação da barra e porcentagem de progresso total
   animarBarraAte(barraProgressoTotal, percentualTotal),
-  animarNumero(spanPontosTotais, 0, totalFinal, 7000, TOTAL_MAX_PONTOS)
+  animarNumero(spanPontosTotais, 0, totalFinal, 7000, TOTAL_MAX_PONTOS),
+  animarPorcentagem(spanPorcentagemProgresso, 0, percentualTotal, 7000)
 
   for (const temaItem of temas) {
     const tema = temaItem.dataset.tema;
@@ -95,6 +97,31 @@ async function animarBarrasSequencialmente(pontuacoes) {
 
   animando = false;
   select.disabled = false;
+}
+
+function animarPorcentagem(elemento, inicio, fim, duracao) {
+  return new Promise(resolve => {
+    if (!elemento) {
+      resolve();
+      return;
+    }
+    const inicioTempo = performance.now();
+
+    function atualizar(tempoAtual) {
+      const progresso = Math.min((tempoAtual - inicioTempo) / duracao, 1);
+      const valorAtual = inicio + (fim - inicio) * progresso;
+
+      elemento.textContent = `(${valorAtual.toFixed(1)}%)`;
+
+      if (progresso < 1) requestAnimationFrame(atualizar);
+      else {
+        elemento.textContent = `(${fim.toFixed(1)}%)`;
+        resolve();
+      }
+    }
+
+    requestAnimationFrame(atualizar);
+  });
 }
 
 function animarNumero(elemento, inicio, fim, duracao, maxPontos) {
