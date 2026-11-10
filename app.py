@@ -56,7 +56,7 @@ CONFIG_COTAS_RANKING = {
     },
     'Estudante': {
         'Fácil':   {'min': 1,  'max': 4},
-        'Médio':   {'min': 2,  'max': 14},
+        'Médio':   {'min': 1,  'max': 14},
         'Difícil': {'min': 2,  'max': 18},
         'Extremo': {'min': 1,  'max': 2}
     },

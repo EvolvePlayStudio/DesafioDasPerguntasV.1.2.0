@@ -482,7 +482,7 @@
         </div>
 
         <p id="resumoPacoteEl" class="resumo-pacote"></p>
-        <p id="aviso-email-nao-confirmado"></p>
+        <div id="aviso-email-nao-confirmado"></div>
 
         <!-- Container das opções de pagamento -->
         <div id="container-opcoes-pagamento" class="opcoes-pagamento">
@@ -776,9 +776,9 @@
       if (tituloModalEl) tituloModalEl.textContent = "Confirmação de e-mail pendente";
       if (resumoPacoteEl) resumoPacoteEl.style.display = 'none';
       if (avisoConfirmacaoEmailEl) {
-        avisoConfirmacaoEmailEl.style.display = '';
+        avisoConfirmacaoEmailEl.style.display = 'block';
         avisoConfirmacaoEmailEl.innerHTML = `
-          <span style="font-size: 0.95rem; display: flex;">Confirme o e-mail para liberar a compra de energias</span>
+          <span style="font-size: 0.95rem; display: flex; margin-top: 0.75rem;">Confirme o e-mail para liberar a compra de energias</span>
           <p id="modal-msg" class="modal-feedback mt-2" style="display: none; font-size: 0.9rem; font-weight: 500; margin-bottom: -1rem;"></p>
         `;
       }

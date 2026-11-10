@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
   localStorage.setItem('limite_energia', maxEnergiaUsuarios);
   const idsUsuariosIsentos = ['291', '439'] // Usuários que não recebem convite para compra de energia
+  const isAdmin = window.ADS_CONFIG.isAdmin;
 
   if (!MODO_VISITANTE) { // Verifica se deve expirar a sessão
     if (!idUsuario) { // Caso o id de usuário não tenha sido identificado
@@ -595,60 +596,29 @@ document.addEventListener("DOMContentLoaded", async () => {
     function exibirModalEnergiaBaixa() {
       const eIsento = idsUsuariosIsentos.includes(idUsuario); // Usuários que já responderam muitas perguntas
       const perguntasRestantesAtual = parseInt(localStorage.getItem('perguntas_restantes') || '500');
-      const deveExibir = sessionStorage.getItem('exibir_modal_sem_energia') === 'true';
-      
+      let deveExibir = sessionStorage.getItem('exibir_modal_sem_energia') === 'true';
+      if (isAdmin) deveExibir = true;
+
       if (deveExibir && !eIsento && perguntasRestantesAtual == 0) {
         // Registra na base o aparecimento do modal de energia esgotada
         try {
-          let textoLog;
-          if (emailConfirmado) textoLog = "Modal de energia baixa (email confirmado)"
-          else textoLog = "Modal de energia baixa (email não confirmado)";
           fetch("/api/registrar-acesso", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pagina: textoLog })
+            body: JSON.stringify({ pagina: "Modal de energia baixa" })
           });
         } catch (err) {console.warn("Falha ao registrar abertura do modal de energia baixa:", err)};
         sessionStorage.setItem('exibir_modal_sem_energia', false); // Para não exibir mais de 1 vez
-        if (emailConfirmado) {
-          abrirModal({
-            titulo: "⚡ Sua energia acabou!",
-            corpoHTML: `
-              <p>Adquira mais energia para continuar respondendo novas perguntas e subir no ranking.</p>
-            `,
-            textoPrimario: "Adquirir Energia",
-            textoSecundario: "Esperar até Amanhã",
-            onPrimario: () => {
-              window.location.href = "/recarga-de-energia";
-            },
-            onSecundario: () => {
-              modal.classList.add("hidden");
-            }
-          });
-        } else {
-          abrirModal({
-            titulo: "⚡ Sua energia acabou!",
-            corpoHTML: `
-              <div style="margin-top: 12px; padding: 10px; background: rgba(250, 204, 21, 0.1); border: 1px solid rgba(250, 204, 21, 0.3); border-radius: 6px; font-size: 0.9rem; text-align: left;">
-                <strong style="color: #facc15;">⚠️ Confirmação PENDENTE</strong><br>
-                Para adquirir novos pacotes de energia, você precisa confirmar seu e-mail cadastrado:<br>
-                <span style="font-weight: bold; color: blue;">${emailUsuario}</span>
-                <p style="margin-top: 8px; font-size: 0.82rem;">
-                  Caso necessário, você pode alterar seu e-mail na tela de <strong>Opções</strong>.
-                </p>
-              </div>
-            `,
-            textoPrimario: "Ir para Opções",
-            textoSecundario: "Fechar",
-            onPrimario: () => {
-              window.location.href = "/opcoes"; // Ou o caminho correto da sua tela de opções
-            },
-            onSecundario: () => {
-              modal.classList.add("hidden");
-            }
-          });
-        }
-        
+        abrirModal({
+          titulo: "⚡ Sua energia acabou!",
+          corpoHTML: `
+            <p>Adquira mais energia para continuar respondendo novas perguntas e subir no ranking.</p>
+          `,
+          textoPrimario: "Adquirir Energia",
+          textoSecundario: "Esperar Recarga Gratuita",
+          onPrimario: () => {window.location.href = "/recarga-de-energia"},
+          onSecundario: () => {modal.classList.add("hidden")}
+        });
       }
     }
 
