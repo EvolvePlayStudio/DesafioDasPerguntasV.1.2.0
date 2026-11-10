@@ -737,9 +737,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-
-
-
   function exibirModalRegistroVisitante(marco) {
     abrirModal({
       titulo: `Você atingiu o marco de ${marco} perguntas 🎯`,

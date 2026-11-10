@@ -61,16 +61,16 @@ CONFIG_COTAS_RANKING = {
         'Extremo': {'min': 1,  'max': 2}
     },
     'Sábio': {
-        'Fácil':   {'min': 1,  'max': 2},
+        'Fácil':   {'min': 0,  'max': 1},
         'Médio':   {'min': 1,  'max': 4},
         'Difícil': {'min': 3,  'max': 20},
         'Extremo': {'min': 2,  'max': 6}
     },
     'Lenda': {
         'Fácil':   {'min': 0,  'max': 1},
-        'Médio':   {'min': 1,  'max': 2},
+        'Médio':   {'min': 0,  'max': 2},
         'Difícil': {'min': 4,  'max': 20},
-        'Extremo': {'min': 3,  'max': 10}
+        'Extremo': {'min': 2,  'max': 12}
     }
 }
 
@@ -364,66 +364,108 @@ def checar_status_pix(transacao_id):
     conn.close()
     return jsonify({"status": status_atual})
 
-@app.route('/api/pacotes-disponiveis', methods=['GET'])
-def obter_pacotes():
-    id_usuario = session.get('id_usuario')
-    if not id_usuario:
-        return jsonify({"sucesso": False, "erro": "Usuário não autenticado."}), 401
+@app.route('/api/processar-cartao', methods=['POST'])
+def processar_cartao():
+    dados = request.get_json() or {}
+    id_pacote = dados.get('pacote_id')
+    token_cartao = dados.get('token') # Token gerado pelo script do Mercado Pago no front-end
+    parcelas = int(dados.get('installments', 1)) # Quantidade de parcelas escolhidas
+    payment_method_id = dados.get('payment_method_id')
+    issuer_id = dados.get('issuer_id')
 
-    conn = get_db_connection()
-    cur = conn.cursor()
+    if not id_pacote or not token_cartao or not payment_method_id:
+        return jsonify({"sucesso": False, "erro": "Dados de pagamento incompletos."}), 400
 
-    # 1. Busca dados do usuário (e-mail confirmado e contagem de respostas)
-    cur.execute("""
-        SELECT u.email_confirmado,
-        u.perguntas_restantes,
-               (SELECT COUNT(*) FROM respostas_usuarios r WHERE r.id_usuario = u.id_usuario) as total_respostas
-        FROM usuarios_registrados u
-        WHERE u.id_usuario = %s;
-    """, (id_usuario,))
-    usuario_info = cur.fetchone()
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
 
-    if not usuario_info:
-        cur.close()
-        conn.close()
-        return jsonify({"sucesso": False, "erro": "Usuário não encontrado."}), 404
+        id_usuario = session.get('id_usuario')
+        if not id_usuario:
+            return jsonify({"sucesso": False, "erro": "Sessão expirada."}), 401
 
-    email_confirmado, perguntas_restantes, total_respostas = usuario_info
+        # Busca dados do usuário (mesma lógica do seu código Pix)
+        cur.execute("SELECT email, email_confirmado, nome, perguntas_restantes FROM usuarios_registrados WHERE id_usuario = %s;", (id_usuario,))
+        usuario = cur.fetchone()
+        if not usuario or not usuario[1]: # usuario[1] é email_confirmado
+            return jsonify({"sucesso": False, "erro": "E-mail não confirmado ou usuário inválido."}), 403
 
-    # Regra 1: Bloqueia loja se e-mail não estiver verificado
-    if not email_confirmado:
-        cur.close()
-        conn.close()
+        email_usuario, _, nome_usuario, energia_inicial = usuario
+
+        # Busca o pacote (mesma lógica do código Pix)
+        cur.execute("SELECT id, nome, energia, preco FROM pacotes_energia WHERE id = %s AND ativo = TRUE;", (id_pacote,))
+        pacote = cur.fetchone()
+        if not pacote:
+            return jsonify({"sucesso": False, "erro": "Pacote inválido."}), 404
+
+        pacote_id, nome_pacote, qtd_energia, preco_pacote = pacote
+        preco_float = float(preco_pacote)
+
+        # Monta a requisição de pagamento via CARTÃO no Mercado Pago
+        payment_data = {
+            "transaction_amount": preco_float,
+            "token": token_cartao,
+            "description": f"Recarga de Energia: +{qtd_energia}⚡ ({nome_pacote}) - Desafio das Perguntas",
+            "installments": parcelas,
+            "payment_method_id": payment_method_id,
+            "issuer_id": int(issuer_id) if issuer_id else None,
+            "payer": {
+                "email": email_usuario,
+                "first_name": nome_usuario or "Jogador"
+            }
+        }
+
+        payment_response = sdk.payment().create(payment_data)
+
+        # print(f"🔍 Resposta completa do MP para o Cartão: {payment_response}")
+        response_status = payment_response.get("status")
+        payment_info = payment_response.get("response")
+
+        if response_status not in [200, 201] or not payment_info:
+            print(f"❌ Erro Cartão Mercado Pago: {payment_response}")
+            # Tenta extrair a mensagem de erro específica do Mercado Pago
+            erro_msg = "Pagamento recusado pela operadora."
+            if payment_info and "status_detail" in payment_info:
+                erro_msg = f"Recusado: {payment_info.get('status_detail')}"
+            return jsonify({"sucesso": False, "erro": erro_msg}), 400
+
+        transacao_id_mp = str(payment_info.get("id"))
+        status_pagamento = payment_info.get("status") # 'approved', 'in_process', 'rejected', etc.
+
+        # Define o status inicial no banco igual ao seu modelo do Pix
+        status_banco = 'APROVADO' if status_pagamento == 'approved' else 'PENDENTE'
+
+        # Registra no historico_compras
+        cur.execute("""
+            INSERT INTO historico_compras 
+            (id_usuario, id_pacote, energia_creditada, valor_pago, status, gateway, transacao_id_gateway, energia_anterior)
+            VALUES (%s, %s, %s, %s, %s, 'MERCADO_PAGO_CARTAO', %s, %s);
+        """, (id_usuario, pacote_id, qtd_energia, preco_float, status_banco, transacao_id_mp, energia_inicial))
+
+        # Se aprovou na hora, já credita a energia imediatamente (assim como na sua checagem do Pix)
+        if status_pagamento == 'approved':
+            cur.execute("""
+                UPDATE usuarios_registrados 
+                SET perguntas_restantes = perguntas_restantes + %s 
+                WHERE id_usuario = %s;
+            """, (qtd_energia, id_usuario))
+
+        conn.commit()
+
         return jsonify({
-            "sucesso": False,
-            "requer_confirmacao_email": True,
-            "erro": "Confirme seu e-mail para desbloquear a loja de energias."
-        }), 403
+            "sucesso": True,
+            "status": status_pagamento,
+            "transacao_id": transacao_id_mp
+        }), 200
 
-    # 2. Busca pacotes no banco
-    cur.execute("SELECT id, nome, energia, preco, respostas_minimas FROM pacotes_energia WHERE ativo = TRUE ORDER BY preco ASC;")
-    pacotes = cur.fetchall()
-
-    lista_pacotes = []
-    for p in pacotes:
-        p_id, p_nome, p_energia, p_preco, p_respostas_min = p
-        
-        # Regra 2: Libera/Bloqueia pacotes baseando-se na contagem de respostas
-        bloqueado = perguntas_restantes + total_respostas < (p_respostas_min or 0)
-
-        lista_pacotes.append({
-            "id": p_id,
-            "nome": p_nome,
-            "energia": p_energia,
-            "preco": float(p_preco),
-            "bloqueado": bloqueado,
-            "respostas_necessarias": p_respostas_min
-        })
-
-    cur.close()
-    conn.close()
-
-    return jsonify({"sucesso": True, "pacotes": lista_pacotes, "total_respostas": total_respostas}), 200
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Erro crítico ao processar cartão: {e}")
+        return jsonify({"sucesso": False, "erro": "Erro interno ao processar pagamento."}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
 
 @app.route("/alterar-email", methods=["POST"])
 def alterar_email_route():

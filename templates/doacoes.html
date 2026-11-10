@@ -5,6 +5,7 @@
   {% include 'cabecalho_comum.html' %}
   <title>Recarga de Energia - Desafio das Perguntas</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
   
   <style>
     body {
@@ -217,10 +218,14 @@
       cursor: pointer; color: #64748b;
     }
     .resumo-pacote {
+      display: flex;                /* Essencial para ativar o Flexbox */
+      justify-content: space-between; /* Joga um para cada extremidade */
+      align-items: center;
       background: #f8fafc;
-      padding: 10px;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px 16px;
       border-radius: 6px;
-      text-align: center;
       font-weight: bold;
       color: #1e293b;
       margin-bottom: 1rem;
@@ -230,6 +235,16 @@
       flex-direction: column;
       gap: 0.8rem;
       margin: 1rem 0;
+    }
+    #aviso-email-nao-confirmado {
+      display: none;
+      background: #f8fafc;
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+      font-weight: bold;
+      color: #1e293b;
+      margin-bottom: 1rem;
     }
     .opcao-pgto {
       display: flex;
@@ -287,7 +302,7 @@
       transition: background 0.2s ease;
     }
     .btn-voltar-sucesso:hover {
-        background: var(--bg-hover-botao-login);
+      background: var(--bg-hover-botao-login);
     }
     .resumo-energia-usuario {
       background: #f8fafc;
@@ -306,7 +321,6 @@
     .projecao-futura {
       font-weight: bold;
     }
-
     /* Container dos botões do modal de e-mail pendente */
     #acoesEmailPendente {
       margin-top: 1.25rem;
@@ -314,7 +328,6 @@
       flex-direction: column;
       gap: 12px; /* Espaçamento vertical garantido entre os botões */
     }
-
     #acoesEmailPendente .btn {
       width: 100%;
       padding: 0.7rem 1rem;
@@ -327,32 +340,27 @@
       align-items: center;
       justify-content: center;
     }
-
     /* Botão de Reenviar (Estilo Primário / Azul) */
     #btnReenviarEmailModal {
       background-color: var(--bs-primary, #0d6efd);
       border: 1px solid var(--bs-primary, #0d6efd);
       color: #ffffff;
     }
-
     #btnReenviarEmailModal:hover {
       background-color: #0b5ed7;
       border-color: #0a58ca;
     }
-
     /* Botão de Opções (Fundo escuro/cinza sólido para destacar do fundo branco do modal) */
     #btnIrOpcoesModal {
       background-color: #334155; /* Tom de cinza escuro elegante */
       border: 1px solid #334155;
       color: #ffffff;
     }
-
     #btnIrOpcoesModal:hover {
       background-color: #1e293b; /* Tom mais escuro no hover */
       border-color: #1e293b;
       color: #ffffff;
     }
-
     /* Feedback de texto do reenvio */
     .modal-feedback {
       margin-top: 0.75rem;
@@ -369,7 +377,7 @@
 
     <h2>⚡ Recarga de Energia</h2>
     <p class="subtitulo">
-      Adquira energia para responder aos quizzes sem esperar pela recarga diária e apoiar nossa plataforma.
+      Adquira energia para responder aos quizzes sem esperar pela recarga diária e apoiar a manutenção da nossa plataforma.
     </p>
 
     <!-- BANNER DE PROMOÇÃO POR TEMPO LIMITADO -->
@@ -382,10 +390,6 @@
     {% if modo_visitante %}
       <div class="alert alert-info text-center p-3 shadow-sm mb-4" style="margin-bottom: 1.3rem;">
         🔒 Você está navegando como <strong>Visitante</strong>. Apenas usuários cadastrados tem acesso à loja e à recarga diária de energia.
-      </div>
-    {% elif not email_confirmado %}
-      <div class="alert alert-warning text-center p-3 shadow-sm mb-4" style="margin-bottom: 1.3rem;">
-        📧 O e-mail <strong>{{ email_usuario }}</strong> ainda não foi verificado. Confirme seu e-mail para concluir a compra.
       </div>
     {% endif %}
 
@@ -430,12 +434,13 @@
 
       <!-- Informações do Sistema -->
       <div class="regras-lista mt-4">
-        <strong>Como funciona o reservatório:</strong>
+        <strong>Importante:</strong>
         <ul>
           <li>A recarga diária gratuita é de <strong>5⚡</strong></li>
-          <li>Pacotes maiores podem ser desativados temporariamente dependendo das perguntas disponíveis no banco</li>
+          <li>O limite para coleta de energia gratuita é <strong>50⚡</strong>(10 dias)</li>
+          <li>Pacotes podem ser desativados se não houverem perguntas disponíveis no banco</li>
           <li>Descontos incidem sobre o preço base de <b>R$ 0,10</b> por⚡</li>
-          <li>Preços e ofertas sujeitos a alterações sem aviso prévio</li>
+          <li>Preços e ofertas estão sujeitos a alterações sem aviso prévio</li>
         </ul>
       </div>
       
@@ -472,30 +477,33 @@
         </div>
 
         <div id="resumo-energia-usuario" class="resumo-energia-usuario">
-          <span id="energia-atual-span">⚡ Energia atual: <strong id="energiaAtualTexto">0</strong> / 500</span>
+          <span id="energia-atual-span">⚡Energia atual: <strong id="energiaAtualTexto">0</strong> / 500</span>
           <span id="projecaoEnergia" class="projecao-futura"></span>
         </div>
 
-        <p id="resumoPacote" class="resumo-pacote"></p>
+        <p id="resumoPacoteEl" class="resumo-pacote"></p>
+        <p id="aviso-email-nao-confirmado"></p>
 
-        <!-- Container das opções de pagamento-->
+        <!-- Container das opções de pagamento -->
         <div id="container-opcoes-pagamento" class="opcoes-pagamento">
-          <!-- Opção de pagamento com PIX -->
-          <div class="opcao-pgto ativa">
+          <div class="opcao-pgto ativa" onclick="mudarMetodoPagamento('pix')">
             <span class="pgto-icone">📱</span>
             <div class="pgto-detalhes">
               <strong>PIX (Aprovação Instantânea)</strong>
               <small>Gera QR Code e Chave Copia e Cola</small>
             </div>
           </div>
-          <!-- Opção de pagamento com cartão -->
-          <div class="opcao-pgto desativada">
+          <div class="opcao-pgto" onclick="mudarMetodoPagamento('cartao')">
             <span class="pgto-icone">💳</span>
             <div class="pgto-detalhes">
-              <strong>Cartão de Crédito / PayPal</strong>
-              <small>Em breve</small>
+              <strong>Cartão de Crédito (Aprovação Instantânea)</strong>
             </div>
           </div>
+        </div>
+
+        <!-- Container onde vai aparecer o formulário do cartão de crédito -->
+        <div id="containerFormularioCartao" style="display: none; margin-bottom: 1rem;">
+          <div id="cardPaymentBrick_container"></div>
         </div>
 
         <!-- Mensagem de erro -->
@@ -520,6 +528,7 @@
   <script type="module">
     import { playSound } from "../static/sound.js";
     import { exibirMensagem } from "../static/utils.js"
+    localStorage.setItem("email_ja_reenviado", "false");
     const configEl = document.getElementById('app-config');
     const eModoVisitante = configEl.dataset.visitant === 'true';
     const eEmailConfirmado = configEl.dataset.emailConfirmado === 'true';
@@ -528,12 +537,13 @@
     const energiaSalva = localStorage.getItem('perguntas_restantes') || '0';
     const energiaAtualUsuario = parseInt(energiaSalva, 10);
     const LIMITE_RESERVATORIO = localStorage.getItem('limite_energia') || 500;
+    const tituloModal = document.getElementById('titulo-modal-pagamento');
     const projecao = document.getElementById('projecaoEnergia');
     const containerPix = document.getElementById('containerPixResultado');
     const btnPagar = document.getElementById('btnPagarAgora');
     const elementoEnergia = document.getElementById('energia-atual-span');
     const blocoOpcoes = document.getElementById('blocoOpcoesPagamento');
-    const resumoPacoteEl = document.getElementById('resumoPacote');
+    const resumoPacoteEl = document.getElementById('resumoPacoteEl');
     const tituloModalEl = document.getElementById('titulo-modal-pagamento');
     const containerOpcoesPagamento = document.getElementById('container-opcoes-pagamento');
     const resumoEnergiaUsuario = document.getElementById('resumo-energia-usuario');
@@ -542,7 +552,149 @@
     let intervalChecagemPix = null;
     let q_checagens_status_pix = 0;
     let modal_requisitado = false;
+    let metodoPagamentoAtual = 'pix';
+    let mpInstance = null;
+    let cardPaymentBrickController = null;
 
+    window.mudarMetodoPagamento = async function(metodo) {
+      playSound("click");
+      metodoPagamentoAtual = metodo;
+      
+      const opcoes = document.querySelectorAll('.opcao-pgto');
+      opcoes.forEach(el => el.classList.remove('ativa'));
+
+      if (metodo === 'pix') {
+        event.currentTarget.classList.add('ativa');
+        document.getElementById('containerFormularioCartao').style.display = 'none';
+        document.getElementById('btnPagarAgora').style.display = 'block';
+        document.getElementById('btnPagarAgora').textContent = "Gerar PIX";
+        document.getElementById('btnPagarAgora').onclick = gerarCobrancaPix;
+      } else {
+        event.currentTarget.classList.add('ativa');
+        document.getElementById('btnPagarAgora').style.display = 'none'; // O Brick tem o próprio botão de pagar
+        document.getElementById('containerFormularioCartao').style.display = 'block';
+        
+        // Inicializa o Brick de Cartão do Mercado Pago se ainda não foi criado
+        if (!cardPaymentBrickController) {
+          inicializarBrickCartao();
+        }
+      }
+    };
+
+    async function inicializarBrickCartao() {
+      if (!mpInstance) {
+        mpInstance = new MercadoPago('APP_USR-c1a93eb4-34bb-4588-b37e-a2bfc29d035d', {
+          locale: 'pt-BR'
+        });
+      }
+
+      const bricksBuilder = mpInstance.bricks();
+      
+      const renderCardPaymentBrick = async (bricksBuilder) => {
+        const settings = {
+          initialization: {
+            amount: parseFloat(pacoteSelecionado.preco.replace(',', '.')), // Valor do pacote
+          },
+          callbacks: {
+            onReady: () => {},
+            onSubmit: (cardFormData) => {
+              // Quando o usuário clica em pagar no formulário do cartão
+              processarPagamentoCartao(cardFormData);
+            },
+            onError: (error) => {
+              console.error(error);
+            },
+          },
+        };
+        cardPaymentBrickController = await bricksBuilder.create('cardPayment', 'cardPaymentBrick_container', settings);
+      };
+      renderCardPaymentBrick(bricksBuilder);
+    }
+
+    async function processarPagamentoCartao(cardFormData) {
+      try {
+        const response = await fetch('/api/processar-cartao', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pacote_id: pacoteSelecionado.id,
+            token: cardFormData.token,
+            installments: cardFormData.installments,
+            payment_method_id: cardFormData.payment_method_id,
+            issuer_id: cardFormData.issuer_id
+          })
+        });
+        const data = await response.json();
+
+        // CORREÇÃO: Verifica o status dentro do JSON retornado pelo Flask (data.status)
+        if (data.sucesso && data.status === 'approved') {
+          // Oculta o container do formulário do cartão do Mercado Pago para limpar a tela
+          const formCartao = document.getElementById('containerFormularioCartao');
+          if (formCartao) formCartao.style.display = 'none';
+
+          const qtdAdicionada = pacoteSelecionado ? pacoteSelecionado.qtd : 0;
+          exibirSucessoPagamento(qtdAdicionada);
+        } else {
+          exibirMensagem(mensagemErro, data.erro || 'Pagamento recusado pela operadora.', 'red', true, true, 'flex', 8000);
+        }
+      } catch (err) {
+        console.error("Erro ao processar cartão:", err);
+        exibirMensagem(mensagemErro, 'Erro de comunicação ao processar o cartão.', 'red', true, true, 'flex', 8000);
+      }
+    }
+
+    // Função unificada para tratar a tela de sucesso de qualquer pagamento
+    function exibirSucessoPagamento(qtdAdicionada) {
+      // 1. Oculta os blocos de opções de pagamento e o formulário do cartão
+      const blocoOpcoes = document.getElementById('blocoOpcoesPagamento');
+      const formCartao = document.getElementById('containerFormularioCartao');
+      const btnFecharModal = document.getElementById('btn-fechar-modal');
+      
+      if (blocoOpcoes) blocoOpcoes.style.display = 'none';
+      if (formCartao) formCartao.style.display = 'none';
+      if (resumoPacoteEl) resumoPacoteEl.style.display = 'none';
+      if (tituloModal) tituloModal.style.display = 'none';
+      if (btnFecharModal) btnFecharModal.style.display = 'none';
+      if (containerOpcoesPagamento) containerOpcoesPagamento.style.display = 'none';
+
+      // 2. Calcula a nova energia total e atualiza o localStorage
+      const novaEnergiaTotal = energiaAtualUsuario + (qtdAdicionada || 0);
+      localStorage.setItem('perguntas_restantes', novaEnergiaTotal.toString());
+
+      // 3. Atualiza o texto da energia anterior no modal (usando o ID correto do seu HTML)
+      if (elementoEnergia) {
+        elementoEnergia.innerHTML = `⚡Energia anterior: <strong id="energiaAtualTexto">${energiaAtualUsuario}</strong>/500`;
+      }
+
+      // 4. Ajusta a projeção de energia para mostrar o valor final creditado (usando 'projecaoEnergia')
+      if (projecao) {
+        projecao.innerHTML = `➔ Energia atual: <strong>${novaEnergiaTotal}/500</strong>`;
+        projecao.style.color = '#16a34a';
+      }
+
+      // 5. Exibe a mensagem de sucesso e limpa o container do Brick/Pix
+      const containerPagamento = document.getElementById('containerPixResultado') || document.getElementById('cardPaymentBrick_container');
+      if (containerPagamento) {
+        containerPagamento.innerHTML = `
+          <div class="pix-checkout-box text-center p-4">
+              <div class="badge bg-success text-white mb-3 px-3 py-2 fs-5">
+                ✅ Pagamento Aprovado!
+              </div>
+          </div>
+        `;
+        containerPagamento.style.display = 'block';
+      }
+
+      // 6. Transforma o botão de pagar no botão de Voltar ao Menu
+      const btnPagarAcao = document.getElementById('btnPagarAgora');
+      if (btnPagarAcao) {
+        btnPagarAcao.innerHTML = "Voltar ao Menu";
+        btnPagarAcao.className = "btn-voltar-sucesso shadow-sm mt-3 w-100"; 
+        btnPagarAcao.onclick = voltarParaHome;
+        btnPagarAcao.style.display = "block";
+      }
+    }
+    
     window.processarCliqueCheckout = async function() {
       if (!pacoteSelecionado || modal_requisitado) return;
       playSound("click");
@@ -618,15 +770,16 @@
 
     // Função para tratar o fluxo de e-mail não confirmado diretamente no modal de pagamento
     function abrirModalConfirmacaoEmail() {
+      const avisoConfirmacaoEmailEl = document.getElementById('aviso-email-nao-confirmado');
       if (resumoEnergiaUsuario) resumoEnergiaUsuario.style.display = 'none';
       if (containerOpcoesPagamento) containerOpcoesPagamento.style.display = 'none';
       if (tituloModalEl) tituloModalEl.textContent = "Confirmação de e-mail pendente";
-      
-      if (resumoPacoteEl) {
-        resumoPacoteEl.innerHTML = `
-          Confirme o seu e-mail para liberar a compra de energias.<br><br>
-          <span style="font-size: 0.85rem" class="text-muted">Obs: O e-mail da conta pode ser alterado na tela de opções</span>
-          <p id="modal-msg" class="modal-feedback mt-2" style="display: none; font-size: 0.9rem; font-weight: 500;"></p>
+      if (resumoPacoteEl) resumoPacoteEl.style.display = 'none';
+      if (avisoConfirmacaoEmailEl) {
+        avisoConfirmacaoEmailEl.style.display = '';
+        avisoConfirmacaoEmailEl.innerHTML = `
+          <span style="font-size: 0.95rem; display: flex;">Confirme o e-mail para liberar a compra de energias</span>
+          <p id="modal-msg" class="modal-feedback mt-2" style="display: none; font-size: 0.9rem; font-weight: 500; margin-bottom: -1rem;"></p>
         `;
       }
       
@@ -649,7 +802,7 @@
       divBotoes.id = 'acoesEmailPendente';
       divBotoes.className = 'd-flex flex-column gap-2 mt-3';
       divBotoes.innerHTML = `
-        <button id="btnReenviarEmailModal" class="btn btn-outline-primary w-100">Reenviar e-mail de confirmação</button>
+        <button id="btnReenviarEmailModal" class="btn btn-outline-primary w-100">Reenviar E-mail de Confirmação</button>
         <button id="btnIrOpcoesModal" class="btn btn-secondary w-100">Ir para Opções (Alterar E-mail)</button>
       `;
       
@@ -657,17 +810,22 @@
       if (btnPagar) btnPagar.style.display = 'none';
       modalContent.appendChild(divBotoes);
 
+      // Ativa os botões
+      const btnReenviarEmail = document.getElementById('btnReenviarEmailModal');
+      const btnIrOpcoes = document.getElementById('btnIrOpcoesModal');
+      btnReenviarEmail.disabled = false;
+
       // Eventos dos botões
-      document.getElementById('btnIrOpcoesModal').onclick = () => {
+      btnIrOpcoes.onclick = () => {
         playSound("click");
         window.location.href = "/opcoes";
       };
 
-      document.getElementById('btnReenviarEmailModal').onclick = () => {
+      btnReenviarEmail.onclick = () => {
         playSound("click");
+        btnReenviarEmail.disabled = true;
         const msgModal = document.getElementById('modal-msg');
-        
-        if (localStorage.getItem("email_reenviado_neste_login") === "true") {
+        if (localStorage.getItem("email_ja_reenviado") === "true") {
           msgModal.innerText = "Um e-mail de confirmação já foi enviado recentemente";
           msgModal.style.display = "block";
           msgModal.style.color = "#d97706"; // Amarelo/Laranja de alerta
@@ -685,8 +843,8 @@
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            localStorage.setItem("email_reenviado_neste_login", "true");
-            msgModal.innerText = "O e-mail de confirmação foi enviado com sucesso!";
+            localStorage.setItem("email_ja_reenviado", "true");
+            msgModal.innerHTML = "E-mail de confirmação enviado!<br>(dica: cheque a caixa de spam caso não encontre)";
             msgModal.style.color = "#16a34a"; // Verde sucesso
           } else {
             msgModal.innerText = data.message || "Não foi possível reenviar o e-mail";
@@ -707,15 +865,19 @@
 
       containerPix.innerHTML = '';
       containerPix.style.display = 'none';
-
-      const resumo = document.getElementById('resumoPacote');
-      resumo.innerHTML = `Pacote: ⚡${pacoteSelecionado.qtd}<br>Total a pagar: R$ ${pacoteSelecionado.preco}`;
+      containerOpcoesPagamento.style.display = 'flex';
+      resumoPacoteEl.innerHTML = `
+        <span>Pacote:⚡${pacoteSelecionado.qtd}</span>
+        <span>Preço: R$ ${pacoteSelecionado.preco}</span>
+      `;
       const novaEnergiaTotal = energiaAtualUsuario + pacoteSelecionado.qtd;
       
       if (novaEnergiaTotal > LIMITE_RESERVATORIO) {
         projecao.innerHTML = `⚠️ Irá para <strong>${novaEnergiaTotal}</strong> (Ultrapassa o limite de 500!)`;
         projecao.style.color = '#dc2626';
-        btnPagar.style.display = 'none';
+        if (tituloModal) tituloModal.style.display = 'none';
+        if (containerOpcoesPagamento) containerOpcoesPagamento.style.display = 'none';
+        if (btnPagar) btnPagar.style.display = 'none';
       } else {
         projecao.innerHTML = `➔ Após compra: <strong>${novaEnergiaTotal} / 500</strong>`;
         projecao.style.color = '#16a34a';
@@ -723,6 +885,8 @@
       }
       
       document.getElementById('modalPagamento').style.display = 'flex';
+      
+      if (metodoPagamentoAtual !== 'pix') btnPagar.style.display = 'none';
     };
 
     // Preenche o valor na tela ao carregar
@@ -733,8 +897,6 @@
 
     window.selecionarPacote = function (elementoCard, somClique=true) {
       if (somClique) playSound("click");
-
-      console.log(`Selecionando pacote`)
       document.querySelectorAll('.pacote-card').forEach(card => {
         card.classList.remove('selecionado');
       });
@@ -754,32 +916,6 @@
       }
     };
 
-    // Seleciona um pacote automaticamente caso o usuário tenha vindo do modal em que escolhe o plano inicial de energia
-    let cardParaSelecionar = null;
-    const planoSalvo = sessionStorage.getItem('plano_inicial_escolhido');
-    
-    // Limpa o sessionStorage imediatamente para não repetir se navegar de volta
-    sessionStorage.removeItem('plano_inicial_escolhido');
-
-    if (planoSalvo) {
-      // Pega todos os cards de pacotes da tela
-      const cards = document.querySelectorAll('.pacote-card');
-      // Procura comparando em minúsculas para evitar erro de digitação ou maiúsculas/minúsculas
-      for (let card of cards) {
-        const nomeCard = (card.getAttribute('data-nome') || '').toLowerCase();
-        if (nomeCard === planoSalvo.toLowerCase()) {
-          cardParaSelecionar = card;
-          break;
-        }
-      }
-    }
-
-    // 3. Se encontrou um card válido e a função selecionarPacote existe, dispara a seleção
-    if (cardParaSelecionar) {
-      window.selecionarPacote(cardParaSelecionar, false);
-      window.abrirModalPagamento();
-    }
-
     window.fecharModalPagamento = function () {
       playSound("click");
       if (intervalChecagemPix) clearInterval(intervalChecagemPix);
@@ -796,11 +932,11 @@
       if (!pacoteSelecionado || mensagemErro.style.display !== 'none') return;
       playSound("click");
 
+      containerOpcoesPagamento.style.display = 'none';
       btnPagar.disabled = true;
       btnPagar.textContent = "Gerando PIX...";
 
       try {
-        
         const response = await fetch('/api/criar-pix', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -856,7 +992,7 @@
           </div>
 
           <p class="text-muted small mb-3">
-            Abra o app do seu banco, escolha a opção <strong>PIX</strong> e escaneie o código abaixo ou copie a chave
+            Abra o app do seu banco, escolha a opção <strong>PIX</strong> e escaneie o código abaixo ou copie a chave.
           </p>
 
           <div class="mb-3">
@@ -865,18 +1001,14 @@
               style="max-width: 220px; width: 100%; border: 4px solid #fff; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);" />
           </div>
 
-          <div class="mb-3">
+          <div style="margin-top: 0.6rem;" class="mb-3">
             <label class="form-label text-muted small">Código Copia e Cola:</label>
             <div class="input-group">
-              <input type="text" id="inputCopiaCola" class="form-control form-control-sm" value="${qrCodeCopiaCola}" readonly />
+              <input style="margin-top: 0.5rem;" type="text" id="inputCopiaCola" class="form-control form-control-sm" value="${qrCodeCopiaCola}" readonly />
               <button id="btnCopiarPix" class="btn btn-outline-primary btn-sm" onclick="copiarChavePix()">
                 📋 Copiar
               </button>
             </div>
-          </div>
-
-          <div class="alert alert-info py-2 small">
-            ⚡ Sua energia será creditada automaticamente assim que o pagamento for confirmado
           </div>
         </div>
       `;
@@ -902,51 +1034,8 @@
         const data = await response.json();
         if (data.status === 'APROVADO') {
           if (intervalChecagemPix) clearInterval(intervalChecagemPix);
-        
-          // 1. Remove elementos desnecessários da tela de sucesso
-          const btnFecharModal      = document.getElementById('btn-fechar-modal');
-          const titulo_modal        = document.getElementById('titulo-modal-pagamento');
-          const resumoPacote        = document.getElementById('resumoPacote');
-          const opcoesPagamento     = document.querySelector('.opcoes-pagamento');
-          if (btnFecharModal)         btnFecharModal.style.display = 'none';
-          if (titulo_modal)           titulo_modal.style.display = 'none';
-          if (resumoPacote)           resumoPacote.style.display = 'none';
-          if (opcoesPagamento)        opcoesPagamento.style.display = 'none';
-
-          // 2. Calcula a nova energia total e atualiza o localStorage
           const qtdAdicionada = pacoteSelecionado ? pacoteSelecionado.qtd : 0;
-          const novaEnergiaTotal = energiaAtualUsuario + qtdAdicionada;
-          localStorage.setItem('perguntas_restantes', novaEnergiaTotal.toString());
-
-          // 3. Atualiza o texto da energia anterior
-          if (elementoEnergia) {
-            elementoEnergia.innerHTML = `⚡Energia anterior: <strong id="energiaAtualTexto">${energiaAtualUsuario}</strong> / 500`;
-          }
-
-          // 4. Ajusta a projeção para mostrar o valor final creditado
-          if (projecao) {
-            projecao.innerHTML = `➔ Energia atual: <strong>${novaEnergiaTotal} / 500</strong>`;
-            projecao.style.color = '#16a34a';
-          }
-
-          // 5. Exibe a mensagem de sucesso no container do PIX
-          if (containerPix) {
-            containerPix.innerHTML = `
-              <div class="pix-checkout-box text-center p-4">
-                  <div class="badge bg-success text-white mb-3 px-3 py-2 fs-5">
-                    ✅ Pagamento Aprovado!
-                  </div>
-              </div>
-            `;
-          }
-
-          // 6. Transforma o botão original no botão de Voltar ao Menu
-          if (btnPagar) {
-            btnPagar.innerHTML = "Voltar ao Menu";
-            btnPagar.className = "btn-voltar-sucesso shadow-sm mt-3"; 
-            btnPagar.onclick = voltarParaHome;
-            btnPagar.style.display = "block";
-          }
+          exibirSucessoPagamento(qtdAdicionada);
         }
       } catch (err) {
         console.error("Erro ao verificar status:", err);
