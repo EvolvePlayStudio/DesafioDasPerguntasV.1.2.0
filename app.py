@@ -74,6 +74,56 @@ CONFIG_COTAS_RANKING = {
     }
 }
 
+@app.route("/api/estoque-temas")
+def carregar_estoque_temas():
+    id_usuario = session.get('id_usuario')
+    modo_visitante = session.get('visitante')
+
+    # Se for visitante, retorna vazio para não exibir nada
+    if not id_usuario or modo_visitante:
+        return jsonify({}), 200
+
+    estoques = {}
+    conn = cur = None
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # Consulta que pega perguntas ativas MENOS as já respondidas pelo usuário
+        cur.execute("""
+            SELECT p.tema, p.dificuldade, COUNT(*) as qtd
+            FROM perguntas_objetivas p
+            WHERE p.status = 'Ativa'
+              AND p.id_pergunta NOT IN (
+                  SELECT r.id_pergunta 
+                  FROM respostas_usuarios r 
+                  WHERE r.id_usuario = %s
+              )
+            GROUP BY p.tema, p.dificuldade;
+        """, (id_usuario,))
+        
+        linhas = cur.fetchall()
+
+        # Estrutura os dados no formato: { "Artes": { "fácil": 0, "médio": 23, "difícil": 6, "extremo": 2 }, ... }
+        for linha in linhas:
+            tema = linha['tema']
+            dificuldade = linha['dificuldade'] # Padroniza para minúsculo conforme seu utils.py
+            qtd = linha['qtd']
+            
+            if tema not in estoques:
+                estoques[tema] = {"Fácil": 0, "Médio": 0, "Difícil": 0, "Extremo": 0}
+            
+            estoques[tema][dificuldade] = qtd
+        return jsonify(estoques), 200
+
+    except Exception as e:
+        print(f"Erro ao buscar estoque de temas: {e}")
+        return jsonify({}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
 @app.route('/api/criar-pix', methods=['POST'])
 def criar_pix():
     dados = request.get_json() or {}
@@ -1250,6 +1300,7 @@ def doacoes():
         cur = conn.cursor(cursor_factory=RealDictCursor)
 
         if id_usuario and not modo_visitante:
+            # Identifica a quantidade de perguntas que o usuário já respondeu e ativas no banco
             cur.execute("""
                 SELECT 
                     u.email,

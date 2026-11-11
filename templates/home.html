@@ -347,6 +347,29 @@
       overflow: hidden;
       cursor: pointer;
     }
+
+
+    .card-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 200px;
+    }
+    /* Estilo limpo para o estoque flutuar logo abaixo, fora do card */
+    .card-estoque {
+      display: none;
+      cursor: help;
+      margin-top: 6px; /* Espacinho de respiro entre o card e os números */
+      font-size: 0.85rem;
+      font-weight: bold;
+      font-family: monospace;
+      color: #ffffff; /* Ou a cor que preferir para o texto/barras */
+      text-align: center;
+      width: 100%;
+    }
+
+
+
     .card img {
       margin-top: -0.21rem;
       width: 100%;
@@ -831,54 +854,162 @@
     <!-- Scroll com os cards de temas -->
     <div id="cards-scroll-wrapper" class="cards-scroll-wrapper">
       <div class="cards-container">
-        <div class="card" data-tema="Artes">
-          <img src="{{ url_for('static', filename='img/Artes.jpeg') }}" alt="Artes">
-          <span>Artes</span>
+        <!-- Artes -->
+        <div class="card-wrapper">
+          <div class="card" data-tema="Artes">
+            <img src="{{ url_for('static', filename='img/Artes.jpeg') }}" alt="Artes">
+            <span>Artes</span>
+          </div>
+          <div class="card-estoque" title="Perguntas disponíveis: Fácil / Médio / Difícil / Extremo">
+            <span class="estoque-facil" style="color: lime;">-</span> /
+            <span class="estoque-medio" style="color: yellow;">-</span> /
+            <span class="estoque-dificil" style="color: red;">-</span> /
+            <span class="estoque-extremo" style="color: #3e16d1;">-</span>
+          </div>
         </div>
-        <div class="card" data-tema="Astronomia">
-          <img src="{{ url_for('static', filename='img/Astronomia.jpeg') }}" alt="Astronomia">
-          <span>Astronomia</span>
+        <!-- Astronomia -->
+        <div class="card-wrapper">
+          <div class="card" data-tema="Astronomia">
+            <img src="{{ url_for('static', filename='img/Astronomia.jpeg') }}" alt="Astronomia">
+            <span>Astronomia</span>
+          </div>
+          <div class="card-estoque" title="Perguntas disponíveis: Fácil / Médio / Difícil / Extremo">
+            <span class="estoque-facil" style="color: lime;">-</span> /
+            <span class="estoque-medio" style="color: yellow;">-</span> /
+            <span class="estoque-dificil" style="color: red;">-</span> /
+            <span class="estoque-extremo" style="color: #3e16d1;">-</span>
+          </div>
         </div>
-        <div class="card" data-tema="Biologia">
-          <img src="{{ url_for('static', filename='img/Biologia.jpeg') }}" alt="Biologia">
-          <span>Biologia</span>
+        <!-- Biologia-->
+        <div class="card-wrapper">
+          <div class="card" data-tema="Biologia">
+            <img src="{{ url_for('static', filename='img/Biologia.jpeg') }}" alt="Biologia">
+            <span>Biologia</span>
+          </div>
+          <div class="card-estoque" title="Perguntas disponíveis: Fácil / Médio / Difícil / Extremo">
+            <span class="estoque-facil" style="color: lime;">-</span> /
+            <span class="estoque-medio" style="color: yellow;">-</span> /
+            <span class="estoque-dificil" style="color: red;">-</span> /
+            <span class="estoque-extremo" style="color: #3e16d1;">-</span>
+          </div>
         </div>
-        <div class="card" data-tema="Esportes">
-          <img src="{{ url_for('static', filename='img/Esportes.jpeg') }}" alt="Esportes">
-          <span>Esportes</span>
+        <!-- Esportes -->
+        <div class="card-wrapper">
+          <div class="card" data-tema="Esportes">
+            <img src="{{ url_for('static', filename='img/Esportes.jpeg') }}" alt="Esportes">
+            <span>Esportes</span>
+          </div>
+          <div class="card-estoque" title="Perguntas disponíveis: Fácil / Médio / Difícil / Extremo">
+            <span class="estoque-facil" style="color: lime;">-</span> /
+            <span class="estoque-medio" style="color: yellow;">-</span> /
+            <span class="estoque-dificil" style="color: red;">-</span> /
+            <span class="estoque-extremo" style="color: #3e16d1;">-</span>
+          </div>
         </div>
-        <div class="card" data-tema="Filosofia">
-          <img src="{{ url_for('static', filename='img/Filosofia.jpeg') }}" alt="Filosofia">
-          <span>Filosofia</span>
+        <!-- Filosofia -->
+        <div class="card-wrapper">
+          <div class="card" data-tema="Filosofia">
+            <img src="{{ url_for('static', filename='img/Filosofia.jpeg') }}" alt="Filosofia">
+            <span>Filosofia</span>
+          </div>
+          <div class="card-estoque" title="Perguntas disponíveis: Fácil / Médio / Difícil / Extremo">
+            <span class="estoque-facil" style="color: lime;">-</span> /
+            <span class="estoque-medio" style="color: yellow;">-</span> /
+            <span class="estoque-dificil" style="color: red;">-</span> /
+            <span class="estoque-extremo" style="color: #3e16d1;">-</span>
+          </div>
         </div>
-        <div class="card" data-tema="Física">
-          <img src="{{ url_for('static', filename='img/Fisica.jpeg') }}" alt="Física">
-          <span>Física</span>
+        <!-- Física -->
+        <div class="card-wrapper">
+          <div class="card" data-tema="Física">
+            <img src="{{ url_for('static', filename='img/Fisica.jpeg') }}" alt="Física">
+            <span>Física</span>
+          </div>
+          <div class="card-estoque" title="Perguntas disponíveis: Fácil / Médio / Difícil / Extremo">
+            <span class="estoque-facil" style="color: lime;">-</span> /
+            <span class="estoque-medio" style="color: yellow;">-</span> /
+            <span class="estoque-dificil" style="color: red;">-</span> /
+            <span class="estoque-extremo" style="color: #3e16d1;">-</span>
+          </div>
         </div>
-        <div class="card" data-tema="Geografia">
-          <img src="{{ url_for('static', filename='img/Geografia.jpeg') }}" alt="Geografia">
-          <span>Geografia</span>
+        <!-- Geografia -->
+        <div class="card-wrapper">
+          <div class="card" data-tema="Geografia">
+            <img src="{{ url_for('static', filename='img/Geografia.jpeg') }}" alt="Geografia">
+            <span>Geografia</span>
+          </div>
+          <div class="card-estoque" title="Perguntas disponíveis: Fácil / Médio / Difícil / Extremo">
+            <span class="estoque-facil" style="color: lime;">-</span> /
+            <span class="estoque-medio" style="color: yellow;">-</span> /
+            <span class="estoque-dificil" style="color: red;">-</span> /
+            <span class="estoque-extremo" style="color: #3e16d1;">-</span>
+          </div>
         </div>
-        <div class="card" data-tema="História">
-          <img src="{{ url_for('static', filename='img/Historia.jpeg') }}" alt="História">
-          <span>História</span>
+        <!-- História -->
+        <div class="card-wrapper">
+          <div class="card" data-tema="História">
+            <img src="{{ url_for('static', filename='img/Historia.jpeg') }}" alt="História">
+            <span>História</span>
+          </div>
+          <div class="card-estoque" title="Perguntas disponíveis: Fácil / Médio / Difícil / Extremo">
+            <span class="estoque-facil" style="color: lime;">-</span> /
+            <span class="estoque-medio" style="color: yellow;">-</span> /
+            <span class="estoque-dificil" style="color: red;">-</span> /
+            <span class="estoque-extremo" style="color: #3e16d1;">-</span>
+          </div>
         </div>
-        <div class="card" data-tema="Mídia">
-          <img src="{{ url_for('static', filename='img/Midia.jpeg') }}" alt="Mídia">
-          <span>Mídia</span>
+        <!-- Mídia -->
+        <div class="card-wrapper">
+          <div class="card" data-tema="Mídia">
+            <img src="{{ url_for('static', filename='img/Midia.jpeg') }}" alt="Mídia">
+            <span>Mídia</span>
+          </div>
+          <div class="card-estoque" title="Perguntas disponíveis: Fácil / Médio / Difícil / Extremo">
+            <span class="estoque-facil" style="color: lime;">-</span> /
+            <span class="estoque-medio" style="color: yellow;">-</span> /
+            <span class="estoque-dificil" style="color: red;">-</span> /
+            <span class="estoque-extremo" style="color: #3e16d1;">-</span>
+          </div>
         </div>
-        <div class="card" data-tema="Música">
-          <img src="{{ url_for('static', filename='img/Musica.jpeg') }}" alt="Música">
-          <span>Música</span>
+        <!-- Música -->
+        <div class="card-wrapper">
+          <div class="card" data-tema="Música">
+            <img src="{{ url_for('static', filename='img/Musica.jpeg') }}" alt="Música">
+            <span>Música</span>
+          </div>
+          <div class="card-estoque" title="Perguntas disponíveis: Fácil / Médio / Difícil / Extremo">
+            <span class="estoque-facil" style="color: lime;">-</span> /
+            <span class="estoque-medio" style="color: yellow;">-</span> /
+            <span class="estoque-dificil" style="color: red;">-</span> /
+            <span class="estoque-extremo" style="color: #3e16d1;">-</span>
+          </div>
         </div>
-        <div class="card" data-tema="Química">
-          <img src="{{ url_for('static', filename='img/Quimica.jpeg') }}" alt="Química">
-          <span>Quimíca</span>
+        <!-- Química -->
+        <div class="card-wrapper">
+          <div class="card" data-tema="Química">
+            <img src="{{ url_for('static', filename='img/Quimica.jpeg') }}" alt="Química">
+            <span>Quimíca</span>
+          </div>
+          <div class="card-estoque" title="Perguntas disponíveis: Fácil / Médio / Difícil / Extremo">
+            <span class="estoque-facil" style="color: lime;">-</span> /
+            <span class="estoque-medio" style="color: yellow;">-</span> /
+            <span class="estoque-dificil" style="color: red;">-</span> /
+            <span class="estoque-extremo" style="color: #3e16d1;">-</span>
+          </div>
         </div>
-        <div class="card" data-tema="Variedades">
-          <img src="{{ url_for('static', filename='img/Variedades.jpeg') }}" alt="Variedades">
-          <span>Variedades</span>
-        </div>
+        <!-- Variedades -->
+        <div class="card-wrapper">
+          <div class="card" data-tema="Variedades">
+            <img src="{{ url_for('static', filename='img/Variedades.jpeg') }}" alt="Variedades">
+            <span>Variedades</span>
+          </div>
+          <div class="card-estoque" title="Perguntas disponíveis: Fácil / Médio / Difícil / Extremo">
+            <span class="estoque-facil" style="color: lime;">-</span> /
+            <span class="estoque-medio" style="color: yellow;">-</span> /
+            <span class="estoque-dificil" style="color: red;">-</span> /
+            <span class="estoque-extremo" style="color: #3e16d1;">-</span>
+          </div>
+        </div>        
       </div>
     </div>
   </main>
@@ -926,25 +1057,74 @@
       registrandoModoTeste: false,
       modoVisitante: MODO_VISITANTE_HTML
     }
-  </script>
 
+    // Mostra os estoques de perguntas em cada nível e tema
+    function preencherContadores(data) {
+      if (!data || typeof data !== 'object' || Object.keys(data).length === 0) {
+        return;
+      }
+
+      document.querySelectorAll('.card-wrapper').forEach(wrapper => {
+        const card = wrapper.querySelector('.card');
+        if (!card) return;
+        
+        const tema = card.getAttribute('data-tema');
+        const estoques = data[tema];
+
+        if (estoques) {
+          const elFacil = wrapper.querySelector('.estoque-facil');
+          const elMedio = wrapper.querySelector('.estoque-medio');
+          const elDificil = wrapper.querySelector('.estoque-dificil');
+          const elExtremo = wrapper.querySelector('.estoque-extremo');
+
+          // Se veio do backend, atribui o valor real (seja 0 ou maior)
+          if (elFacil && 'Fácil' in estoques) elFacil.textContent = estoques['Fácil'];
+          if (elMedio && 'Médio' in estoques) elMedio.textContent = estoques['Médio'];
+          if (elDificil && 'Difícil' in estoques) elDificil.textContent = estoques['Difícil'];
+          if (elExtremo && 'Extremo' in estoques) elExtremo.textContent = estoques['Extremo'];
+        }
+
+        // Revela o bloco de estoque com os dados definitivos
+        const containerEstoque = wrapper.querySelector('.card-estoque');
+        if (containerEstoque) {
+          containerEstoque.classList.add('carregado');
+        }
+      });
+    }
+
+    function carregarEstoques() {
+      fetch('/api/estoque-temas')
+        .then(response => response.json())
+        .then(data => {
+          preencherContadores(data);
+        })
+        .catch(err => {
+          window._estoquesCarregados = false;
+          console.error("Erro ao carregar estoques:", err);
+        });
+    }
+
+    if (!MODO_VISITANTE_HTML && idUsuarioHTML) {
+      document.querySelectorAll('.card-estoque').forEach(el => {
+        el.style.display = 'block';
+      })
+      window.addEventListener("load", carregarEstoques);
+    }
+    
+  </script>
  
   <script>
-    // Script para salvar no localStorage origem do usuário
     document.addEventListener('DOMContentLoaded', () => {
-        const origemDoPython = "{{ session.get('usuario_origem', '') }}";
-        const midiaDoPython = "{{ session.get('usuario_midia', '') }}";
-        if (origemDoPython === 'GoogleAds' || origemDoPython === 'MicrosoftAds') {
-          localStorage.setItem('usuario_origem', origemDoPython);
-          localStorage.setItem('usuario_midia', midiaDoPython);
-        }
+      // Salva no localStorage a origem do usuário
+      const origemDoPython = "{{ session.get('usuario_origem', '') }}";
+      const midiaDoPython = "{{ session.get('usuario_midia', '') }}";
+      if (origemDoPython === 'GoogleAds' || origemDoPython === 'MicrosoftAds') {
+        localStorage.setItem('usuario_origem', origemDoPython);
+        localStorage.setItem('usuario_midia', midiaDoPython);
+      }
     });
   </script>
 
-  <script>
-    
-  </script>
-
-  <script type="module" src="{{ url_for('static', filename='home.js') }}?v=1.3.1"></script>
+  <script type="module" src="{{ url_for('static', filename='home.js') }}?v=1.3.3"></script>
 </body>
 </html>
