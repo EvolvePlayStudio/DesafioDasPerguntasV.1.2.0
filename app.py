@@ -105,15 +105,14 @@ def carregar_estoque_temas():
         
         linhas = cur.fetchall()
 
+        for tema in temas_disponiveis:
+            estoques[tema] = {"Fácil": 0, "Médio": 0, "Difícil": 0, "Extremo": 0}
+
         # Estrutura os dados no formato: { "Artes": { "fácil": 0, "médio": 23, "difícil": 6, "extremo": 2 }, ... }
         for linha in linhas:
             tema = linha['tema']
             dificuldade = linha['dificuldade'] # Padroniza para minúsculo conforme seu utils.py
             qtd = linha['qtd']
-            
-            if tema not in estoques:
-                estoques[tema] = {"Fácil": 0, "Médio": 0, "Difícil": 0, "Extremo": 0}
-            
             estoques[tema][dificuldade] = qtd
         return jsonify(estoques), 200
 
