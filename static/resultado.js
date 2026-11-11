@@ -6,6 +6,7 @@ const MODO_VISITANTE = localStorage.getItem('modoVisitante') === "true";
 const idUsuario = parseInt(localStorage.getItem("id_usuario") ?? "0");
 const idVisitante = localStorage.getItem("id_visitante") ?? "null";
 const isAdmin = idsReservados.includes(idUsuario) || (idsVisitantesReservados.includes(idVisitante) && MODO_VISITANTE);
+const podeFavoritar = !MODO_VISITANTE && idUsuario > 0;
 
 async function carregarInterstitialDinamico() {
   try {
@@ -201,12 +202,12 @@ else {
 }
 
 const resultado = {
-    tema: `${tema_atual}`,
-    pontuacaoAnterior: pontuacao_anterior,
-    pontuacaoFinal: nova_pontuacao,
-    saldo: str_saldo,
-    ranking_atual: rankings_jogador[tema_atual],
-    perguntas_respondidas: perguntas_respondidas
+  tema: `${tema_atual}`,
+  pontuacaoAnterior: pontuacao_anterior,
+  pontuacaoFinal: nova_pontuacao,
+  saldo: str_saldo,
+  ranking_atual: rankings_jogador[tema_atual],
+  perguntas_respondidas: perguntas_respondidas
 };
 
 const emojiTema = simbolosTemas[resultado.tema];
@@ -222,53 +223,60 @@ document.getElementById("ranking-atual").textContent = `${emojiRanking} ${result
 
 const lista = document.getElementById("lista-perguntas");
 resultado.perguntas_respondidas.forEach((p, i) => {
-    const div = document.createElement("div");
-    div.classList.add("pergunta");
-    let correta;
-    let str_pontos_ganhos;
-    if (Number(p.pontos_ganhos) > 0) {
-        str_pontos_ganhos = `+${p.pontos_ganhos}`;
-        correta = true;
-    }
-    else {
-        str_pontos_ganhos = p.pontos_ganhos;
-        correta = false;
-    }
+  const div = document.createElement("div");
+  div.classList.add("pergunta");
+  const iconeEstrela = "☆"; // Nascem sempre desmarcadas
+  let correta;
+  let str_pontos_ganhos;
+  if (Number(p.pontos_ganhos) > 0) {
+    str_pontos_ganhos = `+${p.pontos_ganhos}`;
+    correta = true;
+  }
+  else {
+    str_pontos_ganhos = p.pontos_ganhos;
+    correta = false;
+  }
 
-    const cor_pontuacao = correta? 'lime': 'red'; // O ideal é que estas cores fossem variáveis globais
-    const cor_dificuldade = coresDificuldade[p.dificuldade.toLowerCase()];
-    let cor_alternativa_a = 'black';
-    let cor_alternativa_b = 'black';
-    let cor_alternativa_c = 'black';
-    let cor_alternativa_d = 'black';
-    if (p.resposta_correta === 'A') {
-        cor_alternativa_a = 'lime'
+  const cor_pontuacao = correta? 'lime': 'red'; // O ideal é que estas cores fossem variáveis globais
+  const cor_dificuldade = coresDificuldade[p.dificuldade.toLowerCase()];
+  let cor_alternativa_a = 'black';
+  let cor_alternativa_b = 'black';
+  let cor_alternativa_c = 'black';
+  let cor_alternativa_d = 'black';
+  if (p.resposta_correta === 'A') {
+    cor_alternativa_a = 'lime'
+  }
+  else if (p.resposta_correta === 'B') {
+    cor_alternativa_b = 'lime'
+  }
+  else if (p.resposta_correta === 'C') {
+    cor_alternativa_c = 'lime'
+  }
+  else if (p.resposta_correta === 'D') {
+    cor_alternativa_d = 'lime'
+  }
+  if (p.resposta_correta !== p.resposta_usuario) {
+    if (p.resposta_usuario === 'A') {
+      cor_alternativa_a = 'red'
     }
-    else if (p.resposta_correta === 'B') {
-        cor_alternativa_b = 'lime'
+    else if (p.resposta_usuario === 'B') {
+      cor_alternativa_b = 'red'
     }
-    else if (p.resposta_correta === 'C') {
-        cor_alternativa_c = 'lime'
+    else if (p.resposta_usuario === 'C') {
+      cor_alternativa_c= 'red'
     }
-    else if (p.resposta_correta === 'D') {
-        cor_alternativa_d = 'lime'
+    else if (p.resposta_usuario === 'D') {
+      cor_alternativa_d = 'red'
     }
-    if (p.resposta_correta !== p.resposta_usuario) {
-        if (p.resposta_usuario === 'A') {
-            cor_alternativa_a = 'red'
-        }
-        else if (p.resposta_usuario === 'B') {
-            cor_alternativa_b = 'red'
-        }
-        else if (p.resposta_usuario === 'C') {
-            cor_alternativa_c= 'red'
-        }
-        else if (p.resposta_usuario === 'D') {
-            cor_alternativa_d = 'red'
-        }
-    }
+  }
 
-    div.innerHTML = `
+  // Se puder favoritar, injeta o botão da estrela no HTML; senão, deixa vazio
+  const htmlBotaoFavorito = podeFavoritar 
+    ? `<button class="btn-favorito" data-id-pergunta="${p.id_pergunta}" title="Favoritar pergunta">${iconeEstrela}</button>` 
+    : '';
+
+  div.innerHTML = `
+    ${htmlBotaoFavorito}
     <p><strong>Dificuldade:</strong> <span style="color: ${cor_dificuldade}">${p.dificuldade}</span></p>
     <p style="font-family: 'Noto Serif', 'Roboto', serif, sans-serif; font-weight: bold;"><strong>${i+1}-</strong> ${p.enunciado}</p>
     <p style="font-weight: bold; color: ${cor_alternativa_a};"><strong>A)</strong> ${p.alternativa_a}</p>
@@ -276,8 +284,23 @@ resultado.perguntas_respondidas.forEach((p, i) => {
     <p style="font-weight: bold; color: ${cor_alternativa_c};"><strong>C)</strong> ${p.alternativa_c}</p>
     <p style="font-weight: bold; color: ${cor_alternativa_d};"><strong>D)</strong> ${p.alternativa_d}</p>
     <p><strong>Pontos ganhos:</strong> <span style="color:${cor_pontuacao}">${str_pontos_ganhos}</span></p>
-    `
-    lista.appendChild(div);
+  `;
+
+  // Evento de clique para alternar visualmente a estrela de favoritos
+  if (podeFavoritar) {
+    const btnFav = div.querySelector('.btn-favorito');
+
+    btnFav.addEventListener('click', (e) => {
+      e.stopPropagation();
+      playSound("click");
+
+      const jaEstaFavorita = btnFav.classList.contains('favorito');
+      btnFav.classList.toggle('favorito', !jaEstaFavorita);
+      btnFav.textContent = !jaEstaFavorita ? "★" : "☆";
+    });
+  }
+
+  lista.appendChild(div);
 });
 
 function exibirMensagem(label, texto, cor) {
@@ -320,9 +343,45 @@ document.addEventListener("DOMContentLoaded", () => {
     caixaTextoFeedback.addEventListener("keydown", (e) => {playKeySound(e)});
   }
 
-  // Função para prosseguir para a tela hom
-  btnProsseguir.addEventListener("click", () => {
+  // Função para prosseguir para a tela home (enviando os favoritos em lote)
+  btnProsseguir.addEventListener("click", async () => {
     playSound("click");
+
+    if (podeFavoritar) {
+      const idsAdicionar = [];
+      const idsRemover = [];
+
+      // Varre todos os botões de favoritos na tela
+      const todosBotoes = document.querySelectorAll('.btn-favorito');
+
+      todosBotoes.forEach(btn => {
+        const id = Number(btn.getAttribute('data-id-pergunta'));
+        const estaFavorita = btn.classList.contains('favorito');
+
+        if (estaFavorita) {
+          idsAdicionar.push(id);
+        } else {
+          idsRemover.push(id);
+        }
+      });
+
+      const payload = {
+        tema_atual: resultado.tema,
+        adicionar: idsAdicionar,
+        remover: idsRemover
+      };
+
+      try {
+        fetch('/api/favoritos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        console.error("Erro ao salvar favoritos:", err);
+      }
+    }
+
     window.location.href = 'home';
   });
 

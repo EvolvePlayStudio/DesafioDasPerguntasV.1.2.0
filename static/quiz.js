@@ -1,6 +1,7 @@
 import { coresDificuldade, dificuldadesOrdenadas, deveEncerrarQuiz, idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings, idsVisitantesReservados} from "./utils.js"
 import { playSound, playKeySound } from "./sound.js"
 
+
 function validateAppVersionQuiz() {
   if (!localStorage.getItem('app_version')) {
     localStorage.setItem("auth_message", "Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente");
@@ -850,7 +851,11 @@ async function enviarResposta() {
 
     if (modo_jogo === "desafio") {
       // Armazena informações que serão úteis depois na tela de resultado
-      const info_resposta = {"enunciado": pergunta_selecionada.enunciado, "alternativa_a": pergunta_selecionada.alternativa_a, "alternativa_b": pergunta_selecionada.alternativa_b, "alternativa_c": pergunta_selecionada.alternativa_c, "alternativa_d": pergunta_selecionada.alternativa_d, "resposta_correta": letra_correta, "resposta_usuario": resposta_usuario, "pontos_ganhos": pontos_ganhos, "dificuldade": pergunta_selecionada.dificuldade}
+      const info_resposta = {"id_pergunta": pergunta_selecionada.id_pergunta, "enunciado": pergunta_selecionada.enunciado,
+      "alternativa_a": pergunta_selecionada.alternativa_a, "alternativa_b": pergunta_selecionada.alternativa_b,
+      "alternativa_c": pergunta_selecionada.alternativa_c, "alternativa_d": pergunta_selecionada.alternativa_d,
+      "resposta_correta": letra_correta, "resposta_usuario": resposta_usuario, "pontos_ganhos": pontos_ganhos,
+      "dificuldade": pergunta_selecionada.dificuldade}
       perguntas_respondidas.push(info_resposta);
       localStorage.setItem("perguntas_respondidas", JSON.stringify(perguntas_respondidas));
 
@@ -1393,7 +1398,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Chama as funções que são necessárias na inicialização
   renderizarPontuacaoAtual(pontuacoes_jogador[tema_atual]);
   definirRankingAnterior(); // útil para quando for animar barra de progresso
-  console.log(`111. POntuação do jogador: ${pontuacoes_jogador[tema_atual]}`)
   atualizarRankingVisual();
   await mostrarPergunta(true);
   configurarEstrelas();

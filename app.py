@@ -2211,11 +2211,15 @@ def termos_uso():
 
 @app.route("/api/favoritos", methods=["POST"])
 def salvar_favoritos():
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
 
     tema = data.get("tema_atual")
-    adicionar = set(map(int, data.get("adicionar", [])))
-    remover   = set(map(int, data.get("remover", [])))
+    # Filtra valores None, vazios ou inválidos antes de mapear para int
+    adicionar_raw = data.get("adicionar") or []
+    adicionar = set(map(int, [x for x in adicionar_raw if x is not None]))
+    
+    remover_raw = data.get("remover") or []
+    remover = set(map(int, [x for x in remover_raw if x is not None]))
 
     if not tema:
         return jsonify({"success": False, "msg": "Tema inválido"}), 400

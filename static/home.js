@@ -596,10 +596,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     function exibirModalEnergiaBaixa() {
       const eIsento = idsUsuariosIsentos.includes(idUsuario); // Usuários que já responderam muitas perguntas
       const perguntasRestantesAtual = parseInt(localStorage.getItem('perguntas_restantes') || '500');
-      let deveExibir = sessionStorage.getItem('exibir_modal_sem_energia') === 'true';
-      if (isAdmin) deveExibir = true;
+      let deveExibir = sessionStorage.getItem('exibir_modal_sem_energia') === 'true' && !eIsento && perguntasRestantesAtual == 0;
+      //if (isAdmin) deveExibir = true;
 
-      if (deveExibir && !eIsento && perguntasRestantesAtual == 0) {
+      if (deveExibir) {
         // Registra na base o aparecimento do modal de energia esgotada
         try {
           fetch("/api/registrar-acesso", {

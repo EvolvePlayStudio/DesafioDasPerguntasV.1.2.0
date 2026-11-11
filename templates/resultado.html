@@ -77,8 +77,27 @@
       overflow: auto;
     }
     .pergunta {
+      position: relative;
       border-top: 1px solid #ddd;
       padding: 10px 0;
+    }
+    .btn-favorito {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      font-size: 2rem;
+      cursor: pointer;
+      transition: color 0.3s ease, transform 0.2s ease;
+      color: black;
+      z-index: 2;
+    }
+    .btn-favorito.favorito {
+      color: gold;
+    }
+    .btn-favorito:hover {
+      transform: scale(1.15);
     }
     .pergunta span {
       font-weight: bold;
