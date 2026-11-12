@@ -791,7 +791,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Função que roda a cada 5 segundos
   function verificarAtualizacaoEnergia() {
     if (document.visibilityState !== 'visible' || MODO_VISITANTE) return;
-    if (isAdmin) console.log("Verificando mudança de dia");
+    //if (isAdmin) console.log("Verificando mudança de dia");
     //if (isAdmin) localStorage.removeItem('ultima_data_verificacao');
 
     // Pega a data local correta no formato YYYY-MM-DD respeitando o fuso do Brasil
@@ -834,6 +834,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     .then(data => {
       if (data.success) {
         animarAtualizacaoEnergia(data);
+        permitir_escolher_tema = true;
       } else console.warn("Não foi possível atualizar a energia:", data.message);
       exibirModalEmailOuEnergia();
     })
