@@ -2661,8 +2661,7 @@ def registrar_modo_teste():
 
 def registrar_pagina_visitada(pagina, id_visitante=None, id_usuario=None):
     conn = cur = None
-    if not id_usuario:
-        id_usuario = session.get('id_usuario')
+    if not id_usuario: id_usuario = session.get('id_usuario')
     if not id_visitante: id_visitante = session.get('id_visitante')
 
     # Bloqueia registro de página para admins
