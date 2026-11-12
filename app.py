@@ -2667,8 +2667,8 @@ def registrar_pagina_visitada(pagina, id_visitante=None, id_usuario=None):
 
     # Bloqueia registro de página para admins
     if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
-        #return
-        pass
+        return
+        #pass
     
     # Se não for passado explicitamente na chamada da função, busca tudo padronizado da session!
     dispositivo     = session.get('usuario_dispositivo')
