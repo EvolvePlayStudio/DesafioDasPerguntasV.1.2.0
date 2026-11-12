@@ -1993,7 +1993,8 @@ def recarregar_energia_home():
         # 3. RETORNAR PARA O FRONTEND A NOVA ENERGIA
         return jsonify({
             'success': True,
-            'perguntas_restantes': nova_energia
+            'perguntas_restantes': nova_energia,
+            'energia_ganha': nova_energia - usuario['perguntas_restantes']
         })
 
     except Exception:

@@ -353,7 +353,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
   }
 
-  if (window.ADS_CONFIG.isAdmin && !MODO_VISITANTE) inserirBotaoModoTeste();
+  if (isAdmin && !MODO_VISITANTE) inserirBotaoModoTeste();
   exibirAnuncios();
 
   function registrarLog(textoLog) {
@@ -572,6 +572,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
           // Chama a tela de quiz
           window.location.href = `/quiz/${encodeURIComponent(slugify(tema_atual))}`;
+          mensagem.style.opacity = 0;
+          permitir_escolher_tema = true;
         }
         else {
           exibirMensagem(mensagem, `Não foi possível iniciar o quiz no tema ${tema_atual}`, corMensagemAlerta, true, false, 'flex');
@@ -737,8 +739,93 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Faz a recarga diária de energia do usuário
+  function animarAtualizacaoEnergia(data) {
+    let valorInicial = data.perguntas_restantes - (data.energia_ganha || 0);
+    if (valorInicial < 0) valorInicial = 0;
+
+    if (perguntas_restantes) {
+      localStorage.setItem('perguntas_restantes', data.perguntas_restantes);
+      perguntas_restantes.textContent = `${valorInicial}/${maxEnergiaUsuarios}`;
+    }
+
+    const elBonus = document.getElementById('energia-bonus');
+    if (elBonus) {
+      const ganho = data.energia_ganha ? `+${data.energia_ganha}` : ''; 
+      elBonus.textContent = ganho;
+      elBonus.style.opacity = '1';
+      elBonus.style.display = 'inline';
+
+      setTimeout(() => {
+        let duracaoTotal = 2000; // Ajuste o tempo total aqui se quiser mais lento/rápido
+        let passos = Math.abs(data.perguntas_restantes - valorInicial);
+        if (passos === 0) passos = 1;
+        let intervaloTempo = Math.max(Math.floor(duracaoTotal / passos), 60);
+        
+        let valorAtual = valorInicial;
+        let timerContagem = setInterval(() => {
+          if (valorAtual < data.perguntas_restantes) {
+            valorAtual++;
+          } else if (valorAtual > data.perguntas_restantes) {
+            valorAtual--;
+          }
+
+          if (perguntas_restantes) {
+            perguntas_restantes.textContent = `${valorAtual}/${maxEnergiaUsuarios}`;
+          }
+
+          if (valorAtual === data.perguntas_restantes) {
+            clearInterval(timerContagem);
+
+            setTimeout(() => {
+              elBonus.style.opacity = '0';
+              setTimeout(() => {
+                elBonus.style.display = 'none';
+              }, 800);
+            }, 3000);
+          }
+        }, intervaloTempo);
+      }, 1000); // 1 segundo de espera antes de subir os números
+    }
+  }
+
+  // Função que roda a cada 5 segundos
+  function verificarAtualizacaoEnergia() {
+    if (document.visibilityState !== 'visible' || MODO_VISITANTE) return;
+    if (isAdmin) console.log("Verificando mudança de dia");
+    //if (isAdmin) localStorage.removeItem('ultima_data_verificacao');
+
+    // Pega a data local correta no formato YYYY-MM-DD respeitando o fuso do Brasil
+    const hoje = new Date().toLocaleDateString('en-CA');
+    
+    // Recupera a última data salva no localStorage do navegador
+    const ultimaDataVerificada = localStorage.getItem('ultima_data_verificacao');
+
+    // Se a data de hoje for diferente da última salva, o dia virou!
+    if (ultimaDataVerificada !== hoje) {
+      localStorage.setItem('ultima_data_verificacao', hoje);
+      if (isAdmin) console.log("Virada de dia detectada pelo navegador! Atualizando energia...");
+
+      // Chama a rota do backend para processar a recarga de energia do novo dia
+      fetch('/api/recarregar_energia_usuario', {
+        method: 'GET',
+        headers: {'Content-Type': 'application/json'}
+      })
+      .then(response => response.json()) // Serve para acessar data.perguntas_restantes por exemplo
+      .then(data => {
+        if (data.success) {
+          localStorage.setItem('ultima_data_verificacao', hoje);
+          animarAtualizacaoEnergia(data);
+        } else console.warn("Não foi possível atualizar a energia:", data.message);
+      })
+      .catch(error => {
+        console.error("Erro na requisição de energia:", error);
+      });
+    }
+  }
+
   if (!MODO_VISITANTE) {
+    setInterval(verificarAtualizacaoEnergia, 5000); // Dispara a verificação a cada 5 segundos (5000 ms)
+    // Chama a rota do backend para processar a recarga de energia do novo dia
     fetch('/api/recarregar_energia_usuario', {
       method: 'GET',
       headers: {'Content-Type': 'application/json'}
@@ -746,19 +833,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     .then(response => response.json()) // Serve para acessar data.perguntas_restantes por exemplo
     .then(data => {
       if (data.success) {
-        if (perguntas_restantes) {
-          localStorage.setItem('perguntas_restantes', data.perguntas_restantes)
-          perguntas_restantes.textContent = `${data.perguntas_restantes}/${maxEnergiaUsuarios}`;
-          permitir_escolher_tema = true;
-        }
+        animarAtualizacaoEnergia(data);
       } else console.warn("Não foi possível atualizar a energia:", data.message);
-
       exibirModalEmailOuEnergia();
     })
     .catch(error => {
-        console.error("Erro na requisição de energia:", error);
+      console.error("Erro na requisição de energia:", error);
     });
-  }
+  }   
 
   // Registra acesso em home na base de dados junto com a origem e mídia do usuário
   // (se veio do Google Ads ou Microsoft Ads por exemplo)
@@ -768,8 +850,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-        pagina: 'Home',
-        id_visitante: idVisitante
+      pagina: 'Home',
+      id_visitante: idVisitante
     })
   })
   .then(response => response.json()) // Talvez não seja necessário este .then
