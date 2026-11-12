@@ -510,7 +510,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           // 3. Recupera o progresso de quantidade respondida por Tema e Dificuldade
           const progressoPorDificuldade = JSON.parse(localStorage.getItem("respondidas_visitante_por_dificuldade") ?? "{}");
           // 4. Cotas máximas permitidas para visitantes
-          const cotasVisitante = {'Fácil': 2, 'Médio': 3, 'Difícil': 3, 'Extremo': 2};
+          const cotasVisitante = {'Fácil': 1, 'Médio': 2, 'Difícil': 2, 'Extremo': 0};
 
           Object.keys(data.perguntas).forEach(dificuldade => {
             if (!Array.isArray(data.perguntas[dificuldade])) return;
