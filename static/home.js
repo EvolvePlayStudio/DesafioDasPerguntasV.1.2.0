@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   localStorage.setItem('limite_energia', maxEnergiaUsuarios);
   const idsUsuariosIsentos = ['291', '439'] // Usuários que não recebem convite para compra de energia
   const isAdmin = window.ADS_CONFIG.isAdmin;
+  const controleLogs = {};
 
   if (!MODO_VISITANTE) { // Verifica se deve expirar a sessão
     if (!idUsuario) { // Caso o id de usuário não tenha sido identificado
@@ -357,6 +358,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   exibirAnuncios();
 
   function registrarLog(textoLog) {
+    const agora = Date.now();
+    const ultimoEnvio = controleLogs[textoLog] || 0;
+
+    // Intervalo de 20 segundos (20000 milissegundos)
+    if (agora - ultimoEnvio < 20000) {
+      return; // Ignora o envio se foi registrado há menos de 20 segundos
+    }
+    controleLogs[textoLog] = agora;
+
     try {
       fetch('/api/registrar-acesso', {
         method: 'POST',
