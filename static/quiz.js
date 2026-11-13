@@ -598,10 +598,27 @@ async function enviarResposta() {
     let encerrar_quiz = false
     if (modo_jogo === "desafio") {
       encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE, false);
-      if (parseInt(contador_perguntas_restantes.textContent) <= 0) {
-        encerrar_quiz = true
+      
+      // Pega o texto do contador para analisar a energia normal e o bônus (ex: "0 (+15)" ou apenas "0")
+      const textoContador = contador_perguntas_restantes.textContent.trim();
+      let energiaNormal = 0;
+      let bonusRestante = 0;
+
+      if (textoContador.includes("+")) {
+        // Formato combinado: "0 + 15"
+        const partes = textoContador.split("+");
+        energiaNormal = parseInt(partes[0], 10) || 0;
+        bonusRestante = parseInt(partes[1], 10) || 0;
+      } else {
+        // Formato normal: "10"
+        energiaNormal = parseInt(textoContador, 10) || 0;
+      }
+
+      // Só encerra por falta de energia se TANTO a normal quanto o bônus estiverem esgotados (<= 0)
+      if (energiaNormal <= 0 && bonusRestante <= 0) {
+        encerrar_quiz = true;
         sessionStorage.setItem('exibir_modal_sem_energia', true);
-      };
+      }
     }
     
     // Mostrar apenas o botão Finalizar
@@ -660,7 +677,14 @@ async function enviarResposta() {
 
         // Atualiza as perguntas restantes do usuário no Storage
         localStorage.setItem("perguntas_restantes", data.perguntas_restantes);
-        contador_perguntas_restantes.textContent = data.perguntas_restantes;
+        console.log(`Perguntas restantes: ${data.perguntas_restantes}`);
+
+        // Se a resposta gastou o bônus, atualizamos o contador visual combinando energia + bônus
+        if (data.usando_bonus && data.perguntas_bonus_restantes !== undefined) {
+          contador_perguntas_restantes.textContent = `${data.perguntas_restantes} + ${data.perguntas_bonus_restantes}`;
+        } else {
+          contador_perguntas_restantes.textContent = data.perguntas_restantes;
+        }
 
         atualizarRankingVisual();
         return true;
@@ -669,7 +693,6 @@ async function enviarResposta() {
         console.error('Erro ao registrar resposta:', data.mensagem);
         return false;
       }
-
     } 
     catch (err) {
       console.error('Erro na comunicação:', err);
@@ -712,7 +735,7 @@ async function enviarResposta() {
       }
     }
 
-    // Registra o envio da resposta no SQL
+    // Registra o envio da resposta do visitante no SQL
     fetch("/registrar-resposta-visitante", {
       method: "POST",
       headers: {
@@ -734,7 +757,7 @@ async function enviarResposta() {
         console.warn("Falha ao registrar resposta de visitante")
       });
 
-    // Registra localmente a pergunta respondida pelo usuário para evitar repetição
+    // Registra localmente a pergunta respondida pelo visitante para evitar repetição
     if (!respondidas.includes(pergunta_selecionada.id_pergunta)) {
       respondidas.push(pergunta_selecionada.id_pergunta);
       localStorage.setItem("visitante_respondidas", JSON.stringify(respondidas));
@@ -743,14 +766,14 @@ async function enviarResposta() {
     // Incrementa perguntas respondidas como visitante para tag de conversão
     analisarMetaConversao();
 
-    // Altera a pontuação do usuário após o envio da resposta
+    // Altera a pontuação do visitante após o envio da resposta
     alterarPontuacaoUsuario(pontuacoes_jogador[tema_atual], pontuacoes_jogador[tema_atual] + pontos_ganhos)
     pontuacoes_jogador[tema_atual] = pontuacoes_jogador[tema_atual] + pontos_ganhos;
 
     localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes_jogador));
     atualizarRankingVisual();
 
-    // Atualiza as perguntas restantes do usuário no localStorage
+    // Atualiza as perguntas restantes do visitante no localStorage
     const perguntas_restantes_anterior = Number(localStorage.getItem("perguntas_restantes_visitante") ?? 100);
     const novas_perguntas_restantes = perguntas_restantes_anterior - 1;
     localStorage.setItem("perguntas_restantes_visitante", novas_perguntas_restantes);
@@ -1331,16 +1354,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   if (modo_jogo === 'desafio') {
-    const num_perguntas_restantes = contador_perguntas_restantes
+    const num_perguntas_restantes = contador_perguntas_restantes;
     if (!MODO_VISITANTE) {
-      num_perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes")}`
+      const energiaNormal = localStorage.getItem("perguntas_restantes") || "0";
+      const bonusRestantes = parseInt(sessionStorage.getItem("perguntas_bonus_restantes") || "0", 10);
+      // Se tiver bônus ativo, exibe junto; caso contrário, exibe só a energia normal
+      if (bonusRestantes > 0) {
+        num_perguntas_restantes.textContent = `${energiaNormal} + ${bonusRestantes}`;
+      } else {
+        num_perguntas_restantes.textContent = energiaNormal;
+      }
     }
     else {
-      num_perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}`
+      num_perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}`;
     }
     icone_perguntas_restantes.style.visibility = 'visible';
   }
-  else {
+  else { // Não exibe energia no modo revisão
     icone_perguntas_restantes.style.visibility = 'hidden';
   }
 

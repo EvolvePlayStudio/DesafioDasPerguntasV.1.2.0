@@ -411,13 +411,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     };
 
-    // Mensagem avisando que as perguntas acabaram
-    const perguntas_restantes_atuais = parseInt(perguntas_restantes?.textContent.split("/")[0] ?? "0", 10);
-    // const perguntas_restantes_atuais = 0;
+    // Decide se deve exibie mensagem avisando que as perguntas acabaram
+    let perguntas_restantes_atuais = parseInt(perguntas_restantes?.textContent.split("/")[0] ?? "0", 10);
+    // if (isAdmin) perguntas_restantes_atuais = 0;
 
-    if (perguntas_restantes_atuais <= 0) {
+    let temBonusParaEsteTema = false;
+    if (!MODO_VISITANTE && window.bonusTemasAtuais && Array.isArray(window.bonusTemasAtuais)) {
+      const bonusDoTema = window.bonusTemasAtuais.find(b => b.tema === tema_atual);
+      if (bonusDoTema && bonusDoTema.perguntas_bonus_restantes > 0) {
+        temBonusParaEsteTema = true;
+      }
+    }
+    if (perguntas_restantes_atuais <= 0 && !temBonusParaEsteTema) {
       if (!MODO_VISITANTE) {
-        exibirMensagem(mensagem, `Energia esgotada, aguarde a recarga diária ou obtenha pacotes de energia para responder novas perguntas`, corMensagemAlerta, true, false, 'flex');
+        exibirMensagem(mensagem, `Energia esgotada, aguarde a recarga diária ou realize a compra de energia para responder novas perguntas`, corMensagemAlerta, true, false, 'flex');
       }
       else {
         exibirMensagem(mensagem, `É necessário criar uma conta para ter acesso ao conteúdo completo do jogo`, corMensagemAlerta, true, false, 'flex');
@@ -487,6 +494,15 @@ document.addEventListener("DOMContentLoaded", async () => {
               // Opcional: define um objeto vazio para não quebrar o quiz
               localStorage.setItem("anuncios", JSON.stringify({}));
             }*/
+            // Salva no localStorage o bônus de energia do usuário para ler na tela de quiz caso tenha no tema escolhido
+            let maiorBonusTema = 0;
+            if (window.bonusTemasAtuais && Array.isArray(window.bonusTemasAtuais)) {
+              const bonusDoTema = window.bonusTemasAtuais.find(b => b.tema === tema_atual);
+              if (bonusDoTema) {
+                maiorBonusTema = bonusDoTema.perguntas_bonus_restantes;
+              }
+            }
+            sessionStorage.setItem("perguntas_bonus_restantes", maiorBonusTema);
             window.location.href = `/quiz/${encodeURIComponent(slugify(tema_atual))}`;
             mensagem.style.opacity = 0;
             permitir_escolher_tema = true;
@@ -788,6 +804,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  function atualizarBadgesBonus(bonusArray) {
+    if (!bonusArray || bonusArray.length === 0) return;
+
+    bonusArray.forEach(bonus => {
+      const badge = document.querySelector(`.bonus-badge[data-tema-badge="${bonus.tema}"]`);
+      if (badge) {
+        badge.innerHTML = `🎁 +${bonus.perguntas_bonus_restantes}`;
+        badge.title = `Bônus ativo: ${bonus.perguntas_bonus_restantes} perguntas gratuitas em ${bonus.tema}!`;
+        badge.classList.add('ativo'); // Adiciona a classe CSS que força a exibição
+      }
+    });
+  }
+
   // Função que roda a cada 5 segundos
   function verificarAtualizacaoEnergia() {
     if (document.visibilityState !== 'visible' || MODO_VISITANTE) return;
@@ -815,6 +844,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (data.success) {
           localStorage.setItem('ultima_data_verificacao', hoje);
           animarAtualizacaoEnergia(data);
+          if (data.bonus_energia && data.bonus_energia.length > 0 && isAdmin) {
+            console.log("🎁 Bônus de temas disponíveis:", data.bonus_energia);
+          }
+          atualizarBadgesBonus(data.bonus_energia);
+          window.bonusTemasAtuais = data.bonus_energia;
         } else console.warn("Não foi possível atualizar a energia:", data.message);
       })
       .catch(error => {
@@ -834,6 +868,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     .then(data => {
       if (data.success) {
         animarAtualizacaoEnergia(data);
+        if (data.bonus_energia && data.bonus_energia.length > 0 && isAdmin) {
+          console.log("🎁 Bônus de temas disponíveis:", data.bonus_energia);
+        }
+        atualizarBadgesBonus(data.bonus_energia);
+        window.bonusTemasAtuais = data.bonus_energia;
         permitir_escolher_tema = true;
       } else console.warn("Não foi possível atualizar a energia:", data.message);
       exibirModalEmailOuEnergia();
@@ -841,7 +880,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     .catch(error => {
       console.error("Erro na requisição de energia:", error);
     });
-  }   
+  }
 
   // Registra acesso em home na base de dados junto com a origem e mídia do usuário
   // (se veio do Google Ads ou Microsoft Ads por exemplo)

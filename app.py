@@ -1921,7 +1921,7 @@ def login():
         if cur: cur.close()
         if conn: conn.close()
 
-def atualizar_energia_usuario(cur, id_usuario, energia_atual, u_sessao, b_energia, exp_bonus):
+def atualizar_energia_usuario(cur, id_usuario, energia_atual, u_sessao):
     """
     Calcula o ganho acumulado de energia (+5 por dia de ausência, máx. +50)
     e atualiza o registro no banco de dados.
@@ -1937,11 +1937,6 @@ def atualizar_energia_usuario(cur, id_usuario, energia_atual, u_sessao, b_energi
             ganho_diario = min(dias_passados * 5, 50)
             nova_energia += ganho_diario
 
-    # 2. Processamento do Bônus Pendente (se houver e não estiver expirado)
-    if b_energia and b_energia > 0:
-        if exp_bonus is None or agora_sp < exp_bonus:
-            nova_energia += b_energia
-
     # Respeita o teto máximo global absoluto de 500
     nova_energia = min(nova_energia, 500)
 
@@ -1949,12 +1944,9 @@ def atualizar_energia_usuario(cur, id_usuario, energia_atual, u_sessao, b_energi
     cur.execute("""
         UPDATE usuarios_registrados
         SET ultima_sessao = date_trunc('second', NOW() AT TIME ZONE 'America/Sao_Paulo'),
-            perguntas_restantes = %s,
-            bonus_energia = 0,
-            expiracao_bonus = NULL
+            perguntas_restantes = %s
         WHERE id_usuario = %s
     """, (nova_energia, id_usuario))
-
     return nova_energia
 
 @app.route('/api/recarregar_energia_usuario', methods=['GET'])
@@ -1970,7 +1962,7 @@ def recarregar_energia_home():
 
         # 1. PEGAR APENAS AS INFORMAÇÕES NECESSÁRIAS NO BANCO
         cur.execute("""
-            SELECT perguntas_restantes, ultima_sessao, bonus_energia, expiracao_bonus
+            SELECT perguntas_restantes, ultima_sessao
             FROM usuarios_registrados WHERE id_usuario = %s
         """, (id_usuario,))
         usuario = cur.fetchone()
@@ -1978,15 +1970,19 @@ def recarregar_energia_home():
         if not usuario:
             return jsonify(success=False, message="Usuário não encontrado"), 404
 
-        # 2. ATUALIZAR AS INFORMAÇÕES NO BANCO
+        # 2. ATUALIZA AS INFORMAÇÕES NO BANCO
+        energia_antiga = usuario['perguntas_restantes']
         nova_energia = atualizar_energia_usuario(
             cur=cur,
             id_usuario=id_usuario,
-            energia_atual=usuario['perguntas_restantes'],
-            u_sessao=usuario['ultima_sessao'],
-            b_energia=usuario['bonus_energia'],
-            exp_bonus=usuario['expiracao_bonus']
+            energia_atual=energia_antiga,
+            u_sessao=usuario['ultima_sessao']
         )
+
+        # 3. Analisa se o usuário possui bônus válidos para algum tema
+        agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
+        cur.execute("SELECT tema, perguntas_bonus_restantes, expiracao FROM bonus_temas_usuario WHERE id_usuario = %s AND expiracao > %s AND perguntas_bonus_restantes > 0", (id_usuario, agora_sp))
+        bonus_energia = cur.fetchall()
 
         # 🔑 Salva de fato as alterações no banco de dados da Home
         conn.commit()
@@ -1995,7 +1991,8 @@ def recarregar_energia_home():
         return jsonify({
             'success': True,
             'perguntas_restantes': nova_energia,
-            'energia_ganha': nova_energia - usuario['perguntas_restantes']
+            'energia_ganha': nova_energia - energia_antiga,
+            'bonus_energia': bonus_energia
         })
 
     except Exception:
@@ -2754,21 +2751,50 @@ def registrar_resposta_usuario():
             nova_pontuacao = cur.fetchone()[0]
 
             # Atualiza a quantidade de perguntas restantes do usuário
+            # 1. Verifica se o usuário tem bônus ativo e disponível para este tema específico
             cur.execute("""
-                UPDATE usuarios_registrados
-                SET
-                    perguntas_restantes = GREATEST(perguntas_restantes - 1, 0)
-                WHERE id_usuario = %s
-                RETURNING perguntas_restantes
-            """, (id_usuario,))
+                SELECT perguntas_bonus_restantes 
+                FROM bonus_temas_usuario 
+                WHERE id_usuario = %s AND tema = %s AND perguntas_bonus_restantes > 0
+                LIMIT 1
+            """, (id_usuario, dados["tema"]))
+            bonus_ativo = cur.fetchone()
+            perguntas_restantes = 0
+            bonus_restantes = 0
+            if bonus_ativo:
+                # Se tem bônus, consome 1 do bônus do tema e mantém a energia diária intacta!
+                cur.execute("""
+                    UPDATE bonus_temas_usuario
+                    SET perguntas_bonus_restantes = GREATEST(perguntas_bonus_restantes - 1, 0)
+                    WHERE id_usuario = %s AND perguntas_bonus_restantes > 0
+                    RETURNING perguntas_bonus_restantes
+                """, (id_usuario,))
 
-            perguntas_restantes = cur.fetchone()
+                # Como atualizou vários, pegamos o primeiro retorno ou fazemos uma soma/média para o frontend
+                row_bonus = cur.fetchone()
+                bonus_restantes = row_bonus[0] if row_bonus else 0
+
+                # Busca a energia normal atual apenas para retornar o valor correto ao frontend
+                cur.execute("SELECT perguntas_restantes FROM usuarios_registrados WHERE id_usuario = %s", (id_usuario,))
+                perguntas_restantes = cur.fetchone()[0]
+            else:
+                # Se não tem bônus no tema, consome da energia diária geral normalmente
+                cur.execute("""
+                    UPDATE usuarios_registrados
+                    SET perguntas_restantes = GREATEST(perguntas_restantes - 1, 0)
+                    WHERE id_usuario = %s
+                    RETURNING perguntas_restantes
+                """, (id_usuario,))
+                perguntas_restantes = cur.fetchone()[0]
+
             conn.commit()
 
             return jsonify({
                 "sucesso": True,
                 "nova_pontuacao": nova_pontuacao,
                 "perguntas_restantes": perguntas_restantes,
+                "perguntas_bonus_restantes": bonus_restantes,
+                "usando_bonus": bool(bonus_ativo)
             })
     except Exception:
         if conn: conn.rollback()
