@@ -1,25 +1,15 @@
-import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, maxEnergiaVisitantes, idsReservados, idsVisitantesReservados, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
+import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, idsReservados, idsVisitantesReservados, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
 import { playSound } from "./sound.js";
+
+const maxEnergiaVisitantes = 25;
 
 document.addEventListener("DOMContentLoaded", async () => {
 
   // Exige ir para o login caso a versão do app tenha sido modificada
-  /*
   function validateAppVersionHome() { // Depois pode ir para o utils
     if (!localStorage.getItem('app_version')) {
       localStorage.setItem("auth_message", "Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente");
       window.location.href = '/login';
-    }
-  }*/
-
-  // Exige ir para o login caso a versão do app tenha sido modificada
-  function validateAppVersionHome() { // Depois pode ir para o utils
-    const VERSAO_DO_SISTEMA = "2.0.1";
-    const versaoSalva = localStorage.getItem('app_version');
-    if (versaoSalva !== VERSAO_DO_SISTEMA) {
-        console.warn("🔄 Nova versão detectada! Limpando cache local antigo...");
-        // Recarrega a página forçando o servidor
-        window.location.reload(true);
     }
   }
 

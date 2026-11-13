@@ -1,25 +1,13 @@
-import { coresDificuldade, dificuldadesOrdenadas, deveEncerrarQuiz, idsReservados, maxEnergiaVisitantes, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings, idsVisitantesReservados} from "./utils.js"
+import { coresDificuldade, dificuldadesOrdenadas, deveEncerrarQuiz, idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings, idsVisitantesReservados} from "./utils.js"
 import { playSound, playKeySound } from "./sound.js"
 
-/*
+const maxEnergiaVisitantes = 25;
+
 function validateAppVersionQuiz() {
   if (!localStorage.getItem('app_version')) {
     localStorage.setItem("auth_message", "Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente");
     window.location.href = '/login';
   }
-}*/
-
-// Exige ir para o login caso a versão do app tenha sido modificada
-function validateAppVersionQuiz() { // Depois pode ir para o utils
-    const VERSAO_DO_SISTEMA = "2.0.1";
-    const versaoSalva = localStorage.getItem('app_version');
-
-    if (versaoSalva !== VERSAO_DO_SISTEMA) {
-      console.warn("🔄 Nova versão detectada! Limpando cache local antigo...");
-      // Recarrega a página forçando o servidor
-      window.location.reload(true);
-      localStorage.setItem('app_version', VERSAO_DO_SISTEMA)
-    }
 }
 
 const tema_atual = localStorage.getItem("tema_atual");
