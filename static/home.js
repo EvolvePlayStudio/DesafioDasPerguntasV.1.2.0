@@ -1,7 +1,7 @@
 import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, idsReservados, idsVisitantesReservados, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
 import { playSound } from "./sound.js";
 
-const maxEnergiaVisitantes = 25;
+const maxEnergiaParaVisitantes = 25;
 
 document.addEventListener("DOMContentLoaded", async () => {
 
@@ -93,7 +93,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Cria as informações de perguntas restantes do usuário
     if (!localStorage.getItem("perguntas_restantes_visitante")) {
-      localStorage.setItem("perguntas_restantes_visitante", maxEnergiaVisitantes);
+      localStorage.setItem("perguntas_restantes_visitante", maxEnergiaParaVisitantes);
     }
 
     // Cria pontuações de usuário como visitante
@@ -1011,7 +1011,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Define o nome de usuário e a quantidade de perguntas restantes para responder
   if (MODO_VISITANTE) {
     userName.textContent = "Visitante";
-    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/${maxEnergiaVisitantes}`;
+    perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}/${maxEnergiaParaVisitantes}`;
     permitir_escolher_tema = true;
 
     // Decide se deve exibir modal para convidar a fazer registro

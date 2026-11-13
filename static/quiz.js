@@ -1,7 +1,7 @@
 import { coresDificuldade, dificuldadesOrdenadas, deveEncerrarQuiz, idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings, idsVisitantesReservados} from "./utils.js"
 import { playSound, playKeySound } from "./sound.js"
 
-const maxEnergiaVisitantes = 25;
+const maxEnergiaParaVisitantes = 25;
 
 function validateAppVersionQuiz() {
   if (!localStorage.getItem('app_version')) {
@@ -790,7 +790,7 @@ async function enviarResposta() {
     atualizarRankingVisual();
 
     // Atualiza as perguntas restantes do visitante no localStorage
-    const perguntas_restantes_anterior = Number(localStorage.getItem("perguntas_restantes_visitante") ?? maxEnergiaVisitantes);
+    const perguntas_restantes_anterior = Number(localStorage.getItem("perguntas_restantes_visitante") ?? maxEnergiaParaVisitantes);
     const novas_perguntas_restantes = perguntas_restantes_anterior - 1;
     localStorage.setItem("perguntas_restantes_visitante", novas_perguntas_restantes);
     contador_perguntas_restantes.textContent = novas_perguntas_restantes;
@@ -1332,7 +1332,7 @@ async function registrarFeedback() {
       }
       // 2. Se for VISITANTE (atualiza direto via localStorage com base na flag bonusPorAvaliacao)
       else if (bonusPorAvaliacao) {
-        const perguntas_restantes_atual = Number(localStorage.getItem("perguntas_restantes_visitante") ?? maxEnergiaVisitantes);
+        const perguntas_restantes_atual = Number(localStorage.getItem("perguntas_restantes_visitante") ?? maxEnergiaParaVisitantes);
         const novas_perguntas_restantes = perguntas_restantes_atual + 1;
         localStorage.setItem("perguntas_restantes_visitante", novas_perguntas_restantes);
         contador_perguntas_restantes.textContent = novas_perguntas_restantes;
