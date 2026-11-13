@@ -1,4 +1,4 @@
-import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, idsReservados, idsVisitantesReservados, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
+import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, maxEnergiaVisitantes, idsReservados, idsVisitantesReservados, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
 import { playSound } from "./sound.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -16,7 +16,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   let idVisitante = localStorage.getItem("id_visitante");
   const idUsuario = localStorage.getItem("id_usuario");
   const MODO_VISITANTE = document.body.dataset.modoVisitante === "true";
-  const maxEnergiaVisitantes = 30;
   const maxEnergiaUsuarios = 500;
   localStorage.setItem("modoVisitante", MODO_VISITANTE ? "true" : "false");
   localStorage.setItem('limite_energia', maxEnergiaUsuarios);
@@ -61,12 +60,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const checkModoTeste      = document.getElementById("modo-teste-toggle");
   const modoTeste           = JSON.parse(sessionStorage.getItem("modo_teste") ?? "false");
   const corMensagemAlerta   = 'yellow'
-
+  
   /*
   if (idsVisitantesReservados.includes(idVisitante)) {
     localStorage.removeItem("pontuacoes_visitante");
     localStorage.removeItem("perguntas_restantes_visitante");
     localStorage.removeItem("visitante_respondidas");
+    localStorage.removeItem("respondidas_visitante_por_dificuldade"); // Pode ser substituído pela lista acima
     sessionStorage.removeItem("id_pergunta_ativa");
   }*/
   
@@ -383,6 +383,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  function atualizarBadgesBonus(bonusArray) {
+    // Garante que temos um array válido para iterar (evita erros se vier vazio ou undefined)
+    const listaBonus = bonusArray || [];
+
+    // Pega todos os badges de bônus presentes na tela da home
+    const todosOsBadges = document.querySelectorAll('.bonus-badge');
+
+    todosOsBadges.forEach(badge => {
+      const temaBadge = badge.getAttribute('data-tema-badge');
+      
+      // Procura se este tema específico está na lista de bônus ativos vindos do backend
+      const bonusDoTema = listaBonus.find(b => b.tema.toLowerCase() === temaBadge.toLowerCase() && b.perguntas_bonus_restantes > 0);
+
+      if (bonusDoTema) {
+        // Se tem bônus válido, atualiza o texto, o title e garante a classe 'ativo'
+        badge.innerHTML = `🎁 +${bonusDoTema.perguntas_bonus_restantes}`;
+        badge.title = `Bônus ativo: ${bonusDoTema.perguntas_bonus_restantes} perguntas gratuitas em ${bonusDoTema.tema}!`;
+        badge.classList.add('ativo');
+      } else {
+        // Se não tem bônus (acabou ou expirou), remove a classe 'ativo' e limpa o HTML do badge
+        badge.classList.remove('ativo');
+        badge.innerHTML = '';
+        badge.title = '';
+      }
+    });
+  }
+
   async function iniciarQuiz(event) {
 
     try { // Registra tentativa de início de quiz caso seja o primeiro login na conta do usuário
@@ -426,10 +453,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     // if (isAdmin) perguntas_restantes_atuais = 0;
 
     let temBonusParaEsteTema = false;
-    if (!MODO_VISITANTE && window.bonusTemasAtuais && Array.isArray(window.bonusTemasAtuais)) {
-      const bonusDoTema = window.bonusTemasAtuais.find(b => b.tema === tema_atual);
-      if (bonusDoTema && bonusDoTema.perguntas_bonus_restantes > 0) {
-        temBonusParaEsteTema = true;
+    if (!MODO_VISITANTE) {
+      try {
+        // 1. Busca os bônus atualizados diretamente do banco antes de validar a entrada
+        const response = await fetch("/api/verificar_bonus_temas");
+        const data = await response.json();
+
+        if (data.success) {
+          // Atualiza a variável global de bônus
+          window.bonusTemasAtuais = data.bonus_energia;
+          
+          // Atualiza visualmente os badges/símbolos nos cards de temas da tela
+          atualizarBadgesBonus(data.bonus_energia);
+        }
+        // 2. Verifica se o usuário tem bônus para ESTE tema específico
+        temBonusParaEsteTema = window.bonusTemasAtuais && window.bonusTemasAtuais.some(
+          b => b.tema === tema_atual && b.perguntas_bonus_restantes > 0
+        );
+      } catch (error) {
+        console.error("Erro ao atualizar bônus de temas:", error);
       }
     }
     if (perguntas_restantes_atuais <= 0 && !temBonusParaEsteTema) {
@@ -814,19 +856,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  function atualizarBadgesBonus(bonusArray) {
-    if (!bonusArray || bonusArray.length === 0) return;
-
-    bonusArray.forEach(bonus => {
-      const badge = document.querySelector(`.bonus-badge[data-tema-badge="${bonus.tema}"]`);
-      if (badge) {
-        badge.innerHTML = `🎁 +${bonus.perguntas_bonus_restantes}`;
-        badge.title = `Bônus ativo: ${bonus.perguntas_bonus_restantes} perguntas gratuitas em ${bonus.tema}!`;
-        badge.classList.add('ativo'); // Adiciona a classe CSS que força a exibição
-      }
-    });
-  }
-
   // Função que roda a cada 5 segundos
   function verificarAtualizacaoEnergia() {
     if (document.visibilityState !== 'visible' || MODO_VISITANTE) return;
@@ -884,7 +913,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         atualizarBadgesBonus(data.bonus_energia);
         window.bonusTemasAtuais = data.bonus_energia;
         permitir_escolher_tema = true;
-      } else console.warn("Não foi possível atualizar a energia:", data.message);
+      } else console.error("Não foi possível atualizar a energia:", data);
       exibirModalEmailOuEnergia();
     })
     .catch(error => {

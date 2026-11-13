@@ -14,6 +14,7 @@ export const coresDificuldade = {
   difícil: "red",
   extremo: "#3e16d1"
 };
+export const maxEnergiaVisitantes = 25;
 
 let idUsuario;
 let idVisitante;

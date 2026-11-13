@@ -1,6 +1,5 @@
-import { coresDificuldade, dificuldadesOrdenadas, deveEncerrarQuiz, idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings, idsVisitantesReservados} from "./utils.js"
+import { coresDificuldade, dificuldadesOrdenadas, deveEncerrarQuiz, idsReservados, maxEnergiaVisitantes, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings, idsVisitantesReservados} from "./utils.js"
 import { playSound, playKeySound } from "./sound.js"
-
 
 function validateAppVersionQuiz() {
   if (!localStorage.getItem('app_version')) {
@@ -18,6 +17,10 @@ const isAdmin = idsReservados.includes(idUsuario) || idsVisitantesReservados.inc
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === 'true';
 // Carrega o objeto do localStorage transformando de JSON para Objeto JS (ou cria um vazio se não existir)
 let respondidasVisitantesPorDificuldade = JSON.parse(localStorage.getItem('respondidas_visitante_por_dificuldade')) || {};
+let energiaNormal = 0;
+let bonusRestante = 0;
+const avisoBonus = document.getElementById('aviso-bonus-energia');
+let estrelasAtuaisSelecionadas = null;
 
 try { // Registra primeiro quiz iniciado caso seja o primeiro login na conta do usuário
   if (!MODO_VISITANTE) {
@@ -127,7 +130,6 @@ let autoChute = false;
 
 // Botões
 const btn_enviar = document.getElementById("btn-enviar");
-const btn_pular = document.getElementById("btn-pular");
 const btn_proxima = document.getElementById("btn-proxima");
 const btn_finalizar = document.getElementById("btn-finalizar");
 const botoes_enviar_div = document.getElementById("botoes-envio");
@@ -260,7 +262,6 @@ function renderizarPontuacaoAtual(pontuacaoAtual, incremento=0) {
 
 function ativarBotoes() {
   btn_enviar.disabled = false;
-  btn_pular.disabled = false;
 }
 
 function atualizarRankingVisual() {
@@ -441,8 +442,17 @@ function configurarEstrelas() {
 
   estrelas.forEach((estrela, i) => {
     estrela.addEventListener("click", () => {
-      const valor = i + 1;
-      renderizarEstrelas(valor);
+      const valorClicado = i + 1;
+
+      // Se o usuário clicou EXATAMENTE na mesma quantidade que já estava marcada, ele quer REMOVER!
+      if (estrelasAtuaisSelecionadas === valorClicado) {
+        estrelasAtuaisSelecionadas = null;
+        renderizarEstrelas(0); // Função que limpa as estrelas na tela (deixa todas vazias) 
+      } else {
+        // Caso contrário, define a nova nota normalmente
+        estrelasAtuaisSelecionadas = valorClicado;
+        renderizarEstrelas(valorClicado);
+      }
     });
   });
 }
@@ -467,7 +477,6 @@ function converterNotacaoQuimica(texto) {
 
 function desativarBotoes() {
   btn_enviar.disabled = true;
-  btn_pular.disabled = true;
 }
 
 async function enviarResposta() {
@@ -578,8 +587,28 @@ async function enviarResposta() {
       botaoDislikeNota.classList.add("ativo");
     }
 
-    // Chama as estrelas de feedback e carrega as anteriores enviadas pelo usuário
+    // Pega o texto do contador para analisar a energia normal e o bônus (ex: "0 + 15" ou apenas "0")
+    const textoContador = contador_perguntas_restantes.textContent.trim();
+    energiaNormal = 0;
+    bonusRestante = 0;
+
+    if (textoContador.includes("+")) {
+      // Formato combinado: "0 + 15"
+      const partes = textoContador.split("+");
+      energiaNormal = parseInt(partes[0], 10) || 0;
+      bonusRestante = parseInt(partes[1], 10) || 0;
+    } else {
+      energiaNormal = parseInt(textoContador, 10) || 0;
+    }
     const avaliacao_anterior = pergunta_selecionada.estrelas || 0;
+    if (!pergunta_selecionada.id_feedback && pergunta_selecionada.oferece_bonus && energiaNormal + bonusRestante > 0) {
+      avisoBonus.style.display = "block";
+    } else {
+      avisoBonus.style.display = "none";
+    }
+
+    // Chama as estrelas de feedback e carrega as anteriores enviadas pelo usuário
+    estrelasAtuaisSelecionadas = avaliacao_anterior;
     renderizarEstrelas(avaliacao_anterior);
     estrelas_iniciais = avaliacao_anterior;
     estrelas_avaliacao.style.display = "flex";
@@ -598,21 +627,6 @@ async function enviarResposta() {
     let encerrar_quiz = false
     if (modo_jogo === "desafio") {
       encerrar_quiz = deveEncerrarQuiz(perguntas_por_dificuldade, MODO_VISITANTE, false);
-      
-      // Pega o texto do contador para analisar a energia normal e o bônus (ex: "0 (+15)" ou apenas "0")
-      const textoContador = contador_perguntas_restantes.textContent.trim();
-      let energiaNormal = 0;
-      let bonusRestante = 0;
-
-      if (textoContador.includes("+")) {
-        // Formato combinado: "0 + 15"
-        const partes = textoContador.split("+");
-        energiaNormal = parseInt(partes[0], 10) || 0;
-        bonusRestante = parseInt(partes[1], 10) || 0;
-      } else {
-        // Formato normal: "10"
-        energiaNormal = parseInt(textoContador, 10) || 0;
-      }
 
       // Só encerra por falta de energia se TANTO a normal quanto o bônus estiverem esgotados (<= 0)
       if (energiaNormal <= 0 && bonusRestante <= 0) {
@@ -774,7 +788,7 @@ async function enviarResposta() {
     atualizarRankingVisual();
 
     // Atualiza as perguntas restantes do visitante no localStorage
-    const perguntas_restantes_anterior = Number(localStorage.getItem("perguntas_restantes_visitante") ?? 100);
+    const perguntas_restantes_anterior = Number(localStorage.getItem("perguntas_restantes_visitante") ?? maxEnergiaVisitantes);
     const novas_perguntas_restantes = perguntas_restantes_anterior - 1;
     localStorage.setItem("perguntas_restantes_visitante", novas_perguntas_restantes);
     contador_perguntas_restantes.textContent = novas_perguntas_restantes;
@@ -912,7 +926,12 @@ async function enviarResposta() {
 }
 
 async function finalizarQuiz() {
-  registrarFeedback()
+  if (avisoBonus.style.display != 'none' && [null, 0].includes(pergunta_selecionada.estrelas) && pergunta_selecionada.oferece_bonus
+  && !([null, 0].includes(estrelasAtuaisSelecionadas))) {
+    await registrarFeedback()}
+  else {
+    registrarFeedback()};
+  
   if (modo_jogo === 'desafio') {
     localStorage.setItem("rankings_jogador", JSON.stringify(rankings_jogador ?? {}))
     window.location.href = "/resultado";
@@ -982,7 +1001,7 @@ async function mostrarAlternativas() {
   animacao_concluida = true;
   inicio_pergunta = Date.now();
 
-  hint_avaliacao.style.display = "";
+  // hint_avaliacao.style.display = "";
   botoes_enviar_div.style.display = "flex";
   btn_enviar.style.display = "inline-flex";
   btn_enviar.disabled = false;
@@ -1011,6 +1030,7 @@ function mostrarEnunciado(texto, elemento) {
 
 async function mostrarPergunta(chamarAtualizarAnuncios=false) {
   // Remove widgets anteriores
+  avisoBonus.style.display = 'none';
   alternativaSelecionada = null;
   aguardando_proxima = false;
   document.getElementById("nota-box").style.display = "none";
@@ -1261,11 +1281,13 @@ async function registrarFeedback() {
     return null;
   }
 
-  const estrelas_atual = document.querySelectorAll(".estrela.dourada").length;
+  let bonusPorAvaliacao = false;
+  if (avisoBonus.style.display != 'none' && [null, 0].includes(pergunta_selecionada.estrelas) && pergunta_selecionada.oferece_bonus
+  && !([null, 0].includes(estrelasAtuaisSelecionadas))) bonusPorAvaliacao = true;
+  
   const comentario_atual = textarea_comentario?.value?.trim() || "";
   const aprovacao_nota_atual = obterAprovacaoNotaAtual();
-
-  const mudouEstrelas = estrelas_atual !== estrelas_iniciais;
+  const mudouEstrelas = estrelasAtuaisSelecionadas !== estrelas_iniciais;
   const mudouComentario = comentario_atual !== comentario_inicial;
   const mudouAprovacaoNota = aprovacao_nota_atual !== aprovacao_nota_inicial;
 
@@ -1274,7 +1296,7 @@ async function registrarFeedback() {
   }
 
   try {
-    await fetch("/enviar_feedback", {
+    const response = await fetch("/enviar_feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1285,14 +1307,38 @@ async function registrarFeedback() {
         enunciado: pergunta_selecionada.enunciado,
         versao_pergunta: pergunta_selecionada.versao_pergunta,
         aprovacao_nota: aprovacao_nota_atual,
-        estrelas: estrelas_atual,
+        estrelas: estrelasAtuaisSelecionadas,
         comentario: comentario_atual,
-        dificuldade: pergunta_selecionada.dificuldade
+        dificuldade: pergunta_selecionada.dificuldade,
+        bonus_por_avaliacao: bonusPorAvaliacao
       })
     });
+    const data = await response.json();
+    if (data && data.sucesso) {
+      // Se o backend retornou a energia atualizada (usuário cadastrado)
+      if (data.perguntas_restantes !== undefined) {
+        localStorage.setItem("perguntas_restantes", data.perguntas_restantes);
+        
+        const textoAtual = contador_perguntas_restantes.textContent;
+        if (textoAtual.includes("+")) {
+          const partes = textoAtual.split("+");
+          const bonusLateralAtual = partes[1].trim();
+          contador_perguntas_restantes.textContent = `${data.perguntas_restantes} + ${bonusLateralAtual}`;
+        } else {
+          contador_perguntas_restantes.textContent = data.perguntas_restantes;
+        }
+      }
+      // 2. Se for VISITANTE (atualiza direto via localStorage com base na flag bonusPorAvaliacao)
+      else if (bonusPorAvaliacao) {
+        const perguntas_restantes_atual = Number(localStorage.getItem("perguntas_restantes_visitante") ?? maxEnergiaVisitantes);
+        const novas_perguntas_restantes = perguntas_restantes_atual + 1;
+        localStorage.setItem("perguntas_restantes_visitante", novas_perguntas_restantes);
+        contador_perguntas_restantes.textContent = novas_perguntas_restantes;
+      }
+    }
   }
   catch (e) {
-    console.warn("Falha ao enviar feedback");
+    console.error("Erro ao enviar feedback:", e);
   }
 }
 
@@ -1353,26 +1399,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     box_comentario.addEventListener("keydown", (e) => {playKeySound(e)});
   }
 
-  if (modo_jogo === 'desafio') {
-    const num_perguntas_restantes = contador_perguntas_restantes;
-    if (!MODO_VISITANTE) {
-      const energiaNormal = localStorage.getItem("perguntas_restantes") || "0";
-      const bonusRestantes = parseInt(sessionStorage.getItem("perguntas_bonus_restantes") || "0", 10);
-      // Se tiver bônus ativo, exibe junto; caso contrário, exibe só a energia normal
-      if (bonusRestantes > 0) {
-        num_perguntas_restantes.textContent = `${energiaNormal} + ${bonusRestantes}`;
-      } else {
-        num_perguntas_restantes.textContent = energiaNormal;
-      }
+  // Exibe a energia atual no símbolo de energia
+  const num_perguntas_restantes = contador_perguntas_restantes;
+  if (!MODO_VISITANTE) {
+    const energiaNormal = localStorage.getItem("perguntas_restantes") || "0";
+    const bonusRestantes = parseInt(sessionStorage.getItem("perguntas_bonus_restantes") || "0", 10);
+    // Se tiver bônus ativo, exibe junto; caso contrário, exibe só a energia normal
+    if (bonusRestantes > 0) {
+      num_perguntas_restantes.textContent = `${energiaNormal} + ${bonusRestantes}`;
+    } else {
+      num_perguntas_restantes.textContent = energiaNormal;
     }
-    else {
-      num_perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}`;
-    }
-    icone_perguntas_restantes.style.visibility = 'visible';
   }
-  else { // Não exibe energia no modo revisão
-    icone_perguntas_restantes.style.visibility = 'hidden';
+  else {
+    num_perguntas_restantes.textContent = `${localStorage.getItem("perguntas_restantes_visitante")}`;
   }
+  icone_perguntas_restantes.style.visibility = 'visible';
 
   btn_enviar.classList.add("chutar");
   btn_enviar.textContent = 'Chutar';

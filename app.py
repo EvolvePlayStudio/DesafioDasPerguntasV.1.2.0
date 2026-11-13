@@ -766,7 +766,7 @@ def enviar_feedback():
     comentario = data.get("comentario")
     dificuldade = data.get("dificuldade").lower().capitalize()
     aprovacao_nota = data.get("aprovacao_nota")
-
+    bonus_por_avaliacao = data.get("bonus_por_avaliacao", False)
     id_usuario = session.get("id_usuario")
     id_visitante = session.get("id_visitante")
     modo_visitante = session.get("visitante")
@@ -785,21 +785,42 @@ def enviar_feedback():
         if data['atualizar_feedback_estrelas']:
             if modo_visitante:
                 cur.execute("""
-                    INSERT INTO feedbacks (id_pergunta, tema, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO feedbacks (id_pergunta, tema, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade, recebeu_bonus)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (id_pergunta, versao_pergunta, id_visitante)
-                    DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, comentario = EXCLUDED.comentario, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'))
+                    DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante,
+                    comentario = EXCLUDED.comentario, recebeu_bonus = EXCLUDED.recebeu_bonus,
+                    ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'))
                     RETURNING id_feedback;
-                """, (id_pergunta, tema, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade))
+                """, (id_pergunta, tema, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade, bonus_por_avaliacao))
+                id_feedback = cur.fetchone()[0]
             else:
                 cur.execute("""
-                    INSERT INTO feedbacks (id_pergunta, tema, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO feedbacks (id_pergunta, tema, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade, recebeu_bonus)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (id_pergunta, versao_pergunta, id_usuario)
-                    DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante, comentario = EXCLUDED.comentario, ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'))
+                    DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante,
+                    comentario = EXCLUDED.comentario, recebeu_bonus = EXCLUDED.recebeu_bonus,
+                    ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'))
                     RETURNING id_feedback;
-                """, (id_pergunta, tema, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade))
-            id_feedback = cur.fetchone()[0]
+                """, (id_pergunta, tema, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade, bonus_por_avaliacao))
+                id_feedback = cur.fetchone()[0]
+                # Incrementa a energia do usuário no banco caso tenha recebido bônus por avaliação
+                if bonus_por_avaliacao:
+                    cur.execute("""
+                        UPDATE usuarios_registrados 
+                        SET perguntas_restantes = perguntas_restantes + 1 
+                        WHERE id_usuario = %s
+                        RETURNING perguntas_restantes;
+                    """, (id_usuario,))
+                    
+                    res_energia = cur.fetchone()
+                    if res_energia: perguntas_restantes = res_energia[0]
+                else:
+                    # Se não ganhou bônus nesta, apenas buscamos o valor atual para retornar certinho
+                    cur.execute("SELECT perguntas_restantes FROM usuarios_registrados WHERE id_usuario = %s", (id_usuario,))
+                    res_energia = cur.fetchone()
+                    if res_energia: perguntas_restantes = res_energia[0]
         # Feedback para a nota da pergunta
         if data["atualizar_feedback_nota"]:
             if modo_visitante:
@@ -839,7 +860,13 @@ def enviar_feedback():
             except Exception:
                 app.logger.warning("Falha ao enviar email de feedback da pergunta", exc_info=True)
 
-        return jsonify({"sucesso": True})
+        # Monta a resposta dependendo se é visitante ou usuário cadastrado
+        resposta_json = {"sucesso": True}
+        
+        if not modo_visitante and id_usuario:
+            resposta_json["perguntas_restantes"] = perguntas_restantes
+        return jsonify(resposta_json)
+
     except Exception as e:
         if conn: conn.rollback()
         app.logger.exception("Erro ao salvar feedback da pergunta")
@@ -1671,7 +1698,9 @@ def listar_perguntas():
                 'aprovacao_nota': row['aprovacao_nota'],
                 'total_acertos': row.get('total_acertos', 0),
                 'total_respostas': row.get('total_respostas', 0),
-                'grupo': row.get('grupo', None) # Apenas para depuração
+                'oferece_bonus': row.get('oferece_bonus', False),
+                'id_feedback': row.get('id_feedback'),
+                'grupo': row.get('grupo', None) # Apenas para depuração,
             }
             
             # Inclui a resposta correta com total segurança apenas no modo revisão
@@ -1942,6 +1971,47 @@ def login():
         if cur: cur.close()
         if conn: conn.close()
 
+@app.route("/api/verificar_bonus_temas", methods=["GET"])
+def verificar_bonus_temas():
+    id_usuario = session.get("id_usuario")
+    if not id_usuario:
+        return jsonify({"success": False, "bonus_energia": []})
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+    
+        agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
+        
+        cur.execute("""
+            SELECT tema, perguntas_bonus_restantes, expiracao 
+            FROM bonus_temas_usuario 
+            WHERE id_usuario = %s AND expiracao > %s AND perguntas_bonus_restantes > 0
+        """, (id_usuario, agora_sp))
+        
+        bonus_energia = cur.fetchall()
+        
+        # Converte as tuplas para lista de dicionários para garantir serialização perfeita do JSON
+        bonus_lista = [
+            {
+                "tema": row[0],
+                "perguntas_bonus_restantes": row[1],
+                "expiracao": str(row[2])
+            } 
+            for row in bonus_energia
+        ]
+
+        return jsonify({
+            "success": True,
+            "bonus_energia": bonus_lista
+        })
+    except Exception as e:
+        app.logger.exception("Erro ao verificar bônus de temas")
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+    
 def atualizar_energia_usuario(cur, id_usuario, energia_atual, u_sessao):
     """
     Calcula o ganho acumulado de energia (+5 por dia de ausência, máx. +50)
@@ -2003,7 +2073,17 @@ def recarregar_energia_home():
         # 3. Analisa se o usuário possui bônus válidos para algum tema
         agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
         cur.execute("SELECT tema, perguntas_bonus_restantes, expiracao FROM bonus_temas_usuario WHERE id_usuario = %s AND expiracao > %s AND perguntas_bonus_restantes > 0", (id_usuario, agora_sp))
-        bonus_energia = cur.fetchall()
+        bonus_energia_raw = cur.fetchall()
+
+        # Converte as tuplas para lista de dicionários
+        bonus_energia = [
+            {
+                "tema": row["tema"],
+                "perguntas_bonus_restantes": row["perguntas_bonus_restantes"],
+                "expiracao": str(row["expiracao"])
+            } 
+            for row in bonus_energia_raw
+        ]
 
         # 🔑 Salva de fato as alterações no banco de dados da Home
         conn.commit()
@@ -2015,7 +2095,6 @@ def recarregar_energia_home():
             'energia_ganha': nova_energia - energia_antiga,
             'bonus_energia': bonus_energia
         })
-
     except Exception:
         app.logger.exception("Erro ao recarregar energia na home")
         return jsonify({'success': False, 'message': 'Erro interno'}), 500
