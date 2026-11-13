@@ -142,7 +142,7 @@ def criar_pix():
 
         # 1. Busca dados do usuário logado e valida verificação de e-mail
         cur.execute("""
-            SELECT id_usuario, email, email_confirmado, nome, perguntas_restantes 
+            SELECT id_usuario, email, email_confirmado, nome, perguntas_restantes, ja_comprou_energia
             FROM usuarios_registrados 
             WHERE id_usuario = %s;
         """, (id_usuario,))
@@ -151,7 +151,7 @@ def criar_pix():
         if not usuario:
             return jsonify({"sucesso": False, "erro": "Usuário não encontrado."}), 401
 
-        id_usuario, email_usuario, email_confirmado, nome_usuario, energia_inicial = usuario
+        id_usuario, email_usuario, email_confirmado, nome_usuario, energia_inicial, ja_comprou_energia = usuario
 
         # Trava de e-mail verificado
         if not email_confirmado:
@@ -180,7 +180,10 @@ def criar_pix():
             return jsonify({"sucesso": False, "erro": "Pacote inválido ou inativo."}), 404
 
         pacote_id, nome_pacote, qtd_energia, preco_pacote = pacote
-        preco_float = float(preco_pacote)
+        
+        # 💡 APLICAÇÃO SEGURA DO DESCONTO DE PRIMEIRA COMPRA NO BACKEND
+        preco_base_float = float(preco_pacote)
+        preco_float = preco_base_float * 0.5 if not ja_comprou_energia else preco_base_float
 
         # Validação da trava de perguntas restantes com a margem de segurança
         if qtd_energia > (perguntas_e_energia_restantes - DIFERENCA_PERGUNTAS_RESTANTES):
@@ -321,7 +324,8 @@ def webhook_mercado_pago():
 
                 cur.execute("""
                     UPDATE usuarios_registrados 
-                    SET energia = perguntas_restantes + %s 
+                    SET perguntas_restantes = perguntas_restantes + %s,
+                        ja_comprou_energia = TRUE
                     WHERE id_usuario = %s;
                 """, (qtd_energia, id_usuario))
 
@@ -396,7 +400,8 @@ def checar_status_pix(transacao_id):
                 if cur.rowcount > 0:
                     cur.execute("""
                         UPDATE usuarios_registrados 
-                        SET perguntas_restantes = perguntas_restantes + %s 
+                        SET perguntas_restantes = perguntas_restantes + %s,
+                            ja_comprou_energia = TRUE
                         WHERE id_usuario = %s;
                     """, (qtd_energia, id_usuario))
                     conn.commit()
@@ -435,12 +440,12 @@ def processar_cartao():
             return jsonify({"sucesso": False, "erro": "Sessão expirada."}), 401
 
         # Busca dados do usuário (mesma lógica do seu código Pix)
-        cur.execute("SELECT email, email_confirmado, nome, perguntas_restantes FROM usuarios_registrados WHERE id_usuario = %s;", (id_usuario,))
+        cur.execute("SELECT email, email_confirmado, nome, perguntas_restantes, ja_comprou_energia FROM usuarios_registrados WHERE id_usuario = %s;", (id_usuario,))
         usuario = cur.fetchone()
         if not usuario or not usuario[1]: # usuario[1] é email_confirmado
             return jsonify({"sucesso": False, "erro": "E-mail não confirmado ou usuário inválido."}), 403
 
-        email_usuario, _, nome_usuario, energia_inicial = usuario
+        email_usuario, _, nome_usuario, energia_inicial, ja_comprou_energia = usuario
 
         # Busca o pacote (mesma lógica do código Pix)
         cur.execute("SELECT id, nome, energia, preco FROM pacotes_energia WHERE id = %s AND ativo = TRUE;", (id_pacote,))
@@ -449,7 +454,10 @@ def processar_cartao():
             return jsonify({"sucesso": False, "erro": "Pacote inválido."}), 404
 
         pacote_id, nome_pacote, qtd_energia, preco_pacote = pacote
-        preco_float = float(preco_pacote)
+        
+        # 💡 APLICAÇÃO SEGURA DO DESCONTO DE PRIMEIRA COMPRA NO BACKEND
+        preco_base_float = float(preco_pacote)
+        preco_float = preco_base_float * 0.5 if not ja_comprou_energia else preco_base_float
 
         # Monta a requisição de pagamento via CARTÃO no Mercado Pago
         payment_data = {
@@ -496,7 +504,8 @@ def processar_cartao():
         if status_pagamento == 'approved':
             cur.execute("""
                 UPDATE usuarios_registrados 
-                SET perguntas_restantes = perguntas_restantes + %s 
+                SET perguntas_restantes = perguntas_restantes + %s,
+                    ja_comprou_energia = TRUE
                 WHERE id_usuario = %s;
             """, (qtd_energia, id_usuario))
 
@@ -1290,6 +1299,7 @@ def doacoes():
     email_usuario = ''
     id_usuario = session.get('id_usuario')
     modo_visitante = session.get("visitante", False)
+    ja_comprou_energia = False # Identifica se a é a primeira compra do usuário
 
     # Preço base de referência por energia (R$ 0,10)
     PRECO_BASE_POR_ENERGIA = 0.10
@@ -1305,6 +1315,7 @@ def doacoes():
                 SELECT 
                     u.email,
                     u.email_confirmado,
+                    u.ja_comprou_energia,
                     (SELECT COUNT(*) FROM respostas_usuarios r WHERE r.id_usuario = u.id_usuario) as total_respostas,
                     (SELECT COUNT(*) FROM perguntas_objetivas WHERE status = 'Ativa') as total_perguntas_sistema  
                 FROM usuarios_registrados u
@@ -1316,6 +1327,7 @@ def doacoes():
                 # Acessa diretamente pelo nome da coluna no banco, eliminando erros de índice
                 email_usuario = usuario_info.get('email') or ''
                 email_confirmado = bool(usuario_info.get('email_confirmado'))
+                ja_comprou_energia = bool(usuario_info.get('ja_comprou_energia', False))
                 total_respostas = usuario_info.get('total_respostas') or 0
                 total_perguntas_sistema = usuario_info.get('total_perguntas_sistema') or 0                
                 perguntas_restantes = max(0, total_perguntas_sistema - total_respostas)
@@ -1331,7 +1343,15 @@ def doacoes():
 
         for linha in linhas:
             p = dict(linha)
-            p['preco'] = float(p['preco'])
+            preco_original_tabela = float(p['preco'])
+
+            # 💡 APLICAÇÃO DO DESCONTO DE PRIMEIRA COMPRA (50%)
+            if not ja_comprou_energia:
+                p['preco'] = float(preco_original_tabela * 0.5)
+                p['primeira_compra_ativa'] = True
+            else:
+                p['preco'] = float(preco_original_tabela)
+                p['primeira_compra_ativa'] = False
             qtd_energia = p.get('energia') or 0
 
             # 1. Calcula quanto custaria essa quantidade de energia no valor avulso (âncora real)
@@ -1369,7 +1389,8 @@ def doacoes():
         erro_carregamento=erro_carregamento,
         email_usuario=email_usuario,
         modo_visitante=modo_visitante,
-        id_usuario_atual= session.get('id_usuario') or None
+        id_usuario_atual= session.get('id_usuario') or None,
+        ja_comprou_energia=ja_comprou_energia
     )
 
 @app.route("/pesquisa")
