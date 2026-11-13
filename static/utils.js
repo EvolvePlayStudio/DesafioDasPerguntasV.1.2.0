@@ -3,8 +3,8 @@ export const pontuacaoTemaPadraoVisitantes = 0; // Aqui era 1800 na versão anti
 export const dificuldadesOrdenadas = ['Fácil', 'Médio', 'Difícil', 'Extremo'];
 export const temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"];
 export const idsReservados = [4, 6, 16];
-// O primeiro id de visitante é de desktop e o segundo é de mobile
-export const idsVisitantesReservados = ['0ad9df6c-e208-46c1-abdc-402b9d55bee1', 'd103db0e-cd5d-4743-a67c-2cdf0f282892'];
+// O 2 primeiros ids de visitante são de desktop e o segundo é de mobile
+export const idsVisitantesReservados = ['7f737c0d-cd81-4683-8141-0e2f64aa6659', '0ad9df6c-e208-46c1-abdc-402b9d55bee1', 'd103db0e-cd5d-4743-a67c-2cdf0f282892'];
 export const simbolosTemas = {Artes: "🎨", Astronomia: "🪐", Biologia: "🧬", Esportes: "⚽",
 Filosofia: "🦉", Física: "⚛️", Geografia: "🌍", História: "📜", Mídia: "📺", Música: "🎵", Química: "🧪", Variedades: "🎲"}
 export const simbolosRankings = {Iniciante: "🌱", Aprendiz: "🧩", Estudante: "🎓", Sábio: "🧙‍♂️", Lenda: "🌟"}

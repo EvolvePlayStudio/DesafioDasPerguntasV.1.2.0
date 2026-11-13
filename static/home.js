@@ -7,7 +7,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Exige ir para o login caso a versão do app tenha sido modificada
   function validateAppVersionHome() { // Depois pode ir para o utils
-    if (!localStorage.getItem('app_version')) {
+    
+    if (localStorage.getItem('app_version') !== '2.0.1') {
+      localStorage.setItem('app_version', '2.0.1');
       localStorage.setItem("auth_message", "Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente");
       window.location.href = '/login';
     }

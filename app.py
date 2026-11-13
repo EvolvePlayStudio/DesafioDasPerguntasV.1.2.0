@@ -31,8 +31,8 @@ invite_token = os.getenv("TOKEN_CONVITE")
 
 # Algumas variáveis abaixo podem ir para o utils.py futuramente
 SITE_EM_MANUTENCAO = False
-# O primeiro id é de desktop e o segundo de mobile
-ids_visitante_admin = ['0ad9df6c-e208-46c1-abdc-402b9d55bee1', 'd103db0e-cd5d-4743-a67c-2cdf0f282892']
+# O 2 primeiros ids de visitante são de desktop e o segundo é de mobile
+ids_visitante_admin = ['7f737c0d-cd81-4683-8141-0e2f64aa6659', '0ad9df6c-e208-46c1-abdc-402b9d55bee1', 'd103db0e-cd5d-4743-a67c-2cdf0f282892']
 
 sdk = mercadopago.SDK(ACCESS_TOKEN_MERCADO_PAGO)
 DIFERENCA_PERGUNTAS_RESTANTES = 40 # Para compra de pacotes de energia
