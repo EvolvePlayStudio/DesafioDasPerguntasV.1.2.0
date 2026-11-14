@@ -2024,8 +2024,8 @@ def atualizar_energia_usuario(cur, id_usuario, energia_atual, u_sessao):
     if u_sessao:
         dias_passados = (agora_sp.date() - u_sessao.date()).days
         if dias_passados > 0:
-            # Ganho de +5 por dia, limitado ao teto máximo de +50 de recarga
-            ganho_diario = min(dias_passados * 5, 50)
+            # Ganho de +5 por dia, limitado ao teto máximo de +30 de recarga
+            ganho_diario = min(dias_passados * 5, 30)
             nova_energia += ganho_diario
 
     # Respeita o teto máximo global absoluto de 500
