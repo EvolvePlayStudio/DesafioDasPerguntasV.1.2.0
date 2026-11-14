@@ -552,7 +552,7 @@ async function enviarResposta() {
       if (totalRespostas < 10) {
         elTextoEstatistica = `
           <span style="color: black; font-weight: 400; cursor: help;" 
-            title="Estatísticas de acertos: dados insuficientes"> 🎯 --/--
+            title="Estatísticas de Acertos: Dados Insuficientes"> 🎯 --/--
           </span>
         `;
       } else {
@@ -564,7 +564,7 @@ async function enviarResposta() {
         let textoEstatistica = `🎯 ${totalAcertos}/${totalRespostas} (<span style="color: ${corPorcentagem}; font-weight: 600;">${porcentagem}%</span>)`;
         elTextoEstatistica = `
           <span style="color: black; font-weight: 600; cursor: help;" 
-            title="Estatísticas de acertos de usuários cadastrados">${textoEstatistica}
+            title="Estatísticas de Acertos de Usuários Cadastrados">${textoEstatistica}
           </span>
         `;
       }

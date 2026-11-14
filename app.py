@@ -1682,6 +1682,7 @@ def listar_perguntas():
         # Laço unificado: formata e agrupa por dificuldade
         for row in perguntas_a_processar:
             dificuldade = row.get('dificuldade') or 'Médio'
+            if modo_visitante and dificuldade == 'Extremo': dificuldade = 'Difícil'
             item = {
                 'id_pergunta': row['id_pergunta'],
                 'subtemas': row['subtemas'],
