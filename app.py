@@ -1566,7 +1566,7 @@ def listar_perguntas():
     ranking_usuario = request.args.get('ranking-usuario') or 'Aprendiz'
 
     # Configurações locais
-    limit = 80 if modo == 'desafio' else 1000
+    limit = 60 if modo == 'desafio' else 1000
 
     # Validações
     if not tema or modo not in ('desafio', 'revisao'):
