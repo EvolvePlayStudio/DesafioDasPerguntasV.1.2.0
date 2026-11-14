@@ -44,14 +44,14 @@ TAMANHO_SESSAO = 20
 CONFIG_COTAS_RANKING = {
     'Iniciante': {
         'Fácil':   {'min': 2,  'max': 14},
-        'Médio':   {'min': 1,  'max': 13},
-        'Difícil': {'min': 1,  'max': 10},
-        'Extremo': {'min': 1,  'max': 1}
+        'Médio':   {'min': 1,  'max': 12},
+        'Difícil': {'min': 1,  'max': 6},
+        'Extremo': {'min': 0,  'max': 1}
     },
     'Aprendiz': {
         'Fácil':   {'min': 1,  'max': 10},
         'Médio':   {'min': 1,  'max': 16},
-        'Difícil': {'min': 1,  'max': 16},
+        'Difícil': {'min': 1,  'max': 14},
         'Extremo': {'min': 1,  'max': 1}
     },
     'Estudante': {
