@@ -52,25 +52,25 @@ CONFIG_COTAS_RANKING = {
         'Fácil':   {'min': 1,  'max': 10},
         'Médio':   {'min': 1,  'max': 16},
         'Difícil': {'min': 1,  'max': 14},
-        'Extremo': {'min': 1,  'max': 1}
+        'Extremo': {'min': 1,  'max': 2}
     },
     'Estudante': {
         'Fácil':   {'min': 1,  'max': 4},
         'Médio':   {'min': 1,  'max': 14},
         'Difícil': {'min': 2,  'max': 18},
-        'Extremo': {'min': 1,  'max': 2}
+        'Extremo': {'min': 1,  'max': 3}
     },
     'Sábio': {
         'Fácil':   {'min': 0,  'max': 1},
         'Médio':   {'min': 1,  'max': 4},
         'Difícil': {'min': 3,  'max': 20},
-        'Extremo': {'min': 2,  'max': 6}
+        'Extremo': {'min': 2,  'max': 5}
     },
     'Lenda': {
         'Fácil':   {'min': 0,  'max': 1},
         'Médio':   {'min': 0,  'max': 2},
         'Difícil': {'min': 4,  'max': 20},
-        'Extremo': {'min': 2,  'max': 12}
+        'Extremo': {'min': 2,  'max': 10}
     }
 }
 
