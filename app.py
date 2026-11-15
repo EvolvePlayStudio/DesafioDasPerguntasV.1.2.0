@@ -40,37 +40,36 @@ DIFERENCA_PERGUNTAS_RESTANTES = 40 # Para compra de pacotes de energia
 # Tamanho padrão do lote/sessão entregue ao usuário
 TAMANHO_SESSAO = 20
 
-# Limites (mínimo e máximo) de perguntas por dificuldade para cada ranking
-CONFIG_COTAS_RANKING = {
+CONFIG_MAX_COTAS_RANKING = {
     'Iniciante': {
-        'Fácil':   {'min': 2,  'max': 14},
-        'Médio':   {'min': 1,  'max': 12},
-        'Difícil': {'min': 1,  'max': 6},
-        'Extremo': {'min': 0,  'max': 1}
+        'Fácil':    14,
+        'Médio':    12,
+        'Difícil':  5,
+        'Extremo':  0
     },
     'Aprendiz': {
-        'Fácil':   {'min': 1,  'max': 10},
-        'Médio':   {'min': 1,  'max': 16},
-        'Difícil': {'min': 1,  'max': 14},
-        'Extremo': {'min': 1,  'max': 2}
+        'Fácil':    10,
+        'Médio':    14,
+        'Difícil':  10,
+        'Extremo':  1
     },
     'Estudante': {
-        'Fácil':   {'min': 1,  'max': 4},
-        'Médio':   {'min': 1,  'max': 14},
-        'Difícil': {'min': 2,  'max': 18},
-        'Extremo': {'min': 1,  'max': 3}
+        'Fácil':    3,
+        'Médio':    12,
+        'Difícil':  14,
+        'Extremo':  2
     },
     'Sábio': {
-        'Fácil':   {'min': 0,  'max': 1},
-        'Médio':   {'min': 1,  'max': 4},
-        'Difícil': {'min': 3,  'max': 20},
-        'Extremo': {'min': 2,  'max': 5}
+        'Fácil':    1,
+        'Médio':    4,
+        'Difícil':  15,
+        'Extremo':  6
     },
     'Lenda': {
-        'Fácil':   {'min': 0,  'max': 1},
-        'Médio':   {'min': 0,  'max': 2},
-        'Difícil': {'min': 4,  'max': 20},
-        'Extremo': {'min': 2,  'max': 10}
+        'Fácil':    0, # Depois ver se pode trazer fáceis para cá (talvez o usuário escolha nas opções)
+        'Médio':    2,
+        'Difícil':  16,
+        'Extremo':  8
     }
 }
 
@@ -1722,94 +1721,73 @@ def listar_perguntas():
     })
 
 def montar_sessao_usuario(pool_perguntas, ranking_usuario):
-    cotas = CONFIG_COTAS_RANKING.get(ranking_usuario, CONFIG_COTAS_RANKING['Iniciante'])
+    max_cotas = CONFIG_MAX_COTAS_RANKING.get(ranking_usuario, CONFIG_MAX_COTAS_RANKING['Iniciante'])
     
-    # 0. Agrupa, embaralha internamente cada grupo e junta respeitando a sequência de grupos (1 -> 2 -> 3)
+    # 0. Agrupar estruturadamente por Grupo e Dificuldade
     grupos_dict = {}
     for p in pool_perguntas:
         g = p.get('grupo') or 999
         if g not in grupos_dict:
-            grupos_dict[g] = []
-        grupos_dict[g].append(p)
-        
-    pool_ordenado = []
-    for g in sorted(grupos_dict.keys()):
-        random.shuffle(grupos_dict[g])  # Randomiza a ordem dentro do lote do mesmo grupo
-        pool_ordenado.extend(grupos_dict[g])
+            grupos_dict[g] = {'Fácil': [], 'Médio': [], 'Difícil': [], 'Extremo': []}
+        dif = p.get('dificuldade')
+        if dif in grupos_dict[g]:
+            grupos_dict[g][dif].append(p)
+            
+    # Embaralhar internamente para aleatorizar os IDs dentro de cada grupo/dificuldade
+    for g in grupos_dict:
+        for dif in grupos_dict[g]:
+            random.shuffle(grupos_dict[g][dif])
+            
+    grupos_ordenados = sorted(grupos_dict.keys())
+    ordem_dificuldades = ['Fácil', 'Médio', 'Difícil', 'Extremo']
     
-    # Separar o pool por dificuldade mantendo a prioridade por grupo (com IDs aleatorizados por grupo)
-    candidatos = {
-        'Fácil': [p for p in pool_ordenado if p['dificuldade'] == 'Fácil'],
-        'Médio': [p for p in pool_ordenado if p['dificuldade'] == 'Médio'],
-        'Difícil': [p for p in pool_ordenado if p['dificuldade'] == 'Difícil'],
-        'Extremo': [p for p in pool_ordenado if p['dificuldade'] == 'Extremo']
-    }
+    # Mapeamento de peso para o desempate (nível menor tem menor peso para vir primeiro no sort)
+    peso_dificuldade = {'Fácil': 1, 'Médio': 2, 'Difícil': 3, 'Extremo': 4}
     
     sessao = []
     
-    # 1. Fase dos Pisos Mínimos (pega o mínimo de cada dificuldade de acordo com o ranking)
-    for dificuldade, config in cotas.items():
-        min_q = config['min']
-        disponiveis = candidatos[dificuldade]
+    def qtd_atual(dif):
+        return sum(1 for p in sessao if p['dificuldade'] == dif)
         
-        qtd_a_pegar = min(min_q, len(disponiveis))
-        selecionadas = disponiveis[:qtd_a_pegar]
-        sessao.extend(selecionadas)
+    while len(sessao) < TAMANHO_SESSAO:        
+        pergunta_escolhida = None
         
-        candidatos[dificuldade] = disponiveis[qtd_a_pegar:]
-        
-    # 2. Fase de Preenchimento Restante baseada no Estoque e no Limite de Repetição
-    LIMITE_REPETICAO_CONSECUTIVA = 4
-    while len(sessao) < TAMANHO_SESSAO:
-        ultima_dificuldade = sessao[-1]['dificuldade'] if sessao else None
-        
-        repeticoes_atuais = 0
-        if ultima_dificuldade:
-            for pergunta in reversed(sessao):
-                if pergunta['dificuldade'] == ultima_dificuldade:
-                    repeticoes_atuais += 1
-                else:
-                    break
-        
-        opcoes_viaveis = []
-        for dificuldade, config in cotas.items():
-            max_q = config['max'] # Máximo de perguntas que pode pegar na dificuldade analisada
-            atual_q = sum(1 for pergunta in sessao if pergunta['dificuldade'] == dificuldade)
-            distancia_max = max_q - atual_q # Quanto falta para chegar no máximo definido
-            # (ex: se 15 for o máximo para difícil e já pegou 10, faltam 5 ainda)
+        # Percorre os grupos em ordem (Grupo 1, depois Grupo 2...)
+        for g in grupos_ordenados:
+            opcoes_viaveis = []
             
-            if len(candidatos[dificuldade]) > 0 and distancia_max > 0: # Se ainda tem perguntas para pegar
-                # na dificuldade e ainda não chegou no máximo permitido
-                if dificuldade == ultima_dificuldade and repeticoes_atuais >= LIMITE_REPETICAO_CONSECUTIVA:
-                    # Pula para a próxima dificuldade se já pegou várias consecutivas nesta
+            # Avalia todas as dificuldades dentro deste grupo
+            for dif in ordem_dificuldades:
+                estoque = len(grupos_dict[g][dif])
+                if estoque == 0:
+                    continue
+                
+                # Se já atingiu o teto máximo permitido para esta dificuldade no ranking, pula
+                if qtd_atual(dif) >= max_cotas.get(dif, 0):
                     continue
                 
                 opcoes_viaveis.append({
-                    'dificuldade': dificuldade,
-                    'estoque': len(candidatos[dificuldade]),
-                    'distancia': distancia_max
+                    'dificuldade': dif,
+                    'estoque': estoque,
+                    'peso': peso_dificuldade[dif]
                 })
-        
-        if not opcoes_viaveis and ultima_dificuldade:
-            for dificuldade, config in cotas.items():
-                max_q = config['max']
-                atual_q = sum(1 for pergunta in sessao if pergunta['dificuldade'] == dificuldade)
-                if len(candidatos[dificuldade]) > 0 and (max_q - atual_q) > 0:
-                    opcoes_viaveis.append({
-                        'dificuldade': dificuldade,
-                        'estoque': len(candidatos[dificuldade]),
-                        'distancia': max_q - atual_q
-                    })
-        
-        if not opcoes_viaveis:
+            
+            if opcoes_viaveis:
+                # Ordena: 1. Maior estoque (desc), 2. Menor nível/peso (asc no desempate)
+                opcoes_viaveis.sort(key=lambda x: (x['estoque'], -x['peso']), reverse=True)
+                
+                # Pega diretamente a melhor opção disponível no grupo
+                escolhida_definitiva = opcoes_viaveis[0]['dificuldade']
+                
+                pergunta_escolhida = grupos_dict[g][escolhida_definitiva].pop(0)
+                break # Encontrou a pergunta no grupo atual, sai do loop de grupos
+                    
+        # Se absolutamente nenhum grupo tiver estoque ou se todos os tetos máximos foram atingidos, encerra
+        if not pergunta_escolhida:
             break
             
-        opcoes_viaveis.sort(key=lambda x: x['estoque'], reverse=True)
-        escolha = opcoes_viaveis[0]['dificuldade']
+        sessao.append(pergunta_escolhida)
         
-        pergunta_selecionada = candidatos[escolha].pop(0)
-        sessao.append(pergunta_selecionada)
-
     # --- IMPRESSÃO DOS IDS SEPARADOS POR GRUPO ---
     ids_por_grupo = {}
     for p in sessao:
@@ -1817,6 +1795,7 @@ def montar_sessao_usuario(pool_perguntas, ranking_usuario):
         if g not in ids_por_grupo:
             ids_por_grupo[g] = []
         ids_por_grupo[g].append(str(p['id_pergunta']))
+        
     try:
         id_usuario = int(session.get('id_usuario') or -1)
     except (ValueError, TypeError):
@@ -1825,6 +1804,7 @@ def montar_sessao_usuario(pool_perguntas, ranking_usuario):
         id_visitante = int(session.get('id_visitante') or -1)
     except (ValueError, TypeError):
         id_visitante = -1
+        
     if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
         print("\n--- PERGUNTAS SELECIONADAS PARA A SESSÃO ---")
         for grupo_num in sorted([g for g in ids_por_grupo.keys() if isinstance(g, int)]):
