@@ -2947,16 +2947,13 @@ def salvar_opcoes():
     cur = conn = None
     try:
         data = request.get_json(silent=True) or {}
-        exibir_instrucoes_quiz = bool(data.get("exibir_instrucoes_quiz", True))
         notificacoes_bonus_energia = bool(data.get("notificacoes_bonus_energia", True))
         notificacoes_alteracoes_pontos = bool(data.get("notificacoes_alteracoes_pontos", True))
         notificacoes_atualizacoes_site = bool(data.get("notificacoes_atualizacoes_site", True))
-        outras_notificacoes = bool(data.get("outras_notificacoes", False))
-        temas_interesse = data.get("temas_interesse", [])
-        id_usuario = session["id_usuario"]
-
-        # Garantia defensiva
-        if not isinstance(temas_interesse, list): temas_interesse = []
+        
+        id_usuario = session.get("id_usuario")
+        if not id_usuario:
+            return jsonify({"success": False, "error": "Usuário não autenticado"}), 401
 
         conn = get_db_connection()
         cur = conn.cursor()
@@ -2964,21 +2961,15 @@ def salvar_opcoes():
         cur.execute("""
             UPDATE opcoes_usuarios
             SET
-                exibir_instrucoes_quiz = %s,
                 notificacoes_bonus_energia = %s,
                 notificacoes_alteracoes_pontos = %s,
                 notificacoes_atualizacoes_site = %s,
-                outras_notificacoes = %s,
-                temas_interesse = %s,
                 ultima_atualizacao = date_trunc('seconds', NOW() AT TIME ZONE 'America/Sao_Paulo')
             WHERE id_usuario = %s
         """, (
-            exibir_instrucoes_quiz,
             notificacoes_bonus_energia,
             notificacoes_alteracoes_pontos,
             notificacoes_atualizacoes_site,
-            outras_notificacoes,
-            temas_interesse,
             id_usuario
         ))
 

@@ -75,9 +75,6 @@ btnVoltarMenu.addEventListener("click", () => {
   window.location.href = '/home';
 });
 
-// Checkboxes de temas (quando existirem no HTML)
-const temasCheckboxes = document.querySelectorAll('input[name="temas-interesse"]');
-
 // ===============================
 // Estado inicial (snapshot)
 // ===============================
@@ -90,8 +87,7 @@ function obterEstadoAtual() {
   return {
     notificacoes_bonus_energia: checkNotificacoesBonusEnergia.checked,
     notificacoes_alteracoes_pontos: checkNotificacoesAlteracoesPontos.checked,
-    notificacoes_atualizacoes_site: checkNotificacoesAtualizacoesSite.checked,
-    temas_interesse: Array.from(temasCheckboxes).filter(chk => chk.checked).map(chk => chk.value).sort()
+    notificacoes_atualizacoes_site: checkNotificacoesAtualizacoesSite.checked
   };
 }
 
@@ -119,8 +115,6 @@ function carregarEstadoInicial() {
     checkNotificacoesBonusEnergia.checked = opcoes.notificacoes_bonus_energia;
     checkNotificacoesAlteracoesPontos.checked = opcoes.notificacoes_alteracoes_pontos;
     checkNotificacoesAtualizacoesSite.checked = opcoes.notificacoes_atualizacoes_site;
-    
-    temasCheckboxes.forEach(chk => chk.checked = opcoes.temas_interesse.includes(chk.value));
 
     estadoInicial = obterEstadoAtual();
     atualizarBotaoSalvar();
@@ -149,14 +143,13 @@ function setTelaBloqueada(bloquear) {
   checkNotificacoesBonusEnergia.disabled = bloquear;
   checkNotificacoesAlteracoesPontos.disabled = bloquear;
   checkNotificacoesAtualizacoesSite.disabled = bloquear;
-  temasCheckboxes.forEach(chk => chk.disabled = bloquear);
 }
 
 // ===============================
 // Eventos
 // ===============================
 checkNotificacoesBonusEnergia.addEventListener('change', () => atualizarBotaoSalvar());
-[checkNotificacoesBonusEnergia, checkNotificacoesAlteracoesPontos, checkNotificacoesAtualizacoesSite, ...temasCheckboxes].forEach(el => el.addEventListener('change', atualizarBotaoSalvar));
+[checkNotificacoesBonusEnergia, checkNotificacoesAlteracoesPontos, checkNotificacoesAtualizacoesSite].forEach(el => el.addEventListener('change', atualizarBotaoSalvar));
 
 // ===============================
 // Salvar opções
@@ -174,6 +167,12 @@ btnSalvar.addEventListener('click', async () => {
       headers: { 'Content-Type': 'application/json' },
       body: payload
     });
+
+    if (resp.status === 401) {
+      localStorage.setItem("auth_message", 'Sessão expirada')
+      window.location.href = '/login';
+      return;
+    }
 
     if (!resp.ok) throw new Error();
 

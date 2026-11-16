@@ -596,6 +596,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             let chaveProgresso = `${tema_atual}_${dificuldade}`;
             let jaRespondidasNesteNivel = progressoPorDificuldade[chaveProgresso] || 0;
             let limiteMaximo = cotasVisitante[dificuldade] || 0;
+            if (isAdmin) limiteMaximo = 300;
 
             // Descobre quantas vagas ainda restam para completar a cota
             let vagasRestantes = limiteMaximo - jaRespondidasNesteNivel;
