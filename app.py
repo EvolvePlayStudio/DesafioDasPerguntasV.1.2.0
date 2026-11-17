@@ -1887,9 +1887,7 @@ def login():
                 SELECT
                 notificacoes_bonus_energia,
                 notificacoes_alteracoes_pontos,
-                notificacoes_atualizacoes_site,
-                outras_notificacoes,
-                temas_interesse
+                notificacoes_atualizacoes_site
                 FROM opcoes_usuarios
                 WHERE id_usuario = %s
             """, (id_usuario,))
@@ -1899,17 +1897,13 @@ def login():
             if opcoes:
                 (   notificacoes_bonus_energia,
                     notificacoes_alteracoes_pontos,
-                    notificacoes_atualizacoes_site,
-                    outras_notificacoes,
-                    temas_interesse
+                    notificacoes_atualizacoes_site
                 ) = opcoes
             else:
                 # Fallback defensivo
                 notificacoes_bonus_energia      = True
                 notificacoes_alteracoes_pontos  = True
                 notificacoes_atualizacoes_site  = True
-                outras_notificacoes             = False
-                temas_interesse                 = []
 
             # Cria as pontuações de usuário nos temas e registra na base de dados (iniciando com 0 pontos)
             cur.execute("SELECT tema FROM pontuacoes_usuarios WHERE id_usuario = %s", (id_usuario,))
@@ -1924,9 +1918,7 @@ def login():
             opcoes_usuario = {
                 "notificacoes_bonus_energia":     notificacoes_bonus_energia,
                 "notificacoes_alteracoes_pontos": notificacoes_alteracoes_pontos,
-                "notificacoes_atualizacoes_site": notificacoes_atualizacoes_site,
-                "outras_notificacoes":            outras_notificacoes,
-                "temas_interesse":                temas_interesse or []
+                "notificacoes_atualizacoes_site": notificacoes_atualizacoes_site
             }
 
             # 🔑 Retorna JSON e define cookie HttpOnly

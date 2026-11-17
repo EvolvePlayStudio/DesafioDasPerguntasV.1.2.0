@@ -509,7 +509,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         if (lbl_mensagem_login) {
           lbl_mensagem_login.style.color = 'red';
-          lbl_mensagem_login.textContent = 'Erro na comunicação com o servidor';
+          lbl_mensagem_login.textContent = 'Erro na comunicação com o servidor, por favor tente novamente mais tarde';
           lbl_mensagem_login.style.display = '';
         }
         console.error('login submit error:', error);
