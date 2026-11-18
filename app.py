@@ -57,7 +57,7 @@ CONFIG_MAX_COTAS_RANKING = {
         'Fácil':    3,
         'Médio':    12,
         'Difícil':  14,
-        'Extremo':  2
+        'Extremo':  3
     },
     'Sábio': {
         'Fácil':    1,
@@ -766,9 +766,11 @@ def enviar_feedback():
     dificuldade = data.get("dificuldade").lower().capitalize()
     aprovacao_nota = data.get("aprovacao_nota")
     bonus_por_avaliacao = data.get("bonus_por_avaliacao", False)
+    acertou = data.get("acertou")
     id_usuario = session.get("id_usuario")
     id_visitante = session.get("id_visitante")
     modo_visitante = session.get("visitante")
+    
 
     if modo_visitante:
         if not all([data.get("id_pergunta"), data.get("versao_pergunta"), id_visitante]):
@@ -784,25 +786,25 @@ def enviar_feedback():
         if data['atualizar_feedback_estrelas']:
             if modo_visitante:
                 cur.execute("""
-                    INSERT INTO feedbacks (id_pergunta, tema, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade, recebeu_bonus)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO feedbacks (id_pergunta, tema, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade, recebeu_bonus, acertou)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (id_pergunta, versao_pergunta, id_visitante)
                     DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante,
-                    comentario = EXCLUDED.comentario, recebeu_bonus = EXCLUDED.recebeu_bonus,
+                    comentario = EXCLUDED.comentario, recebeu_bonus = EXCLUDED.recebeu_bonus, acertou = null,
                     ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'))
                     RETURNING id_feedback;
-                """, (id_pergunta, tema, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade, bonus_por_avaliacao))
+                """, (id_pergunta, tema, estrelas, versao_pergunta, id_visitante, modo_visitante, comentario, dificuldade, bonus_por_avaliacao, acertou))
                 id_feedback = cur.fetchone()[0]
             else:
                 cur.execute("""
-                    INSERT INTO feedbacks (id_pergunta, tema, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade, recebeu_bonus)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO feedbacks (id_pergunta, tema, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade, recebeu_bonus, acertou)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (id_pergunta, versao_pergunta, id_usuario)
                     DO UPDATE SET estrelas = EXCLUDED.estrelas, versao_pergunta = EXCLUDED.versao_pergunta, modo_visitante = EXCLUDED.modo_visitante,
-                    comentario = EXCLUDED.comentario, recebeu_bonus = EXCLUDED.recebeu_bonus,
+                    comentario = EXCLUDED.comentario, recebeu_bonus = EXCLUDED.recebeu_bonus, acertou = null,
                     ultima_atualizacao = date_trunc('second', date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'))
                     RETURNING id_feedback;
-                """, (id_pergunta, tema, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade, bonus_por_avaliacao))
+                """, (id_pergunta, tema, estrelas, versao_pergunta, id_usuario, modo_visitante, comentario, dificuldade, bonus_por_avaliacao, acertou))
                 id_feedback = cur.fetchone()[0]
                 # Incrementa a energia do usuário no banco caso tenha recebido bônus por avaliação
                 if bonus_por_avaliacao:
@@ -2781,7 +2783,7 @@ def registrar_resposta_usuario():
             # Registra a resposta do usuário
             cur.execute("""
                 INSERT INTO respostas_usuarios (
-                    id_usuario, id_pergunta, versao_pergunta, resposta_usuario, acertou,pontos_ganhos, tempo_gasto, pontos_usuario, tema, dados_migrados, dificuldade, auto_chute
+                    id_usuario, id_pergunta, versao_pergunta, resposta_usuario, acertou, pontos_ganhos, tempo_gasto, pontos_usuario, tema, dados_migrados, dificuldade, auto_chute
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (

@@ -876,7 +876,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Se a data de hoje for diferente da última salva, o dia virou!
     if (ultimaDataVerificada !== hoje) {
       localStorage.setItem('ultima_data_verificacao', hoje);
-      if (isAdmin) console.log("Virada de dia detectada pelo navegador! Atualizando energia...");
 
       // Chama a rota do backend para processar a recarga de energia do novo dia
       fetch('/api/recarregar_energia_usuario', {

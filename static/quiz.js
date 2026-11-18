@@ -21,6 +21,7 @@ const MODO_VISITANTE = localStorage.getItem("modoVisitante") === 'true';
 let respondidasVisitantesPorDificuldade = JSON.parse(localStorage.getItem('respondidas_visitante_por_dificuldade')) || {};
 let energiaNormal = 0;
 let bonusRestante = 0;
+let acertou = null;
 const avisoBonus = document.getElementById('aviso-bonus-energia');
 let estrelasAtuaisSelecionadas = null;
 
@@ -390,7 +391,7 @@ function atualizarRankingVisual() {
   }
 }
 
-function calcularPontuacao(acertou) {
+function calcularPontuacao() {
   const dificuldade = pergunta_selecionada.dificuldade;
   if (!acertou) {
     let pontos_ganhos = 0;
@@ -484,7 +485,7 @@ function desativarBotoes() {
 async function enviarResposta() {
   hint_avaliacao.style.display = "none";
   const pontuacao_atual = pontuacoes_jogador[tema_atual];
-  let acertou;
+  acertou = null;
   let letra_correta;
   let btnAlternativaSelecionada;
 
@@ -510,7 +511,7 @@ async function enviarResposta() {
     textarea_comentario.disabled = false;
   }
 
-  function revelarGabaritoVisual(acertou) {
+  function revelarGabaritoVisual() {
     const correta = document.querySelector(`.alternativa-btn[data-letter="${letra_correta}"]`);
     if (correta) {
       correta.classList.add('correct');
@@ -520,7 +521,7 @@ async function enviarResposta() {
     }
   }
 
-  function mostrarResultadoResposta(acertou) {
+  function mostrarResultadoResposta() {
     resultado.style.display = "flex";
 
     // Exibe nota, curiosidade ou explicação
@@ -665,7 +666,7 @@ async function enviarResposta() {
     }, 500);
   }
 
-  async function registrarResposta(resposta_usuario, acertou, pontos_ganhos, tempo_gasto, id_pergunta, versao_pergunta) {
+  async function registrarResposta(resposta_usuario, pontos_ganhos, tempo_gasto, id_pergunta, versao_pergunta) {
     try {
       const response = await fetch('/registrar_resposta', {
         method: 'POST',
@@ -693,7 +694,6 @@ async function enviarResposta() {
 
         // Atualiza as perguntas restantes do usuário no Storage
         localStorage.setItem("perguntas_restantes", data.perguntas_restantes);
-        console.log(`Perguntas restantes: ${data.perguntas_restantes}`);
 
         // Se a resposta gastou o bônus, atualizamos o contador visual combinando energia + bônus
         if (data.usando_bonus && data.perguntas_bonus_restantes !== undefined) {
@@ -716,7 +716,7 @@ async function enviarResposta() {
     }
   }
 
-  function registrarRespostaVisitante(resposta_usuario, acertou, pontos_ganhos, tempo_gasto) {
+  function registrarRespostaVisitante(resposta_usuario, pontos_ganhos, tempo_gasto) {
     let respondidas = JSON.parse(localStorage.getItem("visitante_respondidas") ?? "[]");
 
     // --- Lógica de Conversão GoogleAds / MicrosoftAds ---
@@ -838,7 +838,7 @@ async function enviarResposta() {
   }
 
   // Calcula pontos ganhos, toca áudio e salva streak de acertos ou erros
-  pontos_ganhos = calcularPontuacao(acertou);
+  pontos_ganhos = calcularPontuacao();
   if (acertou) {
     playSound("correct")
     // 🔥 Atualiza streaks: Incrementa acertos e zera os erros
@@ -861,7 +861,6 @@ async function enviarResposta() {
     
     prosseguir_com_resultado = await registrarResposta(
       resposta_usuario,
-      acertou,
       pontos_ganhos,
       tempo_gasto,
       id_pergunta,
@@ -880,7 +879,7 @@ async function enviarResposta() {
     // Salva o objeto atualizado de volta no localStorage convertendo para string
     localStorage.setItem('respondidas_visitante_por_dificuldade', JSON.stringify(respondidasVisitantesPorDificuldade));
     // Registra o envio da resposta no SQL
-    registrarRespostaVisitante(resposta_usuario, acertou, pontos_ganhos, tempo_gasto)
+    registrarRespostaVisitante(resposta_usuario, pontos_ganhos, tempo_gasto)
   }
   
   if (prosseguir_com_resultado) {
@@ -916,7 +915,7 @@ async function enviarResposta() {
     }
     
     // Mostra se acertou a resposta e os botões "próxima" e "finalizar"
-    mostrarResultadoResposta(acertou);
+    mostrarResultadoResposta();
     mostrarBotoesAcao();
     revelarGabaritoVisual();
   } 
@@ -1297,11 +1296,14 @@ async function registrarFeedback() {
     return;
   }
 
+  if (modo_jogo === 'revisao' && mudouEstrelas) acertou = null;
+
   try {
     const response = await fetch("/enviar_feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        acertou: acertou,
         atualizar_feedback_nota: mudouAprovacaoNota,
         atualizar_feedback_estrelas: mudouEstrelas || mudouComentario,
         id_pergunta: pergunta_selecionada.id_pergunta,
