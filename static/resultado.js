@@ -94,20 +94,26 @@ async function carregarInterstitialDinamico() {
     linkElement.setAttribute('data-provedor-anuncio', selecionado.provedor);
     linkElement.setAttribute('data-tipo-midia-anuncio', selecionado.tipo_midia);
 
-    if (selecionado.provedor === 'Amazon') {
-      imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoAmazon";
-      imgLogo.style.display = 'block';
-    }
-    else if (selecionado.provedor === 'Mercado Livre'){
-      imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoMercadoLivre03";
-      imgLogo.style.display = 'block';
+    if (selecionado.exibir_logotipo) {
+      if (selecionado.provedor === 'Amazon') {
+        imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoAmazon";
+        imgLogo.style.display = 'block';
+      }
+      else if (selecionado.provedor === 'Mercado Livre'){
+        imgLogo.src = "https://res.cloudinary.com/j70fhijc/image/upload/f_auto,q_auto/logotipoMercadoLivre03";
+        imgLogo.style.display = 'block';
+      }
+      else {
+        imgLogo.src = "";
+        imgLogo.style.display = 'none';
+      }
+
+      imgLogo.onerror = function() {this.style.display = 'none'};
     }
     else {
       imgLogo.src = "";
       imgLogo.style.display = 'none';
     }
-
-    imgLogo.onerror = function() {this.style.display = 'none'};
 
     modal.style.display = 'flex';
 
@@ -272,7 +278,7 @@ resultado.perguntas_respondidas.forEach((p, i) => {
 
   // Se puder favoritar, injeta o botão da estrela no HTML; senão, deixa vazio
   const htmlBotaoFavorito = podeFavoritar 
-    ? `<button class="btn-favorito" data-id-pergunta="${p.id_pergunta}" title="Favoritar pergunta">${iconeEstrela}</button>` 
+    ? `<button class="btn-favorito" data-id-pergunta="${p.id_pergunta}" title="Favoritar Pergunta">${iconeEstrela}</button>` 
     : '';
 
   div.innerHTML = `

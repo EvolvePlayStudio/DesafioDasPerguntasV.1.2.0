@@ -2091,7 +2091,7 @@ def obter_anuncios():
         
         query = """
             SELECT id, nome, tema, descricao, link_asin, imagem_url, tipo_midia, provedor,
-            disponivel_visitantes, disponivel_usuarios, oferta_expira_em, prioridade
+            disponivel_visitantes, disponivel_usuarios, oferta_expira_em, prioridade, exibir_logotipo
             FROM anuncios
             WHERE is_ativo = TRUE
         """
@@ -2104,7 +2104,7 @@ def obter_anuncios():
         anuncios = cur.fetchall()
 
         for a in anuncios:
-            id_banco, nome, tema, desc, link_referencia, img, tipo_midia, provedor, disp_visitantes, disp_usuarios, oferta_expira_em, prioridade = a
+            id_banco, nome, tema, desc, link_referencia, img, tipo_midia, provedor, disp_visitantes, disp_usuarios, oferta_expira_em, prioridade, exibir_logotipo = a
             
             if provedor not in dicionario_anuncios:
                 dicionario_anuncios[provedor] = []
@@ -2123,7 +2123,8 @@ def obter_anuncios():
                 'disponivel_visitantes': disp_visitantes,
                 'disponivel_usuarios': disp_usuarios,
                 'oferta_expira_em': oferta_expira_em,
-                'prioridade': prioridade
+                'prioridade': prioridade,
+                'exibir_logotipo': exibir_logotipo
             })
     except Exception:
         app.logger.exception("Erro ao tentar obter anúncios")
