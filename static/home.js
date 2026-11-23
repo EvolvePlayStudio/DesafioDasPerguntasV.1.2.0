@@ -1,7 +1,7 @@
 import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, idsReservados, idsVisitantesReservados, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
 import { playSound } from "./sound.js";
 
-const maxEnergiaParaVisitantes = 25;
+const maxEnergiaParaVisitantes = 30;
 
 document.addEventListener("DOMContentLoaded", async () => {
 
