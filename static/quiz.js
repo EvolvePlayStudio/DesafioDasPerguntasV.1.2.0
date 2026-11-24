@@ -44,22 +44,6 @@ try { // Registra primeiro quiz iniciado caso seja o primeiro login na conta do 
   } 
 } catch (error) {console.error("Erro no bloco de rastreamento:", error)};
 
-
-window.onerror = function (message) { // Caso ocorra um erro
-  if (!idsVisitantesReservados.includes(id_visitante) && !idsReservados.includes(idUsuario)) {
-    fetch("/api/debug/frontend", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      mensagem: String(message),
-      pagina: location.pathname,
-      id_visitante: localStorage.getItem("id_visitante"),
-      user_agent: navigator.userAgent
-    })
-  }).catch(() => {});
-  }
-};
-
 if (MODO_VISITANTE === undefined || (!MODO_VISITANTE && idUsuario === 0)) {
   localStorage.setItem("auth_message", "Sessão expirada");
   window.location.href = '/login';
@@ -145,6 +129,21 @@ const PAUSA_ANTES_DA_A              = 500;
 const GAP_ENTRE_ALTERNATIVAS        = 380;
 const VELOCIDADE_LETRA_ENUNCIADO    = 21;
 const VELOCIDADE_LETRA_ALTERNATIVAS = 16; // quanto menor, mais rápido
+
+function registrarLog(textoLog) { // Dupllicada em home, pode ir para utils no futuro
+  fetch('/api/registrar-acesso', {
+    method: 'POST',
+    keepalive: true,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      pagina: textoLog,
+      id_visitante: id_visitante,
+      id_usuario: idUsuario
+    })
+  }).catch(error => console.error("Erro ao registrar acesso:", error));
+}
 
 // Seleciona os botões
 botaoLikeNota.addEventListener("click", () => {
@@ -395,7 +394,7 @@ function calcularPontuacao() {
   const dificuldade = pergunta_selecionada.dificuldade;
   if (!acertou) {
     let pontos_ganhos = 0;
-    // Caso em que a pergunta não vale pontos nem para acertos nem para erros
+    // Casos em que a pergunta não vale pontos
     if (dificuldade === "Fácil" && regras_jogador.pontos_acerto_facil === 0 || dificuldade === "Médio" && regras_jogador.pontos_acerto_medio === 0) {
       pontos_ganhos = 0
     }
@@ -408,6 +407,7 @@ function calcularPontuacao() {
     }
     return pontos_ganhos;
   }
+  else if (pontuacoes_jogador[tema_atual] >= 5000) return 0 // O ideal seria pegar o valor de 5000 da base em vez de jogar diretamente aqui para caso mudasse
 
   let pontosBase = 0;
   switch (dificuldade) {
@@ -570,6 +570,7 @@ async function enviarResposta() {
         `;
       }
     } catch (erro) {
+      registrarLog(`Erro ao renderizar estatísticas de acertos da pergunta: ${erro}`)
       console.error("Erro ao renderizar estatísticas de acertos da pergunta:", erro);
       // Em caso de erro, elTextoEstatistica continua vazia e o app não quebra
     }
@@ -706,11 +707,13 @@ async function enviarResposta() {
         return true;
       } 
       else {
+        registrarLog(`1.Erro ao registrar resposta: ${data.mensagem}`);
         console.error('Erro ao registrar resposta:', data.mensagem);
         return false;
       }
     } 
     catch (err) {
+      registrarLog(`2.Erro ao registrar resposta: ${err}`);
       console.error('Erro na comunicação:', err);
       return false;
     }
@@ -769,9 +772,10 @@ async function enviarResposta() {
         dificuldade: pergunta_selecionada.dificuldade,
         auto_chute: autoChute
       })
-      }).catch(() => {
-        console.warn("Falha ao registrar resposta de visitante")
-      });
+    }).catch((erro) => {
+        registrarLog(`Erro ao registrar resposta de visitante: ${erro}`);
+        console.warn("Falha ao registrar resposta de visitante");
+    });
 
     // Registra localmente a pergunta respondida pelo visitante para evitar repetição
     if (!respondidas.includes(pergunta_selecionada.id_pergunta)) {
@@ -1341,8 +1345,9 @@ async function registrarFeedback() {
       }
     }
   }
-  catch (e) {
-    console.error("Erro ao enviar feedback:", e);
+  catch (erro) {
+    registrarLog(`Erro ao enviar feedback: ${erro}`);
+    console.error("Erro ao enviar feedback:", erro);
   }
 }
 

@@ -243,7 +243,11 @@ resultado.perguntas_respondidas.forEach((p, i) => {
     correta = false;
   }
 
-  const cor_pontuacao = correta? 'lime': 'red'; // O ideal é que estas cores fossem variáveis globais
+  let cor_pontuacao;
+  if (p.pontos_ganhos === 0) cor_pontuacao = 'yellow';
+  else if (correta) cor_pontuacao = 'lime';
+  else cor_pontuacao = 'red';
+   
   const cor_dificuldade = coresDificuldade[p.dificuldade.toLowerCase()];
   let cor_alternativa_a = 'black';
   let cor_alternativa_b = 'black';

@@ -1,4 +1,5 @@
-import { deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, idsReservados, idsVisitantesReservados, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
+import { coresDificuldade, deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, simbolosRankings, simbolosTemas, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
+import { criarMissoes, obterProgressoRankingPorPontos } from "./funcoesHome.js";
 import { playSound } from "./sound.js";
 
 const maxEnergiaParaVisitantes = 30;
@@ -365,26 +366,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     const agora = Date.now();
     const ultimoEnvio = controleLogs[textoLog] || 0;
 
-    // Intervalo de 20 segundos (20000 milissegundos)
-    if (agora - ultimoEnvio < 20000) {
-      return; // Ignora o envio se foi registrado há menos de 20 segundos
-    }
+    if (agora - ultimoEnvio < 20000) return;  // Ignora duplo envio em janelas de 20 segundos
     controleLogs[textoLog] = agora;
 
-    try {
-      fetch('/api/registrar-acesso', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          pagina: textoLog,
-          id_visitante: idVisitante
-        })
+    fetch('/api/registrar-acesso', {
+      method: 'POST',
+      keepalive: true,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        pagina: textoLog,
+        id_visitante: idVisitante,
+        id_usuario: idUsuario
       })
-    } catch (error) {
-      console.warn('Não foi possível registrar log');
-    }
+    }).catch(error => console.error("Erro ao registrar acesso:", error));
   }
 
   function atualizarBadgesBonus(bonusArray) {
@@ -433,7 +429,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
     if (!permitir_escolher_tema) {
-      //registrarLog('Retorno - não foi permitido escolher tema');
       return;
     } 
 
@@ -504,7 +499,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const rankingUsuario = obterInfoRankingAtual(tema_atual).ranking;
         const response = await fetchAutenticado(`/api/perguntas?tema=${tema_atual}&modo=desafio&ranking-usuario=${rankingUsuario}`)
         
-        // Pode ser bom tratar quase a resposta não seja ok
+        // Pode ser bom tratar quando a resposta não seja ok
         if (response.ok) {
           const data = await response.json();
 
@@ -663,7 +658,295 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  async function exibirModalEmailOuEnergia() {
+  async function verificarEExibirModalMissoes(onFinishCallback, dadosMissoes = null) {
+    // Aparece apenas para usuários logados e admins
+    if (typeof onFinishCallback === 'function') onFinishCallback();
+      return;
+    if (MODO_VISITANTE || !isAdmin || !dadosMissoes) {
+      if (typeof onFinishCallback === 'function') onFinishCallback();
+      return;
+    }
+
+    // Se já existe ciclo ativo no banco, sincroniza o localStorage e segue adiante
+    const missoesAtivas = (dadosMissoes.missoes || []).filter(m => m.escolhida && m.status === 'Ativa');
+    if (missoesAtivas.length > 0 && missoesAtivas[0].data_expiracao) {
+      const timestampExpiracao = new Date(`${missoesAtivas[0].data_expiracao}-03:00`).getTime();
+      localStorage.setItem('proxima_verificacao_missoes', timestampExpiracao.toString());
+      if (typeof onFinishCallback === 'function') onFinishCallback();
+      return;
+    }
+
+    const corAbaDesselecionada = '#c9c9c9';
+
+    // Garante que os estoques estejam carregados antes de gerar missões baseadas neles
+    let estoques = window.estoquesTemas;
+    if (!estoques && window.promessaEstoques) {
+      const timeoutPromessa = new Promise(resolve => setTimeout(() => resolve(null), 3500));
+      estoques = await Promise.race([window.promessaEstoques, timeoutPromessa]);
+    }
+
+    if (!estoques || !window._estoquesCarregados || typeof estoques !== 'object') {
+      console.warn("Estoques de perguntas indisponíveis no momento para o modal de missões semanais.");
+      if (typeof onFinishCallback === 'function') onFinishCallback();
+      return;
+    }
+
+    const pontuacoesUsuario = dadosMissoes.pontuacoes_usuario || {};
+    const missoesDisponiveis = criarMissoes(estoques, pontuacoesUsuario);
+
+    const formatarDificuldade = (dif) => {
+      const chave = String(dif || "médio")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+      const rotulos = {
+        facil: "Fácil",
+        medio: "Médio",
+        dificil: "Difícil"
+      };
+
+      const mapaCores = {
+        facil: coresDificuldade?.["fácil"] || coresDificuldade?.facil || "lime",
+        medio: coresDificuldade?.["médio"] || coresDificuldade?.medio || "yellow",
+        dificil: coresDificuldade?.["difícil"] || coresDificuldade?.dificil || "red"
+      };
+
+      return {
+        chave,
+        rotulo: rotulos[chave] || "Médio",
+        cor: mapaCores[chave] || "yellow"
+      };
+    };
+
+    // Cards clicáveis para escolha das missões
+    const renderOpcoes = (lista, grupoName) => lista.map(m => {
+      console.log(`Dificuldade: ${m.dificuldade}`)
+      const dif = formatarDificuldade(m.dificuldade);
+      console.log(`Dificuldade formatada: ${dif}`)
+      return `
+        <label class="card-opcao-missao" data-grupo="${grupoName}" style="display: block; font-size: 14px; line-height: 1.4; margin: 8px 0; padding: 10px 12px; border: 1px solid #444; border-radius: 6px; background: rgba(255, 255, 255, 0.02); cursor: pointer; transition: background 0.15s, border-color 0.15s;">
+          <input type="radio" name="${grupoName}" value="${m.id}" style="display: none;">
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+            <span class="rotulo-dificuldade-missao" style="font-size: 14px; font-weight: 600; line-height: 1.3;">Dificuldade:</span>
+            <span style="display: inline-block; font-size: 11px; font-weight: bold; letter-spacing: 0.3px; color: ${dif.cor}; background: rgba(0, 0, 0, 0.45); border: 1px solid ${dif.cor}; border-radius: 4px; padding: 1px 7px; line-height: 1.3;">
+              ${dif.rotulo}
+            </span>
+          </div>
+          <span style="display: block;">${m.descricao}</span>
+        </label>
+      `;
+    }).join('');
+
+    // Monta a lista de temas usando as pontuações vindas do backend
+    const statusTemas = temas_disponiveis.map(tema => {
+      const pontos = pontuacoesUsuario[tema] ?? 0;
+      const info = obterProgressoRankingPorPontos(pontos);
+      return {
+        tema,
+        ranking: info.ranking,
+        pontos: info.pontos,
+        proximoRanking: info.proximoRanking,
+        faltaPontos: info.faltaPontos
+      };
+    });
+
+    const pontuacaoMaximaGlobal = 60000;
+    const pontosTotais = statusTemas.reduce((acc, item) => acc + item.pontos, 0);
+    const porcentagemProgresso = Math.min(100, Math.round((pontosTotais / pontuacaoMaximaGlobal) * 100));
+
+    const renderTabelaRankings = () => `
+      <style>
+        #container-tabela-rankings,
+        #painel-aba-missoes {
+          scrollbar-width: thin;
+        }
+        #container-tabela-rankings::-webkit-scrollbar,
+        #painel-aba-missoes::-webkit-scrollbar {
+          width: 5px;
+        }
+        #container-tabela-rankings::-webkit-scrollbar-track,
+        #painel-aba-missoes::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        #container-tabela-rankings::-webkit-scrollbar-thumb,
+        #painel-aba-missoes::-webkit-scrollbar-thumb {
+          background-color: #666;
+          border-radius: 4px;
+        }
+        .pts-progresso-global {
+          opacity: 0.9;
+          white-space: nowrap;
+        }
+        @media (max-width: 480px) {
+          .pts-progresso-global {
+            display: none;
+          }
+          #painel-aba-missoes {
+            max-height: 48vh;
+          }
+        }
+      </style>
+
+      <div style="margin-bottom: 10px; padding: 10px 12px; border: 1px solid #444; border-radius: 6px; background: rgba(255, 255, 255, 0.03);">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.92em;">
+          <span style="white-space: nowrap;">
+            🚀 <strong>Progresso</strong> <span style="font-size: 0.9em; opacity: 0.8; font-weight: normal;">(${porcentagemProgresso}%)</span>
+          </span>
+          <span class="pts-progresso-global">${pontosTotais} / ${pontuacaoMaximaGlobal} pts</span>
+        </div>
+        <div style="width: 100%; height: 8px; background: rgba(255, 255, 255, 0.12); border-radius: 4px; overflow: hidden;">
+          <div style="width: ${porcentagemProgresso}%; height: 100%; background: #4caf50; border-radius: 4px; transition: width 0.3s ease;"></div>
+        </div>
+      </div>
+
+      <div id="container-tabela-rankings" style="max-height: 215px; overflow-y: auto; border: 1px solid #444; border-radius: 6px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+          <thead style="position: sticky; top: 0; background: #1E1E14; z-index: 1;">
+            <tr style="border-bottom: 1px solid #444;">
+              <th style="color: #eeebeb; padding: 8px 8px 8px 34px; text-align: left;">Tema</th>
+              <th style="color: #eeebeb; padding: 8px 18px 8px 8px; text-align: right;">Pontos</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${statusTemas.map(item => `
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                <td style="padding: 8px 8px 8px 10px; text-align: left; white-space: nowrap;">
+                  <span style="display: inline-block; width: 22px;">${simbolosTemas[item.tema] || ""}</span>
+                  <strong>${item.tema}</strong>
+                </td>
+                <td style="padding: 8px 10px 8px 8px; text-align: right; white-space: nowrap;">
+                  <span title="Ranking: ${item.ranking}" style="margin-right: 2px;">${simbolosRankings[item.ranking] || ""}</span>
+                  <span style="display: inline-block; min-width: 4.5ch; text-align: left;">${item.pontos}</span>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    const corpoHTML = `
+      <div style="display: flex; gap: 8px; margin-bottom: 14px; border-bottom: 1px solid #444; padding-bottom: 8px;">
+        <button type="button" id="aba-btn-missoes" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #666; background: #2c2c2c; color: #fff; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; line-height: 1.2;">
+          <span style="flex-shrink: 0; display: inline-flex; align-items: center; line-height: 1;">✅</span>
+          <span style="text-align: center; line-height: 1.2;">Escolher Missões</span>
+        </button>
+        <button type="button" id="aba-btn-rankings" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #444; background: transparent; color: ${corAbaDesselecionada}; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; line-height: 1.2;">
+          <span style="flex-shrink: 0; display: inline-flex; align-items: center; line-height: 1;">📊</span>
+          <span style="text-align: center; line-height: 1.2;">Meus Rankings</span>
+        </button>
+      </div>
+
+      <div id="painel-aba-missoes" style="max-height: 65vh; overflow-y: auto; padding-right: 4px;">
+        <div style="text-align: left; margin-bottom: 12px;">
+          <strong>🌐 Global</strong>
+          ${renderOpcoes(missoesDisponiveis.globais, 'missao_global')}
+        </div>
+        <div style="text-align: left;">
+          <strong>📌 Temática</strong>
+          ${renderOpcoes(missoesDisponiveis.tematicas, 'missao_tematica')}
+        </div>
+      </div>
+
+      <div id="painel-aba-rankings" style="display: none; text-align: left;">
+        ${renderTabelaRankings()}
+      </div>
+    `;
+
+    abrirModal({
+      titulo: "🏆 Missões Semanais",
+      corpoHTML,
+      textoPrimario: "Confirmar Escolhas",
+      textoSecundario: "Escolher Depois",
+      ativarBotaoPrimario: false,
+      onPrimario: () => {
+        const global = modal.querySelector('input[name="missao_global"]:checked');
+        const tematica = modal.querySelector('input[name="missao_tematica"]:checked');
+        if (!global || !tematica) return;
+
+        // Restaura aparência padrão do botão antes de fechar o modal para não afetar outros modais
+        btnModalPrimario.style.opacity = "";
+        btnModalPrimario.style.cursor = "";
+
+        //localStorage.setItem('proxima_verificacao_missoes', Date.now() + 7 * 24 * 60 * 60 * 1000)
+        localStorage.setItem('proxima_verificacao_missoes', Date.now() + 60 * 1000)
+
+        modal.classList.add("hidden");
+        if (typeof onFinishCallback === 'function') onFinishCallback();
+      },
+      onSecundario: () => {
+        btnModalPrimario.style.opacity = "";
+        btnModalPrimario.style.cursor = "";
+
+        //localStorage.setItem('proxima_verificacao_missoes', Date.now() + 7 * 24 * 60 * 60 * 1000)
+        localStorage.setItem('proxima_verificacao_missoes', Date.now() + 60 * 1000)
+
+        modal.classList.add("hidden");
+        if (typeof onFinishCallback === 'function') onFinishCallback();
+      }
+    });
+
+    // Destaca visualmente o card selecionado e habilita o botão quando ambos estiverem escolhidos
+    const atualizarSelecaoEBotao = () => {
+      modal.querySelectorAll('.card-opcao-missao').forEach(card => {
+        const radio = card.querySelector('input[type="radio"]');
+        if (radio.checked) {
+          card.style.background = "#1E1E14";
+          card.style.borderColor = "#000000";
+          card.style.color = "#fff";
+        } else {
+          card.style.background = "rgba(255, 255, 255, 0.02)";
+          card.style.borderColor = "#444";
+          card.style.color = "";
+        }
+      });
+
+      const temGlobal = !!modal.querySelector('input[name="missao_global"]:checked');
+      const temTematica = !!modal.querySelector('input[name="missao_tematica"]:checked');
+      const pronto = temGlobal && temTematica;
+
+      btnModalPrimario.disabled = !pronto;
+      btnModalPrimario.style.opacity = pronto ? "1" : "0.45";
+      btnModalPrimario.style.cursor = pronto ? "pointer" : "not-allowed";
+    };
+
+    atualizarSelecaoEBotao();
+    modal.querySelectorAll('input[type="radio"]').forEach(radio => {
+      radio.addEventListener('change', atualizarSelecaoEBotao);
+    });
+
+    // Controle de alternância das abas sem perder as seleções
+    const btnAbaMissoes = modal.querySelector('#aba-btn-missoes');
+    const btnAbaRankings = modal.querySelector('#aba-btn-rankings');
+    const painelMissoes = modal.querySelector('#painel-aba-missoes');
+    const painelRankings = modal.querySelector('#painel-aba-rankings');
+
+    btnAbaMissoes.addEventListener('click', () => {
+      painelMissoes.style.display = "block";
+      painelRankings.style.display = "none";
+      btnAbaMissoes.style.background = "#2c2c2c";
+      btnAbaMissoes.style.color = "#fff";
+      btnAbaMissoes.style.fontWeight = "bold";
+      btnAbaRankings.style.background = "transparent";
+      btnAbaRankings.style.color = corAbaDesselecionada;
+      btnAbaRankings.style.fontWeight = "normal";
+    });
+
+    btnAbaRankings.addEventListener('click', () => {
+      painelMissoes.style.display = "none";
+      painelRankings.style.display = "block";
+      btnAbaRankings.style.background = "#2c2c2c";
+      btnAbaRankings.style.color = "#fff";
+      btnAbaRankings.style.fontWeight = "bold";
+      btnAbaMissoes.style.background = "transparent";
+      btnAbaMissoes.style.color = corAbaDesselecionada;
+      btnAbaMissoes.style.fontWeight = "normal";
+    });
+  }
+  
+  async function exibirModalEmailOuEnergia(dadosMissoes = null) {
     const emailConfirmado = localStorage.getItem("email_confirmado") === "true";
     const emailUsuario = localStorage.getItem("email_usuario") || "";
       
@@ -676,13 +959,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (deveExibir) {
         // Registra na base o aparecimento do modal de energia esgotada
-        try {
-          fetch("/api/registrar-acesso", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pagina: "Modal de energia baixa" })
-          });
-        } catch (err) {console.warn("Falha ao registrar abertura do modal de energia baixa:", err)};
+        registrarLog('Modal de energia baixa');
         sessionStorage.setItem('exibir_modal_sem_energia', false); // Para não exibir mais de 1 vez
         abrirModal({
           titulo: "⚡ Sua energia acabou!",
@@ -699,14 +976,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // --- FUNÇÃO 1: Modal de Confirmação de E-mail ---
     function exibirModalConfirmacaoEmail(onCloseCallback) {
-      // Registra na base o aparecimento do modal de confirmação de e-mail
-      try {
-        fetch("/api/registrar-acesso", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pagina: "Modal de confirmação de e-mail" })
-        });
-      } catch (err) {console.warn("Falha ao registrar abertura do modal de confirmação de email:", err)};
+      registrarLog("Modal de confirmaçào de e-mail");
       abrirModal({
         textoPrimario: "Fechar",
         textoSecundario: "Reenviar e-mail",
@@ -765,18 +1035,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       // --- CONTROLE DE FREQUÊNCIA DO MODAL DE E-MAIL (1 vez por dia) ---
       const CHAVE_TEMPO_AVISO_EMAIL = "ultimo_horario_aviso_email_exibido";
-      //if (idsReservados.includes(Number(idUsuario))) localStorage.removeItem(CHAVE_TEMPO_AVISO_EMAIL);
       const ultimoAvisoEmail = localStorage.getItem(CHAVE_TEMPO_AVISO_EMAIL);
       const agora = new Date().getTime();
       const UM_DIA_EM_MS = 24 * 60 * 60 * 1000; // 24 horas
 
       // Deve exibir se o e-mail NÃO está confirmado e (nunca apareceu OU já passou 1 dia)
       const deveExibirAvisoEmail = !emailConfirmado && (!ultimoAvisoEmail || (agora - parseInt(ultimoAvisoEmail) > UM_DIA_EM_MS));
+
       if (deveExibirAvisoEmail) {
         localStorage.setItem(CHAVE_TEMPO_AVISO_EMAIL, agora.toString());
-        exibirModalConfirmacaoEmail(exibirModalEnergiaBaixa);
+        exibirModalConfirmacaoEmail(() => {
+          verificarEExibirModalMissoes(exibirModalEnergiaBaixa, dadosMissoes);
+        });
         spanEmail.textContent = emailUsuario;
-      } else exibirModalEnergiaBaixa();
+      } else {
+        verificarEExibirModalMissoes(exibirModalEnergiaBaixa, dadosMissoes);
+      }
     } catch (e) {
       console.error("Erro ao tentar gerenciar modais de entrada", e);
     }
@@ -802,11 +1076,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       },
       onSecundario: async () => {
         sessionStorage.setItem("ir_para_aba_registro", true);
-        await fetch("/pagina_destino", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pagina_destino: "Modal de Registro -> Registro" })
-        });
+        registrarLog('Modal de Registro -> Registro');
         window.location.href = "/";
       }
     });
@@ -864,7 +1134,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Função que roda a cada 5 segundos
   function verificarAtualizacaoEnergia() {
     if (document.visibilityState !== 'visible' || MODO_VISITANTE) return;
-    //if (isAdmin) console.log("Verificando mudança de dia");
     //if (isAdmin) localStorage.removeItem('ultima_data_verificacao');
 
     // Pega a data local correta no formato YYYY-MM-DD respeitando o fuso do Brasil
@@ -900,10 +1169,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  if (!MODO_VISITANTE) {
+  // Consulta recarga de energia e missões semanais
+  if (!MODO_VISITANTE) { 
     setInterval(verificarAtualizacaoEnergia, 5000); // Dispara a verificação a cada 5 segundos (5000 ms)
+
+    // Verifica se já passou o prazo salvo no localStorage para consultar missões novamente
+    const proximaVerificacao = Number(localStorage.getItem('proxima_verificacao_missoes') || 0);
+    const deveVerificarMissoes = isAdmin && Date.now() >= proximaVerificacao;
+    const urlRecarga = deveVerificarMissoes
+      ? '/api/recarregar_energia_usuario?verificar_missoes=true'
+      : '/api/recarregar_energia_usuario';
+
     // Chama a rota do backend para processar a recarga de energia do novo dia
-    fetch('/api/recarregar_energia_usuario', {
+    fetch(urlRecarga, {
       method: 'GET',
       headers: {'Content-Type': 'application/json'}
     })
@@ -918,15 +1196,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.bonusTemasAtuais = data.bonus_energia;
         permitir_escolher_tema = true;
       } else console.error("Não foi possível atualizar a energia:", data);
-      exibirModalEmailOuEnergia();
+      exibirModalEmailOuEnergia(data.dados_missoes || null);
     })
     .catch(error => {
       console.error("Erro na requisição de energia:", error);
     });
   }
 
-  // Registra acesso em home na base de dados junto com a origem e mídia do usuário
-  // (se veio do Google Ads ou Microsoft Ads por exemplo)
+  // Registra acesso em home na base e origem do Usuário (GoogleAds ou MicrosoftAds)
   fetch('/api/registrar-acesso', {
     method: 'POST',
     headers: {
@@ -937,9 +1214,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       id_visitante: idVisitante,
       id_usuario: idUsuario
     })
-  })
-  .then(response => response.json()) // Talvez não seja necessário este .then
-  .catch(error => console.error("Erro ao registrar acesso:", error));
+  }).catch(error => console.error("Erro ao registrar acesso:", error));
 
   // Adiciona áudio no clique dos botões
   if (btnModalPrimario) {
@@ -993,11 +1268,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (btn_logout) {
     btn_logout.addEventListener("click", async () => {
         playSound("click");
-        await fetch("/pagina_destino", { // Registra na base que o usuário foi para a tela de login
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pagina_destino: "Home -> Login" })
-        });
+        registrarLog('Home -> Login');
         window.location.href = "/";
       });
   };

@@ -15,6 +15,7 @@ export const coresDificuldade = {
   extremo: "#3e16d1"
 };
 export const maxEnergiaVisitantes = 25;
+export const maxPontuacaoTema = 5000;
 
 let idUsuario;
 let idVisitante;
@@ -288,13 +289,13 @@ export async function fetchAutenticado(url, options = {}) {
   const response = await fetch(url, config);
 
   if (response.status === 401) {
+    localStorage.setItem("auth_message", "Sessão expirada");
     window.location.href = "/login";
   }
 
   // 🚧 Site em manutenção
   if (response.status === 503) {
     localStorage.setItem("auth_message", "Site em manutenção");
-
     window.location.href = "/login";
     return response;
   }

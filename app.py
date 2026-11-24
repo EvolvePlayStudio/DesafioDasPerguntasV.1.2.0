@@ -66,7 +66,7 @@ CONFIG_MAX_COTAS_RANKING = {
         'Extremo':  6
     },
     'Lenda': {
-        'Fácil':    0, # Depois ver se pode trazer fáceis para cá (talvez o usuário escolha nas opções)
+        'Fácil':    0, # Parece não estar funcionando, ainda traz as perguntas de nível fácil no Lenda
         'Médio':    2,
         'Difícil':  16,
         'Extremo':  8
@@ -638,18 +638,17 @@ def api_regras_pontuacao():
             message="Erro ao carregar regras de pontuação"
         ), 500
 
-def buscar_pontuacoes_usuario():
-    """
-    Busca pontuações do usuário para todos os temas ativos.
-    Caso o usuário ainda não tenha pontuação em um tema, retorna 0.
-    """
+def buscar_pontuacoes_usuario(cur=None):
+    """Busca pontuações do usuário para os temas ativos"""
     pontuacoes_usuario = {}
     id_usuario = session['id_usuario']
+    abrir_conexao = cur is None
+    conn = None
 
-    conn = cur = None
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        if abrir_conexao:
+            conn = get_db_connection()
+            cur = conn.cursor()
 
         cur.execute("""
             SELECT
@@ -663,16 +662,18 @@ def buscar_pontuacoes_usuario():
             ORDER BY t.nome
         """, (id_usuario,))
 
-        pontuacoes_usuario = {
-            tema: pontuacao
-            for tema, pontuacao in cur.fetchall()
-        }
+        for row in cur.fetchall():
+            if isinstance(row, dict):
+                pontuacoes_usuario[row['tema']] = row['pontuacao']
+            else:
+                pontuacoes_usuario[row[0]] = row[1]
 
     except Exception:
         app.logger.exception("Erro ao tentar obter pontuações do usuário %s", id_usuario)
     finally:
-        if cur: cur.close()
-        if conn: conn.close()
+        if abrir_conexao:
+            if cur: cur.close()
+            if conn: conn.close()
 
     return pontuacoes_usuario
 
@@ -1580,16 +1581,11 @@ def listar_perguntas():
         app.logger.error("Visitante não autenticado")
         return jsonify({'erro': 'Visitante não autenticado'}), 401
     
-    # Conexão com banco
     conn = cur = None
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
-    except Exception:
-        app.logger.exception("1.Erro ao conectar para buscar perguntas. User: %s", id_usuario)
-        return jsonify({'erro': 'Erro ao tentar conectar para buscar novas perguntas'}), 500
 
-    try:
         select_clause = ",\n".join(QUESTION_CONFIG['select_cols'])
         select_cols_visitante = ",\n".join(QUESTION_CONFIG['select_cols_visitante'])
     
@@ -1708,19 +1704,21 @@ def listar_perguntas():
             # Inclui a resposta correta com total segurança apenas no modo revisão
             if modo == 'revisao': item.update({'resposta_correta': row['resposta_correta']})
             perguntas_por_dificuldade.setdefault(dificuldade, []).append(item)
+
+        # Busca as pontuações do usuário nos temas
+        pontuacoes_usuario = buscar_pontuacoes_usuario(cur) if not modo_visitante else {}
+            
+        return jsonify({
+            'perguntas': perguntas_por_dificuldade,
+            'pontuacoes_usuario': pontuacoes_usuario,
+        })
+    
     except Exception:
         app.logger.exception("2.Erro ao consultar perguntas. User: %s", id_usuario)
         return jsonify({'erro': 'Erro interno ao consultar perguntas'}), 500
     finally:
         if cur: cur.close()
         if conn: conn.close()
-
-    pontuacoes_usuario = buscar_pontuacoes_usuario() if not modo_visitante else {}
-
-    return jsonify({
-        'perguntas': perguntas_por_dificuldade,
-        'pontuacoes_usuario': pontuacoes_usuario,
-    })
 
 def montar_sessao_usuario(pool_perguntas, ranking_usuario):
     max_cotas = CONFIG_MAX_COTAS_RANKING.get(ranking_usuario, CONFIG_MAX_COTAS_RANKING['Iniciante'])
@@ -1989,8 +1987,7 @@ def verificar_bonus_temas():
     
 def atualizar_energia_usuario(cur, id_usuario, energia_atual, u_sessao):
     """
-    Calcula o ganho acumulado de energia (+5 por dia de ausência, máx. +50)
-    e atualiza o registro no banco de dados.
+    Calcula o ganho acumulado de energia e atualiza o registro no banco de dados.
     """
     agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
     nova_energia = energia_atual
@@ -2016,17 +2013,19 @@ def atualizar_energia_usuario(cur, id_usuario, energia_atual, u_sessao):
     return nova_energia
 
 @app.route('/api/recarregar_energia_usuario', methods=['GET'])
-def recarregar_energia_home():
+def recarregar_energia_home():   
     id_usuario = session.get('id_usuario')
     if not id_usuario:
         return jsonify(success=False, message="Sessão expirada"), 401
 
+    verificar_missoes = request.args.get('verificar_missoes') == 'true'
+
     conn = cur = None
-    try:
+    try:       
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
 
-        # 1. PEGAR APENAS AS INFORMAÇÕES NECESSÁRIAS NO BANCO
+        # 1. PEGA AS INFORMAÇÕES NECESSÁRIAS NO BANCO
         cur.execute("""
             SELECT perguntas_restantes, ultima_sessao
             FROM usuarios_registrados WHERE id_usuario = %s
@@ -2034,7 +2033,7 @@ def recarregar_energia_home():
         usuario = cur.fetchone()
 
         if not usuario:
-            return jsonify(success=False, message="Usuário não encontrado"), 404
+            return jsonify(success=False, message="Usuário não encontrado"), 404        
 
         # 2. ATUALIZA AS INFORMAÇÕES NO BANCO
         energia_antiga = usuario['perguntas_restantes']
@@ -2047,29 +2046,71 @@ def recarregar_energia_home():
 
         # 3. Analisa se o usuário possui bônus válidos para algum tema
         agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
-        cur.execute("SELECT tema, perguntas_bonus_restantes, expiracao FROM bonus_temas_usuario WHERE id_usuario = %s AND expiracao > %s AND perguntas_bonus_restantes > 0", (id_usuario, agora_sp))
-        bonus_energia_raw = cur.fetchall()
-
-        # Converte as tuplas para lista de dicionários
+        cur.execute("""
+            SELECT tema, perguntas_bonus_restantes, expiracao
+            FROM bonus_temas_usuario
+            WHERE id_usuario = %s AND expiracao > %s AND perguntas_bonus_restantes > 0
+        """, (id_usuario, agora_sp))
+        bonus_energia_raw = cur.fetchall()   
+               
         bonus_energia = [
             {
                 "tema": row["tema"],
                 "perguntas_bonus_restantes": row["perguntas_bonus_restantes"],
                 "expiracao": str(row["expiracao"])
-            } 
+            }
             for row in bonus_energia_raw
         ]
 
-        # 🔑 Salva de fato as alterações no banco de dados da Home
+        # 4. Verificação opcional de missões semanais e pontuações
+        dados_missoes = None
+        if verificar_missoes:
+            # Marca missões antigas vencidas como Expirada
+            cur.execute("""
+                UPDATE missoes_semanais_usuarios
+                SET status = 'Expirada',
+                    atualizado_em = date_trunc('second', (NOW() AT TIME ZONE 'America/Sao_Paulo'))
+                WHERE id_usuario = %s
+                  AND status IN ('Disponível', 'Ativa')
+                  AND data_expiracao IS NOT NULL
+                  AND data_expiracao <= %s
+            """, (id_usuario, agora_sp))
+
+            # Busca missões vigentes do ciclo atual (Disponível ou Ativa/Concluída/Falhou dentro do prazo)
+            cur.execute("""
+                SELECT id, categoria_bloco, tipo_objetivo, parametros, escolhida,
+                       progresso_atual, tentativas_gastas, status, data_expiracao
+                FROM missoes_semanais_usuarios
+                WHERE id_usuario = %s
+                  AND (data_expiracao IS NULL OR data_expiracao > %s)
+                ORDER BY id ASC
+            """, (id_usuario, agora_sp))
+            missoes_vigentes = cur.fetchall()
+
+            # Converte data_expiracao para string ISO para serializar no JSON
+            for m in missoes_vigentes:
+                if m['data_expiracao']:
+                    m['data_expiracao'] = m['data_expiracao'].isoformat()
+
+            pontuacoes_usuario = buscar_pontuacoes_usuario(cur)
+
+            dados_missoes = {
+                'missoes': missoes_vigentes,
+                'pontuacoes_usuario': pontuacoes_usuario
+            }
+
         conn.commit()
 
-        # 3. RETORNAR PARA O FRONTEND A NOVA ENERGIA
-        return jsonify({
+        resposta = {
             'success': True,
             'perguntas_restantes': nova_energia,
             'energia_ganha': nova_energia - energia_antiga,
             'bonus_energia': bonus_energia
-        })
+        }
+        if dados_missoes is not None:
+            resposta['dados_missoes'] = dados_missoes
+
+        return jsonify(resposta)
     except Exception:
         app.logger.exception("Erro ao recarregar energia na home")
         return jsonify({'success': False, 'message': 'Erro interno'}), 500
