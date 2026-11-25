@@ -57,19 +57,19 @@ CONFIG_MAX_COTAS_RANKING = {
         'Fácil':    3,
         'Médio':    12,
         'Difícil':  14,
-        'Extremo':  3
+        'Extremo':  2
     },
     'Sábio': {
         'Fácil':    1,
         'Médio':    4,
         'Difícil':  15,
-        'Extremo':  6
+        'Extremo':  4
     },
     'Lenda': {
         'Fácil':    0, # Parece não estar funcionando, ainda traz as perguntas de nível fácil no Lenda
         'Médio':    2,
         'Difícil':  16,
-        'Extremo':  8
+        'Extremo':  7
     }
 }
 
