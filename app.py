@@ -12,6 +12,7 @@ import traceback
 import random, string, time
 import mercadopago
 import random
+import json
 from PIL import Image, ImageEnhance, ImageFilter
 from io import BytesIO
 import urllib.parse
@@ -63,7 +64,7 @@ CONFIG_MAX_COTAS_RANKING = {
         'Fácil':    1,
         'Médio':    4,
         'Difícil':  14,
-        'Extremo':  3
+        'Extremo':  4
     },
     'Lenda': {
         'Fácil':    0, # Parece não estar funcionando, ainda traz as perguntas de nível fácil no Lenda
@@ -270,10 +271,9 @@ def webhook_mercado_pago():
         # Se não for JSON puro, tenta pegar de formulário ou dados da requisição
         data = request.form.to_dict()
         if not data and request.data:
-            import json
             try:
                 data = json.loads(request.data.decode('utf-8'))
-            except:
+            except Exception:
                 data = {}
 
     # Se ainda estiver vazio, tenta pegar pelos query parameters (muito comum em testes de painel)
@@ -2062,42 +2062,41 @@ def recarregar_energia_home():
             for row in bonus_energia_raw
         ]
 
-        # 4. Verificação opcional de missões semanais e pontuações
+        # 4. Verifica missões semanais e pontuações
         dados_missoes = None
-        if verificar_missoes:
-            # Marca missões antigas vencidas como Expirada
-            cur.execute("""
-                UPDATE missoes_semanais_usuarios
-                SET status = 'Expirada',
-                    atualizado_em = date_trunc('second', (NOW() AT TIME ZONE 'America/Sao_Paulo'))
-                WHERE id_usuario = %s
-                  AND status IN ('Disponível', 'Ativa')
-                  AND data_expiracao IS NOT NULL
-                  AND data_expiracao <= %s
-            """, (id_usuario, agora_sp))
+        # Marca missões antigas vencidas como Expirada
+        cur.execute("""
+            UPDATE missoes_semanais_usuarios
+            SET status = 'Expirada',
+                atualizado_em = date_trunc('second', (NOW() AT TIME ZONE 'America/Sao_Paulo'))
+            WHERE id_usuario = %s
+                AND status IN ('Disponível', 'Ativa')
+                AND data_expiracao IS NOT NULL
+                AND data_expiracao <= %s
+        """, (id_usuario, agora_sp))
 
-            # Busca missões vigentes do ciclo atual (Disponível ou Ativa/Concluída/Falhou dentro do prazo)
-            cur.execute("""
-                SELECT id, categoria_bloco, tipo_objetivo, parametros, escolhida,
-                       progresso_atual, tentativas_gastas, status, data_expiracao
-                FROM missoes_semanais_usuarios
-                WHERE id_usuario = %s
-                  AND (data_expiracao IS NULL OR data_expiracao > %s)
-                ORDER BY id ASC
-            """, (id_usuario, agora_sp))
-            missoes_vigentes = cur.fetchall()
+        # Busca missões vigentes do ciclo atual (Disponível ou Ativa/Concluída/Falhou dentro do prazo)
+        cur.execute("""
+            SELECT id, categoria, tipo_objetivo, parametros,
+                    progresso_atual, tentativas_gastas, status, data_expiracao
+            FROM missoes_semanais_usuarios
+            WHERE id_usuario = %s AND status IN ('Disponível', 'Ativa', 'Concluída', 'Falhou')
+                AND (data_expiracao IS NULL OR data_expiracao > %s)
+            ORDER BY id ASC
+        """, (id_usuario, agora_sp))
+        missoes_vigentes = cur.fetchall()
 
-            # Converte data_expiracao para string ISO para serializar no JSON
-            for m in missoes_vigentes:
-                if m['data_expiracao']:
-                    m['data_expiracao'] = m['data_expiracao'].isoformat()
+        # Converte data_expiracao para string ISO para serializar no JSON
+        for m in missoes_vigentes:
+            if m['data_expiracao']:
+                m['data_expiracao'] = m['data_expiracao'].isoformat()
 
-            pontuacoes_usuario = buscar_pontuacoes_usuario(cur)
+        pontuacoes_usuario = buscar_pontuacoes_usuario(cur)
 
-            dados_missoes = {
-                'missoes': missoes_vigentes,
-                'pontuacoes_usuario': pontuacoes_usuario
-            }
+        dados_missoes = {
+            'missoes': missoes_vigentes,
+            'pontuacoes_usuario': pontuacoes_usuario
+        }
 
         conn.commit()
 
@@ -2763,6 +2762,104 @@ def registrar_interacao_anuncio():
     except Exception:
         app.logger.exception("Erro ao tentar registrar interação em anúncio")
         return jsonify({"erro": "Erro ao tentar registrar interação em anúncio"}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+@app.route('/api/missoes/registrar-disponiveis', methods=['POST'])
+def registrar_missoes_disponiveis():
+    dados = request.get_json(silent=True)
+    if not dados:
+        return jsonify({"erro": "Dados inválidos"}), 400
+
+    id_usuario = session.get("id_usuario")
+    if not id_usuario:
+        return jsonify({"erro": "Usuário não identificado"}), 401
+
+    missoes = dados.get("missoes")
+    if not isinstance(missoes, list) or len(missoes) == 0:
+        return jsonify({"erro": "Nenhuma missão enviada"}), 400
+
+    expirar_anteriores = bool(dados.get("expirar_anteriores", True))
+    duracao_horas = int(dados.get("duracao_janela_horas") or 72)
+
+    conn = cur = None
+    try:
+        agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
+        data_expiracao = agora_sp + timedelta(hours=duracao_horas)
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        if expirar_anteriores:
+            cur.execute(
+                """
+                UPDATE missoes_semanais_usuarios
+                SET status = 'Expirada',
+                    atualizado_em = %s
+                WHERE id_usuario = %s
+                  AND status = 'Disponível'
+                """,
+                (agora_sp, id_usuario),
+            )
+
+        inseridas = 0
+        for m in missoes:
+            categoria = m.get("categoria")
+            if categoria not in ("Global", "Temática"):
+                continue
+
+            codigo_missao = m.get("codigo_missao")
+            parametros = {
+                "codigo_missao": codigo_missao,
+                "descricao": m.get("descricao", ""),
+                "dificuldade": m.get("dificuldade", "Médio"),
+                "temas": m.get("temas") or [],
+            }
+
+            cur.execute(
+                """
+                INSERT INTO missoes_semanais_usuarios (
+                    id_usuario,
+                    categoria,
+                    tipo_objetivo,
+                    parametros,
+                    progresso_atual,
+                    tentativas_gastas,
+                    status,
+                    data_inicio,
+                    data_expiracao,
+                    criado_em,
+                    atualizado_em
+                )
+                VALUES (%s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    id_usuario,
+                    categoria,
+                    codigo_missao,
+                    json.dumps(parametros, ensure_ascii=False),
+                    0,
+                    0,
+                    "Disponível",
+                    None,
+                    data_expiracao,
+                    agora_sp,
+                    agora_sp,
+                ),
+            )
+            inseridas += 1
+
+        conn.commit()
+        return jsonify({
+            "status": "sucesso",
+            "registradas": inseridas,
+            "data_expiracao": data_expiracao.isoformat(),
+        }), 201
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.exception("Erro ao tentar registrar missões disponíveis")
+        return jsonify({"erro": "Erro ao tentar registrar missões disponíveis"}), 500
     finally:
         if cur: cur.close()
         if conn: conn.close()

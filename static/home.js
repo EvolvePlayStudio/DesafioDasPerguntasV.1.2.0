@@ -1,5 +1,5 @@
 import { coresDificuldade, deveEncerrarQuiz, obterPerguntasDisponiveis, fetchAutenticado, exibirMensagem, obterInfoRankingAtual, pontuacaoTemaPadraoVisitantes, registrarInteracaoAnuncio, simbolosRankings, simbolosTemas, sincronizarPontuacoesVisitante, slugify, temas_disponiveis } from "./utils.js";
-import { criarMissoes, obterProgressoRankingPorPontos } from "./funcoesHome.js";
+import { criarMissoes, obterProgressoRankingPorPontos, registrarMissoesDisponiveis } from "./funcoesHome.js";
 import { playSound } from "./sound.js";
 
 const maxEnergiaParaVisitantes = 30;
@@ -659,40 +659,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function verificarEExibirModalMissoes(onFinishCallback, dadosMissoes = null) {
-    // Aparece apenas para usuários logados e admins
-    if (typeof onFinishCallback === 'function') onFinishCallback();
-      return;
-    if (MODO_VISITANTE || !isAdmin || !dadosMissoes) {
-      if (typeof onFinishCallback === 'function') onFinishCallback();
-      return;
-    }
-
-    // Se já existe ciclo ativo no banco, sincroniza o localStorage e segue adiante
-    const missoesAtivas = (dadosMissoes.missoes || []).filter(m => m.escolhida && m.status === 'Ativa');
-    if (missoesAtivas.length > 0 && missoesAtivas[0].data_expiracao) {
-      const timestampExpiracao = new Date(`${missoesAtivas[0].data_expiracao}-03:00`).getTime();
-      localStorage.setItem('proxima_verificacao_missoes', timestampExpiracao.toString());
-      if (typeof onFinishCallback === 'function') onFinishCallback();
-      return;
-    }
-
     const corAbaDesselecionada = '#c9c9c9';
 
-    // Garante que os estoques estejam carregados antes de gerar missões baseadas neles
-    let estoques = window.estoquesTemas;
-    if (!estoques && window.promessaEstoques) {
-      const timeoutPromessa = new Promise(resolve => setTimeout(() => resolve(null), 3500));
-      estoques = await Promise.race([window.promessaEstoques, timeoutPromessa]);
+    function parseExpiracaoMs(dataExpiracao) {
+      if (!dataExpiracao) return NaN;
+      const str = String(dataExpiracao).trim();
+      // Se já tiver 'Z' ou offset (+/-HH:MM ou +/-HH), usa direto; senão assume -03:00
+      const normalizada = /(?:Z|[+-]\d{2}(?::?\d{2})?)$/i.test(str) ? str : `${str.replace(" ", "T")}-03:00`;
+      return new Date(normalizada).getTime();
     }
-
-    if (!estoques || !window._estoquesCarregados || typeof estoques !== 'object') {
-      console.warn("Estoques de perguntas indisponíveis no momento para o modal de missões semanais.");
-      if (typeof onFinishCallback === 'function') onFinishCallback();
-      return;
-    }
-
-    const pontuacoesUsuario = dadosMissoes.pontuacoes_usuario || {};
-    const missoesDisponiveis = criarMissoes(estoques, pontuacoesUsuario);
 
     const formatarDificuldade = (dif) => {
       const chave = String(dif || "médio")
@@ -720,14 +695,58 @@ document.addEventListener("DOMContentLoaded", async () => {
       };
     };
 
+    if (typeof onFinishCallback === 'function') onFinishCallback();
+    return;
+
+    // Aparece apenas para usuários logados e admins
+    if (MODO_VISITANTE || !isAdmin || !dadosMissoes) {
+      if (typeof onFinishCallback === 'function') onFinishCallback();
+      return;
+    }
+
+    const listaBanco = Array.isArray(dadosMissoes.missoes) ? dadosMissoes.missoes : [];
+
+    // Se já existem missões com status 'Ativa' ou 'Disponível' no banco, sincroniza o prazo e não reabre o modal
+    const missoesEmAndamentoOuOfertaValidas = listaBanco.filter(m => {
+      if (m.status !== 'Ativa' && m.status !== 'Disponível') return false;
+      if (!m.data_expiracao) return true;
+      const expMs = parseExpiracaoMs(m.data_expiracao);
+      return !Number.isNaN(expMs) && Date.now() < expMs;
+    });
+
+    if (missoesEmAndamentoOuOfertaValidas.length > 0) {
+      if (typeof onFinishCallback === 'function') onFinishCallback();
+      return;
+    }
+
+    // 3. Sem ativa nem disponível no banco: garante estoques, gera novas e registra como 'Disponível'
+    let estoques = window.estoquesTemas;
+    if (!estoques && window.promessaEstoques) {
+      const timeoutPromessa = new Promise(resolve => setTimeout(() => resolve(null), 3500));
+      estoques = await Promise.race([window.promessaEstoques, timeoutPromessa]);
+    }
+
+    if (!estoques || !window._estoquesCarregados || typeof estoques !== 'object') {
+      console.warn("Estoques de perguntas indisponíveis no momento para o modal de missões semanais.");
+      if (typeof onFinishCallback === 'function') onFinishCallback();
+      return;
+    }
+
+    const pontuacoesUsuario = dadosMissoes.pontuacoes_usuario || {};
+    const missoesParaExibir = criarMissoes(estoques, pontuacoesUsuario);
+
+    await registrarMissoesDisponiveis(missoesParaExibir, {
+      expirarAnteriores: true,
+      duracaoJanelaHoras: 72
+    });
+
     // Cards clicáveis para escolha das missões
-    const renderOpcoes = (lista, grupoName) => lista.map(m => {
-      console.log(`Dificuldade: ${m.dificuldade}`)
+    const renderOpcoes = (lista, grupoName) => (lista || []).map(m => {
       const dif = formatarDificuldade(m.dificuldade);
-      console.log(`Dificuldade formatada: ${dif}`)
+      const idOpcao = m.id_missao ?? m.id;
       return `
         <label class="card-opcao-missao" data-grupo="${grupoName}" style="display: block; font-size: 14px; line-height: 1.4; margin: 8px 0; padding: 10px 12px; border: 1px solid #444; border-radius: 6px; background: rgba(255, 255, 255, 0.02); cursor: pointer; transition: background 0.15s, border-color 0.15s;">
-          <input type="radio" name="${grupoName}" value="${m.id}" style="display: none;">
+          <input type="radio" name="${grupoName}" value="${idOpcao}" style="display: none;">
           <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
             <span class="rotulo-dificuldade-missao" style="font-size: 14px; font-weight: 600; line-height: 1.3;">Dificuldade:</span>
             <span style="display: inline-block; font-size: 11px; font-weight: bold; letter-spacing: 0.3px; color: ${dif.cor}; background: rgba(0, 0, 0, 0.45); border: 1px solid ${dif.cor}; border-radius: 4px; padding: 1px 7px; line-height: 1.3;">
@@ -838,18 +857,19 @@ document.addEventListener("DOMContentLoaded", async () => {
           <span style="text-align: center; line-height: 1.2;">Meus Rankings</span>
         </button>
       </div>
-
       <div id="painel-aba-missoes" style="max-height: 65vh; overflow-y: auto; padding-right: 4px;">
         <div style="text-align: left; margin-bottom: 12px;">
           <strong>🌐 Global</strong>
-          ${renderOpcoes(missoesDisponiveis.globais, 'missao_global')}
+          ${renderOpcoes(missoesParaExibir.globais, 'missao_global')}
         </div>
         <div style="text-align: left;">
           <strong>📌 Temática</strong>
-          ${renderOpcoes(missoesDisponiveis.tematicas, 'missao_tematica')}
+          ${renderOpcoes(missoesParaExibir.tematicas, 'missao_tematica')}
         </div>
+        <p style="margin-top: 10px; margin-bottom: 0; font-size: 13px; opacity: 0.78; text-align: left;">
+          <strong>Obs:</strong> Você pode acompanhar seu progresso de missões na tela de perfil
+        </p>
       </div>
-
       <div id="painel-aba-rankings" style="display: none; text-align: left;">
         ${renderTabelaRankings()}
       </div>
@@ -869,20 +889,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Restaura aparência padrão do botão antes de fechar o modal para não afetar outros modais
         btnModalPrimario.style.opacity = "";
         btnModalPrimario.style.cursor = "";
-
-        //localStorage.setItem('proxima_verificacao_missoes', Date.now() + 7 * 24 * 60 * 60 * 1000)
-        localStorage.setItem('proxima_verificacao_missoes', Date.now() + 60 * 1000)
-
         modal.classList.add("hidden");
         if (typeof onFinishCallback === 'function') onFinishCallback();
       },
       onSecundario: () => {
         btnModalPrimario.style.opacity = "";
         btnModalPrimario.style.cursor = "";
-
-        //localStorage.setItem('proxima_verificacao_missoes', Date.now() + 7 * 24 * 60 * 60 * 1000)
-        localStorage.setItem('proxima_verificacao_missoes', Date.now() + 60 * 1000)
-
         modal.classList.add("hidden");
         if (typeof onFinishCallback === 'function') onFinishCallback();
       }
@@ -1173,15 +1185,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!MODO_VISITANTE) { 
     setInterval(verificarAtualizacaoEnergia, 5000); // Dispara a verificação a cada 5 segundos (5000 ms)
 
-    // Verifica se já passou o prazo salvo no localStorage para consultar missões novamente
-    const proximaVerificacao = Number(localStorage.getItem('proxima_verificacao_missoes') || 0);
-    const deveVerificarMissoes = isAdmin && Date.now() >= proximaVerificacao;
-    const urlRecarga = deveVerificarMissoes
-      ? '/api/recarregar_energia_usuario?verificar_missoes=true'
-      : '/api/recarregar_energia_usuario';
-
     // Chama a rota do backend para processar a recarga de energia do novo dia
-    fetch(urlRecarga, {
+    fetch('/api/recarregar_energia_usuario', {
       method: 'GET',
       headers: {'Content-Type': 'application/json'}
     })
@@ -1202,19 +1207,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.error("Erro na requisição de energia:", error);
     });
   }
-
-  // Registra acesso em home na base e origem do Usuário (GoogleAds ou MicrosoftAds)
-  fetch('/api/registrar-acesso', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      pagina: 'Home',
-      id_visitante: idVisitante,
-      id_usuario: idUsuario
-    })
-  }).catch(error => console.error("Erro ao registrar acesso:", error));
+  registrarLog('Home');
 
   // Adiciona áudio no clique dos botões
   if (btnModalPrimario) {
