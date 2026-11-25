@@ -42,28 +42,28 @@ TAMANHO_SESSAO = 20
 
 CONFIG_MAX_COTAS_RANKING = {
     'Iniciante': {
-        'Fácil':    14,
+        'Fácil':    13,
         'Médio':    12,
         'Difícil':  5,
         'Extremo':  0
     },
     'Aprendiz': {
-        'Fácil':    10,
-        'Médio':    14,
+        'Fácil':    9,
+        'Médio':    13,
         'Difícil':  10,
         'Extremo':  1
     },
     'Estudante': {
         'Fácil':    3,
         'Médio':    12,
-        'Difícil':  14,
+        'Difícil':  12,
         'Extremo':  2
     },
     'Sábio': {
         'Fácil':    1,
         'Médio':    4,
-        'Difícil':  15,
-        'Extremo':  4
+        'Difícil':  14,
+        'Extremo':  3
     },
     'Lenda': {
         'Fácil':    0, # Parece não estar funcionando, ainda traz as perguntas de nível fácil no Lenda
