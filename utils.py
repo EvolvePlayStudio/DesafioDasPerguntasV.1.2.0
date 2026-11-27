@@ -15,6 +15,7 @@ AMAZON_TRACKING_ID = os.getenv('AMAZON_TRACKING_ID')
 ACCESS_TOKEN_MERCADO_PAGO = os.getenv('ACCESS_TOKEN_MERCADO_PAGO')
 
 temas_disponiveis = ["Artes", "Astronomia", "Biologia", "Esportes", "Filosofia", "Física", "Geografia", "História", "Mídia", "Música", "Química", "Variedades"]
+PONTUACAO_MAXIMA_TOTAL = 60000
 
 tz_sp = ZoneInfo("America/Sao_Paulo")
 email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"

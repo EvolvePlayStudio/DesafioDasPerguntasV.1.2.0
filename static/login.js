@@ -495,8 +495,10 @@ document.addEventListener('DOMContentLoaded', function () {
             body: JSON.stringify({pagina: `Login - erro: ${data.message}`})
           });
           if (lbl_mensagem_login) {
+            let mensagem_erro = data.message || "";
+            if (mensagem_erro.toLowerCase().includes("e-mail não registrado")) mensagem_erro = "E-mail não registrado";
             lbl_mensagem_login.style.color = 'red';
-            lbl_mensagem_login.textContent = data.message || 'Falha no login';
+            lbl_mensagem_login.textContent = mensagem_erro || 'Falha no login';
             lbl_mensagem_login.style.display = '';
           }
         }

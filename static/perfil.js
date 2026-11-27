@@ -1,26 +1,167 @@
 import { playSound } from "./sound.js"
-import { pontuacaoTemaPadraoVisitantes, sincronizarPontuacoesVisitante} from "./utils.js";
+import { maxPontuacaoTema, maxPontuacaoTotal, pontuacaoTemaPadraoVisitantes, registrarLog, sincronizarPontuacoesVisitante, CONQUISTAS_CATALOGO} from "./utils.js";
 
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 let pontuacoes = {};
 let animando = false;
-let temas = document.querySelectorAll(".tema-item");
 const select = document.getElementById("ordenacao");
-const TEMAS_MAX_PONTOS = 5000;
-const TOTAL_MAX_PONTOS = TEMAS_MAX_PONTOS * (temas.length - 1);
 const barraProgressoTotal = document.getElementById("barra-progresso-total");
 const spanPontosTotais = document.getElementById("pontos-totais");
 const spanPorcentagemProgresso = document.getElementById("porcentagem-progresso");
+const ORDEM_TIER = {bronze: 1, prata: 2, ouro: 3};
+let filtroConquistasAtual = "todas";
+const formatadorNumero = new Intl.NumberFormat("pt-BR");
+const selectFiltroConquistas = document.getElementById("filtro-conquistas");
+const MEDALHAS_TIER = {bronze: "🥉", prata: "🥈", ouro: "🥇"};
 
-document.addEventListener("DOMContentLoaded", iniciarPerfil);
+document.addEventListener("DOMContentLoaded", () => {
+  configurarAbas();
+  iniciarPerfil();
+});
+
+function formatarValorConquista(valor) {
+  return formatadorNumero.format(Number(valor) || 0);
+}
+
+if (selectFiltroConquistas) {
+  selectFiltroConquistas.addEventListener("change", (e) => {
+    if (MODO_VISITANTE) return;
+    playSound("click");
+    renderizarConquistas(CONQUISTAS_CATALOGO, estadoConquistas, e.target.value);
+  });
+}
+
+function renderizarAvisoVisitanteConquistas() {
+  const lista = document.getElementById("lista-conquistas");
+  const filtro = document.getElementById("filtro-conquistas");
+  if (filtro) filtro.style.display = "none";
+  if (!lista) return;
+
+  lista.innerHTML = `
+    <div class="aviso-visitante-conquistas">
+      <p class="aviso-visitante-titulo">🔒 Conquistas disponíveis para contas cadastradas</p>
+      <p class="aviso-visitante-texto">Crie uma conta para liberar as conquistas e salvar seu progresso de troféus.</p>
+    </div>
+  `;
+}
+
+function configurarAbas() {
+  const abas = document.querySelectorAll(".aba-btn");
+  const paineis = document.querySelectorAll(".painel-aba");
+
+  abas.forEach(aba => {
+    aba.addEventListener("click", () => {
+      playSound("click");
+      // Rola a scroll para o topo ao trocar de aba
+      const mainEl = document.querySelector("main");
+      if (mainEl) mainEl.scrollTo({ top: 0, behavior: "instant" });
+
+      const alvo = aba.getAttribute("aria-controls");
+      abas.forEach(btn => btn.setAttribute("aria-selected", String(btn === aba)));
+      paineis.forEach(painel => {painel.classList.toggle("ativo", painel.id === alvo)});
+
+      if (alvo === "painel-conquistas" || alvo.includes("conquista")) {
+        registrarLog('Perfil - Conquistas');
+        if (MODO_VISITANTE) {renderizarAvisoVisitanteConquistas()}
+        else {renderizarConquistas(CONQUISTAS_CATALOGO, estadoConquistas, filtroConquistasAtual)};
+      }
+    });
+  });
+}
+
+function renderizarConquistas(catalogo, estadoUsuario = {}, filtro = filtroConquistasAtual) {
+  const lista = document.getElementById("lista-conquistas");
+  if (!lista) return;
+
+  filtroConquistasAtual = filtro;
+
+  const itensOrdenados = [...catalogo].sort((a, b) => {
+    const pesoA = ORDEM_TIER[a.tier] ?? 99;
+    const pesoB = ORDEM_TIER[b.tier] ?? 99;
+    return pesoA - pesoB;
+  });
+
+  const itensFiltrados = itensOrdenados.filter(item => {
+    const info = estadoUsuario[item.id] || {};
+    const desbloqueada = Boolean(info.desbloqueada);
+
+    if (filtro === "desbloqueadas") return desbloqueada;
+    if (filtro === "bronze" || filtro === "prata" || filtro === "ouro") {
+      return item.tier === filtro;
+    }
+    return true;
+  });
+
+  lista.innerHTML = "";
+
+  if (itensFiltrados.length === 0) {
+    lista.innerHTML = `<p class="conquista-descricao">Nenhuma conquista encontrada para este filtro.</p>`;
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  itensFiltrados.forEach(item => {
+    const info = estadoUsuario[item.id] || {};
+    const atual = Math.min(info.atual ?? 0, item.meta);
+    const desbloqueada = Boolean(info.desbloqueada);
+    const atualFormatado = formatarValorConquista(atual);
+    const metaFormatada = formatarValorConquista(item.meta);
+
+    const card = document.createElement("div");
+    card.className = `conquista-card${desbloqueada ? " desbloqueada" : ""}`;
+    card.innerHTML = `
+      <div class="conquista-cabecalho">
+        <span class="conquista-medalha">${MEDALHAS_TIER[item.tier] ?? "🏅"}</span>
+        <span class="conquista-titulo">${item.titulo}</span>
+      </div>
+      <p class="conquista-descricao">${item.descricao}</p>
+      <span class="conquista-progresso">${desbloqueada ? "Desbloqueada" : `${atualFormatado} / ${metaFormatada}`}</span>
+    `;
+
+    fragment.appendChild(card);
+  });
+
+  lista.appendChild(fragment);
+}
+
+let estadoConquistas = {};
+
+async function buscarDadosPerfilBackend() {
+  try {
+    const res = await fetch("/api/perfil", {
+      headers: { "Accept": "application/json" }
+    });
+
+    if (!res.ok) {
+      throw new Error(`Erro HTTP ${res.status}`);
+    }
+
+    const dados = await res.json();
+    return {
+      pontuacoes: dados.pontuacoes || {},
+      conquistas: dados.conquistas || {}
+    };
+  }
+  catch (erro) {
+    console.error("Falha ao buscar dados do perfil:", erro);
+    return { pontuacoes: {}, conquistas: {} };
+  }
+}
 
 async function iniciarPerfil() {
   try {
     if (MODO_VISITANTE) {
       sincronizarPontuacoesVisitante(pontuacaoTemaPadraoVisitantes);
       pontuacoes = JSON.parse(localStorage.getItem("pontuacoes_visitante")) || {};
+      renderizarAvisoVisitanteConquistas();
     }
-    else pontuacoes = await buscarPontuacoesBackend();
+    else {
+      const dadosPerfil = await buscarDadosPerfilBackend();
+      pontuacoes = dadosPerfil.pontuacoes;
+      estadoConquistas = dadosPerfil.conquistas;
+      renderizarConquistas(CONQUISTAS_CATALOGO, estadoConquistas, "todas");
+    }
 
     // Ordem padrão: maior pontuação
     ordenarTemas("pontuacao-desc", pontuacoes);
@@ -31,7 +172,7 @@ async function iniciarPerfil() {
   }
   catch (erro) {
     console.error("Erro ao inicializar perfil:", erro);
-    aplicarPontuacoes(pontuacoes); // fallback visual
+    aplicarPontuacoes(pontuacoes);
   }
 }
 
@@ -65,11 +206,11 @@ async function animarBarrasSequencialmente(pontuacoes) {
   const temas = Array.from(document.getElementById("lista-temas").children);
 
   const totalFinal = Object.values(pontuacoes).reduce((acc, val) => acc + val, 0);
-  const percentualTotal = Math.min((totalFinal / TOTAL_MAX_PONTOS) * 100, 100);
+  const percentualTotal = Math.min((totalFinal / maxPontuacaoTotal) * 100, 100);
 
   // Animação da barra e porcentagem de progresso total
   animarBarraAte(barraProgressoTotal, percentualTotal),
-  animarNumero(spanPontosTotais, 0, totalFinal, 7000, TOTAL_MAX_PONTOS),
+  animarNumero(spanPontosTotais, 0, totalFinal, 7000, maxPontuacaoTotal),
   animarPorcentagem(spanPorcentagemProgresso, 0, percentualTotal, 7000)
 
   for (const temaItem of temas) {
@@ -80,7 +221,7 @@ async function animarBarrasSequencialmente(pontuacoes) {
     const barraTema = temaItem.querySelector(".barra-progresso");
     const spanPontosTema = temaItem.querySelector(".tema-pontos");
 
-    const percentualTema = Math.min((pontos / TEMAS_MAX_PONTOS) * 100, 100);
+    const percentualTema = Math.min((pontos / maxPontuacaoTema) * 100, 100);
     const duracao = calcularDuracao(percentualTema);
 
     barraTema.style.transition = "none";
@@ -89,7 +230,7 @@ async function animarBarrasSequencialmente(pontuacoes) {
     barraTema.style.transition = `width ${duracao}ms cubic-bezier(0.4,0,0.2,1)`;
     await Promise.all([
       animarBarraAte(barraTema, percentualTema),
-      animarNumero(spanPontosTema, 0, pontos, duracao, TEMAS_MAX_PONTOS),
+      animarNumero(spanPontosTema, 0, pontos, duracao, maxPontuacaoTema),
     ]);
     
     //await new Promise(r => setTimeout(r, 80)); // pausa entre as animações
@@ -149,28 +290,9 @@ function aplicarPontuacoes(pontuacoes) {
     const spanPontos = item.querySelector(".tema-pontos");
     const barra = item.querySelector(".barra-progresso");
     spanPontos.textContent = `${pontos} pts`;
-    const percentual = Math.min((pontos / TEMAS_MAX_PONTOS) * 100, 100);
+    const percentual = Math.min((pontos / maxPontuacaoTema) * 100, 100);
     barra.style.width = `${percentual}%`;
   });
-}
-
-async function buscarPontuacoesBackend() {
-  try {
-    const res = await fetch("/api/pontuacoes", {
-      headers: { "Accept": "application/json" }
-    });
-
-    if (!res.ok) {
-      throw new Error(`Erro HTTP ${res.status}`);
-    }
-
-    const dados = await res.json();
-    return dados || {};
-  }
-  catch (erro) {
-    console.error("Falha ao buscar pontuações do servidor:", erro);
-    return {}; // fallback seguro
-  }
 }
 
 function calcularDuracao(percentual) {

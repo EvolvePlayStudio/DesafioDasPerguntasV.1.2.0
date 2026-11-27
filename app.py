@@ -74,6 +74,13 @@ CONFIG_MAX_COTAS_RANKING = {
     }
 }
 
+PISO_RANKING = { # Para a função que analisa conquistas de alcançar ranking do usuário
+    "Aprendiz": 1000,
+    "Estudante": 2000,
+    "Sábio": 3000,
+    "Lenda": 4000,
+}
+
 @app.route("/api/estoque-temas")
 def carregar_estoque_temas():
     id_usuario = session.get('id_usuario')
@@ -602,10 +609,165 @@ def alterar_email_route():
         if cur: cur.close()
         if conn: conn.close()
 
-@app.route("/api/pontuacoes")
+@app.route("/api/pontuacoes") # Deixou de ser usada na tela de Perfil, mas provavelmente é usada em home ou outras telas ainda
 def api_pontuacoes():
     pontuacoes = buscar_pontuacoes_usuario()
     return jsonify(pontuacoes)
+
+def calcular_estado_conquistas(cur, id_usuario, pontuacoes):
+    # 1. Contagens na tabela de respostas
+    cur.execute("""
+        SELECT
+            COUNT(*) AS total_respondidas,
+            COUNT(*) FILTER (WHERE acertou = TRUE AND dificuldade = 'Médio') AS acertos_medio,
+            COUNT(*) FILTER (WHERE acertou = TRUE AND dificuldade = 'Difícil') AS acertos_dificil,
+            COUNT(*) FILTER (WHERE acertou = TRUE AND dificuldade = 'Extremo') AS acertos_extremo
+        FROM respostas_usuarios
+        WHERE id_usuario = %s
+    """, (id_usuario,))
+    resp_row = cur.fetchone()
+    if isinstance(resp_row, dict):
+        total_respondidas = resp_row["total_respondidas"] or 0
+        acertos_medio = resp_row["acertos_medio"] or 0
+        acertos_dificil = resp_row["acertos_dificil"] or 0
+        acertos_extremo = resp_row["acertos_extremo"] or 0
+    else:
+        total_respondidas = (resp_row[0] if resp_row else 0) or 0
+        acertos_medio = (resp_row[1] if resp_row else 0) or 0
+        acertos_dificil = (resp_row[2] if resp_row else 0) or 0
+        acertos_extremo = (resp_row[3] if resp_row else 0) or 0
+
+    # 2. Contagem de avaliações com estrelas
+    cur.execute("""
+        SELECT COUNT(*)
+        FROM feedbacks
+        WHERE id_usuario = %s
+          AND estrelas IS NOT NULL
+    """, (id_usuario,))
+    fb_row = cur.fetchone()
+    total_avaliacoes = (fb_row["count"] if isinstance(fb_row, dict) else fb_row[0]) or 0
+
+    # 3. Métricas derivadas das pontuações já carregadas
+    pts_natureza = sum(pontuacoes.get(t, 0) for t in ("Astronomia", "Biologia", "Física", "Química"))
+    pts_humanas = sum(pontuacoes.get(t, 0) for t in ("História", "Geografia", "Filosofia"))
+    pts_cultura = sum(pontuacoes.get(t, 0) for t in ("Artes", "Mídia", "Música"))
+    pts_variedades = sum(pontuacoes.get(t, 0) for t in ("Esportes", "Variedades"))
+    pts_total = sum(pontuacoes.values())
+
+    progresso_pct = int((pts_total / PONTUACAO_MAXIMA_TOTAL) * 100) if pts_total > 0 else 0
+
+    temas_aprendiz = sum(1 for p in pontuacoes.values() if p >= PISO_RANKING["Aprendiz"])
+    temas_estudante = sum(1 for p in pontuacoes.values() if p >= PISO_RANKING["Estudante"])
+    temas_sabio = sum(1 for p in pontuacoes.values() if p >= PISO_RANKING["Sábio"])
+    temas_lenda = sum(1 for p in pontuacoes.values() if p >= PISO_RANKING["Lenda"])
+
+    # Meta = 3 no catálogo de ranking
+    prog_ranking_bronze = 6 if (temas_estudante >= 1 or temas_aprendiz >= 6) else temas_aprendiz
+    prog_ranking_prata = 6 if (temas_sabio >= 1 or temas_estudante >= 6) else temas_estudante
+    prog_ranking_ouro = 6 if (temas_lenda >= 1 or temas_sabio >= 6) else temas_sabio
+
+    # Mapa: id_conquista -> (valor_atual, meta)
+    progresso_calculado = {
+        # 1. Volume Geral
+        "respondidas_bronze": (total_respondidas, 10),
+        "respondidas_prata": (total_respondidas, 400),
+        "respondidas_ouro": (total_respondidas, 1200),
+        # 2. Ranking
+        "ranking_bronze": (prog_ranking_bronze, 6),
+        "ranking_prata": (prog_ranking_prata, 6),
+        "ranking_ouro": (prog_ranking_ouro, 6),
+        # 3. Ciências da Natureza
+        "natureza_bronze": (pts_natureza, 4000),
+        "natureza_prata": (pts_natureza, 8000),
+        "natureza_ouro": (pts_natureza, 12000),
+        # 4. Ciências Humanas
+        "humanas_bronze": (pts_humanas, 3000),
+        "humanas_prata": (pts_humanas, 6000),
+        "humanas_ouro": (pts_humanas, 9000),
+        # 5. Artes e Cultura
+        "cultura_bronze": (pts_cultura, 3000),
+        "cultura_prata": (pts_cultura, 6000),
+        "cultura_ouro": (pts_cultura, 9000),
+        # 6. Esportes e Variedades
+        "variedades_bronze": (pts_variedades, 2000),
+        "variedades_prata": (pts_variedades, 4000),
+        "variedades_ouro": (pts_variedades, 6000),
+        # 7. Acertos em Nível Específico
+        "superando_medio": (acertos_medio, 20),
+        "superando_dificil": (acertos_dificil, 20),
+        "superando_extremo": (acertos_extremo, 20),
+        # 8. Avaliações com Estrelas
+        "avaliador_bronze": (total_avaliacoes, 10),
+        "avaliador_prata": (total_avaliacoes, 100),
+        "avaliador_ouro": (total_avaliacoes, 300),
+        # 9. Progresso Total
+        "progresso_bronze": (progresso_pct, 10),
+        "progresso_prata": (progresso_pct, 30),
+        "progresso_ouro": (progresso_pct, 60),
+    }
+
+    # 4. Busca conquistas já registradas no banco
+    cur.execute("""
+        SELECT id_conquista
+        FROM usuario_conquistas
+        WHERE id_usuario = %s
+    """, (id_usuario,))
+    ja_desbloqueadas = {
+        (r["id_conquista"] if isinstance(r, dict) else r[0])
+        for r in cur.fetchall()
+    }
+
+    # 5. Insere novas conquistas concluídas (horário de SP truncado em segundos)
+    novas_ids = [
+        cid for cid, (atual, meta) in progresso_calculado.items()
+        if atual >= meta and cid not in ja_desbloqueadas
+    ]
+
+    if novas_ids:
+        agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
+        for cid in novas_ids:
+            cur.execute("""
+                INSERT INTO usuario_conquistas (id_usuario, id_conquista, desbloqueada_em)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (id_usuario, id_conquista) DO NOTHING
+            """, (id_usuario, cid, agora_sp))
+        ja_desbloqueadas.update(novas_ids)
+
+    # 6. Monta resposta no formato esperado pelo renderizarConquistas
+    return {
+        cid: {
+            "atual": atual,
+            "desbloqueada": cid in ja_desbloqueadas
+        }
+        for cid, (atual, _meta) in progresso_calculado.items()
+    }
+
+@app.route("/api/perfil")
+def api_perfil():
+    id_usuario = session.get("id_usuario")
+    if not id_usuario:
+        return jsonify({"erro": "Não autenticado"}), 401
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        pontuacoes = buscar_pontuacoes_usuario(cur=cur)
+        conquistas = calcular_estado_conquistas(cur, id_usuario, pontuacoes)
+
+        conn.commit()
+        return jsonify({
+            "pontuacoes": pontuacoes,
+            "conquistas": conquistas
+        })
+    except Exception:
+        if conn: conn.rollback()
+        app.logger.exception("Erro ao carregar dados do perfil do usuário %s", id_usuario)
+        return jsonify({"pontuacoes": {}, "conquistas": {}}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
 
 @app.route('/api/registrar-acesso', methods=['POST'])
 def api_registrar_acesso():
@@ -1869,7 +2031,7 @@ def login():
             usuario = cur.fetchone()
 
             if not usuario:
-                return jsonify(success=False, message="E-mail não registrado")
+                return jsonify(success=False, message=f"E-mail não registrado: {email}")
 
             id_usuario, senha_hash, nome_usuario, email_confirmado, modal_inicial_exibido = usuario
 
@@ -2018,8 +2180,6 @@ def recarregar_energia_home():
     if not id_usuario:
         return jsonify(success=False, message="Sessão expirada"), 401
 
-    verificar_missoes = request.args.get('verificar_missoes') == 'true'
-
     conn = cur = None
     try:       
         conn = get_db_connection()
@@ -2062,42 +2222,6 @@ def recarregar_energia_home():
             for row in bonus_energia_raw
         ]
 
-        # 4. Verifica missões semanais e pontuações
-        dados_missoes = None
-        # Marca missões antigas vencidas como Expirada
-        cur.execute("""
-            UPDATE missoes_semanais_usuarios
-            SET status = 'Expirada',
-                atualizado_em = date_trunc('second', (NOW() AT TIME ZONE 'America/Sao_Paulo'))
-            WHERE id_usuario = %s
-                AND status IN ('Disponível', 'Ativa')
-                AND data_expiracao IS NOT NULL
-                AND data_expiracao <= %s
-        """, (id_usuario, agora_sp))
-
-        # Busca missões vigentes do ciclo atual (Disponível ou Ativa/Concluída/Falhou dentro do prazo)
-        cur.execute("""
-            SELECT id, categoria, tipo_objetivo, parametros,
-                    progresso_atual, tentativas_gastas, status, data_expiracao
-            FROM missoes_semanais_usuarios
-            WHERE id_usuario = %s AND status IN ('Disponível', 'Ativa', 'Concluída', 'Falhou')
-                AND (data_expiracao IS NULL OR data_expiracao > %s)
-            ORDER BY id ASC
-        """, (id_usuario, agora_sp))
-        missoes_vigentes = cur.fetchall()
-
-        # Converte data_expiracao para string ISO para serializar no JSON
-        for m in missoes_vigentes:
-            if m['data_expiracao']:
-                m['data_expiracao'] = m['data_expiracao'].isoformat()
-
-        pontuacoes_usuario = buscar_pontuacoes_usuario(cur)
-
-        dados_missoes = {
-            'missoes': missoes_vigentes,
-            'pontuacoes_usuario': pontuacoes_usuario
-        }
-
         conn.commit()
 
         resposta = {
@@ -2106,9 +2230,6 @@ def recarregar_energia_home():
             'energia_ganha': nova_energia - energia_antiga,
             'bonus_energia': bonus_energia
         }
-        if dados_missoes is not None:
-            resposta['dados_missoes'] = dados_missoes
-
         return jsonify(resposta)
     except Exception:
         app.logger.exception("Erro ao recarregar energia na home")
@@ -2803,18 +2924,25 @@ def registrar_missoes_disponiveis():
                 (agora_sp, id_usuario),
             )
 
-        inseridas = 0
+        inseridas_detalhes = []
         for m in missoes:
             categoria = m.get("categoria")
             if categoria not in ("Global", "Temática"):
                 continue
 
             codigo_missao = m.get("codigo_missao")
+            tipo_objetivo = m.get("tipo_objetivo") or "Acertar"
+            meta = m.get("meta")
+            max_tentativas = m.get("max_tentativas") if m.get("max_tentativas") is not None else m.get("max_perguntas")
+
             parametros = {
                 "codigo_missao": codigo_missao,
                 "descricao": m.get("descricao", ""),
-                "dificuldade": m.get("dificuldade", "Médio"),
+                "dificuldade_missao": m.get("dificuldade_missao", "Médio"),
+                "dificuldades_perguntas": m.get("dificuldades_perguntas") or [],
                 "temas": m.get("temas") or [],
+                "meta": meta,
+                "max_tentativas": max_tentativas,
             }
 
             cur.execute(
@@ -2833,11 +2961,12 @@ def registrar_missoes_disponiveis():
                     atualizado_em
                 )
                 VALUES (%s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
                 """,
                 (
                     id_usuario,
                     categoria,
-                    codigo_missao,
+                    tipo_objetivo,
                     json.dumps(parametros, ensure_ascii=False),
                     0,
                     0,
@@ -2848,13 +2977,20 @@ def registrar_missoes_disponiveis():
                     agora_sp,
                 ),
             )
-            inseridas += 1
+            novo_id = cur.fetchone()[0]
+            inseridas_detalhes.append({
+                "id": novo_id,
+                "categoria": categoria,
+                "codigo_missao": codigo_missao,
+                "tipo_objetivo": tipo_objetivo,
+            })
 
         conn.commit()
         return jsonify({
             "status": "sucesso",
-            "registradas": inseridas,
+            "registradas": len(inseridas_detalhes),
             "data_expiracao": data_expiracao.isoformat(),
+            "missoes": inseridas_detalhes,
         }), 201
     except Exception:
         if conn: conn.rollback()
@@ -3008,7 +3144,7 @@ def registrar_resposta_usuario():
                 "nova_pontuacao": nova_pontuacao,
                 "perguntas_restantes": perguntas_restantes,
                 "perguntas_bonus_restantes": bonus_restantes,
-                "usando_bonus": bool(bonus_ativo)
+                "usando_bonus": bool(bonus_ativo),
             })
     except Exception:
         if conn: conn.rollback()

@@ -561,7 +561,118 @@
     .hidden {
       display: none;
     }
-    /* Responsivo em smartphones */
+
+
+
+
+    .missoes-toast-box {
+      position: fixed;
+      top: 4px;
+      left: 50%;
+      transform: translate3d(-50%, calc(-100% - 16px), 0);
+      opacity: 0;
+      z-index: 999;
+      width: 100%;
+      max-width: 38rem;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 0, 0, 0.18);
+      background: var(--cor-fundo-claro);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+      box-sizing: border-box;
+      pointer-events: none;
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+    }
+    .missoes-toast-box.visivel {
+      transform: translate3d(-50%, 0, 0);
+      opacity: 1;
+    }
+    .missoes-toast-box.hidden {
+      display: none;
+    }
+
+    .missoes-toast-lista {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+    }
+    .missoes-toast-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: calc(var(--fs-base) - 1px);
+      font-weight: 600;
+      line-height: 1.35;
+      min-width: 0;
+      max-width: 50%;
+    }
+    .missoes-toast-tipo {
+      flex-shrink: 0;
+      font-size: var(--fs-base);
+      line-height: 1.35;
+    }
+    .missoes-toast-texto {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .missoes-toast-item.falhou {
+      color: #c0392b;
+    }
+    .missoes-toast-status {
+      flex-shrink: 0;
+      font-size: var(--fs-base);
+      line-height: 1;
+    }
+    @media (max-width: 933px) {
+      .missoes-toast-box {
+        width: 60vw;
+      }
+    }
+    @media (max-width: 918px) {
+      .missoes-toast-box {
+        width: 360px;
+      }
+      .missoes-toast-lista {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+      .missoes-toast-item {
+        max-width: 100%;
+        min-height: 27px;
+      }
+    }
+    @media (max-width: 800px) {
+      .missoes-toast-box {
+        top: 3px;
+      }
+      .missoes-toast-item {
+        min-height: 23px;
+      }
+    }
+    @media (max-width: 650px) {
+      .missoes-toast-box {
+        width: 320px;
+      }
+      .missoes-toast-item {
+        font-size: calc(var(--fs-base) - 1px);
+      }
+    }
+    @media (max-width: 400px) {
+      .missoes-toast-box {
+        width: 290px;
+      }
+      .missoes-toast-item {
+        font-size: var(--fs-aux);
+      }
+    }
+  </style>
+
+  <!-- CSS em mobile -->
+  <style>
     @media (max-width: 800px) {
       body, .container-principal {
         overflow-x: hidden;
@@ -645,6 +756,22 @@
         <span id="proximo-ranking"></span>
       </div>
 
+      <!-- Caixa flutuante ancorada no topo da tela (teste inicial visível, sem animação) -->
+      <div id="missoes-toast-box" class="missoes-toast-box" role="status" aria-live="polite">
+        <div id="missoes-toast-lista" class="missoes-toast-lista">
+          <div class="missoes-toast-item concluida">
+            <span class="missoes-toast-tipo" aria-label="Missão global">🌐</span>
+            <span class="missoes-toast-texto">Progresso Total: 29% (meta: 29%)</span>
+            <span class="missoes-toast-status" aria-label="Concluída">✅</span>
+          </div>
+          <div class="missoes-toast-item">
+            <span class="missoes-toast-tipo" aria-label="Missão temática">📌</span>
+            <span class="missoes-toast-texto">Acertos no Difícil: 3/4 (meta: 8/10)</span>
+            <span class="missoes-toast-status" aria-label="Concluída">✅</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Grid layout com anúncios nas laterais e layout de quiz no centro -->
       <div class="quiz-grid-layout">
         <!-- Layout contendo o enunciado, altenativas, etc -->
@@ -695,11 +822,6 @@
             <div id="respostas-aceitas-box">
               <strong>Respostas aceitas:</strong> <span id="lista-respostas"></span>
             </div>
-
-            <!-- Hint-text para avaliar a pergunta -->
-            <div id="hint-avaliacao" style="display: none">
-              ⭐ Apoie a melhoria do conteúdo avaliando a pergunta no final
-            </div>
             
             <!-- Box da nota -->
             <div id="nota-box">
@@ -745,13 +867,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Comentários dos usuários para a pergunta -->
-      <div id="comentarios">
-        <h3>Comentários (não disponíveis na versão atual):</h3>
-        <ul id="lista-comentarios"></ul>
-      </div>
-    </div>
 
     <script type="module" src="{{ url_for('static', filename='quiz.js') }}?v=1.2.5"></script>
   </body>

@@ -6,24 +6,31 @@
   
   <style>
     /* ===== BASE ===== */
-    body {
+   html, body {
+      height: 100dvh;
       width: 100%;
       margin: 0;
+      overflow: hidden;
       font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
       background: var(--cor-fundo-padrao);
       color: #ffffff;
-      min-height: 100dvh;
     }
-    main {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 1rem 1rem;
+    body {
       display: flex;
       flex-direction: column;
-      gap: 1.6rem;
+    }
+    main {
+      width: 100%;
+      max-width: 900px;
+      margin: 0.5rem auto var(--major-footer-h);
+      padding: 0.75rem 1rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
       flex: 1;
-      padding-bottom: calc(var(--major-footer-h) + 12px);
-      margin-top: 0.5rem;
+      min-height: 0;
+      overflow-y: auto;
+      box-sizing: border-box;
     }
     /* ===== HEADER PERFIL ===== */
     .perfil-header {
@@ -76,11 +83,14 @@
       margin: 0;
     }
     /* ===== LISTA DE TEMAS ===== */
-    #lista-temas {
+     #lista-temas {
       display: flex;
       flex-direction: column;
-      gap: 1.2rem;
-      margin-bottom: 1.2rem;
+      gap: 1rem;
+      margin-bottom: 0;
+    }
+    #lista-temas .tema-item:last-child .escala-ranking {
+      margin-bottom: 0;
     }
     /* ===== ITEM DO TEMA ===== */
     .tema-item {
@@ -149,7 +159,7 @@
       gap: 0.3rem;
       margin-top: 0.4rem;
       padding-top: 0.3rem;
-      margin-bottom: 0.8rem;
+      margin-bottom: 0.2rem;
     }
     .escala-labels {
       position: relative;
@@ -197,6 +207,121 @@
         font-size: calc(var(--fs-min-max) - 0.18rem);
       }
     }
+    .perfil-abas {
+      width: 100%;
+      max-width: 900px;
+      margin: 0.75rem auto 0;
+      box-sizing: border-box;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+      background: var(--cor-fundo-escuro);
+      padding: 0.35rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+    .aba-btn {
+      padding: 0.65rem 0.9rem;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: var(--fs-base-max);
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .aba-btn[aria-selected="true"] {
+      background: var(--bg-botao-login);
+      color: #ffffff;
+    }
+    .painel-aba {
+      position: fixed;
+      top: -9999px;
+      left: -9999px;
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .painel-aba.ativo {
+      position: relative;
+      top: auto;
+      left: auto;
+      width: auto;
+      max-width: none;
+      visibility: visible;
+      pointer-events: auto;
+    }
+    .scroll-conquistas {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+    .conquista-card {
+      background: var(--cor-fundo-escuro);
+      padding: 0.9rem 1rem 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      opacity: 0.68;
+    }
+    .conquista-card.desbloqueada {
+      opacity: 1;
+      border-color: rgba(253, 216, 53, 0.45);
+    }
+    .conquista-cabecalho {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.5rem;
+    }
+    .conquista-medalha {
+      font-size: 1.15rem;
+      line-height: 1;
+    }
+    .conquista-titulo {
+      font-weight: 700;
+      font-size: var(--fs-base-max);
+    }
+    .conquista-descricao {
+      margin: 0;
+      font-size: var(--fs-aux-max);
+      color: rgba(255, 255, 255, 0.82);
+    }
+    .conquista-progresso {
+      font-size: var(--fs-min-max);
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.72);
+    }
+    .aviso-visitante-conquistas {
+      background: var(--cor-fundo-escuro);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 1.2rem 1rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .aviso-visitante-titulo {
+      margin: 0;
+      font-size: var(--fs-base-max);
+      font-weight: 700;
+    }
+    .aviso-visitante-texto {
+      margin: 0;
+      font-size: var(--fs-aux-max);
+      color: rgba(255, 255, 255, 0.8);
+    }
+    .footer {
+      flex-shrink: 0;
+    }
   </style>
 
     <!-- Cabeçalho da página -->
@@ -209,75 +334,103 @@
       </div>
     </header>
 
+    <!-- Abas fixas fora da área de rolagem -->
+    <nav class="perfil-abas" role="tablist">
+      <button id="tab-rankings" class="aba-btn" role="tab" aria-selected="true" aria-controls="painel-rankings">
+        📊 Rankings
+      </button>
+      <button id="tab-conquistas" class="aba-btn" role="tab" aria-selected="false" aria-controls="painel-conquistas">
+        🏆 Conquistas
+      </button>
+    </nav>
+
     <!-- Parte do meio da página (corpo principal)-->
     <main>
-      <!-- Título e Combobox da ordem em que os temas devem aparecer -->
-      <section class="linha-topo">
-        <h2 class="secao-titulo">📊 Rankings Atuais</h2>
-        <div id="controles">
-          <label for="ordenacao">Ordenar por:</label>
-          <select id="ordenacao" disabled>
-            <option value="pontuacao-desc" selected>Pontuação</option>
-            <option value="nome-tema">Tema</option>
+   
+      <!-- Seção que exibe rankings do usuário -->
+      <section id="painel-rankings" class="painel-aba ativo" role="tabpanel" aria-labelledby="tab-rankings">
+      
+        <!-- Título e Combobox da ordem em que os temas devem aparecer -->
+        <section class="linha-topo">
+          <div id="controles">
+            <label for="ordenacao">Ordenar por:</label>
+            <select id="ordenacao" disabled>
+              <option value="pontuacao-desc" selected>Pontuação</option>
+              <option value="nome-tema">Tema</option>
+            </select>
+          </div>
+        </section>
+        
+        <!-- Progresso total -->
+        <section class="lista-temas" style="margin-bottom: -0.5rem;">
+          <div class="tema-item">
+            <div class="tema-info">
+              <span class="progresso-label" style="margin-bottom: 0.4rem;">
+                🚀 Progresso <span id="porcentagem-progresso" style="font-size: 0.9em; opacity: 0.8; font-weight: normal;">(0%)</span>
+              </span>
+              <span id="pontos-totais" class="tema-pontos">0 / 60000 pts</span>
+            </div>
+            <div class="barra-container barra-referencia">
+              <div id="barra-progresso-total" class="barra-progresso"></div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Progresso nos temas -->
+        <section id="lista-temas" class="lista-temas"></section>
+        <script type="module">
+          import { simbolosTemas, temas_disponiveis } from '../static/utils.js'
+          const container = document.getElementById("lista-temas");
+          const fragment = document.createDocumentFragment();
+          
+          temas_disponiveis.forEach(tema => {
+            const div = document.createElement("div");
+            div.className = "tema-item";
+            div.dataset.tema = tema;
+            const emoji_tema = simbolosTemas[tema] ?? "";
+            div.innerHTML = `
+              <div class="tema-info">
+                <span class="tema-label">${emoji_tema} ${tema}</span>
+                <span class="tema-pontos">0 / 5000 pts</span>
+              </div>
+              <section class="escala-ranking">
+                <div class="escala-labels">
+                  <span style="left: 10%">Iniciante</span>
+                  <span style="left: 30%">Aprendiz</span>
+                  <span style="left: 50%">Estudante</span>
+                  <span style="left: 70%">Sábio</span>
+                  <span style="left: 90%">Lenda</span>
+                </div>
+                <div class="barra-container barra-referencia">
+                  <div class="barra-progresso"></div>
+                  <span class="barra-marco" style="left: 20%"></span>
+                  <span class="barra-marco" style="left: 40%"></span>
+                  <span class="barra-marco" style="left: 60%"></span>
+                  <span class="barra-marco" style="left: 80%"></span>
+                </div>
+              </section>
+            `;
+
+            fragment.appendChild(div);
+          });
+
+          container.appendChild(fragment);
+        </script>
+      </section>
+
+      <!-- Seção que exibe conquistas do usuário -->
+      <section id="painel-conquistas" class="painel-aba" role="tabpanel" aria-labelledby="tab-conquistas">
+        <div class="linha-topo">
+          <select id="filtro-conquistas">
+            <option value="todas" selected>Todas (27)</option>
+            <option value="desbloqueadas">Desbloqueadas</option>
+            <option value="bronze">🥉 Bronze (9)</option>
+            <option value="prata">🥈 Prata (9)</option>
+            <option value="ouro">🥇 Ouro (9)</option>
           </select>
         </div>
+        <div id="lista-conquistas" class="scroll-conquistas"></div>
       </section>
-      
-      <!-- Progresso total -->
-      <section class="lista-temas" style="margin-bottom: -0.5rem;">
-        <div class="tema-item">
-          <div class="tema-info">
-            <span class="progresso-label" style="margin-bottom: 0.4rem;">
-              🚀 Progresso <span id="porcentagem-progresso" style="font-size: 0.9em; opacity: 0.8; font-weight: normal;">(0%)</span>
-            </span>
-            <span id="pontos-totais" class="tema-pontos">0 / 60000 pts</span>
-          </div>
-          <div class="barra-container barra-referencia">
-            <div id="barra-progresso-total" class="barra-progresso"></div>
-          </div>
-        </div>
-      </section>
-      
-      <!-- Progresso nos temas -->
-      <section id="lista-temas" class="lista-temas"></section>
-      <script type="module">
-        import { simbolosTemas, temas_disponiveis } from '../static/utils.js'
-        const container = document.getElementById("lista-temas");
-        const fragment = document.createDocumentFragment();
-        
-        temas_disponiveis.forEach(tema => {
-          const div = document.createElement("div");
-          div.className = "tema-item";
-          div.dataset.tema = tema;
-          const emoji_tema = simbolosTemas[tema] ?? "";
-          div.innerHTML = `
-            <div class="tema-info">
-              <span class="tema-label">${emoji_tema} ${tema}</span>
-              <span class="tema-pontos">0 / 5000 pts</span>
-            </div>
-            <section class="escala-ranking">
-              <div class="escala-labels">
-                <span style="left: 10%">Iniciante</span>
-                <span style="left: 30%">Aprendiz</span>
-                <span style="left: 50%">Estudante</span>
-                <span style="left: 70%">Sábio</span>
-                <span style="left: 90%">Lenda</span>
-              </div>
-              <div class="barra-container barra-referencia">
-                <div class="barra-progresso"></div>
-                <span class="barra-marco" style="left: 20%"></span>
-                <span class="barra-marco" style="left: 40%"></span>
-                <span class="barra-marco" style="left: 60%"></span>
-                <span class="barra-marco" style="left: 80%"></span>
-              </div>
-            </section>
-          `;
-
-          fragment.appendChild(div);
-        });
-
-        container.appendChild(fragment);
-      </script>
     </main>
 
     <!-- Rodapé com botões -->

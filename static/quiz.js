@@ -2,7 +2,6 @@ import { coresDificuldade, dificuldadesOrdenadas, deveEncerrarQuiz, idsReservado
 import { playSound, playKeySound } from "./sound.js"
 
 const maxEnergiaParaVisitantes = 25;
-
 function validateAppVersionQuiz() {
   if (!localStorage.getItem('app_version')) {
     localStorage.setItem("auth_message", "Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente");
@@ -11,13 +10,10 @@ function validateAppVersionQuiz() {
 }
 
 const tema_atual = localStorage.getItem("tema_atual");
-
-// Faz envio de dados para a base
 const id_visitante = localStorage.getItem("id_visitante");
 const idUsuario = Number(localStorage.getItem("id_usuario") ?? "0");
 const isAdmin = idsReservados.includes(idUsuario) || idsVisitantesReservados.includes(id_visitante);
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === 'true';
-// Carrega o objeto do localStorage transformando de JSON para Objeto JS (ou cria um vazio se não existir)
 let respondidasVisitantesPorDificuldade = JSON.parse(localStorage.getItem('respondidas_visitante_por_dificuldade')) || {};
 let energiaNormal = 0;
 let bonusRestante = 0;
@@ -83,7 +79,6 @@ const lblProximoRanking = document.getElementById("proximo-ranking")
 const alternativasContainer = document.getElementById("alternativas-container");
 const resultado = document.getElementById('resultado');
 const barra = document.getElementById("barra-progresso");
-const hint_avaliacao = document.getElementById("hint-avaliacao");
 const respostasAceitas = document.getElementById("respostas-aceitas-box");
 const estrelas_avaliacao = document.getElementById("avaliacao");
 const estrelas = document.querySelectorAll(".estrela");
@@ -483,7 +478,6 @@ function desativarBotoes() {
 }
 
 async function enviarResposta() {
-  hint_avaliacao.style.display = "none";
   const pontuacao_atual = pontuacoes_jogador[tema_atual];
   acertou = null;
   let letra_correta;
@@ -1006,7 +1000,6 @@ async function mostrarAlternativas() {
   animacao_concluida = true;
   inicio_pergunta = Date.now();
 
-  // hint_avaliacao.style.display = "";
   botoes_enviar_div.style.display = "flex";
   btn_enviar.style.display = "inline-flex";
   btn_enviar.disabled = false;
@@ -1274,7 +1267,6 @@ async function proximaPergunta() {
     box_comentario.style.display = "none";
     document.getElementById("nota-box").style.display = "none";
     mostrarPergunta();
-    // document.getElementById('comentarios').style.display = 'none';
     aguardando_proxima = false;
   }
 }
