@@ -1,5 +1,5 @@
 import { playSound } from "./sound.js"
-import { maxPontuacaoTema, maxPontuacaoTotal, pontuacaoTemaPadraoVisitantes, registrarLog, sincronizarPontuacoesVisitante} from "./utils.js";
+import { pontuacaoTemaPadraoVisitantes, sincronizarPontuacoesVisitante} from "./utils.js";
 
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 let pontuacoes = {};
@@ -58,8 +58,29 @@ const CATALOGO_CONQUISTAS = [
   { id: "progresso_bronze", tier: "bronze", titulo: "Impulso Inicial", descricao: "Alcance 10% de progresso total (6.000 pts).", meta: 10 },
   { id: "progresso_prata", tier: "prata", titulo: "Base Sólida", descricao: "Alcance 30% de progresso total (18.000 pts).", meta: 30 },
   { id: "progresso_ouro", tier: "ouro", titulo: "Domínio Avançado", descricao: "Alcance 60% de progresso total (36.000 pts).", meta: 60 }
-]; // Irá para o utils depois
+]; // Já tem no utils, será removido depois
+const maxPontuacaoTema = 5000 // Já tem no utils, será removido depois
+const maxPontuacaoTotal = 60000 // Já tem no utils, será removido depois
+function registrarLog(textoLog) {
+    const agora = Date.now();
+    const ultimoEnvio = controleLogs[textoLog] || 0;
 
+    if (agora - ultimoEnvio < 20000) return;  // Ignora duplo envio em janelas de 20 segundos
+    controleLogs[textoLog] = agora;
+
+    fetch('/api/registrar-acesso', {
+      method: 'POST',
+      keepalive: true,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        pagina: textoLog,
+        id_visitante: idVisitante,
+        id_usuario: idUsuario
+      })
+    }).catch(error => console.error("Erro ao registrar acesso:", error));
+} // Já tem no utils, será removido depois
 
 document.addEventListener("DOMContentLoaded", () => {
   configurarAbas();
