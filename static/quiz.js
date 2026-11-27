@@ -52,6 +52,27 @@ else {
   pontuacoes_jogador = JSON.parse(localStorage.getItem("pontuacoes_usuario") ?? "{}");
   validateAppVersionQuiz();
 }
+async function carregarEstadoConquistasQuiz(pontuacoesAtuais) {
+  if (MODO_VISITANTE) return null;
+
+  try {
+    const res = await fetch("/api/quiz/estado-conquistas", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({ pontuacoes: pontuacoesAtuais || {} })
+    });
+
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (erro) {
+    console.warn("Falha ao carregar estado inicial de conquistas:", erro);
+    return null;
+  }
+}
+carregarEstadoConquistasQuiz();
 if (typeof pontuacoes_jogador[tema_atual] !== "number") { 
   pontuacoes_jogador[tema_atual] = 0;
   localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes_jogador))

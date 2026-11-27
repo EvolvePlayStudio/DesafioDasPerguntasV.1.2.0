@@ -4,6 +4,7 @@ import { pontuacaoTemaPadraoVisitantes, sincronizarPontuacoesVisitante} from "./
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 let pontuacoes = {};
 let animando = false;
+const controleLogs = {};
 const select = document.getElementById("ordenacao");
 const barraProgressoTotal = document.getElementById("barra-progresso-total");
 const spanPontosTotais = document.getElementById("pontos-totais");
@@ -61,6 +62,9 @@ const CATALOGO_CONQUISTAS = [
 ]; // Já tem no utils, será removido depois
 const maxPontuacaoTema = 5000 // Já tem no utils, será removido depois
 const maxPontuacaoTotal = 60000 // Já tem no utils, será removido depois
+const idVisitante = localStorage.getItem('id_visitante');// Será removido depois que a função de registra logs voltar para o utils
+const idUsuario = localStorage.getItem('id_usuario')// Será removido depois que a função de registra logs voltar para o utils
+
 function registrarLog(textoLog) {
     const agora = Date.now();
     const ultimoEnvio = controleLogs[textoLog] || 0;

@@ -81,6 +81,52 @@ PISO_RANKING = { # Para a função que analisa conquistas de alcançar ranking d
     "Lenda": 4000,
 }
 
+@app.route('/api/quiz/estado-conquistas', methods=['POST'])
+def estado_conquistas_quiz():
+    id_usuario = session.get('id_usuario')
+    modo_visitante = session.get("visitante")
+
+    if modo_visitante or not id_usuario:
+        return jsonify({"conquistas": {}, "desbloqueadas": []})
+
+    payload = request.get_json(silent=True) or {}
+    pontuacoes_recebidas = payload.get("pontuacoes")
+
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        if isinstance(pontuacoes_recebidas, dict) and pontuacoes_recebidas:
+            pontuacoes = {
+                str(tema): max(0, int(pts))
+                for tema, pts in pontuacoes_recebidas.items()
+                if isinstance(pts, (int, float))
+            }
+        else:
+            pontuacoes = buscar_pontuacoes_usuario(cur)
+
+        estado = calcular_estado_conquistas(cur, id_usuario, pontuacoes)
+        conn.commit()
+
+        desbloqueadas = [cid for cid, info in estado.items() if info.get("desbloqueada")]
+        session["conquistas_desbloqueadas_quiz"] = desbloqueadas
+        session["progresso_conquistas_quiz"] = {
+            cid: info.get("atual", 0) for cid, info in estado.items()
+        }
+
+        return jsonify({
+            "conquistas": estado,
+            "desbloqueadas": desbloqueadas,
+        })
+    except Exception:
+        app.logger.exception("Erro ao obter estado inicial de conquistas no quiz. User: %s", id_usuario)
+        if conn: conn.rollback()
+        return jsonify({"erro": "Erro ao carregar conquistas"}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
 @app.route("/api/estoque-temas")
 def carregar_estoque_temas():
     id_usuario = session.get('id_usuario')
@@ -661,7 +707,7 @@ def calcular_estado_conquistas(cur, id_usuario, pontuacoes):
     temas_sabio = sum(1 for p in pontuacoes.values() if p >= PISO_RANKING["Sábio"])
     temas_lenda = sum(1 for p in pontuacoes.values() if p >= PISO_RANKING["Lenda"])
 
-    # Meta = 3 no catálogo de ranking
+    # Meta = 6 no catálogo de ranking
     prog_ranking_bronze = 6 if (temas_estudante >= 1 or temas_aprendiz >= 6) else temas_aprendiz
     prog_ranking_prata = 6 if (temas_sabio >= 1 or temas_estudante >= 6) else temas_estudante
     prog_ranking_ouro = 6 if (temas_lenda >= 1 or temas_sabio >= 6) else temas_sabio
