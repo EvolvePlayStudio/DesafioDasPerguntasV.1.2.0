@@ -1,5 +1,5 @@
 import { playSound } from "./sound.js"
-import { maxPontuacaoTema, maxPontuacaoTotal, pontuacaoTemaPadraoVisitantes, registrarLog, sincronizarPontuacoesVisitante, CONQUISTAS_CATALOGO} from "./utils.js";
+import { maxPontuacaoTema, maxPontuacaoTotal, pontuacaoTemaPadraoVisitantes, registrarLog, sincronizarPontuacoesVisitante} from "./utils.js";
 
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === "true";
 let pontuacoes = {};
@@ -13,6 +13,53 @@ let filtroConquistasAtual = "todas";
 const formatadorNumero = new Intl.NumberFormat("pt-BR");
 const selectFiltroConquistas = document.getElementById("filtro-conquistas");
 const MEDALHAS_TIER = {bronze: "🥉", prata: "🥈", ouro: "🥇"};
+const CONQUISTAS_CATALOGO = [
+  // 1. Volume Geral
+  { id: "respondidas_bronze", tier: "bronze", titulo: "Primeiros Passos", descricao: "Responda 10 perguntas.", meta: 10 },
+  { id: "respondidas_prata", tier: "prata", titulo: "Ritmo Constante", descricao: "Responda 400 perguntas.", meta: 400 },
+  { id: "respondidas_ouro", tier: "ouro", titulo: "Veterano do Quiz", descricao: "Responda 1.200 perguntas.", meta: 1200 },
+
+  // 2. Ranking
+  { id: "ranking_bronze", tier: "bronze", titulo: "Caminho do Estudante", descricao: "Alcance o ranking Estudante em 1 tema ou Aprendiz em 6.", meta: 6 },
+  { id: "ranking_prata", tier: "prata", titulo: "Caminho do Sábio", descricao: "Alcance o ranking Sábio em 1 tema ou Estudante em 6.", meta: 6 },
+  { id: "ranking_ouro", tier: "ouro", titulo: "Lenda Viva", descricao: "Alcance o ranking Lenda em 1 tema ou Sábio em 6.", meta: 6 },
+
+  // 3. Pontos — Ciências da Natureza (Astronomia, Biologia, Física, Química)
+  { id: "natureza_bronze", tier: "bronze", titulo: "Curioso da Natureza", descricao: "Atinja 4.000 pontos somados em Astronomia, Biologia, Física e Química.", meta: 4000 },
+  { id: "natureza_prata", tier: "prata", titulo: "Explorador da Natureza", descricao: "Atinja 8.000 pontos somados em Astronomia, Biologia, Física e Química.", meta: 8000 },
+  { id: "natureza_ouro", tier: "ouro", titulo: "Mestre da Natureza", descricao: "Atinja 12.000 pontos somados em Astronomia, Biologia, Física e Química.", meta: 12000 },
+
+  // 4. Pontos — Ciências Humanas (História, Geografia, Filosofia)
+  { id: "humanas_bronze", tier: "bronze", titulo: "Aprendiz de Humanas", descricao: "Atinja 3.000 pontos somados em História, Geografia e Filosofia.", meta: 3000 },
+  { id: "humanas_prata", tier: "prata", titulo: "Explorador de Humanas", descricao: "Atinja 6.000 pontos somados em História, Geografia e Filosofia.", meta: 6000 },
+  { id: "humanas_ouro", tier: "ouro", titulo: "Mestre em Humanas", descricao: "Atinja 9.000 pontos somados em História, Geografia e Filosofia.", meta: 9000 },
+
+  // 5. Pontos — Artes e Cultura (Artes, Música, Mídia)
+  { id: "cultura_bronze", tier: "bronze", titulo: "Primeira Cena", descricao: "Atinja 3.000 pontos somados em Artes, Mídia e Música.", meta: 3000 },
+  { id: "cultura_prata", tier: "prata", titulo: "Cultura e Expressão", descricao: "Atinja 6.000 pontos somados em Artes, Mídia e Música.", meta: 6000 },
+  { id: "cultura_ouro", tier: "ouro", titulo: "Mestre das Artes", descricao: "Atinja 9.000 pontos somados em Artes, Mídia e Música.", meta: 9000 },
+
+  // 6. Pontos — Esportes e Variedades (Esportes, Variedades)
+  { id: "variedades_bronze", tier: "bronze", titulo: "Jogo e Cotidiano", descricao: "Atinja 2.000 pontos somados em Esportes e Variedades.", meta: 2000 },
+  { id: "variedades_prata", tier: "prata", titulo: "Versátil em Ação", descricao: "Atinja 4.000 pontos somados em Esportes e Variedades.", meta: 4000 },
+  { id: "variedades_ouro", tier: "ouro", titulo: "Mestre do Repertório", descricao: "Atinja 6.000 pontos somados em Esportes e Variedades.", meta: 6000 },
+
+  // 7. Acertos em Nível Específico
+  { id: "superando_medio", tier: "bronze", titulo: "Superando o Médio", descricao: "Acerte 25 perguntas de nível Médio em qualquer tema.", meta: 25 },
+  { id: "superando_dificil", tier: "prata", titulo: "Superando o Difícil", descricao: "Acerte 25 perguntas de nível Difícil em qualquer tema.", meta: 25 },
+  { id: "superando_extremo", tier: "ouro", titulo: "Superando o Extremo", descricao: "Acerte 25 perguntas de nível Extremo em qualquer tema.", meta: 25 },
+
+  // 8. Avaliações com Estrelas
+  { id: "avaliador_bronze", tier: "bronze", titulo: "Avaliador", descricao: "Avalie 10 perguntas com estrelas.", meta: 10 },
+  { id: "avaliador_prata", tier: "prata", titulo: "Crítico Frequente", descricao: "Avalie 100 perguntas com estrelas.", meta: 100 },
+  { id: "avaliador_ouro", tier: "ouro", titulo: "Referência da Comunidade", descricao: "Avalie 300 perguntas com estrelas.", meta: 300 },
+
+  // 9. Progresso Total
+  { id: "progresso_bronze", tier: "bronze", titulo: "Impulso Inicial", descricao: "Alcance 10% de progresso total (6.000 pts).", meta: 10 },
+  { id: "progresso_prata", tier: "prata", titulo: "Base Sólida", descricao: "Alcance 30% de progresso total (18.000 pts).", meta: 30 },
+  { id: "progresso_ouro", tier: "ouro", titulo: "Domínio Avançado", descricao: "Alcance 60% de progresso total (36.000 pts).", meta: 60 }
+];
+
 
 document.addEventListener("DOMContentLoaded", () => {
   configurarAbas();
