@@ -13,7 +13,7 @@ let filtroConquistasAtual = "todas";
 const formatadorNumero = new Intl.NumberFormat("pt-BR");
 const selectFiltroConquistas = document.getElementById("filtro-conquistas");
 const MEDALHAS_TIER = {bronze: "🥉", prata: "🥈", ouro: "🥇"};
-const CONQUISTAS_CATALOGO = [
+const CATALOGO_CONQUISTAS = [
   // 1. Volume Geral
   { id: "respondidas_bronze", tier: "bronze", titulo: "Primeiros Passos", descricao: "Responda 10 perguntas.", meta: 10 },
   { id: "respondidas_prata", tier: "prata", titulo: "Ritmo Constante", descricao: "Responda 400 perguntas.", meta: 400 },
@@ -58,7 +58,7 @@ const CONQUISTAS_CATALOGO = [
   { id: "progresso_bronze", tier: "bronze", titulo: "Impulso Inicial", descricao: "Alcance 10% de progresso total (6.000 pts).", meta: 10 },
   { id: "progresso_prata", tier: "prata", titulo: "Base Sólida", descricao: "Alcance 30% de progresso total (18.000 pts).", meta: 30 },
   { id: "progresso_ouro", tier: "ouro", titulo: "Domínio Avançado", descricao: "Alcance 60% de progresso total (36.000 pts).", meta: 60 }
-];
+]; // Irá para o utils depois
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -74,7 +74,7 @@ if (selectFiltroConquistas) {
   selectFiltroConquistas.addEventListener("change", (e) => {
     if (MODO_VISITANTE) return;
     playSound("click");
-    renderizarConquistas(CONQUISTAS_CATALOGO, estadoConquistas, e.target.value);
+    renderizarConquistas(CATALOGO_CONQUISTAS, estadoConquistas, e.target.value);
   });
 }
 
@@ -110,7 +110,7 @@ function configurarAbas() {
       if (alvo === "painel-conquistas" || alvo.includes("conquista")) {
         registrarLog('Perfil - Conquistas');
         if (MODO_VISITANTE) {renderizarAvisoVisitanteConquistas()}
-        else {renderizarConquistas(CONQUISTAS_CATALOGO, estadoConquistas, filtroConquistasAtual)};
+        else {renderizarConquistas(CATALOGO_CONQUISTAS, estadoConquistas, filtroConquistasAtual)};
       }
     });
   });
@@ -207,7 +207,7 @@ async function iniciarPerfil() {
       const dadosPerfil = await buscarDadosPerfilBackend();
       pontuacoes = dadosPerfil.pontuacoes;
       estadoConquistas = dadosPerfil.conquistas;
-      renderizarConquistas(CONQUISTAS_CATALOGO, estadoConquistas, "todas");
+      renderizarConquistas(CATALOGO_CONQUISTAS, estadoConquistas, "todas");
     }
 
     // Ordem padrão: maior pontuação
