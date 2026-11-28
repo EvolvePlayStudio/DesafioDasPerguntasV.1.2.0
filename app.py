@@ -890,8 +890,9 @@ def api_registrar_acesso():
         pagina = dados.get('pagina', 'Não identificada')
         id_visitante = dados.get('id_visitante')
         id_usuario = dados.get('id_usuario')
+        modo_visitante = dados.get('modo_visitante')
 
-        registrar_pagina_visitada(pagina, id_visitante, id_usuario)
+        registrar_pagina_visitada(pagina, id_visitante, id_usuario, modo_visitante)
         
         return jsonify({"status": "sucesso"}), 200
         
@@ -2303,7 +2304,7 @@ def atualizar_energia_usuario(cur, id_usuario, energia_atual, u_sessao):
 def recarregar_energia_home():   
     id_usuario = session.get('id_usuario')
     if not id_usuario:
-        return jsonify(success=False, message="Sessão expirada"), 401
+        return jsonify(success=False, message="Sessão expirada", erro="ID de usuário não encontrado"), 401
 
     conn = cur = None
     try:       
@@ -2318,7 +2319,7 @@ def recarregar_energia_home():
         usuario = cur.fetchone()
 
         if not usuario:
-            return jsonify(success=False, message="Usuário não encontrado"), 404        
+            return jsonify(success=False, message="Usuário não encontrado", erro="Usuário não encontrado"), 404        
 
         # 2. ATUALIZA AS INFORMAÇÕES NO BANCO
         energia_antiga = usuario['perguntas_restantes']
@@ -2356,9 +2357,9 @@ def recarregar_energia_home():
             'bonus_energia': bonus_energia
         }
         return jsonify(resposta)
-    except Exception:
+    except Exception as erro:
         app.logger.exception("Erro ao recarregar energia na home")
-        return jsonify({'success': False, 'message': 'Erro interno'}), 500
+        return jsonify({'success': False, 'message': 'Erro interno', 'erro': erro}), 500
     finally:
         if cur: cur.close()
         if conn: conn.close()
@@ -3131,10 +3132,11 @@ def registrar_modo_teste():
     session["modo_teste"] = bool(data.get("modo_teste", False))
     return jsonify({"ok": True})
 
-def registrar_pagina_visitada(pagina, id_visitante=None, id_usuario=None):
+def registrar_pagina_visitada(pagina, id_visitante=None, id_usuario=None, modo_visitante=None):
     conn = cur = None
     if not id_usuario: id_usuario = session.get('id_usuario')
     if not id_visitante: id_visitante = session.get('id_visitante')
+    if not modo_visitante: modo_visitante = session.get('visitante')
 
     # Bloqueia registro de página para admins
     if id_usuario in privileged_ids or id_visitante in ids_visitante_admin:
@@ -3149,7 +3151,6 @@ def registrar_pagina_visitada(pagina, id_visitante=None, id_usuario=None):
     correspondencia = session.get('usuario_correspondencia', 'Não aplicável')
     palavra_chave   = session.get('usuario_palavra_chave', 'Não aplicável')
     canal_display   = session.get('usuario_canal_display', 'Não aplicável')
-    modo_visitante  = session.get('visitante')
 
     try:
         conn = get_db_connection()

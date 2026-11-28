@@ -378,7 +378,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       body: JSON.stringify({
         pagina: textoLog,
         id_visitante: idVisitante,
-        id_usuario: idUsuario
+        id_usuario: idUsuario,
+        modo_visitante: MODO_VISITANTE
       })
     }).catch(error => console.error("Erro ao registrar acesso:", error));
   }
@@ -858,7 +859,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // Consulta recarga de energia e missões semanais
-  if (!MODO_VISITANTE) { 
+  if (MODO_VISITANTE) { 
     setInterval(verificarAtualizacaoEnergia, 5000); // Dispara a verificação a cada 5 segundos (5000 ms)
 
     // Chama a rota do backend para processar a recarga de energia do novo dia
@@ -876,10 +877,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         atualizarBadgesBonus(data.bonus_energia);
         window.bonusTemasAtuais = data.bonus_energia;
         permitir_escolher_tema = true;
-      } else console.error("Não foi possível atualizar a energia:", data);
+      } else {
+        registrarLog(`1.Erro na requisição de energia: ${data.erro}`);
+        console.error("Não foi possível atualizar a energia:", data);
+      }
       exibirModalEmailOuEnergia(data.dados_missoes || null);
     })
     .catch(error => {
+      registrarLog(`2.Erro na requisição de energia: ${error}`);
       console.error("Erro na requisição de energia:", error);
     });
   }
