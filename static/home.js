@@ -859,7 +859,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // Consulta recarga de energia e missões semanais
-  if (MODO_VISITANTE) { 
+  if (!MODO_VISITANTE) { 
     setInterval(verificarAtualizacaoEnergia, 5000); // Dispara a verificação a cada 5 segundos (5000 ms)
 
     // Chama a rota do backend para processar a recarga de energia do novo dia
