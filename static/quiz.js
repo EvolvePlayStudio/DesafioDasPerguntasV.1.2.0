@@ -1,25 +1,53 @@
 import { coresDificuldade, dificuldadesOrdenadas, deveEncerrarQuiz, idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings, idsVisitantesReservados} from "./utils.js"
 import { playSound, playKeySound } from "./sound.js"
+import { CATALOGO_CONQUISTAS, MEDALHAS_TIER, PISO_RANKING } from "./utilsTemporario.js";
 
-const maxEnergiaParaVisitantes = 25;
+const id_visitante = localStorage.getItem("id_visitante");
+const idUsuario = Number(localStorage.getItem("id_usuario") ?? "0");
+const isAdmin = idsReservados.includes(idUsuario) || idsVisitantesReservados.includes(id_visitante);
+
+function registrarLog(textoLog) { // Dupllicada em home, pode ir para utils no futuro
+  fetch('/api/registrar-acesso', {
+    method: 'POST',
+    keepalive: true,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      pagina: textoLog,
+      id_visitante: id_visitante,
+      id_usuario: idUsuario
+    })
+  }).catch(error => console.error("Erro ao registrar acesso:", error));
+}
+
 function validateAppVersionQuiz() {
+  // if (isAdmin) localStorage.removeItem('app_version');
   if (!localStorage.getItem('app_version')) {
-    localStorage.setItem("auth_message", "Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente");
+    registrarLog('Quiz - Sessão Expirada')
+    localStorage.setItem("auth_message", "Sessão expirada");
     window.location.href = '/login';
   }
 }
 
+const maxEnergiaParaVisitantes = 25;
 const tema_atual = localStorage.getItem("tema_atual");
-const id_visitante = localStorage.getItem("id_visitante");
-const idUsuario = Number(localStorage.getItem("id_usuario") ?? "0");
-const isAdmin = idsReservados.includes(idUsuario) || idsVisitantesReservados.includes(id_visitante);
 const MODO_VISITANTE = localStorage.getItem("modoVisitante") === 'true';
 let respondidasVisitantesPorDificuldade = JSON.parse(localStorage.getItem('respondidas_visitante_por_dificuldade')) || {};
 let energiaNormal = 0;
 let bonusRestante = 0;
 let acertou = null;
+let pontuacoes_jogador;
 const avisoBonus = document.getElementById('aviso-bonus-energia');
 let estrelasAtuaisSelecionadas = null;
+const perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas") ?? "null");
+
+// Variáveis relacionadas às conquistas do usuário
+const conquistasDesbloqueadasSet = new Set();
+const catalogoPorId = new Map(CATALOGO_CONQUISTAS.map((item) => [item.id, item]));
+const filaConquistasTopo = [];
+let exibindoConquistaTopo = false;
+const DURACAO_TOAST_MS = 8000;
 
 try { // Registra primeiro quiz iniciado caso seja o primeiro login na conta do usuário
   if (!MODO_VISITANTE) {
@@ -44,42 +72,93 @@ if (MODO_VISITANTE === undefined || (!MODO_VISITANTE && idUsuario === 0)) {
   localStorage.setItem("auth_message", "Sessão expirada");
   window.location.href = '/login';
 }
-let pontuacoes_jogador;
 if (MODO_VISITANTE) {
   pontuacoes_jogador = JSON.parse(localStorage.getItem("pontuacoes_visitante") ?? "{}");
+  if (typeof pontuacoes_jogador[tema_atual] !== "number") { 
+    pontuacoes_jogador[tema_atual] = 0;
+    localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes_jogador))
+  };
 }
 else {
   pontuacoes_jogador = JSON.parse(localStorage.getItem("pontuacoes_usuario") ?? "{}");
   validateAppVersionQuiz();
 }
-async function carregarEstadoConquistasQuiz(pontuacoesAtuais) {
-  if (MODO_VISITANTE) return null;
 
-  try {
-    const res = await fetch("/api/quiz/estado-conquistas", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-      },
-      body: JSON.stringify({ pontuacoes: pontuacoesAtuais || {} })
-    });
-
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (erro) {
-    console.warn("Falha ao carregar estado inicial de conquistas:", erro);
-    return null;
-  }
+function exibirBannerConquista(conquista) {
+  filaConquistasTopo.push(conquista);
+  if (!exibindoConquistaTopo) {processarProximaConquista()}
 }
-carregarEstadoConquistasQuiz();
-if (typeof pontuacoes_jogador[tema_atual] !== "number") { 
-  pontuacoes_jogador[tema_atual] = 0;
-  localStorage.setItem("pontuacoes_visitante", JSON.stringify(pontuacoes_jogador))
-};
-const perguntas_por_dificuldade = JSON.parse(localStorage.getItem("perguntas") ?? "null");
 
+function processarProximaConquista() {
+  const conquista = filaConquistasTopo.shift();
+  if (!conquista) {
+    exibindoConquistaTopo = false;
+    return;
+  }
+
+  exibindoConquistaTopo = true;
+  const medalha = MEDALHAS_TIER[conquista.tier] || "🏅";
+  
+  const toast = document.createElement("div");
+  toast.style.cssText = `
+    position: fixed;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e2433;
+    color: #fff;
+    border: 1px solid rgba(253, 216, 53, 0.65);
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    max-width: 90vw;
+    z-index: 9999;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  `;
+
+  const medalhaEl = document.createElement("div");
+  medalhaEl.textContent = medalha;
+  medalhaEl.style.cssText = `
+    font-size: 1.6rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+  `;
+
+  const conteudoEl = document.createElement("div");
+  conteudoEl.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  `;
+
+  const tituloEl = document.createElement("div");
+  tituloEl.textContent = `Conquista Desbloqueada: ${conquista.titulo}`;
+  tituloEl.style.fontWeight = "700";
+
+  conteudoEl.appendChild(tituloEl);
+
+  if (conquista.descricao) {
+    const descEl = document.createElement("div");
+    descEl.textContent = conquista.descricao;
+    descEl.style.cssText = "font-size: 0.88em; opacity: 0.88; font-weight: 400;";
+    conteudoEl.appendChild(descEl);
+  }
+
+  toast.appendChild(medalhaEl);
+  toast.appendChild(conteudoEl);
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+    processarProximaConquista();
+  }, DURACAO_TOAST_MS);
+}
 // Ordena os IDs de forma crescente em cada nível de dificuldade (facilita coleta de dados)
+// Talvez este trecho seja desnecessário, pois isto já é feito no backend provavelmente
 if (perguntas_por_dificuldade && MODO_VISITANTE) {
   Object.keys(perguntas_por_dificuldade).forEach((dificuldade) => {
     if (Array.isArray(perguntas_por_dificuldade[dificuldade])) {
@@ -145,21 +224,6 @@ const PAUSA_ANTES_DA_A              = 500;
 const GAP_ENTRE_ALTERNATIVAS        = 380;
 const VELOCIDADE_LETRA_ENUNCIADO    = 21;
 const VELOCIDADE_LETRA_ALTERNATIVAS = 16; // quanto menor, mais rápido
-
-function registrarLog(textoLog) { // Dupllicada em home, pode ir para utils no futuro
-  fetch('/api/registrar-acesso', {
-    method: 'POST',
-    keepalive: true,
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      pagina: textoLog,
-      id_visitante: id_visitante,
-      id_usuario: idUsuario
-    })
-  }).catch(error => console.error("Erro ao registrar acesso:", error));
-}
 
 // Seleciona os botões
 botaoLikeNota.addEventListener("click", () => {
@@ -494,9 +558,7 @@ function converterNotacaoQuimica(texto) {
     .replace(/[⁺⁻⁰-⁹]/g, char => mapaSobrescritos[char]);
 }
 
-function desativarBotoes() {
-  btn_enviar.disabled = true;
-}
+function desativarBotoes() {btn_enviar.disabled = true};
 
 async function enviarResposta() {
   const pontuacao_atual = pontuacoes_jogador[tema_atual];
@@ -702,6 +764,7 @@ async function enviarResposta() {
       });
 
       const data = await response.json();
+
       if (data.sucesso) {
         // Atualiza a pontuação do usuário para o tema no Storage
         pontuacoes_jogador[tema_atual] = data.nova_pontuacao;
@@ -716,6 +779,27 @@ async function enviarResposta() {
           contador_perguntas_restantes.textContent = `${data.perguntas_restantes} + ${data.perguntas_bonus_restantes}`;
         } else {
           contador_perguntas_restantes.textContent = data.perguntas_restantes;
+        }
+
+        // Exibe banner de conquista no topo da tela caso alguma tenha sido feita
+        if (Array.isArray(data.ids_novas_conquistas)) {
+          for (const idConquista of data.ids_novas_conquistas) {
+            if (!idConquista || conquistasDesbloqueadasSet.has(idConquista)) continue;
+
+            conquistasDesbloqueadasSet.add(idConquista);
+
+            const infoCatalogo = catalogoPorId.get(idConquista);
+            if (!infoCatalogo) {
+              console.warn("Conquista não encontrada no catálogo do frontend:", idConquista);
+              continue;
+            }
+            exibirBannerConquista({
+              id: infoCatalogo.id,
+              tier: infoCatalogo.tier,
+              titulo: infoCatalogo.titulo,
+              descricao: infoCatalogo.descricao,
+            });
+          }
         }
 
         atualizarRankingVisual();
@@ -877,7 +961,7 @@ async function enviarResposta() {
   if (modo_jogo === 'desafio' && !MODO_VISITANTE) {
     const id_pergunta = pergunta_selecionada.id_pergunta;
     const versao_pergunta = pergunta_selecionada.versao_pergunta;
-    
+
     prosseguir_com_resultado = await registrarResposta(
       resposta_usuario,
       pontos_ganhos,
@@ -1293,27 +1377,75 @@ async function proximaPergunta() {
 }
 
 async function registrarFeedback() {
-  function obterAprovacaoNotaAtual() {
-    if (botaoLikeNota.classList.contains("ativo")) return true;
-    if (botaoDislikeNota.classList.contains("ativo")) return false;
-    return null;
-  }
-
   let bonusPorAvaliacao = false;
   if (avisoBonus.style.display != 'none' && [null, 0].includes(pergunta_selecionada.estrelas) && pergunta_selecionada.oferece_bonus
   && !([null, 0].includes(estrelasAtuaisSelecionadas))) bonusPorAvaliacao = true;
-  
+
   const comentario_atual = textarea_comentario?.value?.trim() || "";
   const aprovacao_nota_atual = obterAprovacaoNotaAtual();
   const mudouEstrelas = estrelasAtuaisSelecionadas !== estrelas_iniciais;
   const mudouComentario = comentario_atual !== comentario_inicial;
   const mudouAprovacaoNota = aprovacao_nota_atual !== aprovacao_nota_inicial;
 
-  if (!mudouEstrelas && !mudouComentario && !mudouAprovacaoNota) {
-    return;
+  if (!mudouEstrelas && !mudouComentario && !mudouAprovacaoNota) return;
+
+  if (modo_jogo === 'revisao' && mudouEstrelas) acertou = null; // Não registra se o usuário
+  // acertou caso ele tenha avaliado no modo revisão (normalmente os feedbacks de 1 estrela
+  // só são enviados quando o usuário erra no modo valendo pontos)
+  
+  function obterAprovacaoNotaAtual() {
+    if (botaoLikeNota.classList.contains("ativo")) return true;
+    if (botaoDislikeNota.classList.contains("ativo")) return false;
+    return null;
   }
 
-  if (modo_jogo === 'revisao' && mudouEstrelas) acertou = null;
+  function atualizarEnergiaAtual(data) {
+    if (data.perguntas_restantes !== undefined) {
+      localStorage.setItem("perguntas_restantes", data.perguntas_restantes);
+
+      const textoAtual = contador_perguntas_restantes.textContent;
+      if (textoAtual.includes("+")) {
+        const partes = textoAtual.split("+");
+        const bonusLateralAtual = partes[1].trim();
+        contador_perguntas_restantes.textContent = `${data.perguntas_restantes} + ${bonusLateralAtual}`;
+      } else {
+        contador_perguntas_restantes.textContent = data.perguntas_restantes;
+      }
+    }
+    // 2. Atualiza energia para visitante no localStorage quando houver bônus
+    else if (bonusPorAvaliacao) {
+      const perguntas_restantes_atual = Number(
+        localStorage.getItem("perguntas_restantes_visitante") ?? maxEnergiaParaVisitantes
+      );
+      const novas_perguntas_restantes = perguntas_restantes_atual + 1;
+      localStorage.setItem("perguntas_restantes_visitante", novas_perguntas_restantes);
+      contador_perguntas_restantes.textContent = novas_perguntas_restantes;
+    }
+
+  }
+
+  function exibirBannersConquistasFeedbacks(data) {
+    if (!MODO_VISITANTE && Array.isArray(data.ids_novas_conquistas)) {
+      for (const idConquista of data.ids_novas_conquistas) {
+        if (!idConquista || conquistasDesbloqueadasSet.has(idConquista)) continue;
+
+        conquistasDesbloqueadasSet.add(idConquista);
+
+        const infoCatalogo = catalogoPorId.get(idConquista);
+        if (!infoCatalogo) {
+          console.warn("Conquista não encontrada no catálogo do frontend:", idConquista);
+          continue;
+        }
+
+        exibirBannerConquista({
+          id: infoCatalogo.id,
+          tier: infoCatalogo.tier,
+          titulo: infoCatalogo.titulo,
+          descricao: infoCatalogo.descricao,
+        });
+      }
+    }
+  }
 
   try {
     const response = await fetch("/enviar_feedback", {
@@ -1336,29 +1468,10 @@ async function registrarFeedback() {
     });
     const data = await response.json();
     if (data && data.sucesso) {
-      // Se o backend retornou a energia atualizada (usuário cadastrado)
-      if (data.perguntas_restantes !== undefined) {
-        localStorage.setItem("perguntas_restantes", data.perguntas_restantes);
-        
-        const textoAtual = contador_perguntas_restantes.textContent;
-        if (textoAtual.includes("+")) {
-          const partes = textoAtual.split("+");
-          const bonusLateralAtual = partes[1].trim();
-          contador_perguntas_restantes.textContent = `${data.perguntas_restantes} + ${bonusLateralAtual}`;
-        } else {
-          contador_perguntas_restantes.textContent = data.perguntas_restantes;
-        }
-      }
-      // 2. Se for VISITANTE (atualiza direto via localStorage com base na flag bonusPorAvaliacao)
-      else if (bonusPorAvaliacao) {
-        const perguntas_restantes_atual = Number(localStorage.getItem("perguntas_restantes_visitante") ?? maxEnergiaParaVisitantes);
-        const novas_perguntas_restantes = perguntas_restantes_atual + 1;
-        localStorage.setItem("perguntas_restantes_visitante", novas_perguntas_restantes);
-        contador_perguntas_restantes.textContent = novas_perguntas_restantes;
-      }
+      atualizarEnergiaAtual(data);
+      exibirBannersConquistasFeedbacks(data);
     }
-  }
-  catch (erro) {
+  } catch (erro) {
     registrarLog(`Erro ao enviar feedback: ${erro}`);
     console.error("Erro ao enviar feedback:", erro);
   }

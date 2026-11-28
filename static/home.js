@@ -687,7 +687,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // --- FUNÇÃO 1: Modal de Confirmação de E-mail ---
     function exibirModalConfirmacaoEmail(onCloseCallback) {
-      registrarLog("Modal de confirmaçào de e-mail");
+      registrarLog("Modal de confirmação de e-mail");
       abrirModal({
         textoPrimario: "Fechar",
         textoSecundario: "Reenviar e-mail",

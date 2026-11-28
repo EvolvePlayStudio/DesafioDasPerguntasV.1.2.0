@@ -3,7 +3,7 @@ import { playSound, playKeySound } from './sound.js';
 
 const APP_VERSION_LOGIN = '1.8.9';
 const mensagensAbaLogin = ['Sessão expirada', 
-'Sua sessão expirou devido a uma atualização recente do sistema. Por favor, logue novamente'];
+'Sua sessão expirou devido a uma atualização recente do sistema'];
 
 // Função para registrar conversão da Microsoft para conta cadastrada
 function dispararConversaoMicrosoft() {

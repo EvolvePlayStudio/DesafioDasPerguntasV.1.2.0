@@ -81,6 +81,42 @@ PISO_RANKING = { # Para a função que analisa conquistas de alcançar ranking d
     "Lenda": 4000,
 }
 
+CONQUISTAS_RESPOSTAS = {
+    "respondidas_bronze",
+    "respondidas_prata",
+    "respondidas_ouro",
+    "superando_medio",
+    "superando_dificil",
+    "superando_extremo",
+}
+
+CONQUISTAS_AVALIACOES = {
+    "avaliador_bronze",
+    "avaliador_prata",
+    "avaliador_ouro",
+}
+
+CONQUISTAS_PONTUACOES = {
+    "ranking_bronze",
+    "ranking_prata",
+    "ranking_ouro",
+    "natureza_bronze",
+    "natureza_prata",
+    "natureza_ouro",
+    "humanas_bronze",
+    "humanas_prata",
+    "humanas_ouro",
+    "cultura_bronze",
+    "cultura_prata",
+    "cultura_ouro",
+    "variedades_bronze",
+    "variedades_prata",
+    "variedades_ouro",
+    "progresso_bronze",
+    "progresso_prata",
+    "progresso_ouro",
+}
+
 @app.route('/api/quiz/estado-conquistas', methods=['POST'])
 def estado_conquistas_quiz():
     id_usuario = session.get('id_usuario')
@@ -660,99 +696,10 @@ def api_pontuacoes():
     pontuacoes = buscar_pontuacoes_usuario()
     return jsonify(pontuacoes)
 
-def calcular_estado_conquistas(cur, id_usuario, pontuacoes):
-    # 1. Contagens na tabela de respostas
-    cur.execute("""
-        SELECT
-            COUNT(*) AS total_respondidas,
-            COUNT(*) FILTER (WHERE acertou = TRUE AND dificuldade = 'Médio') AS acertos_medio,
-            COUNT(*) FILTER (WHERE acertou = TRUE AND dificuldade = 'Difícil') AS acertos_dificil,
-            COUNT(*) FILTER (WHERE acertou = TRUE AND dificuldade = 'Extremo') AS acertos_extremo
-        FROM respostas_usuarios
-        WHERE id_usuario = %s
-    """, (id_usuario,))
-    resp_row = cur.fetchone()
-    if isinstance(resp_row, dict):
-        total_respondidas = resp_row["total_respondidas"] or 0
-        acertos_medio = resp_row["acertos_medio"] or 0
-        acertos_dificil = resp_row["acertos_dificil"] or 0
-        acertos_extremo = resp_row["acertos_extremo"] or 0
-    else:
-        total_respondidas = (resp_row[0] if resp_row else 0) or 0
-        acertos_medio = (resp_row[1] if resp_row else 0) or 0
-        acertos_dificil = (resp_row[2] if resp_row else 0) or 0
-        acertos_extremo = (resp_row[3] if resp_row else 0) or 0
+def calcular_estado_conquistas(cur, id_usuario, pontuacoes, ids_novas_conquistas=None, escopo="completo"):
+    pontuacoes = pontuacoes or {}
 
-    # 2. Contagem de avaliações com estrelas
-    cur.execute("""
-        SELECT COUNT(*)
-        FROM feedbacks
-        WHERE id_usuario = %s
-          AND estrelas IS NOT NULL
-    """, (id_usuario,))
-    fb_row = cur.fetchone()
-    total_avaliacoes = (fb_row["count"] if isinstance(fb_row, dict) else fb_row[0]) or 0
-
-    # 3. Métricas derivadas das pontuações já carregadas
-    pts_natureza = sum(pontuacoes.get(t, 0) for t in ("Astronomia", "Biologia", "Física", "Química"))
-    pts_humanas = sum(pontuacoes.get(t, 0) for t in ("História", "Geografia", "Filosofia"))
-    pts_cultura = sum(pontuacoes.get(t, 0) for t in ("Artes", "Mídia", "Música"))
-    pts_variedades = sum(pontuacoes.get(t, 0) for t in ("Esportes", "Variedades"))
-    pts_total = sum(pontuacoes.values())
-
-    progresso_pct = int((pts_total / PONTUACAO_MAXIMA_TOTAL) * 100) if pts_total > 0 else 0
-
-    temas_aprendiz = sum(1 for p in pontuacoes.values() if p >= PISO_RANKING["Aprendiz"])
-    temas_estudante = sum(1 for p in pontuacoes.values() if p >= PISO_RANKING["Estudante"])
-    temas_sabio = sum(1 for p in pontuacoes.values() if p >= PISO_RANKING["Sábio"])
-    temas_lenda = sum(1 for p in pontuacoes.values() if p >= PISO_RANKING["Lenda"])
-
-    # Meta = 6 no catálogo de ranking
-    prog_ranking_bronze = 6 if (temas_estudante >= 1 or temas_aprendiz >= 6) else temas_aprendiz
-    prog_ranking_prata = 6 if (temas_sabio >= 1 or temas_estudante >= 6) else temas_estudante
-    prog_ranking_ouro = 6 if (temas_lenda >= 1 or temas_sabio >= 6) else temas_sabio
-
-    # Mapa: id_conquista -> (valor_atual, meta)
-    progresso_calculado = {
-        # 1. Volume Geral
-        "respondidas_bronze": (total_respondidas, 10),
-        "respondidas_prata": (total_respondidas, 400),
-        "respondidas_ouro": (total_respondidas, 1200),
-        # 2. Ranking
-        "ranking_bronze": (prog_ranking_bronze, 6),
-        "ranking_prata": (prog_ranking_prata, 6),
-        "ranking_ouro": (prog_ranking_ouro, 6),
-        # 3. Ciências da Natureza
-        "natureza_bronze": (pts_natureza, 4000),
-        "natureza_prata": (pts_natureza, 8000),
-        "natureza_ouro": (pts_natureza, 12000),
-        # 4. Ciências Humanas
-        "humanas_bronze": (pts_humanas, 3000),
-        "humanas_prata": (pts_humanas, 6000),
-        "humanas_ouro": (pts_humanas, 9000),
-        # 5. Artes e Cultura
-        "cultura_bronze": (pts_cultura, 3000),
-        "cultura_prata": (pts_cultura, 6000),
-        "cultura_ouro": (pts_cultura, 9000),
-        # 6. Esportes e Variedades
-        "variedades_bronze": (pts_variedades, 2000),
-        "variedades_prata": (pts_variedades, 4000),
-        "variedades_ouro": (pts_variedades, 6000),
-        # 7. Acertos em Nível Específico
-        "superando_medio": (acertos_medio, 20),
-        "superando_dificil": (acertos_dificil, 20),
-        "superando_extremo": (acertos_extremo, 20),
-        # 8. Avaliações com Estrelas
-        "avaliador_bronze": (total_avaliacoes, 10),
-        "avaliador_prata": (total_avaliacoes, 100),
-        "avaliador_ouro": (total_avaliacoes, 300),
-        # 9. Progresso Total
-        "progresso_bronze": (progresso_pct, 10),
-        "progresso_prata": (progresso_pct, 30),
-        "progresso_ouro": (progresso_pct, 60),
-    }
-
-    # 4. Busca conquistas já registradas no banco
+    # 1. Busca conquistas já registradas no banco primeiro
     cur.execute("""
         SELECT id_conquista
         FROM usuario_conquistas
@@ -763,30 +710,148 @@ def calcular_estado_conquistas(cur, id_usuario, pontuacoes):
         for r in cur.fetchall()
     }
 
+    verificar_respostas = escopo in ("completo", "respostas") and not CONQUISTAS_RESPOSTAS.issubset(ja_desbloqueadas)
+    verificar_avaliacoes = escopo in ("completo", "feedback") and not CONQUISTAS_AVALIACOES.issubset(ja_desbloqueadas)
+    verificar_pontuacoes = escopo in ("completo", "respostas") and not CONQUISTAS_PONTUACOES.issubset(ja_desbloqueadas)
+
+    metricas = {
+        "total_avaliacoes": 0,
+        "total_respondidas": 0,
+        "acertos_medio": 0,
+        "acertos_dificil": 0,
+        "acertos_extremo": 0,
+        "progresso_pct": 0,
+        "prog_ranking_bronze": 0,
+        "prog_ranking_prata": 0,
+        "prog_ranking_ouro": 0,
+        "pts_natureza": 0,
+        "pts_humanas": 0,
+        "pts_cultura": 0,
+        "pts_variedades": 0,
+    }
+
+    # 2. Contagem de avaliações com estrelas (apenas se faltar alguma conquista de avaliação)
+    if verificar_avaliacoes:
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM feedbacks
+            WHERE id_usuario = %s
+                AND estrelas IS NOT NULL
+        """, (id_usuario,))
+        fb_row = cur.fetchone()
+        metricas["total_avaliacoes"] = (fb_row["count"] if isinstance(fb_row, dict) else fb_row[0]) or 0
+
+    # 3. Análise de total de respostas do usuário e acertos em cada nível de pergunta
+    if verificar_respostas:
+        cur.execute("""
+            SELECT
+                COUNT(*) AS total_respondidas,
+                COUNT(*) FILTER (WHERE acertou = TRUE AND dificuldade = 'Médio') AS acertos_medio,
+                COUNT(*) FILTER (WHERE acertou = TRUE AND dificuldade = 'Difícil') AS acertos_dificil,
+                COUNT(*) FILTER (WHERE acertou = TRUE AND dificuldade = 'Extremo') AS acertos_extremo
+            FROM respostas_usuarios
+            WHERE id_usuario = %s AND NOT dados_migrados
+        """, (id_usuario,))
+        resp_row = cur.fetchone()
+        if isinstance(resp_row, dict):
+            metricas["total_respondidas"] = resp_row["total_respondidas"] or 0
+            metricas["acertos_medio"] = resp_row["acertos_medio"] or 0
+            metricas["acertos_dificil"] = resp_row["acertos_dificil"] or 0
+            metricas["acertos_extremo"] = resp_row["acertos_extremo"] or 0
+        else:
+            metricas["total_respondidas"] = (resp_row[0] if resp_row else 0) or 0
+            metricas["acertos_medio"] = (resp_row[1] if resp_row else 0) or 0
+            metricas["acertos_dificil"] = (resp_row[2] if resp_row else 0) or 0
+            metricas["acertos_extremo"] = (resp_row[3] if resp_row else 0) or 0
+
+    # 4. Métricas derivadas das pontuações
+    if verificar_pontuacoes:
+        if not pontuacoes:
+            pontuacoes = buscar_pontuacoes_usuario(cur=cur) or {}
+        metricas["pts_natureza"] = sum(pontuacoes.get(t, 0) for t in ("Astronomia", "Biologia", "Física", "Química"))
+        metricas["pts_humanas"] = sum(pontuacoes.get(t, 0) for t in ("História", "Geografia", "Filosofia"))
+        metricas["pts_cultura"] = sum(pontuacoes.get(t, 0) for t in ("Artes", "Mídia", "Música"))
+        metricas["pts_variedades"] = sum(pontuacoes.get(t, 0) for t in ("Esportes", "Variedades"))
+        pts_total = sum(v for v in pontuacoes.values() if isinstance(v, (int, float)))
+
+        metricas["progresso_pct"] = int((pts_total / PONTUACAO_MAXIMA_TOTAL) * 100) if pts_total > 0 else 0
+
+        temas_aprendiz = sum(1 for p in pontuacoes.values() if p >= PISO_RANKING["Aprendiz"])
+        temas_estudante = sum(1 for p in pontuacoes.values() if p >= PISO_RANKING["Estudante"])
+        temas_sabio = sum(1 for p in pontuacoes.values() if p >= PISO_RANKING["Sábio"])
+        temas_lenda = sum(1 for p in pontuacoes.values() if p >= PISO_RANKING["Lenda"])
+
+        metricas["prog_ranking_bronze"] = 6 if (temas_estudante >= 1 or temas_aprendiz >= 6) else temas_aprendiz
+        metricas["prog_ranking_prata"] = 6 if (temas_sabio >= 1 or temas_estudante >= 6) else temas_estudante
+        metricas["prog_ranking_ouro"] = 6 if (temas_lenda >= 1 or temas_sabio >= 6) else temas_sabio
+    
+    progresso_calculado = {
+        # 1. Volume Geral
+        "respondidas_bronze": (metricas["total_respondidas"], 10),
+        "respondidas_prata": (metricas["total_respondidas"], 400),
+        "respondidas_ouro": (metricas["total_respondidas"], 1200),
+        # 2. Ranking
+        "ranking_bronze": (metricas["prog_ranking_bronze"], 6),
+        "ranking_prata": (metricas["prog_ranking_prata"], 6),
+        "ranking_ouro": (metricas["prog_ranking_ouro"], 6),
+        # 3. Ciências da Natureza
+        "natureza_bronze": (metricas["pts_natureza"], 4000),
+        "natureza_prata": (metricas["pts_natureza"], 8000),
+        "natureza_ouro": (metricas["pts_natureza"], 12000),
+        # 4. Ciências Humanas
+        "humanas_bronze": (metricas["pts_humanas"], 3000),
+        "humanas_prata": (metricas["pts_humanas"], 6000),
+        "humanas_ouro": (metricas["pts_humanas"], 9000),
+        # 5. Artes e Cultura
+        "cultura_bronze": (metricas["pts_cultura"], 3000),
+        "cultura_prata": (metricas["pts_cultura"], 6000),
+        "cultura_ouro": (metricas["pts_cultura"], 9000),
+        # 6. Esportes e Variedades
+        "variedades_bronze": (metricas["pts_variedades"], 2000),
+        "variedades_prata": (metricas["pts_variedades"], 4000),
+        "variedades_ouro": (metricas["pts_variedades"], 6000),
+        # 7. Acertos em Nível Específico
+        "superando_medio": (metricas["acertos_medio"], 30),
+        "superando_dificil": (metricas["acertos_dificil"], 30),
+        "superando_extremo": (metricas["acertos_extremo"], 30),
+        # 8. Avaliações com Estrelas
+        "avaliador_bronze": (metricas["total_avaliacoes"], 10),
+        "avaliador_prata": (metricas["total_avaliacoes"], 100),
+        "avaliador_ouro": (metricas["total_avaliacoes"], 300),
+        # 9. Progresso Total
+        "progresso_bronze": (metricas["progresso_pct"], 10),
+        "progresso_prata": (metricas["progresso_pct"], 30),
+        "progresso_ouro": (metricas["progresso_pct"], 60),
+    }
+
     # 5. Insere novas conquistas concluídas (horário de SP truncado em segundos)
-    novas_ids = [
+    novos_ids = [
         cid for cid, (atual, meta) in progresso_calculado.items()
         if atual >= meta and cid not in ja_desbloqueadas
     ]
 
-    if novas_ids:
+    if novos_ids:
+        if isinstance(ids_novas_conquistas, list):
+            ids_novas_conquistas.extend(novos_ids)
         agora_sp = datetime.now(tz_sp).replace(tzinfo=None, microsecond=0)
-        for cid in novas_ids:
+        for cid in novos_ids:
             cur.execute("""
                 INSERT INTO usuario_conquistas (id_usuario, id_conquista, desbloqueada_em)
                 VALUES (%s, %s, %s)
                 ON CONFLICT (id_usuario, id_conquista) DO NOTHING
             """, (id_usuario, cid, agora_sp))
-        ja_desbloqueadas.update(novas_ids)
+        ja_desbloqueadas.update(novos_ids)
 
     # 6. Monta resposta no formato esperado pelo renderizarConquistas
-    return {
-        cid: {
-            "atual": atual,
-            "desbloqueada": cid in ja_desbloqueadas
+    resultado = {}
+    for cid, (atual, meta) in progresso_calculado.items():
+        esta_desbloqueada = cid in ja_desbloqueadas
+        valor_exibido = meta if (esta_desbloqueada and atual < meta) else atual
+        resultado[cid] = {
+            "atual": valor_exibido,
+            "desbloqueada": esta_desbloqueada,
         }
-        for cid, (atual, _meta) in progresso_calculado.items()
-    }
+    return resultado
 
 @app.route("/api/perfil")
 def api_perfil():
@@ -966,20 +1031,19 @@ def entrar_visitante():
 def enviar_feedback():
     data = request.get_json()
     id_pergunta = data.get("id_pergunta")
-    tema = data.get("tema").lower().capitalize()
+    tema = (data.get("tema") or "").lower().capitalize()
     estrelas = data.get("estrelas")
     if estrelas not in (1, 2, 3, 4, 5):
         estrelas = None
     versao_pergunta = data.get("versao_pergunta")
     comentario = data.get("comentario")
-    dificuldade = data.get("dificuldade").lower().capitalize()
+    dificuldade = (data.get("dificuldade") or "").lower().capitalize()
     aprovacao_nota = data.get("aprovacao_nota")
     bonus_por_avaliacao = data.get("bonus_por_avaliacao", False)
     acertou = data.get("acertou")
     id_usuario = session.get("id_usuario")
     id_visitante = session.get("id_visitante")
     modo_visitante = session.get("visitante")
-    
 
     if modo_visitante:
         if not all([data.get("id_pergunta"), data.get("versao_pergunta"), id_visitante]):
@@ -1052,6 +1116,17 @@ def enviar_feedback():
                                     versao = EXCLUDED.versao,
                                     ultima_atualizacao = date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo');
                 """, (id_pergunta, id_usuario, versao_pergunta, aprovacao_nota))
+        
+        ids_novas_conquistas = []
+        if not modo_visitante and id_usuario and data.get("atualizar_feedback_estrelas") and estrelas is not None:
+            calcular_estado_conquistas(
+                cur,
+                id_usuario,
+                None,
+                ids_novas_conquistas=ids_novas_conquistas,
+                escopo="feedback",
+            )
+        
         conn.commit()
 
         # Notifica por e-mail o feedback enviado caso tenha comentário
@@ -1071,10 +1146,14 @@ def enviar_feedback():
                 app.logger.warning("Falha ao enviar email de feedback da pergunta", exc_info=True)
 
         # Monta a resposta dependendo se é visitante ou usuário cadastrado
-        resposta_json = {"sucesso": True}
-        
+        resposta_json = {
+            "sucesso": True,
+            "ids_novas_conquistas": ids_novas_conquistas,
+        }
+
         if not modo_visitante and id_usuario:
-            resposta_json["perguntas_restantes"] = perguntas_restantes
+            resposta_json["perguntas_restantes"] = perguntas_restantes # Caso tenha ganhado bônus de energia pelo envio de feeback
+
         return jsonify(resposta_json)
 
     except Exception as e:
@@ -3183,6 +3262,9 @@ def registrar_resposta_usuario():
                 """, (id_usuario,))
                 perguntas_restantes = cur.fetchone()[0]
 
+            ids_novas_conquistas = []
+            calcular_estado_conquistas(cur, id_usuario, None, ids_novas_conquistas=ids_novas_conquistas, escopo="respostas")
+
             conn.commit()
 
             return jsonify({
@@ -3191,6 +3273,7 @@ def registrar_resposta_usuario():
                 "perguntas_restantes": perguntas_restantes,
                 "perguntas_bonus_restantes": bonus_restantes,
                 "usando_bonus": bool(bonus_ativo),
+                "ids_novas_conquistas": ids_novas_conquistas
             })
     except Exception:
         if conn: conn.rollback()
