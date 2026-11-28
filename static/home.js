@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const idsUsuariosIsentos = ['291', '439'] // Usuários que não recebem convite para compra de energia
   const isAdmin = window.ADS_CONFIG.isAdmin;
   const controleLogs = {};
+  const cotasVisitante = {'Fácil': 1, 'Médio': 3, 'Difícil': 3, 'Extremo': 0}; // 4. Cotas máximas permitidas para visitantes
 
   if (!MODO_VISITANTE) { // Verifica se deve expirar a sessão
     if (!idUsuario) { // Caso o id de usuário não tenha sido identificado
@@ -529,28 +530,10 @@ document.addEventListener("DOMContentLoaded", async () => {
           
           if (ha_perguntas_disponiveis && !encerrar_quiz) {
             localStorage.removeItem("perguntas_respondidas");
-            // Pega os anúncios que serão utilizados na tela de quiz
-            /*
-            try {
-              // 1. Faz a requisição
-              const resposta = await fetch("/api/obter_todos_anuncios"); // Não serve para nada por enquanto, anúncios em quiz foram removidos
-              // 2. Transforma em objeto JSON
-              const dados = await resposta.json();
-              // 3. Salva como STRING (o Storage só aceita strings)
-              localStorage.setItem("anuncios", JSON.stringify(dados));
-            }
-            catch (erro) {
-              console.error("Falha ao carregar anúncios:", erro);
-              // Opcional: define um objeto vazio para não quebrar o quiz
-              localStorage.setItem("anuncios", JSON.stringify({}));
-            }*/
-            // Salva no localStorage o bônus de energia do usuário para ler na tela de quiz caso tenha no tema escolhido
             let maiorBonusTema = 0;
             if (window.bonusTemasAtuais && Array.isArray(window.bonusTemasAtuais)) {
               const bonusDoTema = window.bonusTemasAtuais.find(b => b.tema === tema_atual);
-              if (bonusDoTema) {
-                maiorBonusTema = bonusDoTema.perguntas_bonus_restantes;
-              }
+              if (bonusDoTema) maiorBonusTema = bonusDoTema.perguntas_bonus_restantes;
             }
             sessionStorage.setItem("perguntas_bonus_restantes", maiorBonusTema);
             window.location.href = `/quiz/${encodeURIComponent(slugify(tema_atual))}`;
@@ -575,8 +558,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           const idsRespondidas = JSON.parse(localStorage.getItem("visitante_respondidas") ?? "[]");
           // 3. Recupera o progresso de quantidade respondida por Tema e Dificuldade
           const progressoPorDificuldade = JSON.parse(localStorage.getItem("respondidas_visitante_por_dificuldade") ?? "{}");
-          // 4. Cotas máximas permitidas para visitantes
-          const cotasVisitante = {'Fácil': 1, 'Médio': 2, 'Difícil': 3, 'Extremo': 0};
 
           Object.keys(data.perguntas).forEach(dificuldade => {
             if (!Array.isArray(data.perguntas[dificuldade])) return;

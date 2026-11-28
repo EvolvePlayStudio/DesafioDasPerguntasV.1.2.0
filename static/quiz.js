@@ -1,6 +1,6 @@
 import { coresDificuldade, dificuldadesOrdenadas, deveEncerrarQuiz, idsReservados, obterDificuldadesDisponiveis, obterInfoRankingAtual, fetchAutenticado, registrarInteracaoAnuncio, simbolosRankings, idsVisitantesReservados} from "./utils.js"
 import { playSound, playKeySound } from "./sound.js"
-import { CATALOGO_CONQUISTAS, MEDALHAS_TIER, PISO_RANKING } from "./utilsTemporario.js";
+import { CATALOGO_CONQUISTAS, MEDALHAS_TIER } from "./utilsTemporario.js";
 
 const id_visitante = localStorage.getItem("id_visitante");
 const idUsuario = Number(localStorage.getItem("id_usuario") ?? "0");
@@ -1313,7 +1313,7 @@ async function mostrarPergunta(chamarAtualizarAnuncios=false) {
     if (!MODO_VISITANTE && modo_jogo === 'desafio') sessionStorage.setItem("id_pergunta_ativa", pergunta_selecionada.id_pergunta);
   }
   if (isAdmin) {
-    console.log(`Dificuldade selecionada: ${pergunta_selecionada.dificuldade}`);
+    //console.log(`Dificuldade selecionada: ${pergunta_selecionada.dificuldade}`);
     console.log(`Pergunta selecionada: (${pergunta_selecionada.id_pergunta}/${pergunta_selecionada.grupo}) ${pergunta_selecionada.enunciado}`);
   }
   window.avaliacaoAtual = 0;
